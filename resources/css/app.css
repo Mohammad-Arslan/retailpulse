@@ -125,4 +125,14 @@
     body {
         @apply bg-background text-foreground;
     }
+
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-teal-400;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    [role='menuitem']:focus-visible {
+        @apply outline-2 outline-offset-2 outline-teal-400;
+    }
 }

@@ -31,8 +31,8 @@ final class UserController extends Controller
         $this->authorize('viewAny', User::class);
 
         return Inertia::render('Admin/Users/Index', [
-            'users' => $this->users->paginate($request->only('search', 'is_active')),
-            'filters' => $request->only('search', 'is_active'),
+            'users' => $this->users->paginate($request->only('search', 'is_active', 'sort', 'direction')),
+            'filters' => $request->only('search', 'is_active', 'sort', 'direction'),
         ]);
     }
 

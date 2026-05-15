@@ -1,7 +1,4 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import FormField from '@/Components/common/FormField';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
 
@@ -22,72 +19,59 @@ export default function ResetPassword({ token, email }) {
     };
 
     return (
-        <GuestLayout>
+        <GuestLayout
+            title="Choose a new password"
+            subtitle="Enter your new credentials below."
+        >
             <Head title="Reset Password" />
 
-            <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="email" value="Email" />
-
-                    <TextInput
+            <form onSubmit={submit} className="space-y-5">
+                <FormField label="Email" id="email" error={errors.email}>
+                    <input
                         id="email"
                         type="email"
                         name="email"
                         value={data.email}
-                        className="mt-1 block w-full"
                         autoComplete="username"
+                        className="rp-form-input"
                         onChange={(e) => setData('email', e.target.value)}
                     />
+                </FormField>
 
-                    <InputError message={errors.email} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
+                <FormField label="Password" id="password" error={errors.password}>
+                    <input
                         id="password"
                         type="password"
                         name="password"
                         value={data.password}
-                        className="mt-1 block w-full"
                         autoComplete="new-password"
-                        isFocused={true}
+                        autoFocus
+                        className="rp-form-input"
                         onChange={(e) => setData('password', e.target.value)}
                     />
+                </FormField>
 
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Confirm Password"
-                    />
-
-                    <TextInput
-                        type="password"
+                <FormField
+                    label="Confirm password"
+                    id="password_confirmation"
+                    error={errors.password_confirmation}
+                >
+                    <input
                         id="password_confirmation"
+                        type="password"
                         name="password_confirmation"
                         value={data.password_confirmation}
-                        className="mt-1 block w-full"
                         autoComplete="new-password"
+                        className="rp-form-input"
                         onChange={(e) =>
                             setData('password_confirmation', e.target.value)
                         }
                     />
+                </FormField>
 
-                    <InputError
-                        message={errors.password_confirmation}
-                        className="mt-2"
-                    />
-                </div>
-
-                <div className="mt-4 flex items-center justify-end">
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Reset Password
-                    </PrimaryButton>
-                </div>
+                <button type="submit" disabled={processing} className="rp-btn-login">
+                    Reset password
+                </button>
             </form>
         </GuestLayout>
     );

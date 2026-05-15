@@ -22,7 +22,17 @@ final class UserRepository implements UserRepositoryInterface
 
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = User::query()->with('roles')->latest();
+        $query = User::query()->with('roles');
+
+        $sort = $filters['sort'] ?? 'created_at';
+        $direction = strtolower((string) ($filters['direction'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
+        $allowedSorts = ['name', 'email', 'created_at', 'is_active'];
+
+        if (! in_array($sort, $allowedSorts, true)) {
+            $sort = 'created_at';
+        }
+
+        $query->orderBy($sort, $direction);
 
         if (! empty($filters['search'])) {
             $search = $filters['search'];

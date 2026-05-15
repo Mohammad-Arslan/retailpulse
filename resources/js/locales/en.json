@@ -1,0 +1,84 @@
+{
+    "nav": {
+        "dashboard": "Dashboard",
+        "users": "Users",
+        "roles": "Roles",
+        "permissions": "Permissions",
+        "overview": "Overview",
+        "admin": "Admin"
+    },
+    "common": {
+        "search": "Search",
+        "searchPlaceholder": "Search by name or email...",
+        "addUser": "Add User",
+        "addRole": "Add Role",
+        "addPermission": "Add Permission",
+        "noResults": "No results found.",
+        "actions": "Actions",
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete",
+        "clone": "Clone",
+        "showing": "Showing {{from}}–{{to}} of {{total}}",
+        "branch": "Branch",
+        "allBranches": "All branches",
+        "branchSwitcherHint": "Branch switching available in a future phase",
+        "logOut": "Log out",
+        "profile": "Profile",
+        "openMenu": "Open menu",
+        "closeMenu": "Close menu",
+        "collapseSidebar": "Collapse sidebar",
+        "expandSidebar": "Expand sidebar",
+        "switchToLight": "Switch to light mode",
+        "switchToDark": "Switch to dark mode",
+        "commandPalette": "Search pages, users, actions..."
+    },
+    "confirm": {
+        "defaultTitle": "Are you sure?",
+        "deleteTitle": "Confirm deletion",
+        "deleteDescription": "Delete {{name}}? This cannot be undone.",
+        "deleteUser": "Delete {{name}}? This will permanently remove their account and access.",
+        "deleteRole": "Delete {{name}}? Users assigned this role may lose access.",
+        "deletePermission": "Delete {{name}}? This will remove the permission from all roles that use it.",
+        "confirm": "Confirm",
+        "cancel": "Cancel"
+    },
+    "pages": {
+        "dashboard": {
+            "title": "Dashboard",
+            "description": "Overview of your RetailPulse workspace."
+        },
+        "users": {
+            "title": "Team Members",
+            "description": "Manage users, roles, and access permissions across all branches.",
+            "empty": "No users found."
+        },
+        "roles": {
+            "title": "Roles",
+            "description": "Define access profiles and assign permissions to each role.",
+            "searchPlaceholder": "Search roles..."
+        },
+        "permissions": {
+            "title": "Permissions",
+            "description": "Granular capabilities assigned to roles across the system."
+        }
+    },
+    "auth": {
+        "welcomeBack": "Welcome back.",
+        "signInSubtitle": "Sign in to your RetailPulse workspace.",
+        "email": "Email address",
+        "password": "Password",
+        "remember": "Remember this device",
+        "signIn": "Sign In",
+        "adminOnly": "Admin access only. Contact your administrator for an account."
+    },
+    "breadcrumbs": {
+        "home": "Dashboard",
+        "users": "Users",
+        "roles": "Roles",
+        "permissions": "Permissions",
+        "create": "Create",
+        "edit": "Edit",
+        "clone": "Clone"
+    }
+}

@@ -2,7 +2,7 @@ import PermissionsByGroupChart from '@/Components/charts/PermissionsByGroupChart
 import UserGrowthChart from '@/Components/charts/UserGrowthChart';
 import UserStatusChart from '@/Components/charts/UserStatusChart';
 import UsersByRoleChart from '@/Components/charts/UsersByRoleChart';
-import AdminLayout from '@/Layouts/AdminLayout';
+import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, Link } from '@inertiajs/react';
 import {
     Calendar,
@@ -12,7 +12,7 @@ import {
     Users,
 } from 'lucide-react';
 
-export default function Dashboard({ stats, charts }) {
+function Dashboard({ stats, charts }) {
     const today = new Date().toLocaleDateString('en-US', {
         month: 'long',
         day: 'numeric',
@@ -85,7 +85,7 @@ export default function Dashboard({ stats, charts }) {
     };
 
     return (
-        <AdminLayout>
+        <>
             <Head title="Dashboard" />
 
             <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -168,6 +168,8 @@ export default function Dashboard({ stats, charts }) {
                     })}
                 </div>
             </div>
-        </AdminLayout>
+        </>
     );
 }
+
+export default withAdminLayout(Dashboard);

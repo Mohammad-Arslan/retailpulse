@@ -2,12 +2,16 @@ import PermissionCheckboxes from '@/Components/admin/PermissionCheckboxes';
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
+import { useConfirm } from '@/Components/common/ConfirmDialogProvider';
 import { useCan } from '@/Hooks/useCan';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 export default function Edit({ role, permissionGroups }) {
     const can = useCan();
+    const confirm = useConfirm();
+    const { t } = useTranslation();
     const { data, setData, put, processing, errors, delete: destroy } = useForm({
         name: role.name,
         description: role.description ?? '',
@@ -19,8 +23,16 @@ export default function Edit({ role, permissionGroups }) {
         put(route('admin.roles.update', role.id));
     };
 
-    const remove = () => {
-        if (confirm('Delete this role?')) {
+    const remove = async () => {
+        const confirmed = await confirm({
+            title: t('confirm.deleteTitle'),
+            description: t('confirm.deleteRole', { name: role.name }),
+            confirmLabel: t('common.delete'),
+            cancelLabel: t('confirm.cancel'),
+            variant: 'destructive',
+        });
+
+        if (confirmed) {
             destroy(route('admin.roles.destroy', role.id));
         }
     };

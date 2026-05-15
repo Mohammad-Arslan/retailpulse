@@ -23,7 +23,17 @@ final class RoleRepository implements RoleRepositoryInterface
 
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = Role::query()->withCount('permissions')->latest();
+        $query = Role::query()->withCount('permissions');
+
+        $sort = $filters['sort'] ?? 'name';
+        $direction = strtolower((string) ($filters['direction'] ?? 'asc')) === 'desc' ? 'desc' : 'asc';
+        $allowedSorts = ['name', 'description', 'created_at'];
+
+        if (! in_array($sort, $allowedSorts, true)) {
+            $sort = 'name';
+        }
+
+        $query->orderBy($sort, $direction);
 
         if (! empty($filters['search'])) {
             $search = $filters['search'];

@@ -1,13 +1,17 @@
+import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
 import RolePill from '@/Components/common/RolePill';
 import UserAvatar from '@/Components/common/UserAvatar';
+import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
-import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Pencil, Plus, Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
-export default function Index({ users, filters }) {
+function Index({ users, filters }) {
     const can = useCan();
+    const { t } = useTranslation();
 
     const search = (e) => {
         e.preventDefault();
@@ -17,18 +21,103 @@ export default function Index({ users, filters }) {
         });
     };
 
+    const columns = useMemo(
+        () => [
+            {
+                id: 'name',
+                accessorKey: 'name',
+                header: 'User',
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-3">
+                        <UserAvatar name={row.original.name} />
+                        <div>
+                            <div className="text-sm font-semibold text-rp-text">
+                                {row.original.name}
+                            </div>
+                            <div className="text-xs text-rp-text-muted">
+                                {row.original.email}
+                            </div>
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                id: 'roles',
+                header: 'Roles',
+                enableSorting: false,
+                cell: ({ row }) => (
+                    <div className="flex flex-wrap gap-1.5">
+                        {row.original.roles?.length ? (
+                            row.original.roles.map((role) => (
+                                <RolePill
+                                    key={role.id ?? role.name}
+                                    name={role.name}
+                                />
+                            ))
+                        ) : (
+                            <span className="text-xs text-ink-300">—</span>
+                        )}
+                    </div>
+                ),
+            },
+            {
+                id: 'is_active',
+                accessorKey: 'is_active',
+                header: 'Status',
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-1.5 text-xs text-rp-text-secondary">
+                        <span
+                            className={`h-1.5 w-1.5 rounded-full ${row.original.is_active ? 'bg-teal-400 shadow-[0_0_0_2px] shadow-teal-100' : 'bg-ink-300'}`}
+                        />
+                        {row.original.is_active ? 'Active' : 'Inactive'}
+                    </div>
+                ),
+            },
+        ],
+        [],
+    );
+
+    const rowActions = (user) => {
+        const actions = [];
+
+        if (can('users.update')) {
+            actions.push({
+                label: t('common.edit'),
+                type: 'edit',
+                href: route('admin.users.edit', user.id),
+                permission: 'users.update',
+            });
+        }
+
+        if (can('users.delete')) {
+            actions.push({
+                label: t('common.delete'),
+                type: 'delete',
+                method: 'delete',
+                href: route('admin.users.destroy', user.id),
+                permission: 'users.delete',
+                variant: 'destructive',
+                confirm: {
+                    description: t('confirm.deleteUser', { name: user.name }),
+                },
+            });
+        }
+
+        return actions;
+    };
+
     return (
-        <AdminLayout>
-            <Head title="Users" />
+        <>
+            <Head title={t('nav.users')} />
 
             <PageHeader
-                title="Team Members"
-                description="Manage users, roles, and access permissions across all branches."
+                title={t('pages.users.title')}
+                description={t('pages.users.description')}
             >
                 {can('users.create') && (
                     <Link href={route('admin.users.create')} className="rp-btn-primary">
                         <Plus className="h-4 w-4" />
-                        Add User
+                        {t('common.addUser')}
                     </Link>
                 )}
             </PageHeader>
@@ -39,151 +128,26 @@ export default function Index({ users, filters }) {
                     <input
                         name="search"
                         defaultValue={filters.search ?? ''}
-                        placeholder="Search by name or email..."
+                        placeholder={t('common.searchPlaceholder')}
                         className="rp-search-input"
                     />
                 </div>
                 <button type="submit" className="rp-btn-outline">
-                    Search
+                    {t('common.search')}
                 </button>
             </form>
 
-            <div className="rp-user-table-wrap">
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-[720px] border-collapse">
-                        <thead>
-                            <tr>
-                                <th className="rp-table-head rp-table-head-bg px-4 py-3">
-                                    User
-                                </th>
-                                <th className="rp-table-head rp-table-head-bg px-4 py-3">
-                                    Roles
-                                </th>
-                                <th className="rp-table-head rp-table-head-bg px-4 py-3">
-                                    Status
-                                </th>
-                                <th className="px-4 py-3" />
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.data.length === 0 ? (
-                                <tr>
-                                    <td
-                                        colSpan={4}
-                                        className="px-4 py-12 text-center text-sm text-rp-text-muted"
-                                    >
-                                        No users found.
-                                    </td>
-                                </tr>
-                            ) : (
-                                users.data.map((user) => (
-                                    <tr
-                                        key={user.id}
-                                        className="group border-b border-sand-100 last:border-0 hover:bg-teal-500/[0.02]"
-                                    >
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-3">
-                                                <UserAvatar name={user.name} />
-                                                <div>
-                                                    <div className="text-sm font-semibold text-rp-text">
-                                                        {user.name}
-                                                    </div>
-                                                    <div className="text-xs text-rp-text-muted">
-                                                        {user.email}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {user.roles?.length ? (
-                                                    user.roles.map((role) => (
-                                                        <RolePill
-                                                            key={role.id ?? role.name}
-                                                            name={role.name}
-                                                        />
-                                                    ))
-                                                ) : (
-                                                    <span className="text-xs text-ink-300">
-                                                        —
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-1.5 text-xs text-rp-text-secondary">
-                                                <span
-                                                    className={`h-1.5 w-1.5 rounded-full ${user.is_active ? 'bg-teal-400 shadow-[0_0_0_2px] shadow-teal-100' : 'bg-ink-300'}`}
-                                                />
-                                                {user.is_active ? 'Active' : 'Inactive'}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center justify-end gap-1.5 opacity-100 transition group-hover:opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
-                                                {can('users.update') && (
-                                                    <Link
-                                                        href={route(
-                                                            'admin.users.edit',
-                                                            user.id,
-                                                        )}
-                                                        className="flex h-[30px] w-[30px] items-center justify-center rounded-[7px] border border-sand-200 bg-white transition hover:border-teal-400 hover:bg-teal-100"
-                                                        title="Edit"
-                                                    >
-                                                        <Pencil className="h-3.5 w-3.5 text-ink-500" />
-                                                    </Link>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {users.last_page > 1 && (
-                    <div className="flex flex-col gap-3 border-t border-rp-border bg-rp-surface-inset px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-                        <span className="text-[13px] text-rp-text-secondary">
-                            Showing{' '}
-                            <strong className="text-rp-text">
-                                {users.from}–{users.to}
-                            </strong>{' '}
-                            of{' '}
-                            <strong className="text-rp-text">
-                                {users.total}
-                            </strong>{' '}
-                            users
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                            {users.links?.map((link, i) =>
-                                link.url ? (
-                                    <Link
-                                        key={i}
-                                        href={link.url}
-                                        preserveState
-                                        className={`flex h-8 min-w-8 items-center justify-center rounded-[7px] border px-2 text-[13px] font-medium transition ${
-                                            link.active
-                                                ? 'border-ink-900 bg-ink-900 text-white'
-                                                : 'border-sand-200 bg-white text-ink-700 hover:border-ink-900 hover:bg-ink-900 hover:text-white'
-                                        }`}
-                                        dangerouslySetInnerHTML={{
-                                            __html: link.label,
-                                        }}
-                                    />
-                                ) : (
-                                    <span
-                                        key={i}
-                                        className="flex h-8 min-w-8 items-center justify-center rounded-[7px] border border-sand-200 bg-white px-2 text-[13px] text-ink-300"
-                                        dangerouslySetInnerHTML={{
-                                            __html: link.label,
-                                        }}
-                                    />
-                                ),
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
-        </AdminLayout>
+            <DataTable
+                columns={columns}
+                data={users.data}
+                pagination={users}
+                filters={filters}
+                indexRoute="admin.users.index"
+                rowActions={rowActions}
+                emptyMessage={t('pages.users.empty')}
+            />
+        </>
     );
 }
+
+export default withAdminLayout(Index);
