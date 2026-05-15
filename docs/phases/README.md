@@ -6,7 +6,7 @@ This folder breaks the [SRS](../srs.md) into sequential, shippable phases. Each 
 
 | Phase | Document | SRS Sections | Summary |
 | :--- | :--- | :--- | :--- |
-| **1** | [phase-01-super-admin-auth-rbac.md](./phase-01-super-admin-auth-rbac.md) | 3.1, 3.2, 4.3 (partial), 4.4 (partial) | Super Admin login, Fortify auth, Spatie RBAC, user/role/permission management |
+| **1** | [phase-01-super-admin-auth-rbac.md](./phase-01-super-admin-auth-rbac.md) | 3.1, 3.2, 4.3 (partial), 4.4 (partial) | Super Admin login, Breeze (Inertia + React) auth, Spatie RBAC, user/role/permission management |
 | **2** | [phase-02-platform-shell.md](./phase-02-platform-shell.md) | 2, 4.7 (partial), 4.8 (partial) | Inertia + React 19, shadcn/ui, admin layout, command palette shell |
 | **3** | [phase-03-multi-branch.md](./phase-03-multi-branch.md) | 3.4 | Branches, warehouses, head-office console, per-branch settings |
 | **4** | [phase-04-product-information.md](./phase-04-product-information.md) | 3.5 | PIM: products, variants, batches, SKUs, barcodes |

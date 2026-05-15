@@ -19,7 +19,7 @@ Deliver the **Super Admin control plane**: secure login as the default entry poi
 
 | Area | Deliverable |
 | :--- | :--- |
-| **Authentication** | Laravel Fortify (email/password login, logout, password reset, email verification optional) |
+| **Authentication** | Laravel Breeze (Inertia + React stack: login, logout, password reset, email verification optional) |
 | **Default route** | Remove Laravel welcome page; `/` redirects unauthenticated users to `/login`; authenticated Super Admin lands on `/admin/dashboard` |
 | **RBAC** | `spatie/laravel-permission` — roles, permissions, role-permission assignment, user-role assignment |
 | **Super Admin UI** | Manage users (CRUD), roles (CRUD + clone), permissions (CRUD + groups) |
@@ -35,7 +35,7 @@ Deliver the **Super Admin control plane**: secure login as the default entry poi
 - Session/device management UI (Phase 16)
 - Branch-scoped roles (Phase 3)
 - Sanctum API tokens for third parties (Phase 15)
-- Full React/shadcn design system polish (Phase 2 — use minimal Blade or basic Inertia pages in Phase 1 if Inertia not yet installed)
+- Full shadcn/ui design system polish (Phase 2 — restyle Breeze auth pages in Phase 2; functional Breeze Inertia pages in Phase 1)
 
 ---
 
@@ -43,12 +43,11 @@ Deliver the **Super Admin control plane**: secure login as the default entry poi
 
 | Package | Purpose | Notes |
 | :--- | :--- | :--- |
-| **laravel/fortify** | Headless auth (login, logout, reset) | Pair with custom Inertia/Blade views; no Jetstream |
+| **laravel/breeze** | Auth scaffolding (Inertia + React) | `php artisan breeze:install react` — installs Inertia, React, Sanctum, and auth routes/controllers |
 | **spatie/laravel-permission** | RBAC | `HasRoles` trait on `User`; guard `web` |
-| **laravel/sanctum** | SPA session auth | Install and configure; token UI deferred to Phase 15 |
-| **inertiajs/inertia-laravel** + **@inertiajs/react** | Admin pages (recommended) | Install in Phase 1 if team wants React login from day one; otherwise Blade + migrate in Phase 2 |
+| **laravel/sanctum** | SPA session auth | Included with Breeze; token UI deferred to Phase 15 |
 
-**Recommendation:** Install **Inertia + React** in Phase 1 alongside Fortify so all admin screens share one stack. Use minimal Tailwind styling; Phase 2 adds shadcn/ui.
+**Recommendation:** Use Breeze **React** stack so login, admin CRUD, and future POS share one Inertia + React codebase. **Disable public registration** — only Super Admin creates users via `/admin/users`. Phase 2 restyles Breeze `Pages/Auth/*` with shadcn/ui.
 
 ---
 
@@ -56,9 +55,10 @@ Deliver the **Super Admin control plane**: secure login as the default entry poi
 
 ```
 GET  /                      → redirect: guest → /login, auth → /admin/dashboard
-GET  /login                   → Fortify login view
-POST /login                   → Fortify authenticate
-POST /logout                  → Fortify logout
+GET  /login                   → Breeze `AuthenticatedSessionController@create` (Inertia `Auth/Login`)
+POST /login                   → Breeze `AuthenticatedSessionController@store`
+POST /logout                  → Breeze `AuthenticatedSessionController@destroy`
+# routes/auth.php — register disabled; password reset optional
 
 Prefix: /admin (middleware: auth, verified optional)
   GET  /admin/dashboard       → Super Admin home (minimal)
@@ -190,6 +190,10 @@ app/
 ├── DTOs/User/
 │   ├── CreateUserData.php
 │   └── UpdateUserData.php
+├── Http/Controllers/Auth/          # Breeze (customize redirects, throttle hooks)
+│   ├── AuthenticatedSessionController.php
+│   ├── PasswordResetLinkController.php
+│   └── NewPasswordController.php
 ├── Http/Controllers/Admin/
 │   ├── DashboardController.php
 │   ├── UserController.php
@@ -220,9 +224,11 @@ app/
 
 ## 8. Frontend Pages (Inertia)
 
+**Breeze auth pages** (under `resources/js/Pages/Auth/`): `Login`, `ForgotPassword`, `ResetPassword`, `VerifyEmail` — restyle in Phase 2.
+
 | Page | Route name | Permission |
 | :--- | :--- | :--- |
-| Login | `login` | guest |
+| Login | `login` | guest (`Pages/Auth/Login.tsx` from Breeze) |
 | Admin Dashboard | `admin.dashboard` | `admin.dashboard.view` |
 | Users Index / Create / Edit | `admin.users.*` | `users.view`, etc. |
 | Roles Index / Create / Edit / Clone | `admin.roles.*` | `roles.view`, etc. |
@@ -247,12 +253,15 @@ app/
 
 ### 9.1 Packages & config
 
-- [ ] `composer require laravel/fortify spatie/laravel-permission laravel/sanctum`
-- [ ] `php artisan fortify:install` — customize views/controllers paths
+- [ ] `composer require laravel/breeze --dev`
+- [ ] `php artisan breeze:install react` — installs Inertia, React, Sanctum, Tailwind, auth scaffolding
+- [ ] `npm install && npm run build`
+- [ ] `composer require spatie/laravel-permission`
 - [ ] `php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"`
-- [ ] Register `FortifyServiceProvider` — set view callbacks to Inertia/Blade
-- [ ] `config/fortify.php` — enable `login`, `logout`, `resetPasswords`; disable features not needed yet
-- [ ] `User` model: `HasRoles`, `HasApiTokens` (Sanctum)
+- [ ] **Disable public registration:** remove or comment `register` routes in `routes/auth.php`; delete/disable `RegisteredUserController` routes
+- [ ] Customize `app/Http/Controllers/Auth/AuthenticatedSessionController` — post-login redirect to `admin.dashboard`; enforce `admin.access` permission
+- [ ] Update `bootstrap/app.php` / `RouteServiceProvider` HOME constant → `/admin/dashboard`
+- [ ] `User` model: `HasRoles`, `HasApiTokens` (Sanctum, from Breeze)
 
 ### 9.2 Routes & welcome removal
 
@@ -309,7 +318,8 @@ SUPER_ADMIN_NAME="Super Admin"
 SUPER_ADMIN_EMAIL=admin@retailpulse.local
 SUPER_ADMIN_PASSWORD=          # Set locally; never commit
 
-FORTIFY_VIEWS=false            # Custom views
+# Breeze: no extra auth env vars required
+# Disable registration in routes/auth.php (admin-only user creation)
 ```
 
 ---
@@ -333,7 +343,7 @@ FORTIFY_VIEWS=false            # Custom views
 
 | Task | Days (est.) |
 | :--- | :--- |
-| Packages, Fortify, routes | 1 |
+| Packages, Breeze, routes | 1 |
 | Migrations, models, seeders | 1 |
 | Services, repositories, policies | 1.5 |
 | Admin UI (users, roles, permissions) | 2–3 |

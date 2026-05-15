@@ -57,7 +57,7 @@ The system will follow a **modular, domain-driven, API-first monolith** architec
 | **UI Components & Styling** | shadcn/ui & Tailwind CSS 4 | Accessible, composable component primitives with a utility-first styling approach. |
 | **Database** | MySQL 8.4 | Robust relational model for transactional integrity and complex reporting. |
 | **Real-Time Engine** | Laravel Reverb over WebSockets | Scalable, server-pushed updates for dashboards, POS terminals, and stock levels. |
-| **Auth & Permissions** | Laravel Sanctum (SPA/API) & Spatie Permission | Secure token-based authentication combined with a proven, flexible RBAC engine. |
+| **Auth & Permissions** | Laravel Breeze (Inertia + React), Sanctum (SPA/API) & Spatie Permission | Breeze provides session auth scaffolding; Sanctum for API tokens; Spatie for RBAC. |
 
 **Backend Architecture Pattern:**
 - **Services:** Encapsulate all business logic.
