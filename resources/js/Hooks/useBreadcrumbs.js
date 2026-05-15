@@ -17,6 +17,15 @@ const ROUTE_CRUMBS = {
     'Admin/Branches/Index': ['home', 'branches'],
     'Admin/Branches/Create': ['home', 'branches', 'create'],
     'Admin/Branches/Edit': ['home', 'branches', 'edit'],
+    'Admin/Categories/Index': ['home', 'categories'],
+    'Admin/Categories/Create': ['home', 'categories', 'create'],
+    'Admin/Categories/Edit': ['home', 'categories', 'edit'],
+    'Admin/Brands/Index': ['home', 'brands'],
+    'Admin/Brands/Create': ['home', 'brands', 'create'],
+    'Admin/Brands/Edit': ['home', 'brands', 'edit'],
+    'Admin/Products/Index': ['home', 'products'],
+    'Admin/Products/Create': ['home', 'products', 'create'],
+    'Admin/Products/Edit': ['home', 'products', 'edit'],
 };
 
 const CRUMB_HREFS = {
@@ -25,6 +34,9 @@ const CRUMB_HREFS = {
     roles: 'admin.roles.index',
     permissions: 'admin.permissions.index',
     branches: 'admin.branches.index',
+    categories: 'admin.categories.index',
+    brands: 'admin.brands.index',
+    products: 'admin.products.index',
 };
 
 export function useBreadcrumbs() {

@@ -45,6 +45,13 @@ final class PermissionSeeder extends Seeder
             ['name' => 'branches.update', 'description' => 'Update branches'],
             ['name' => 'branches.delete', 'description' => 'Delete branches'],
         ],
+        'products' => [
+            ['name' => 'products.view', 'description' => 'View products and catalog'],
+            ['name' => 'products.create', 'description' => 'Create products'],
+            ['name' => 'products.update', 'description' => 'Update products'],
+            ['name' => 'products.delete', 'description' => 'Delete products'],
+            ['name' => 'products.show-cost', 'description' => 'View cost price columns'],
+        ],
     ];
 
     public function run(): void

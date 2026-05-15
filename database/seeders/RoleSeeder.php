@@ -35,6 +35,11 @@ final class RoleSeeder extends Seeder
                 'branches.create',
                 'branches.update',
                 'branches.delete',
+                'products.view',
+                'products.create',
+                'products.update',
+                'products.delete',
+                'products.show-cost',
             ],
         ],
         'branch-manager' => [
@@ -46,6 +51,9 @@ final class RoleSeeder extends Seeder
                 'branches.view',
                 'branches.update',
                 'users.view',
+                'products.view',
+                'products.create',
+                'products.update',
             ],
         ],
         'accountant' => [

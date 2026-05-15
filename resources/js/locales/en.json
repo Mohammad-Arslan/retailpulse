@@ -5,6 +5,10 @@
         "roles": "Roles",
         "permissions": "Permissions",
         "branches": "Branches",
+        "catalog": "Catalog",
+        "categories": "Categories",
+        "brands": "Brands",
+        "products": "Products",
         "overview": "Overview",
         "organization": "Organization",
         "admin": "Admin"
@@ -16,6 +20,9 @@
         "addRole": "Add Role",
         "addPermission": "Add Permission",
         "addBranch": "Add Branch",
+        "addCategory": "Add Category",
+        "addBrand": "Add Brand",
+        "addProduct": "Add Product",
         "noResults": "No results found.",
         "actions": "Actions",
         "view": "View",
@@ -44,6 +51,9 @@
         "deleteRole": "Delete {{name}}? Users assigned this role may lose access.",
         "deletePermission": "Delete {{name}}? This will remove the permission from all roles that use it.",
         "deleteBranch": "Delete {{name}}? Warehouses and assignments for this branch will be removed.",
+        "deleteCategory": "Delete {{name}}? Products in this category will be uncategorized.",
+        "deleteBrand": "Delete {{name}}? Products for this brand will be unbranded.",
+        "deleteProduct": "Delete {{name}}? All variants and identifiers will be removed.",
         "confirm": "Confirm",
         "cancel": "Cancel"
     },
@@ -103,6 +113,126 @@
                 "warehouseName": "Warehouse name",
                 "warehouseCode": "Warehouse code"
             }
+        },
+        "categories": {
+            "title": "Categories",
+            "description": "Organize products into a hierarchical category tree.",
+            "empty": "No categories found.",
+            "searchPlaceholder": "Search categories...",
+            "createTitle": "Create Category",
+            "createDescription": "Add a product category.",
+            "createSubmit": "Create category",
+            "editTitle": "Edit {{name}}",
+            "saveChanges": "Save changes",
+            "active": "Active",
+            "inactive": "Inactive",
+            "noParent": "No parent (top level)",
+            "columns": {
+                "name": "Category",
+                "parent": "Parent",
+                "products": "Products",
+                "status": "Status"
+            },
+            "fields": {
+                "name": "Name",
+                "parent": "Parent category",
+                "description": "Description",
+                "sortOrder": "Sort order",
+                "active": "Active category"
+            }
+        },
+        "brands": {
+            "title": "Brands",
+            "description": "Manage product brands and manufacturers.",
+            "empty": "No brands found.",
+            "searchPlaceholder": "Search brands...",
+            "createTitle": "Create Brand",
+            "createSubmit": "Create brand",
+            "editTitle": "Edit {{name}}",
+            "saveChanges": "Save changes",
+            "active": "Active",
+            "inactive": "Inactive",
+            "columns": {
+                "name": "Brand",
+                "products": "Products",
+                "status": "Status"
+            },
+            "fields": {
+                "name": "Name",
+                "description": "Description",
+                "active": "Active brand"
+            }
+        },
+        "products": {
+            "title": "Products",
+            "description": "Product master data, variants, bundles, and identifiers.",
+            "empty": "No products found.",
+            "searchPlaceholder": "Search by name, SKU, or barcode...",
+            "createTitle": "Create Product",
+            "createDescription": "Add a product with auto-generated SKU and barcode.",
+            "createSubmit": "Create product",
+            "editTitle": "Edit {{name}}",
+            "saveChanges": "Save changes",
+            "active": "Active",
+            "inactive": "Inactive",
+            "none": "None",
+            "allTypes": "All types",
+            "allCategories": "All categories",
+            "autoIdentifiers": "SKU and barcode are generated automatically unless you provide overrides on save.",
+            "serializedHint": "Serial numbers are captured when stock is received (Phase 5).",
+            "regenerateVariants": "Regenerate all variants from attributes (replaces existing variants)",
+            "addAttribute": "Add attribute",
+            "addOption": "Add option",
+            "bundleEmpty": "Search and add component products to this bundle.",
+            "bundleHint": "Bundle resolves child line items for POS checkout.",
+            "useDefaultPrice": "Default",
+            "branchPricingHint": "Optional sell price overrides per branch.",
+            "types": {
+                "standard": "Standard",
+                "variable": "Variable",
+                "service": "Service",
+                "digital": "Digital",
+                "serialized": "Serialized",
+                "combo": "Combo / Bundle"
+            },
+            "columns": {
+                "name": "Product",
+                "type": "Type",
+                "category": "Category",
+                "cost": "Cost",
+                "price": "Sell price",
+                "variants": "Variants",
+                "status": "Status"
+            },
+            "sections": {
+                "general": "General",
+                "attributes": "Variant attributes",
+                "bundle": "Bundle components",
+                "pricing": "Pricing",
+                "variants": "Variants",
+                "identifiers": "Identifiers",
+                "branchPricing": "Branch pricing"
+            },
+            "fields": {
+                "type": "Product type",
+                "name": "Name",
+                "description": "Description",
+                "category": "Category",
+                "brand": "Brand",
+                "unit": "Unit of measure",
+                "trackBatches": "Track batch / expiry",
+                "active": "Active product",
+                "costPrice": "Cost price",
+                "sellPrice": "Sell price",
+                "attributeName": "Attribute name",
+                "attributeOptions": "Options",
+                "variant": "Variant"
+            },
+            "placeholders": {
+                "attributeName": "e.g. Size",
+                "option": "Option value",
+                "searchVariants": "Search SKU or product name..."
+            }
         }
     },
     "auth": {
@@ -122,6 +252,9 @@
         "create": "Create",
         "edit": "Edit",
         "clone": "Clone",
-        "branches": "Branches"
+        "branches": "Branches",
+        "categories": "Categories",
+        "brands": "Brands",
+        "products": "Products"
     }
 }
