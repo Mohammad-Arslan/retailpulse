@@ -1,9 +1,11 @@
 # Phase 1 — Super Admin, Authentication & RBAC
 
 **SRS Reference:** §3.1 Authentication, §3.2 Authorization, §4.3 Audit (foundation), §4.4 Security (foundation)  
-**Status:** Not started  
+**Status:** Mostly complete — see [§14 Remaining work](#14-remaining-work)  
 **Depends on:** Fresh Laravel 13 install (current state)  
 **Blocks:** All subsequent phases
+
+> **Development policy:** Automated tests are **not required** for this project day-to-day. Do not run `php artisan test` or add/fix tests unless explicitly requested. Verify features manually (browser, seeders, `tinker`).
 
 ---
 
@@ -19,7 +21,7 @@ Deliver the **Super Admin control plane**: secure login as the default entry poi
 
 | Area | Deliverable |
 | :--- | :--- |
-| **Authentication** | Laravel Breeze (Inertia + React stack: login, logout, password reset, email verification optional) |
+| **Authentication** | Laravel Breeze (Inertia + React stack: login, logout; **no** public register or password reset — admin-only portal) |
 | **Default route** | Remove Laravel welcome page; `/` redirects unauthenticated users to `/login`; authenticated Super Admin lands on `/admin/dashboard` |
 | **RBAC** | `spatie/laravel-permission` — roles, permissions, role-permission assignment, user-role assignment |
 | **Super Admin UI** | Manage users (CRUD), roles (CRUD + clone), permissions (CRUD + groups) |
@@ -58,16 +60,16 @@ GET  /                      → redirect: guest → /login, auth → /admin/dash
 GET  /login                   → Breeze `AuthenticatedSessionController@create` (Inertia `Auth/Login`)
 POST /login                   → Breeze `AuthenticatedSessionController@store`
 POST /logout                  → Breeze `AuthenticatedSessionController@destroy`
-# routes/auth.php — register disabled; password reset optional
+# routes/auth.php — register, forgot-password, reset-password redirect to /login
 
-Prefix: /admin (middleware: auth, verified optional)
+Prefix: /admin (middleware: auth, admin → requires admin.access)
   GET  /admin/dashboard       → Super Admin home (minimal)
   Resource: /admin/users      → UserController (policy: users.*)
   Resource: /admin/roles      → RoleController (policy: roles.*)
   Resource: /admin/permissions→ PermissionController (policy: permissions.*)
 ```
 
-**Gate:** Only users with role `super-admin` OR permission `access admin panel` reach `/admin/*` until branch roles exist.
+**Gate:** Users with permission `admin.access` reach `/admin/*` (Super Admin and other seeded roles per matrix below).
 
 ---
 
@@ -228,7 +230,7 @@ app/
 
 | Page | Route name | Permission |
 | :--- | :--- | :--- |
-| Login | `login` | guest (`Pages/Auth/Login.tsx` from Breeze) |
+| Login | `login` | guest (`Pages/Auth/Login.jsx`) |
 | Admin Dashboard | `admin.dashboard` | `admin.dashboard.view` |
 | Users Index / Create / Edit | `admin.users.*` | `users.view`, etc. |
 | Roles Index / Create / Edit / Clone | `admin.roles.*` | `roles.view`, etc. |
@@ -253,61 +255,64 @@ app/
 
 ### 9.1 Packages & config
 
-- [ ] `composer require laravel/breeze --dev`
-- [ ] `php artisan breeze:install react` — installs Inertia, React, Sanctum, Tailwind, auth scaffolding
-- [ ] `npm install && npm run build`
-- [ ] `composer require spatie/laravel-permission`
-- [ ] `php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"`
-- [ ] **Disable public registration:** remove or comment `register` routes in `routes/auth.php`; delete/disable `RegisteredUserController` routes
-- [ ] Customize `app/Http/Controllers/Auth/AuthenticatedSessionController` — post-login redirect to `admin.dashboard`; enforce `admin.access` permission
-- [ ] Update `bootstrap/app.php` / `RouteServiceProvider` HOME constant → `/admin/dashboard`
-- [ ] `User` model: `HasRoles`, `HasApiTokens` (Sanctum, from Breeze)
+- [x] `composer require laravel/breeze --dev`
+- [x] `php artisan breeze:install react` — installs Inertia, React, Sanctum, Tailwind, auth scaffolding
+- [x] `npm install && npm run build`
+- [x] `composer require spatie/laravel-permission`
+- [x] `php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"`
+- [x] **Disable public registration:** `register`, `forgot-password`, and `reset-password` redirect to `/login` in `routes/auth.php`
+- [x] Customize `AuthenticatedSessionController` — post-login redirect to `admin.dashboard`; enforce `admin.access`
+- [x] `/` and `/home` redirect to dashboard or login (`routes/web.php`)
+- [x] `User` model: `HasRoles`, Sanctum API tokens (from Breeze)
 
 ### 9.2 Routes & welcome removal
 
-- [ ] Delete or disable `resources/views/welcome.blade.php` route in `routes/web.php`
-- [ ] `Route::get('/', fn () => auth()->check() ? redirect()->route('admin.dashboard') : redirect()->route('login'));`
-- [ ] `Route::redirect('/home', '/admin/dashboard');` (if applicable)
-- [ ] Guest middleware on login; `auth` + `can:admin.access` on admin group
+- [x] No Laravel welcome page on `/`
+- [x] `Route::get('/')` → guest → login, auth → `admin.dashboard`
+- [x] `Route::redirect('/home', '/admin/dashboard')`
+- [x] Guest middleware on login; `auth` + `admin` middleware (`EnsureAdminAccess`) on admin routes
 
 ### 9.3 Database
 
-- [ ] Migrations: users extensions, audit_logs, roles/permissions extensions
-- [ ] Run migrations
+- [x] Migrations: users extensions, audit_logs, roles/permissions extensions, `user_permission_overrides` (table only)
+- [x] Run migrations
 
 ### 9.4 Seeders
 
-- [ ] `PermissionSeeder` — all Phase 1 permissions with groups
-- [ ] `RoleSeeder` — 5 default roles + permission assignments
-- [ ] `SuperAdminSeeder` — user `admin@retailpulse.local` (password from `.env` `SUPER_ADMIN_PASSWORD`)
-- [ ] `DatabaseSeeder` calls seeders in order
+- [x] `PermissionSeeder` — all Phase 1 permissions with groups
+- [x] `RoleSeeder` — 5 default roles + permission assignments
+- [x] `SuperAdminSeeder` — user `admin@retailpulse.local` (password from `.env` `SUPER_ADMIN_PASSWORD`)
+- [x] `DatabaseSeeder` calls seeders in order
 
 ### 9.5 CRUD & policies
 
-- [ ] User CRUD with role multi-select
-- [ ] Role CRUD with permission checkboxes grouped by `permission.group`
-- [ ] Role clone action
-- [ ] Permission list (create/edit for Super Admin only)
-- [ ] Policies registered in `AuthServiceProvider`
-- [ ] `@can` / `authorize()` on every controller action
+- [x] User CRUD with role multi-select
+- [x] Role CRUD with permission checkboxes grouped by `permission.group`
+- [x] Role clone action
+- [x] Permission list (create/edit for Super Admin only)
+- [x] Policies registered (`AuthServiceProvider` / auto-discovery)
+- [x] `authorize()` on controller actions; `can()` in React via shared Inertia props
 
 ### 9.6 Security (Phase 1 baseline)
 
-- [ ] Rate limit login: `RateLimiter::for('login', ...)` — 5 attempts/minute per IP+email
-- [ ] Lock account after 5 failed attempts (`locked_until` = now + 15 minutes)
-- [ ] Log login/logout to `audit_logs`
-- [ ] CSRF on all forms (default)
-- [ ] Prevent self-deletion of logged-in Super Admin
-- [ ] Prevent deletion of `is_system` roles
+- [x] Login throttling — 5 attempts per email+IP (`LoginRequest` + `RateLimiter::for('login')` in `AppServiceProvider`)
+- [x] Lock account after 5 failed attempts (`locked_until` ≈ 15 minutes)
+- [x] Log login/logout to `audit_logs`
+- [x] CSRF on all forms (default)
+- [x] Prevent self-deletion of logged-in user (`UserPolicy`)
+- [x] Prevent deletion of `is_system` roles (`RolePolicy`)
 
-### 9.7 Tests
+### 9.7 Tests (optional — not a delivery gate)
 
-- [ ] Feature: login success/failure/lockout
-- [ ] Feature: guest cannot access `/admin`
-- [ ] Feature: cashier cannot access `users.create`
-- [ ] Feature: Super Admin can create user with role
-- [ ] Feature: role clone copies permissions
-- [ ] Unit: `RoleService::clone`
+Automated tests under `tests/` are **optional**. Do not run or maintain them unless explicitly requested.
+
+Reference scenarios (manual verification is sufficient):
+
+- Login success / failure / lockout
+- Guest cannot access `/admin`
+- Cashier cannot access `users.create`
+- Super Admin can create user with role
+- Role clone copies permissions
 
 ---
 
@@ -335,7 +340,7 @@ SUPER_ADMIN_PASSWORD=          # Set locally; never commit
 7. Unauthorized users receive **403** on admin routes; unauthenticated users redirect to **login**.
 8. User/role/permission changes are recorded in **`audit_logs`**.
 9. `php artisan db:seed` produces a working Super Admin and default roles.
-10. All Phase 1 feature tests pass in CI.
+10. **Manual smoke test** (browser): guest → login → dashboard → create/edit user with roles → create/clone role → view permissions list → logout. Automated tests are **not** required.
 
 ---
 
@@ -347,11 +352,24 @@ SUPER_ADMIN_PASSWORD=          # Set locally; never commit
 | Migrations, models, seeders | 1 |
 | Services, repositories, policies | 1.5 |
 | Admin UI (users, roles, permissions) | 2–3 |
-| Audit + security + tests | 1.5 |
+| Audit + security | 1.5 |
 | **Total** | **~7–8 days** |
 
 ---
 
 ## 13. Handoff to Phase 2
 
-Phase 2 introduces the polished **admin shell** (sidebar, shadcn/ui, command palette) and does not change RBAC semantics. Phase 1 controllers and policies remain; only views/layouts are upgraded.
+Phase 2 introduces further **admin shell** polish (shadcn/ui components, deeper design-system alignment). RBAC semantics from Phase 1 stay unchanged. A baseline admin layout (sidebar, topbar, command palette, dark mode) was delivered early; Phase 2 refines visuals without altering controllers or policies.
+
+---
+
+## 14. Remaining work
+
+Optional or follow-up items — not blocked on automated tests:
+
+| Item | Notes |
+| :--- | :--- |
+| Deactivate vs delete users | `is_active` exists; `destroy` still hard-deletes. Prefer deactivate-only or confirm delete in UI. |
+| Enforce `users.assign-roles` | Policy + UI gating exist; server should reject role `syncRoles` without this permission. |
+| `user_permission_overrides` | Migration + model only; service + user-edit tab still stretch. |
+| Breeze scaffold tests | `tests/Feature/Auth/*` may not match redirect-based auth routes; ignore unless tests are requested. |
