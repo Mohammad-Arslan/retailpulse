@@ -107,7 +107,7 @@ export default function Create({ roles }) {
                         />
                     </AdminFormField>
 
-                    <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-500">
+                    <label className="rp-checkbox-label">
                         <input
                             type="checkbox"
                             checked={data.is_active}
@@ -120,12 +120,9 @@ export default function Create({ roles }) {
                     </label>
 
                     <AdminFormField label="Roles" error={errors.roles}>
-                        <div className="mt-1 space-y-2 rounded-lg border border-sand-200 bg-sand-50 p-3">
+                        <div className="rp-checkbox-group">
                             {roles.map((role) => (
-                                <label
-                                    key={role}
-                                    className="flex cursor-pointer items-center gap-2 text-sm text-ink-700"
-                                >
+                                <label key={role} className="rp-checkbox-label">
                                     <input
                                         type="checkbox"
                                         checked={data.roles.includes(role)}

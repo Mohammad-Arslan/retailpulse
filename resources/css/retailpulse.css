@@ -1,5 +1,39 @@
 /* RetailPulse design tokens — matches UI mockup suite */
 
+:root {
+    --rp-page-bg: #faf8f5;
+    --rp-surface: #ffffff;
+    --rp-surface-subtle: #f3efe8;
+    --rp-surface-inset: #faf8f5;
+    --rp-border: #e8e0d0;
+    --rp-border-subtle: #f3efe8;
+    --rp-text: #1a1714;
+    --rp-text-secondary: #7a726a;
+    --rp-text-muted: #b8b0a8;
+    --rp-chart-grid: #f3efe8;
+    --rp-chart-tick: #b8b0a8;
+    --rp-tooltip-bg: #ffffff;
+    --rp-tooltip-border: #e8e0d0;
+    --rp-tooltip-text: #1a1714;
+}
+
+.dark {
+    --rp-page-bg: #1a1714;
+    --rp-surface: #2d2926;
+    --rp-surface-subtle: #363230;
+    --rp-surface-inset: #1f1c1a;
+    --rp-border: #46403a;
+    --rp-border-subtle: #363230;
+    --rp-text: #faf8f5;
+    --rp-text-secondary: #d4c9b0;
+    --rp-text-muted: #b8b0a8;
+    --rp-chart-grid: #46403a;
+    --rp-chart-tick: #d4c9b0;
+    --rp-tooltip-bg: #2d2926;
+    --rp-tooltip-border: #46403a;
+    --rp-tooltip-text: #faf8f5;
+}
+
 @theme inline {
     --font-sans: 'Sora', ui-sans-serif, system-ui, sans-serif;
     --font-serif: 'Instrument Serif', ui-serif, Georgia, serif;
@@ -30,6 +64,16 @@
     --color-violet-500: #6a4ac8;
     --color-violet-100: #e8e0f8;
 
+    --color-rp-page: var(--rp-page-bg);
+    --color-rp-surface: var(--rp-surface);
+    --color-rp-surface-subtle: var(--rp-surface-subtle);
+    --color-rp-surface-inset: var(--rp-surface-inset);
+    --color-rp-border: var(--rp-border);
+    --color-rp-border-subtle: var(--rp-border-subtle);
+    --color-rp-text: var(--rp-text);
+    --color-rp-text-secondary: var(--rp-text-secondary);
+    --color-rp-text-muted: var(--rp-text-muted);
+
     --width-sidebar: 260px;
     --width-sidebar-collapsed: 72px;
 }
@@ -39,13 +83,12 @@
 }
 
 @layer components {
-
     .rp-form-label {
-        @apply mb-2 block text-xs font-semibold tracking-wide text-ink-700 uppercase dark:text-sand-300;
+        @apply mb-2 block text-xs font-semibold tracking-wide text-rp-text-secondary uppercase;
     }
 
     .rp-form-input {
-        @apply w-full rounded-[10px] border-[1.5px] border-sand-200 bg-sand-50 px-4 py-3.5 text-sm text-ink-900 outline-none transition placeholder:text-ink-300 focus:border-teal-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(42,124,111,0.1)] dark:border-ink-700 dark:bg-ink-900 dark:text-white dark:placeholder:text-ink-500 dark:focus:border-teal-400 dark:focus:bg-ink-800;
+        @apply w-full rounded-[10px] border-[1.5px] border-rp-border bg-rp-surface-inset px-4 py-3.5 text-sm text-rp-text outline-none transition placeholder:text-rp-text-muted focus:border-teal-400 focus:bg-rp-surface focus:shadow-[0_0_0_3px_rgba(42,124,111,0.1)];
     }
 
     .rp-btn-primary {
@@ -53,7 +96,7 @@
     }
 
     .rp-btn-outline {
-        @apply inline-flex items-center justify-center gap-2 rounded-[9px] border-[1.5px] border-sand-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-ink-700 transition hover:border-teal-400 hover:text-teal-500 disabled:pointer-events-none disabled:opacity-60 dark:border-ink-700 dark:bg-ink-800 dark:text-sand-300 dark:hover:border-teal-400 dark:hover:text-teal-300;
+        @apply inline-flex items-center justify-center gap-2 rounded-[9px] border-[1.5px] border-rp-border bg-rp-surface px-4 py-2.5 text-[13px] font-semibold text-rp-text-secondary transition hover:border-teal-400 hover:text-teal-500 disabled:pointer-events-none disabled:opacity-60;
     }
 
     .rp-btn-login {
@@ -61,15 +104,43 @@
     }
 
     .rp-card {
-        @apply rounded-2xl border border-sand-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800;
+        @apply rounded-2xl border border-rp-border bg-rp-surface p-5;
     }
 
     .rp-kpi-card {
-        @apply relative overflow-hidden rounded-2xl border border-sand-200 bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(26,23,20,0.08)] dark:border-ink-700 dark:bg-ink-800;
+        @apply relative overflow-hidden rounded-2xl border border-rp-border bg-rp-surface p-5 transition hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(26,23,20,0.08)] dark:hover:shadow-[0_12px_32px_rgba(0,0,0,0.25)];
+    }
+
+    .rp-kpi-value {
+        @apply font-display block text-[32px] leading-none text-rp-text;
+    }
+
+    .rp-kpi-label {
+        @apply mt-1 text-xs font-medium tracking-wide text-rp-text-secondary uppercase;
+    }
+
+    .rp-kpi-sub {
+        @apply mt-2.5 border-t border-rp-border-subtle pt-2.5 text-xs text-rp-text-muted;
+    }
+
+    .rp-kpi-icon-teal {
+        @apply flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-teal-100 text-teal-500 dark:bg-teal-500/20 dark:text-teal-300;
+    }
+
+    .rp-kpi-icon-amber {
+        @apply flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-amber-100 text-amber-500 dark:bg-amber-500/20 dark:text-amber-400;
+    }
+
+    .rp-kpi-icon-violet {
+        @apply flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-violet-100 text-violet-500 dark:bg-violet-500/20 dark:text-violet-300;
     }
 
     .rp-page-title {
-        @apply font-display text-[26px] leading-tight font-normal text-ink-900 dark:text-white;
+        @apply font-display text-[26px] leading-tight font-normal text-rp-text;
+    }
+
+    .rp-page-desc {
+        @apply mt-0.5 text-[13px] text-rp-text-secondary;
     }
 
     .rp-sidebar-nav-item {
@@ -85,10 +156,62 @@
     }
 
     .rp-user-table-wrap {
-        @apply overflow-hidden rounded-2xl border border-sand-200 bg-white dark:border-ink-700 dark:bg-ink-800;
+        @apply overflow-hidden rounded-2xl border border-rp-border bg-rp-surface;
     }
 
     .rp-filter-bar {
-        @apply mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-sand-200 bg-white p-3.5 dark:border-ink-700 dark:bg-ink-800;
+        @apply mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-rp-border bg-rp-surface p-3.5;
+    }
+
+    .rp-search-inset {
+        @apply flex min-w-[200px] flex-1 items-center gap-2 rounded-lg border-[1.5px] border-rp-border bg-rp-surface-inset px-3 py-2;
+    }
+
+    .rp-search-input {
+        @apply w-full border-0 bg-transparent text-[13px] text-rp-text outline-none placeholder:text-rp-text-muted;
+    }
+
+    .rp-checkbox-group {
+        @apply mt-1 space-y-2 rounded-lg border border-rp-border bg-rp-surface-inset p-3;
+    }
+
+    .rp-checkbox-label {
+        @apply flex cursor-pointer items-center gap-2 text-sm text-rp-text-secondary;
+    }
+
+    .rp-quick-action {
+        @apply flex items-center gap-2.5 rounded-xl border-[1.5px] border-rp-border bg-rp-surface-inset p-3.5 transition hover:-translate-y-px hover:border-teal-400 hover:bg-teal-100 dark:hover:bg-teal-500/15;
+    }
+
+    .rp-quick-action-title {
+        @apply text-[12.5px] font-semibold text-rp-text;
+    }
+
+    .rp-quick-action-desc {
+        @apply text-[11px] text-rp-text-muted;
+    }
+
+    .rp-section-title {
+        @apply text-[15px] font-semibold text-rp-text;
+    }
+
+    .rp-table-head {
+        @apply px-4 py-3 text-left text-[11px] font-bold tracking-wider text-rp-text-muted uppercase;
+    }
+
+    .rp-table-cell {
+        @apply text-sm text-rp-text-secondary;
+    }
+
+    .rp-table-head-bg {
+        @apply bg-rp-surface-inset;
+    }
+
+    .rp-table-row-border {
+        @apply border-b border-rp-border-subtle;
+    }
+
+    .rp-pill-surface {
+        @apply rounded-lg border border-rp-border bg-rp-surface-inset px-3.5 py-2 text-[13px] font-medium text-rp-text-secondary;
     }
 }

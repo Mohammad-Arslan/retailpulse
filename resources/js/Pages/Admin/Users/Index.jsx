@@ -34,13 +34,13 @@ export default function Index({ users, filters }) {
             </PageHeader>
 
             <form onSubmit={search} className="rp-filter-bar">
-                <div className="flex min-w-[200px] flex-1 items-center gap-2 rounded-lg border-[1.5px] border-sand-200 bg-sand-50 px-3 py-2">
-                    <Search className="h-3.5 w-3.5 shrink-0 text-ink-300" />
+                <div className="rp-search-inset">
+                    <Search className="h-3.5 w-3.5 shrink-0 text-rp-text-muted" />
                     <input
                         name="search"
                         defaultValue={filters.search ?? ''}
                         placeholder="Search by name or email..."
-                        className="w-full border-0 bg-transparent text-[13px] text-ink-900 outline-none placeholder:text-ink-300"
+                        className="rp-search-input"
                     />
                 </div>
                 <button type="submit" className="rp-btn-outline">
@@ -53,13 +53,13 @@ export default function Index({ users, filters }) {
                     <table className="w-full min-w-[720px] border-collapse">
                         <thead>
                             <tr>
-                                <th className="px-4 py-3 text-left text-[11px] font-bold tracking-wider text-ink-300 uppercase">
+                                <th className="rp-table-head rp-table-head-bg px-4 py-3">
                                     User
                                 </th>
-                                <th className="px-4 py-3 text-left text-[11px] font-bold tracking-wider text-ink-300 uppercase">
+                                <th className="rp-table-head rp-table-head-bg px-4 py-3">
                                     Roles
                                 </th>
-                                <th className="px-4 py-3 text-left text-[11px] font-bold tracking-wider text-ink-300 uppercase">
+                                <th className="rp-table-head rp-table-head-bg px-4 py-3">
                                     Status
                                 </th>
                                 <th className="px-4 py-3" />
@@ -70,7 +70,7 @@ export default function Index({ users, filters }) {
                                 <tr>
                                     <td
                                         colSpan={4}
-                                        className="px-4 py-12 text-center text-sm text-ink-300"
+                                        className="px-4 py-12 text-center text-sm text-rp-text-muted"
                                     >
                                         No users found.
                                     </td>
@@ -85,10 +85,10 @@ export default function Index({ users, filters }) {
                                             <div className="flex items-center gap-3">
                                                 <UserAvatar name={user.name} />
                                                 <div>
-                                                    <div className="text-sm font-semibold text-ink-900">
+                                                    <div className="text-sm font-semibold text-rp-text">
                                                         {user.name}
                                                     </div>
-                                                    <div className="text-xs text-ink-300">
+                                                    <div className="text-xs text-rp-text-muted">
                                                         {user.email}
                                                     </div>
                                                 </div>
@@ -111,7 +111,7 @@ export default function Index({ users, filters }) {
                                             </div>
                                         </td>
                                         <td className="px-4 py-3">
-                                            <div className="flex items-center gap-1.5 text-xs text-ink-500">
+                                            <div className="flex items-center gap-1.5 text-xs text-rp-text-secondary">
                                                 <span
                                                     className={`h-1.5 w-1.5 rounded-full ${user.is_active ? 'bg-teal-400 shadow-[0_0_0_2px] shadow-teal-100' : 'bg-ink-300'}`}
                                                 />
@@ -142,14 +142,14 @@ export default function Index({ users, filters }) {
                 </div>
 
                 {users.last_page > 1 && (
-                    <div className="flex flex-col gap-3 border-t border-sand-200 bg-sand-50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-                        <span className="text-[13px] text-ink-500">
+                    <div className="flex flex-col gap-3 border-t border-rp-border bg-rp-surface-inset px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+                        <span className="text-[13px] text-rp-text-secondary">
                             Showing{' '}
-                            <strong className="text-ink-900">
+                            <strong className="text-rp-text">
                                 {users.from}–{users.to}
                             </strong>{' '}
                             of{' '}
-                            <strong className="text-ink-900">
+                            <strong className="text-rp-text">
                                 {users.total}
                             </strong>{' '}
                             users

@@ -4,7 +4,7 @@ export default function PageHeader({ title, description, children }) {
             <div>
                 <h1 className="rp-page-title">{title}</h1>
                 {description && (
-                    <p className="mt-0.5 text-[13px] text-ink-500">{description}</p>
+                    <p className="rp-page-desc">{description}</p>
                 )}
             </div>
             {children && (

@@ -1,9 +1,12 @@
 import ChartCard from '@/Components/charts/ChartCard';
-import { CHART_COLORS, chartTooltipStyle } from '@/Components/charts/chartTheme';
+import { CHART_COLORS } from '@/Components/charts/chartTheme';
+import { useChartTheme } from '@/Hooks/useChartTheme';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 export default function UserStatusChart({ data }) {
+    const chart = useChartTheme();
     const total = data.reduce((sum, row) => sum + row.count, 0);
+    const inactiveColor = chart.tick;
 
     return (
         <ChartCard title="User Status" subtitle="Active vs inactive accounts">
@@ -19,20 +22,20 @@ export default function UserStatusChart({ data }) {
                         outerRadius={82}
                         paddingAngle={3}
                     >
-                        {data.map((entry, index) => (
+                        {data.map((entry) => (
                             <Cell
                                 key={entry.status}
                                 fill={
                                     entry.status === 'Active'
                                         ? CHART_COLORS.teal
-                                        : CHART_COLORS.ink300
+                                        : inactiveColor
                                 }
                                 stroke="none"
                             />
                         ))}
                     </Pie>
                     <Tooltip
-                        contentStyle={chartTooltipStyle}
+                        contentStyle={chart.tooltip}
                         formatter={(value, name) => [value, name]}
                     />
                     <text
@@ -40,7 +43,9 @@ export default function UserStatusChart({ data }) {
                         y="50%"
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        className="fill-ink-900 font-display text-2xl"
+                        fill={chart.centerText}
+                        fontSize={24}
+                        fontFamily="Instrument Serif, serif"
                     >
                         {total}
                     </text>
@@ -49,7 +54,7 @@ export default function UserStatusChart({ data }) {
                         y="58%"
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        fill={CHART_COLORS.ink300}
+                        fill={chart.centerSubtext}
                         fontSize={11}
                         fontFamily="Sora, sans-serif"
                     >
@@ -59,14 +64,17 @@ export default function UserStatusChart({ data }) {
             </ResponsiveContainer>
             <div className="mt-2 flex justify-center gap-4">
                 {data.map((row) => (
-                    <div key={row.status} className="flex items-center gap-1.5 text-xs text-ink-500">
+                    <div
+                        key={row.status}
+                        className="flex items-center gap-1.5 text-xs text-rp-text-secondary"
+                    >
                         <span
                             className="h-2 w-2 rounded-full"
                             style={{
                                 background:
                                     row.status === 'Active'
                                         ? CHART_COLORS.teal
-                                        : CHART_COLORS.ink300,
+                                        : inactiveColor,
                             }}
                         />
                         {row.status} ({row.count})

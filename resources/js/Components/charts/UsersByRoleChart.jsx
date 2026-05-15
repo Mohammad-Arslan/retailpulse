@@ -1,10 +1,6 @@
 import ChartCard from '@/Components/charts/ChartCard';
-import {
-    CHART_COLORS,
-    CHART_PALETTE,
-    chartAxisTick,
-    chartTooltipStyle,
-} from '@/Components/charts/chartTheme';
+import { CHART_PALETTE } from '@/Components/charts/chartTheme';
+import { useChartTheme } from '@/Hooks/useChartTheme';
 import {
     Bar,
     BarChart,
@@ -21,6 +17,9 @@ function formatRoleLabel(role) {
 }
 
 export default function UsersByRoleChart({ data }) {
+    const chart = useChartTheme();
+    const tickStyle = { fill: chart.tick, fontSize: 11, fontFamily: 'Sora, sans-serif' };
+
     const chartData = data.map((row) => ({
         ...row,
         label: formatRoleLabel(row.role),
@@ -30,12 +29,12 @@ export default function UsersByRoleChart({ data }) {
         <ChartCard title="Users by Role" subtitle="Team members per access profile">
             <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                    <CartesianGrid stroke={CHART_COLORS.sand100} vertical={false} />
+                    <CartesianGrid stroke={chart.grid} vertical={false} />
                     <XAxis
                         dataKey="label"
                         axisLine={false}
                         tickLine={false}
-                        tick={chartAxisTick}
+                        tick={tickStyle}
                         interval={0}
                         angle={chartData.length > 4 ? -20 : 0}
                         textAnchor={chartData.length > 4 ? 'end' : 'middle'}
@@ -45,10 +44,10 @@ export default function UsersByRoleChart({ data }) {
                         allowDecimals={false}
                         axisLine={false}
                         tickLine={false}
-                        tick={chartAxisTick}
+                        tick={tickStyle}
                     />
                     <Tooltip
-                        contentStyle={chartTooltipStyle}
+                        contentStyle={chart.tooltip}
                         formatter={(value) => [value, 'Users']}
                         labelFormatter={(_, payload) =>
                             payload?.[0]?.payload?.role ?? ''

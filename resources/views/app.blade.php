@@ -26,7 +26,7 @@
             })();
         </script>
     </head>
-    <body class="h-full font-sans antialiased text-ink-900 dark:text-sand-100">
+    <body class="h-full bg-rp-page font-sans antialiased text-rp-text">
         @inertia
     </body>
 </html>

@@ -1,9 +1,7 @@
 import ChartCard from '@/Components/charts/ChartCard';
-import {
-    CHART_COLORS,
-    chartAxisTick,
-    chartTooltipStyle,
-} from '@/Components/charts/chartTheme';
+import { CHART_COLORS } from '@/Components/charts/chartTheme';
+import { useChartTheme } from '@/Hooks/useChartTheme';
+import { useTheme } from '@/Hooks/useTheme';
 import {
     Area,
     AreaChart,
@@ -15,6 +13,11 @@ import {
 } from 'recharts';
 
 export default function UserGrowthChart({ data }) {
+    const chart = useChartTheme();
+    const { isDark } = useTheme();
+
+    const tickStyle = { fill: chart.tick, fontSize: 11, fontFamily: 'Sora, sans-serif' };
+
     return (
         <ChartCard
             title="New Users"
@@ -29,22 +32,22 @@ export default function UserGrowthChart({ data }) {
                             <stop offset="100%" stopColor={CHART_COLORS.teal} stopOpacity={0} />
                         </linearGradient>
                     </defs>
-                    <CartesianGrid stroke={CHART_COLORS.sand100} vertical={false} />
+                    <CartesianGrid stroke={chart.grid} vertical={false} />
                     <XAxis
                         dataKey="label"
                         axisLine={false}
                         tickLine={false}
-                        tick={chartAxisTick}
+                        tick={tickStyle}
                     />
                     <YAxis
                         allowDecimals={false}
                         axisLine={false}
                         tickLine={false}
-                        tick={chartAxisTick}
+                        tick={tickStyle}
                     />
                     <Tooltip
-                        contentStyle={chartTooltipStyle}
-                        labelStyle={{ color: CHART_COLORS.ink500, fontWeight: 600 }}
+                        contentStyle={chart.tooltip}
+                        labelStyle={{ color: chart.tick, fontWeight: 600 }}
                         formatter={(value) => [value, 'New users']}
                     />
                     <Area
@@ -53,7 +56,12 @@ export default function UserGrowthChart({ data }) {
                         stroke={CHART_COLORS.teal}
                         strokeWidth={2.5}
                         fill="url(#userGrowthFill)"
-                        dot={{ r: 4, fill: CHART_COLORS.teal, stroke: '#fff', strokeWidth: 2 }}
+                        dot={{
+                            r: 4,
+                            fill: CHART_COLORS.teal,
+                            stroke: isDark ? '#2d2926' : '#fff',
+                            strokeWidth: 2,
+                        }}
                         activeDot={{ r: 6 }}
                     />
                 </AreaChart>

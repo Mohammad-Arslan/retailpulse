@@ -2,11 +2,14 @@ import { rolePillVariant } from '@/lib/avatar';
 import { cn } from '@/lib/utils';
 
 const VARIANTS = {
-    'super-admin': 'bg-ink-900 text-sand-300',
-    manager: 'bg-violet-100 text-violet-500',
-    cashier: 'bg-teal-100 text-teal-500',
-    accountant: 'bg-amber-100 text-amber-500',
-    default: 'bg-sand-100 text-ink-700',
+    'super-admin':
+        'bg-ink-900 text-sand-300 dark:bg-ink-700 dark:text-sand-200 dark:ring-1 dark:ring-ink-500',
+    manager:
+        'bg-violet-100 text-violet-500 dark:bg-violet-500/20 dark:text-violet-300',
+    cashier: 'bg-teal-100 text-teal-500 dark:bg-teal-500/20 dark:text-teal-300',
+    accountant:
+        'bg-amber-100 text-amber-500 dark:bg-amber-500/20 dark:text-amber-400',
+    default: 'bg-sand-100 text-ink-700 dark:bg-ink-700 dark:text-sand-300',
 };
 
 export default function RolePill({ name }) {

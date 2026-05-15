@@ -53,48 +53,35 @@ export default function Dashboard({ stats, charts }) {
             desc: 'Team members & access',
             href: route('admin.users.index'),
             icon: Users,
-            bg: 'bg-teal-100',
-            color: 'text-teal-500',
+            iconClass: 'bg-teal-100 text-teal-500 dark:bg-teal-500/20 dark:text-teal-300',
         },
         {
             label: 'Manage Roles',
             desc: 'Role definitions',
             href: route('admin.roles.index'),
             icon: Shield,
-            bg: 'bg-violet-100',
-            color: 'text-violet-500',
+            iconClass: 'bg-violet-100 text-violet-500 dark:bg-violet-500/20 dark:text-violet-300',
         },
         {
             label: 'Permissions',
             desc: 'System capabilities',
             href: route('admin.permissions.index'),
             icon: KeyRound,
-            bg: 'bg-amber-100',
-            color: 'text-amber-500',
+            iconClass: 'bg-amber-100 text-amber-500 dark:bg-amber-500/20 dark:text-amber-400',
         },
         {
             label: 'Dashboard',
             desc: 'Overview & metrics',
             href: route('admin.dashboard'),
             icon: LayoutDashboard,
-            bg: 'bg-sand-100',
-            color: 'text-ink-500',
+            iconClass: 'bg-sand-100 text-ink-500 dark:bg-ink-700 dark:text-sand-300',
         },
     ];
 
     const toneMap = {
-        teal: {
-            card: 'before:bg-teal-500',
-            icon: 'bg-teal-100 text-teal-500',
-        },
-        amber: {
-            card: 'before:bg-amber-500',
-            icon: 'bg-amber-100 text-amber-500',
-        },
-        violet: {
-            card: 'before:bg-violet-500',
-            icon: 'bg-violet-100 text-violet-500',
-        },
+        teal: { card: 'before:bg-teal-500', icon: 'rp-kpi-icon-teal' },
+        amber: { card: 'before:bg-amber-500', icon: 'rp-kpi-icon-amber' },
+        violet: { card: 'before:bg-violet-500', icon: 'rp-kpi-icon-violet' },
     };
 
     return (
@@ -103,16 +90,16 @@ export default function Dashboard({ stats, charts }) {
 
             <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="font-display text-[28px] font-normal text-ink-900 dark:text-white">
+                    <h1 className="font-display text-[28px] font-normal text-rp-text">
                         {greeting}, Admin. ☀️
                     </h1>
-                    <p className="mt-0.5 text-[13px] text-ink-500">
+                    <p className="rp-page-desc">
                         Here&apos;s your system overview for today.
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 rounded-lg border border-sand-200 bg-white px-3.5 py-2 text-[13px] font-medium text-ink-700 dark:border-ink-700 dark:bg-ink-800 dark:text-sand-300">
-                        <Calendar className="h-3.5 w-3.5 text-ink-300" />
+                    <div className="rp-pill-surface flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-rp-text-muted" />
                         {today}
                     </div>
                 </div>
@@ -129,21 +116,13 @@ export default function Dashboard({ stats, charts }) {
                             className={`rp-kpi-card before:absolute before:top-0 before:right-0 before:h-20 before:w-20 before:rounded-bl-[80px] before:opacity-[0.06] before:content-[''] ${tone.card}`}
                         >
                             <div className="mb-3.5 flex items-center justify-between">
-                                <div
-                                    className={`flex h-[38px] w-[38px] items-center justify-center rounded-[10px] ${tone.icon}`}
-                                >
+                                <div className={tone.icon}>
                                     <Icon className="h-[18px] w-[18px]" />
                                 </div>
                             </div>
-                            <span className="font-display block text-[32px] leading-none text-ink-900">
-                                {kpi.value}
-                            </span>
-                            <div className="mt-1 text-xs font-medium tracking-wide text-ink-500 uppercase">
-                                {kpi.label}
-                            </div>
-                            <div className="mt-2.5 border-t border-sand-100 pt-2.5 text-xs text-ink-300">
-                                {kpi.sub}
-                            </div>
+                            <span className="rp-kpi-value">{kpi.value}</span>
+                            <div className="rp-kpi-label">{kpi.label}</div>
+                            <div className="rp-kpi-sub">{kpi.sub}</div>
                         </div>
                     );
                 })}
@@ -160,9 +139,7 @@ export default function Dashboard({ stats, charts }) {
             </div>
 
             <div className="rp-card">
-                <h2 className="mb-4 text-[15px] font-semibold text-ink-900">
-                    Quick Actions
-                </h2>
+                <h2 className="rp-section-title mb-4">Quick Actions</h2>
                 <div className="grid gap-2.5 sm:grid-cols-2">
                     {quickActions.map((action) => {
                         const Icon = action.icon;
@@ -171,20 +148,18 @@ export default function Dashboard({ stats, charts }) {
                             <Link
                                 key={action.href}
                                 href={action.href}
-                                className="flex items-center gap-2.5 rounded-xl border-[1.5px] border-sand-200 bg-sand-50 p-3.5 transition hover:-translate-y-px hover:border-teal-400 hover:bg-teal-100"
+                                className="rp-quick-action"
                             >
                                 <div
-                                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] ${action.bg}`}
+                                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] ${action.iconClass}`}
                                 >
-                                    <Icon
-                                        className={`h-[17px] w-[17px] ${action.color}`}
-                                    />
+                                    <Icon className="h-[17px] w-[17px]" />
                                 </div>
                                 <div>
-                                    <div className="text-[12.5px] font-semibold text-ink-700">
+                                    <div className="rp-quick-action-title">
                                         {action.label}
                                     </div>
-                                    <div className="text-[11px] text-ink-300">
+                                    <div className="rp-quick-action-desc">
                                         {action.desc}
                                     </div>
                                 </div>

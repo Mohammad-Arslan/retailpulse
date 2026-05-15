@@ -56,28 +56,28 @@ export default function CommandPalette({ open, onClose }) {
         <div className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[12vh]">
             <button
                 type="button"
-                className="absolute inset-0 bg-ink-900/50 backdrop-blur-sm"
+                className="absolute inset-0 bg-ink-900/60 backdrop-blur-sm"
                 onClick={onClose}
                 aria-label="Close search"
             />
-            <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-sand-200 bg-white shadow-2xl dark:border-ink-700 dark:bg-ink-800">
-                <div className="flex items-center gap-3 border-b border-sand-200 px-4 py-3 dark:border-ink-700">
-                    <Search className="h-4 w-4 shrink-0 text-ink-300" />
+            <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-rp-border bg-rp-surface shadow-2xl">
+                <div className="flex items-center gap-3 border-b border-rp-border px-4 py-3">
+                    <Search className="h-4 w-4 shrink-0 text-rp-text-muted" />
                     <input
                         ref={inputRef}
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Search pages, users, actions..."
-                        className="w-full border-0 bg-transparent text-sm text-ink-900 outline-none placeholder:text-ink-300 dark:text-white"
+                        className="w-full border-0 bg-transparent text-sm text-rp-text outline-none placeholder:text-rp-text-muted"
                     />
-                    <kbd className="hidden rounded border border-sand-200 px-1.5 py-0.5 text-[10px] text-ink-300 sm:inline dark:border-ink-600">
+                    <kbd className="hidden rounded border border-rp-border bg-rp-surface-inset px-1.5 py-0.5 text-[10px] text-rp-text-muted sm:inline">
                         ESC
                     </kbd>
                 </div>
                 <ul className="max-h-72 overflow-y-auto p-2">
                     {filtered.length === 0 ? (
-                        <li className="px-3 py-6 text-center text-sm text-ink-300">
+                        <li className="px-3 py-6 text-center text-sm text-rp-text-muted">
                             No results found.
                         </li>
                     ) : (
@@ -91,17 +91,17 @@ export default function CommandPalette({ open, onClose }) {
                                         onClick={() => navigate(item.href)}
                                         className={cn(
                                             'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition',
-                                            'hover:bg-sand-50 dark:hover:bg-ink-700',
+                                            'hover:bg-rp-surface-inset',
                                         )}
                                     >
-                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100 text-teal-500 dark:bg-teal-500/20">
+                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100 text-teal-500 dark:bg-teal-500/20 dark:text-teal-300">
                                             <Icon className="h-4 w-4" />
                                         </span>
                                         <span className="min-w-0 flex-1">
-                                            <span className="block text-sm font-medium text-ink-900 dark:text-white">
+                                            <span className="block text-sm font-medium text-rp-text">
                                                 {item.label}
                                             </span>
-                                            <span className="block text-xs text-ink-300">
+                                            <span className="block text-xs text-rp-text-muted">
                                                 {item.section}
                                             </span>
                                         </span>

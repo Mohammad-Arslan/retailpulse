@@ -9,10 +9,12 @@ import {
     Sun,
 } from 'lucide-react';
 
+const iconBtn =
+    'flex h-9 w-9 items-center justify-center rounded-lg border border-rp-border bg-rp-surface transition hover:border-teal-400';
+
 export default function AdminTopbar({
     collapsed,
     isDark,
-    onToggleSidebar,
     onToggleCollapse,
     onOpenSearch,
     onToggleTheme,
@@ -21,29 +23,29 @@ export default function AdminTopbar({
     return (
         <header
             className={cn(
-                'sticky top-0 z-30 flex h-14 items-center gap-3 border-b px-4',
-                'border-sand-200 bg-white/95 backdrop-blur dark:border-ink-800 dark:bg-ink-900/95',
+                'sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-rp-border px-4',
+                'bg-rp-surface/95 backdrop-blur',
             )}
         >
             <button
                 type="button"
                 onClick={onOpenMobileMenu}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-sand-200 bg-white lg:hidden dark:border-ink-700 dark:bg-ink-800"
+                className={cn(iconBtn, 'lg:hidden')}
                 aria-label="Open menu"
             >
-                <Menu className="h-4 w-4 text-ink-700 dark:text-sand-300" />
+                <Menu className="h-4 w-4 text-rp-text-secondary" />
             </button>
 
             <button
                 type="button"
                 onClick={onToggleCollapse}
-                className="hidden h-9 w-9 items-center justify-center rounded-lg border border-sand-200 bg-white transition hover:border-teal-400 lg:flex dark:border-ink-700 dark:bg-ink-800"
+                className={cn(iconBtn, 'hidden lg:flex')}
                 title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
                 {collapsed ? (
-                    <PanelLeftOpen className="h-4 w-4 text-ink-700 dark:text-sand-300" />
+                    <PanelLeftOpen className="h-4 w-4 text-rp-text-secondary" />
                 ) : (
-                    <PanelLeftClose className="h-4 w-4 text-ink-700 dark:text-sand-300" />
+                    <PanelLeftClose className="h-4 w-4 text-rp-text-secondary" />
                 )}
             </button>
 
@@ -51,16 +53,15 @@ export default function AdminTopbar({
                 type="button"
                 onClick={onOpenSearch}
                 className={cn(
-                    'flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-sand-200 bg-sand-50 px-3 py-2 text-left transition',
-                    'hover:border-teal-400 hover:bg-white sm:max-w-md lg:max-w-xl',
-                    'dark:border-ink-700 dark:bg-ink-800 dark:hover:border-teal-400 dark:hover:bg-ink-700',
+                    'flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-rp-border bg-rp-surface-inset px-3 py-2 text-left transition',
+                    'hover:border-teal-400 hover:bg-rp-surface sm:max-w-md lg:max-w-xl',
                 )}
             >
-                <Search className="h-4 w-4 shrink-0 text-ink-300" />
-                <span className="flex-1 truncate text-sm text-ink-300">
+                <Search className="h-4 w-4 shrink-0 text-rp-text-muted" />
+                <span className="flex-1 truncate text-sm text-rp-text-muted">
                     Search pages, users, actions...
                 </span>
-                <kbd className="hidden rounded border border-sand-200 bg-white px-1.5 py-0.5 text-[10px] text-ink-300 sm:inline dark:border-ink-600 dark:bg-ink-900">
+                <kbd className="hidden rounded border border-rp-border bg-rp-surface px-1.5 py-0.5 text-[10px] text-rp-text-muted sm:inline">
                     ⌘K
                 </kbd>
             </button>
@@ -69,16 +70,13 @@ export default function AdminTopbar({
                 <button
                     type="button"
                     onClick={onToggleTheme}
-                    className={cn(
-                        'flex h-9 w-9 items-center justify-center rounded-lg border border-sand-200 bg-white transition',
-                        'hover:border-teal-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-teal-400',
-                    )}
+                    className={iconBtn}
                     title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
                 >
                     {isDark ? (
                         <Sun className="h-4 w-4 text-amber-500" />
                     ) : (
-                        <Moon className="h-4 w-4 text-ink-700" />
+                        <Moon className="h-4 w-4 text-rp-text-secondary" />
                     )}
                 </button>
 

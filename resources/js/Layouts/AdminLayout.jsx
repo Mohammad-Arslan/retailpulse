@@ -185,7 +185,7 @@ export default function AdminLayout({ children }) {
         : 'lg:ml-(--width-sidebar)';
 
     return (
-        <div className="min-h-screen bg-sand-50 font-sans dark:bg-ink-900">
+        <div className="min-h-screen bg-rp-page font-sans">
             <CommandPalette open={paletteOpen} onClose={closePalette} />
 
             {mobileOpen && (

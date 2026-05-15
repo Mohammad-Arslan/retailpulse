@@ -32,13 +32,13 @@ export default function Index({ roles, filters }) {
             </PageHeader>
 
             <form onSubmit={search} className="rp-filter-bar">
-                <div className="flex min-w-[200px] flex-1 items-center gap-2 rounded-lg border-[1.5px] border-sand-200 bg-sand-50 px-3 py-2">
-                    <Search className="h-3.5 w-3.5 shrink-0 text-ink-300" />
+                <div className="rp-search-inset">
+                    <Search className="h-3.5 w-3.5 shrink-0 text-rp-text-muted" />
                     <input
                         name="search"
                         defaultValue={filters.search ?? ''}
                         placeholder="Search roles..."
-                        className="w-full border-0 bg-transparent text-[13px] text-ink-900 outline-none placeholder:text-ink-300"
+                        className="rp-search-input"
                     />
                 </div>
                 <button type="submit" className="rp-btn-outline">
@@ -70,16 +70,16 @@ export default function Index({ roles, filters }) {
                                     className="group border-b border-sand-100 last:border-0 hover:bg-teal-500/[0.02]"
                                 >
                                     <td className="px-4 py-3">
-                                        <span className="text-sm font-semibold text-ink-900">
+                                        <span className="text-sm font-semibold text-rp-text">
                                             {role.name}
                                         </span>
                                         {role.is_system && (
-                                            <span className="ms-2 text-[11px] text-ink-300">
+                                            <span className="ms-2 text-[11px] text-rp-text-muted">
                                                 (system)
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-ink-500">
+                                    <td className="px-4 py-3 text-sm text-rp-text-secondary">
                                         {role.description || '—'}
                                     </td>
                                     <td className="px-4 py-3">

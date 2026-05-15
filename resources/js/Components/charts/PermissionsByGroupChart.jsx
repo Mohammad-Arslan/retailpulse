@@ -1,10 +1,6 @@
 import ChartCard from '@/Components/charts/ChartCard';
-import {
-    CHART_COLORS,
-    CHART_PALETTE,
-    chartAxisTick,
-    chartTooltipStyle,
-} from '@/Components/charts/chartTheme';
+import { CHART_PALETTE } from '@/Components/charts/chartTheme';
+import { useChartTheme } from '@/Hooks/useChartTheme';
 import {
     Bar,
     BarChart,
@@ -21,6 +17,9 @@ function formatGroupLabel(group) {
 }
 
 export default function PermissionsByGroupChart({ data }) {
+    const chart = useChartTheme();
+    const tickStyle = { fill: chart.tick, fontSize: 11, fontFamily: 'Sora, sans-serif' };
+
     const chartData = data.map((row) => ({
         ...row,
         label: formatGroupLabel(row.group),
@@ -37,13 +36,13 @@ export default function PermissionsByGroupChart({ data }) {
                     layout="vertical"
                     margin={{ top: 4, right: 12, left: 4, bottom: 4 }}
                 >
-                    <CartesianGrid stroke={CHART_COLORS.sand100} horizontal={false} />
+                    <CartesianGrid stroke={chart.grid} horizontal={false} />
                     <XAxis
                         type="number"
                         allowDecimals={false}
                         axisLine={false}
                         tickLine={false}
-                        tick={chartAxisTick}
+                        tick={tickStyle}
                     />
                     <YAxis
                         type="category"
@@ -51,10 +50,10 @@ export default function PermissionsByGroupChart({ data }) {
                         width={88}
                         axisLine={false}
                         tickLine={false}
-                        tick={chartAxisTick}
+                        tick={tickStyle}
                     />
                     <Tooltip
-                        contentStyle={chartTooltipStyle}
+                        contentStyle={chart.tooltip}
                         formatter={(value) => [value, 'Permissions']}
                     />
                     <Bar dataKey="count" radius={[0, 6, 6, 0]} maxBarSize={22}>
