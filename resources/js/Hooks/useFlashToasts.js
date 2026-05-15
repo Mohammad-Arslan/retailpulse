@@ -1,60 +1,77 @@
-import { router } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
-function resolveFlash(flash) {
-    if (!flash || typeof flash !== 'object') {
+/**
+ * @param {unknown} flash
+ */
+function mergeFlashSources(page) {
+    const propsFlash = page?.props?.flash;
+    const rootFlash = page?.flash;
+
+    const success =
+        (rootFlash && rootFlash.success) ?? (propsFlash && propsFlash.success) ?? undefined;
+    const error =
+        (rootFlash && rootFlash.error) ?? (propsFlash && propsFlash.error) ?? undefined;
+    const warning =
+        (rootFlash && rootFlash.warning) ?? (propsFlash && propsFlash.warning) ?? undefined;
+
+    if (!success && !error && !warning) {
         return null;
     }
 
-    if (flash.success || flash.error || flash.warning) {
-        return flash;
-    }
-
-    return null;
+    return { success, error, warning };
 }
 
-function showFlashMessages(flash, shown) {
-    const messages = resolveFlash(flash);
-
-    if (!messages) {
-        return;
+/**
+ * @param {{ success?: unknown, error?: unknown, warning?: unknown }} messages
+ */
+function pushToasts(messages) {
+    if (messages.success) {
+        toast.success(String(messages.success));
     }
 
-    if (messages.success && shown.current.success !== messages.success) {
-        shown.current.success = messages.success;
-        toast.success(messages.success);
+    if (messages.error) {
+        toast.error(String(messages.error));
     }
 
-    if (messages.error && shown.current.error !== messages.error) {
-        shown.current.error = messages.error;
-        toast.error(messages.error);
-    }
-
-    if (messages.warning && shown.current.warning !== messages.warning) {
-        shown.current.warning = messages.warning;
-        toast.warning(messages.warning);
+    if (messages.warning) {
+        toast.warning(String(messages.warning));
     }
 }
 
 export function useFlashToasts() {
-    const shown = useRef({ success: null, error: null, warning: null });
+    const page = usePage();
+
+    /** @type {React.MutableRefObject<{ url: string, digest: string } | null>} */
+    const last = useRef(null);
 
     useEffect(() => {
-        const removeFlash = router.on('flash', (event) => {
-            showFlashMessages(event.detail.flash, shown);
-        });
+        const messages = mergeFlashSources(page);
 
-        const removeSuccess = router.on('success', (event) => {
-            const page = event.detail.page;
-            const flash = page?.flash ?? page?.props?.flash;
+        if (!messages) {
+            return;
+        }
 
-            showFlashMessages(flash, shown);
-        });
+        const digest = [messages.success, messages.error, messages.warning]
+            .map((value) => (value === undefined || value === null ? '' : String(value)))
+            .join('\u0001');
 
-        return () => {
-            removeFlash();
-            removeSuccess();
-        };
-    }, []);
+        const prev = last.current;
+
+        if (prev !== null && prev.url === page.url && prev.digest === digest) {
+            return;
+        }
+
+        last.current = { url: page.url, digest };
+        pushToasts(messages);
+    }, [
+        page.url,
+        page.props?.flash?.success,
+        page.props?.flash?.error,
+        page.props?.flash?.warning,
+        page.flash?.success,
+        page.flash?.error,
+        page.flash?.warning,
+    ]);
 }
