@@ -28,6 +28,9 @@ final class StoreUserRequest extends FormRequest
             'is_active' => ['boolean'],
             'roles' => ['nullable', 'array'],
             'roles.*' => ['string', Rule::exists('roles', 'name')],
+            'branches' => ['nullable', 'array'],
+            'branches.*.branch_id' => ['required_with:branches', 'integer', 'exists:branches,id'],
+            'branches.*.is_primary' => ['boolean'],
         ];
     }
 }

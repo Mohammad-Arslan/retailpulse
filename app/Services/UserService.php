@@ -15,6 +15,7 @@ final class UserService
 {
     public function __construct(
         private readonly UserRepositoryInterface $users,
+        private readonly BranchService $branches,
     ) {}
 
     public function create(CreateUserData $data): User
@@ -32,7 +33,14 @@ final class UserService
                 $user->syncRoles($data->roleNames);
             }
 
-            return $user->load('roles');
+            if ($data->branchAssignments !== []) {
+                $this->branches->syncUserBranches(
+                    $user,
+                    new \App\DTOs\User\BranchAssignmentData($data->branchAssignments),
+                );
+            }
+
+            return $user->load(['roles', 'branches']);
         });
     }
 
@@ -56,7 +64,14 @@ final class UserService
                 $user->syncRoles($data->roleNames);
             }
 
-            return $user->load('roles');
+            if ($data->branchAssignments !== null) {
+                $this->branches->syncUserBranches(
+                    $user,
+                    new \App\DTOs\User\BranchAssignmentData($data->branchAssignments),
+                );
+            }
+
+            return $user->load(['roles', 'branches']);
         });
     }
 

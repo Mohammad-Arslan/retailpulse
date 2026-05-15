@@ -1,4 +1,4 @@
-import { KeyRound, LayoutDashboard, Shield, Users } from 'lucide-react';
+import { Building2, KeyRound, LayoutDashboard, Shield, Users } from 'lucide-react';
 
 export const ADMIN_NAV_SECTIONS = [
     {
@@ -13,6 +13,21 @@ export const ADMIN_NAV_SECTIONS = [
                 permission: 'admin.dashboard.view',
                 icon: LayoutDashboard,
                 keywords: ['home', 'overview', 'stats'],
+            },
+        ],
+    },
+    {
+        label: 'Organization',
+        labelKey: 'organization',
+        items: [
+            {
+                label: 'Branches',
+                labelKey: 'branches',
+                href: 'admin.branches.index',
+                routeName: 'admin.branches.*',
+                permission: 'branches.view',
+                icon: Building2,
+                keywords: ['stores', 'locations', 'outlets'],
             },
         ],
     },

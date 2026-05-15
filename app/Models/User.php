@@ -8,6 +8,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -47,6 +48,26 @@ class User extends Authenticatable
     public function permissionOverrides(): HasMany
     {
         return $this->hasMany(UserPermissionOverride::class);
+    }
+
+    public function branches(): BelongsToMany
+    {
+        return $this->belongsToMany(Branch::class)
+            ->withPivot('is_primary')
+            ->withTimestamps();
+    }
+
+    public function hasBranchRestrictions(): bool
+    {
+        return $this->branches()->exists();
+    }
+
+    public function primaryBranch(): ?Branch
+    {
+        return $this->branches()
+            ->wherePivot('is_primary', true)
+            ->first()
+            ?? $this->branches()->first();
     }
 
     public function isLocked(): bool

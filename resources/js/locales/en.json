@@ -4,7 +4,9 @@
         "users": "Users",
         "roles": "Roles",
         "permissions": "Permissions",
+        "branches": "Branches",
         "overview": "Overview",
+        "organization": "Organization",
         "admin": "Admin"
     },
     "common": {
@@ -13,6 +15,7 @@
         "addUser": "Add User",
         "addRole": "Add Role",
         "addPermission": "Add Permission",
+        "addBranch": "Add Branch",
         "noResults": "No results found.",
         "actions": "Actions",
         "view": "View",
@@ -22,7 +25,7 @@
         "showing": "Showing {{from}}–{{to}} of {{total}}",
         "branch": "Branch",
         "allBranches": "All branches",
-        "branchSwitcherHint": "Branch switching available in a future phase",
+        "branchSwitcherHint": "Switch your active branch context",
         "logOut": "Log out",
         "profile": "Profile",
         "openMenu": "Open menu",
@@ -40,6 +43,7 @@
         "deleteUser": "Delete {{name}}? This will permanently remove their account and access.",
         "deleteRole": "Delete {{name}}? Users assigned this role may lose access.",
         "deletePermission": "Delete {{name}}? This will remove the permission from all roles that use it.",
+        "deleteBranch": "Delete {{name}}? Warehouses and assignments for this branch will be removed.",
         "confirm": "Confirm",
         "cancel": "Cancel"
     },
@@ -61,6 +65,44 @@
         "permissions": {
             "title": "Permissions",
             "description": "Granular capabilities assigned to roles across the system."
+        },
+        "branches": {
+            "title": "Branches",
+            "description": "Manage store locations, warehouses, and per-branch operational settings.",
+            "empty": "No branches found.",
+            "searchPlaceholder": "Search by name or code...",
+            "createTitle": "Create Branch",
+            "createDescription": "Add a new branch with a default warehouse.",
+            "createSubmit": "Create branch",
+            "editTitle": "Edit {{name}}",
+            "saveChanges": "Save changes",
+            "active": "Active",
+            "inactive": "Inactive",
+            "columns": {
+                "name": "Branch",
+                "currency": "Currency",
+                "timezone": "Timezone",
+                "warehouses": "Warehouses",
+                "status": "Status"
+            },
+            "sections": {
+                "general": "General",
+                "settings": "Operational settings",
+                "hours": "Operating hours",
+                "warehouse": "Default warehouse"
+            },
+            "fields": {
+                "name": "Name",
+                "code": "Code",
+                "address": "Address",
+                "active": "Active branch",
+                "currency": "Currency",
+                "timezone": "Timezone",
+                "receiptFooter": "Receipt footer",
+                "defaultWarehouse": "Default warehouse",
+                "warehouseName": "Warehouse name",
+                "warehouseCode": "Warehouse code"
+            }
         }
     },
     "auth": {
@@ -79,6 +121,7 @@
         "permissions": "Permissions",
         "create": "Create",
         "edit": "Edit",
-        "clone": "Clone"
+        "clone": "Clone",
+        "branches": "Branches"
     }
 }

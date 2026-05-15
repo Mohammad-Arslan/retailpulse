@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Models\Branch;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -33,7 +34,12 @@ final class AuditObserver
 
     private function record(string $event, Model $model, ?array $old, ?array $new): void
     {
-        if (! $model instanceof User && ! $model instanceof Role && ! $model instanceof Permission) {
+        if (
+            ! $model instanceof User
+            && ! $model instanceof Role
+            && ! $model instanceof Permission
+            && ! $model instanceof Branch
+        ) {
             return;
         }
 

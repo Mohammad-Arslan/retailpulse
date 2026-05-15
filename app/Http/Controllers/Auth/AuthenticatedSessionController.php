@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Services\AuditService;
+use App\Services\BranchContextService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +18,7 @@ class AuthenticatedSessionController extends Controller
 {
     public function __construct(
         private readonly AuditService $audit,
+        private readonly BranchContextService $branchContext,
     ) {}
 
     public function create(): Response
@@ -36,6 +38,10 @@ class AuthenticatedSessionController extends Controller
 
         if ($user !== null) {
             $this->audit->logLogin($user, $request);
+        }
+
+        if ($user !== null) {
+            $this->branchContext->initializeSession($request, $user);
         }
 
         if ($user !== null && ! $user->can('admin.access')) {

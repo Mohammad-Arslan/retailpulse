@@ -10,6 +10,7 @@ final readonly class UpdateUserData
 {
     /**
      * @param  list<string>|null  $roleNames
+     * @param  list<array{branch_id: int, is_primary: bool}>|null  $branchAssignments
      */
     public function __construct(
         public string $name,
@@ -18,6 +19,7 @@ final readonly class UpdateUserData
         public ?string $phone,
         public bool $isActive,
         public ?array $roleNames,
+        public ?array $branchAssignments,
     ) {}
 
     public static function fromRequest(UpdateUserRequest $request): self
@@ -29,6 +31,9 @@ final readonly class UpdateUserData
             phone: $request->validated('phone'),
             isActive: $request->boolean('is_active', true),
             roleNames: $request->has('roles') ? $request->validated('roles', []) : null,
+            branchAssignments: $request->has('branches')
+                ? BranchAssignmentData::fromInput($request->validated('branches'))->assignments
+                : null,
         );
     }
 }

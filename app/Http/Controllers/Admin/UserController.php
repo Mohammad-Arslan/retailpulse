@@ -10,9 +10,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\User;
+use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Services\BranchContextService;
 use App\Services\UserService;
+use App\Support\BranchContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,7 +26,9 @@ final class UserController extends Controller
     public function __construct(
         private readonly UserRepositoryInterface $users,
         private readonly RoleRepositoryInterface $roles,
+        private readonly BranchRepositoryInterface $branches,
         private readonly UserService $userService,
+        private readonly BranchContextService $branchContext,
     ) {}
 
     public function index(Request $request): Response
@@ -31,17 +36,23 @@ final class UserController extends Controller
         $this->authorize('viewAny', User::class);
 
         return Inertia::render('Admin/Users/Index', [
-            'users' => $this->users->paginate($request->only('search', 'is_active', 'sort', 'direction')),
+            'users' => $this->users->paginate(
+                $request->only('search', 'is_active', 'sort', 'direction'),
+                $this->userBranchFilterIds($request),
+            ),
             'filters' => $request->only('search', 'is_active', 'sort', 'direction'),
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $this->authorize('create', User::class);
 
         return Inertia::render('Admin/Users/Create', [
             'roles' => $this->roles->allWithPermissions()->pluck('name'),
+            'availableBranches' => $this->branches->allActive(
+                $this->branchContext->accessibleBranchIds($request->user()),
+            ),
         ]);
     }
 
@@ -60,7 +71,7 @@ final class UserController extends Controller
     {
         $this->authorize('update', $user);
 
-        $user->load('roles');
+        $user->load(['roles', 'branches']);
 
         return Inertia::render('Admin/Users/Edit', [
             'user' => [
@@ -70,8 +81,15 @@ final class UserController extends Controller
                 'phone' => $user->phone,
                 'is_active' => $user->is_active,
                 'roles' => $user->getRoleNames(),
+                'branches' => $user->branches->map(fn ($b) => [
+                    'branch_id' => $b->id,
+                    'is_primary' => (bool) $b->pivot->is_primary,
+                ]),
             ],
             'roles' => $this->roles->allWithPermissions()->pluck('name'),
+            'availableBranches' => $this->branches->allActive(
+                $this->branchContext->accessibleBranchIds(request()->user()),
+            ),
         ]);
     }
 
@@ -95,5 +113,23 @@ final class UserController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('success', __('User deleted successfully.'));
+    }
+
+    /**
+     * @return list<int>|null
+     */
+    private function userBranchFilterIds(Request $request): ?array
+    {
+        $context = app(BranchContext::class);
+
+        if (! $context->isRestricted()) {
+            return null;
+        }
+
+        if ($context->branchId !== null) {
+            return [$context->branchId];
+        }
+
+        return $context->accessibleBranchIds;
     }
 }

@@ -14,6 +14,9 @@ const ROUTE_CRUMBS = {
     'Admin/Permissions/Index': ['home', 'permissions'],
     'Admin/Permissions/Create': ['home', 'permissions', 'create'],
     'Admin/Permissions/Edit': ['home', 'permissions', 'edit'],
+    'Admin/Branches/Index': ['home', 'branches'],
+    'Admin/Branches/Create': ['home', 'branches', 'create'],
+    'Admin/Branches/Edit': ['home', 'branches', 'edit'],
 };
 
 const CRUMB_HREFS = {
@@ -21,6 +24,7 @@ const CRUMB_HREFS = {
     users: 'admin.users.index',
     roles: 'admin.roles.index',
     permissions: 'admin.permissions.index',
+    branches: 'admin.branches.index',
 };
 
 export function useBreadcrumbs() {
