@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Observers;
 
 use App\Models\Branch;
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Permission;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditService;
@@ -39,6 +42,9 @@ final class AuditObserver
             && ! $model instanceof Role
             && ! $model instanceof Permission
             && ! $model instanceof Branch
+            && ! $model instanceof Category
+            && ! $model instanceof Brand
+            && ! $model instanceof Product
         ) {
             return;
         }

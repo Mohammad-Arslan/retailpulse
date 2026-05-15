@@ -1,4 +1,13 @@
-import { Building2, KeyRound, LayoutDashboard, Shield, Users } from 'lucide-react';
+import {
+    Building2,
+    FolderTree,
+    KeyRound,
+    LayoutDashboard,
+    Package,
+    Shield,
+    Tag,
+    Users,
+} from 'lucide-react';
 
 export const ADMIN_NAV_SECTIONS = [
     {
@@ -28,6 +37,39 @@ export const ADMIN_NAV_SECTIONS = [
                 permission: 'branches.view',
                 icon: Building2,
                 keywords: ['stores', 'locations', 'outlets'],
+            },
+        ],
+    },
+    {
+        label: 'Catalog',
+        labelKey: 'catalog',
+        items: [
+            {
+                label: 'Products',
+                labelKey: 'products',
+                href: 'admin.products.index',
+                routeName: 'admin.products.*',
+                permission: 'products.view',
+                icon: Package,
+                keywords: ['items', 'sku', 'inventory', 'pim'],
+            },
+            {
+                label: 'Categories',
+                labelKey: 'categories',
+                href: 'admin.categories.index',
+                routeName: 'admin.categories.*',
+                permission: 'products.view',
+                icon: FolderTree,
+                keywords: ['taxonomy', 'groups'],
+            },
+            {
+                label: 'Brands',
+                labelKey: 'brands',
+                href: 'admin.brands.index',
+                routeName: 'admin.brands.*',
+                permission: 'products.view',
+                icon: Tag,
+                keywords: ['manufacturer', 'vendor'],
             },
         ],
     },

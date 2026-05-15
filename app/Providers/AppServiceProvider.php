@@ -4,19 +4,32 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Permission;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
 use App\Observers\AuditObserver;
 use App\Models\Branch;
 use App\Repositories\Contracts\BranchRepositoryInterface;
+use App\Repositories\Contracts\BrandRepositoryInterface;
+use App\Repositories\Contracts\CategoryRepositoryInterface;
+use App\Repositories\Contracts\IdentifierSequenceRepositoryInterface;
 use App\Repositories\Contracts\PermissionRepositoryInterface;
+use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
+use App\Repositories\Contracts\UnitRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\WarehouseRepositoryInterface;
 use App\Repositories\Eloquent\BranchRepository;
+use App\Repositories\Eloquent\BrandRepository;
+use App\Repositories\Eloquent\CategoryRepository;
+use App\Repositories\Eloquent\IdentifierSequenceRepository;
 use App\Repositories\Eloquent\PermissionRepository;
+use App\Repositories\Eloquent\ProductRepository;
 use App\Repositories\Eloquent\RoleRepository;
+use App\Repositories\Eloquent\UnitRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\WarehouseRepository;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -34,6 +47,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PermissionRepositoryInterface::class, PermissionRepository::class);
         $this->app->bind(BranchRepositoryInterface::class, BranchRepository::class);
         $this->app->bind(WarehouseRepositoryInterface::class, WarehouseRepository::class);
+        $this->app->bind(CategoryRepositoryInterface::class, CategoryRepository::class);
+        $this->app->bind(BrandRepositoryInterface::class, BrandRepository::class);
+        $this->app->bind(UnitRepositoryInterface::class, UnitRepository::class);
+        $this->app->bind(ProductRepositoryInterface::class, ProductRepository::class);
+        $this->app->bind(IdentifierSequenceRepositoryInterface::class, IdentifierSequenceRepository::class);
     }
 
     public function boot(): void
@@ -44,6 +62,9 @@ class AppServiceProvider extends ServiceProvider
         Role::observe(AuditObserver::class);
         Permission::observe(AuditObserver::class);
         Branch::observe(AuditObserver::class);
+        Category::observe(AuditObserver::class);
+        Brand::observe(AuditObserver::class);
+        Product::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email');
