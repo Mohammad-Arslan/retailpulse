@@ -23,6 +23,7 @@ final class PermissionSeeder extends Seeder
             ['name' => 'users.update', 'description' => 'Update users'],
             ['name' => 'users.delete', 'description' => 'Delete users'],
             ['name' => 'users.assign-roles', 'description' => 'Assign roles to users'],
+            ['name' => 'users.assign-branches', 'description' => 'Assign branches to users'],
         ],
         'roles' => [
             ['name' => 'roles.view', 'description' => 'View roles'],
@@ -37,6 +38,12 @@ final class PermissionSeeder extends Seeder
             ['name' => 'permissions.create', 'description' => 'Create permissions'],
             ['name' => 'permissions.update', 'description' => 'Update permissions'],
             ['name' => 'permissions.delete', 'description' => 'Delete permissions'],
+        ],
+        'branches' => [
+            ['name' => 'branches.view', 'description' => 'View branches'],
+            ['name' => 'branches.create', 'description' => 'Create branches'],
+            ['name' => 'branches.update', 'description' => 'Update branches'],
+            ['name' => 'branches.delete', 'description' => 'Delete branches'],
         ],
     ];
 

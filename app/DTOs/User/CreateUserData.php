@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\DTOs\User;
 
+use App\DTOs\User\BranchAssignmentData;
 use App\Http\Requests\Admin\StoreUserRequest;
 
 final readonly class CreateUserData
 {
     /**
      * @param  list<string>  $roleNames
+     * @param  list<array{branch_id: int, is_primary: bool}>  $branchAssignments
      */
     public function __construct(
         public string $name,
@@ -18,6 +20,7 @@ final readonly class CreateUserData
         public ?string $phone,
         public bool $isActive,
         public array $roleNames,
+        public array $branchAssignments,
     ) {}
 
     public static function fromRequest(StoreUserRequest $request): self
@@ -29,6 +32,9 @@ final readonly class CreateUserData
             phone: $request->validated('phone'),
             isActive: $request->boolean('is_active', true),
             roleNames: $request->validated('roles', []),
+            branchAssignments: BranchAssignmentData::fromInput(
+                $request->validated('branches'),
+            )->assignments,
         );
     }
 }

@@ -30,6 +30,11 @@ final class RoleSeeder extends Seeder
                 'users.update',
                 'users.delete',
                 'users.assign-roles',
+                'users.assign-branches',
+                'branches.view',
+                'branches.create',
+                'branches.update',
+                'branches.delete',
             ],
         ],
         'branch-manager' => [
@@ -38,6 +43,9 @@ final class RoleSeeder extends Seeder
             'permissions' => [
                 'admin.access',
                 'admin.dashboard.view',
+                'branches.view',
+                'branches.update',
+                'users.view',
             ],
         ],
         'accountant' => [

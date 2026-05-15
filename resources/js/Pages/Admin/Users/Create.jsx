@@ -1,10 +1,13 @@
+import BranchAssignmentFields from '@/Components/admin/BranchAssignmentFields';
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useCan } from '@/Hooks/useCan';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-export default function Create({ roles }) {
+export default function Create({ roles, availableBranches }) {
+    const can = useCan();
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
@@ -13,6 +16,7 @@ export default function Create({ roles }) {
         phone: '',
         is_active: true,
         roles: [],
+        branches: [],
     });
 
     const toggleRole = (role) => {
@@ -118,6 +122,15 @@ export default function Create({ roles }) {
                         />
                         Active account
                     </label>
+
+                    {can('users.assign-branches') && (
+                        <BranchAssignmentFields
+                            availableBranches={availableBranches}
+                            assignments={data.branches}
+                            onChange={(branches) => setData('branches', branches)}
+                            error={errors.branches}
+                        />
+                    )}
 
                     <AdminFormField label="Roles" error={errors.roles}>
                         <div className="rp-checkbox-group">

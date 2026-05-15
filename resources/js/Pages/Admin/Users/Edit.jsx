@@ -1,3 +1,4 @@
+import BranchAssignmentFields from '@/Components/admin/BranchAssignmentFields';
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
@@ -7,7 +8,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 
-export default function Edit({ user, roles }) {
+export default function Edit({ user, roles, availableBranches }) {
     const can = useCan();
     const confirm = useConfirm();
     const { t } = useTranslation();
@@ -19,6 +20,7 @@ export default function Edit({ user, roles }) {
         phone: user.phone ?? '',
         is_active: user.is_active,
         roles: [...user.roles],
+        branches: user.branches ?? [],
     });
 
     const toggleRole = (role) => {
@@ -118,6 +120,15 @@ export default function Edit({ user, roles }) {
                         />
                         Active account
                     </label>
+
+                    {can('users.assign-branches') && (
+                        <BranchAssignmentFields
+                            availableBranches={availableBranches}
+                            assignments={data.branches}
+                            onChange={(branches) => setData('branches', branches)}
+                            error={errors.branches}
+                        />
+                    )}
 
                     {can('users.assign-roles') && (
                         <AdminFormField label="Roles">

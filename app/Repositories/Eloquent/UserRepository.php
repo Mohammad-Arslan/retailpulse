@@ -20,9 +20,13 @@ final class UserRepository implements UserRepositoryInterface
         return User::query()->where('email', $email)->first();
     }
 
-    public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
+    public function paginate(array $filters = [], ?array $branchIds = null, int $perPage = 15): LengthAwarePaginator
     {
-        $query = User::query()->with('roles');
+        $query = User::query()->with(['roles', 'branches']);
+
+        if ($branchIds !== null) {
+            $query->whereHas('branches', fn ($q) => $q->whereIn('branches.id', $branchIds));
+        }
 
         $sort = $filters['sort'] ?? 'created_at';
         $direction = strtolower((string) ($filters['direction'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';

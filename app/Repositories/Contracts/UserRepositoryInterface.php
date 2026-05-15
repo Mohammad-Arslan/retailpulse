@@ -16,7 +16,10 @@ interface UserRepositoryInterface
     /**
      * @param  array<string, mixed>  $filters
      */
-    public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator;
+    /**
+     * @param  list<int>|null  $branchIds
+     */
+    public function paginate(array $filters = [], ?array $branchIds = null, int $perPage = 15): LengthAwarePaginator;
 
     /**
      * @param  array<string, mixed>  $attributes

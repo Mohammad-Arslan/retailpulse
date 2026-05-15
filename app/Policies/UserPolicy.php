@@ -41,4 +41,9 @@ final class UserPolicy
     {
         return $user->can('users.assign-roles');
     }
+
+    public function assignBranches(User $user): bool
+    {
+        return $user->can('users.assign-branches');
+    }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAdminAccess;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SetBranchContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => EnsureAdminAccess::class,
+            'branch.context' => SetBranchContext::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
