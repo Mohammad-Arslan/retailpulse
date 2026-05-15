@@ -1,4 +1,6 @@
+import BranchSwitcher from '@/Components/admin/BranchSwitcher';
 import NotificationsMenu from '@/Components/admin/NotificationsMenu';
+import UserMenu from '@/Components/admin/UserMenu';
 import { cn } from '@/lib/utils';
 import {
     Menu,
@@ -8,6 +10,7 @@ import {
     Search,
     Sun,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const iconBtn =
     'flex h-9 w-9 items-center justify-center rounded-lg border border-rp-border bg-rp-surface transition hover:border-teal-400';
@@ -20,6 +23,8 @@ export default function AdminTopbar({
     onToggleTheme,
     onOpenMobileMenu,
 }) {
+    const { t } = useTranslation();
+
     return (
         <header
             className={cn(
@@ -31,7 +36,7 @@ export default function AdminTopbar({
                 type="button"
                 onClick={onOpenMobileMenu}
                 className={cn(iconBtn, 'lg:hidden')}
-                aria-label="Open menu"
+                aria-label={t('common.openMenu')}
             >
                 <Menu className="h-4 w-4 text-rp-text-secondary" />
             </button>
@@ -40,7 +45,9 @@ export default function AdminTopbar({
                 type="button"
                 onClick={onToggleCollapse}
                 className={cn(iconBtn, 'hidden lg:flex')}
-                title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                aria-label={
+                    collapsed ? t('common.expandSidebar') : t('common.collapseSidebar')
+                }
             >
                 {collapsed ? (
                     <PanelLeftOpen className="h-4 w-4 text-rp-text-secondary" />
@@ -52,6 +59,7 @@ export default function AdminTopbar({
             <button
                 type="button"
                 onClick={onOpenSearch}
+                aria-label={t('common.commandPalette')}
                 className={cn(
                     'flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-rp-border bg-rp-surface-inset px-3 py-2 text-left transition',
                     'hover:border-teal-400 hover:bg-rp-surface sm:max-w-md lg:max-w-xl',
@@ -59,7 +67,7 @@ export default function AdminTopbar({
             >
                 <Search className="h-4 w-4 shrink-0 text-rp-text-muted" />
                 <span className="flex-1 truncate text-sm text-rp-text-muted">
-                    Search pages, users, actions...
+                    {t('common.commandPalette')}
                 </span>
                 <kbd className="hidden rounded border border-rp-border bg-rp-surface px-1.5 py-0.5 text-[10px] text-rp-text-muted sm:inline">
                     ⌘K
@@ -67,11 +75,14 @@ export default function AdminTopbar({
             </button>
 
             <div className="ml-auto flex items-center gap-2">
+                <BranchSwitcher />
                 <button
                     type="button"
                     onClick={onToggleTheme}
                     className={iconBtn}
-                    title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                    aria-label={
+                        isDark ? t('common.switchToLight') : t('common.switchToDark')
+                    }
                 >
                     {isDark ? (
                         <Sun className="h-4 w-4 text-amber-500" />
@@ -81,6 +92,7 @@ export default function AdminTopbar({
                 </button>
 
                 <NotificationsMenu />
+                <UserMenu />
             </div>
         </header>
     );

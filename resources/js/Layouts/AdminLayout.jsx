@@ -2,7 +2,7 @@ import AdminTopbar from '@/Components/admin/AdminTopbar';
 import CommandPalette from '@/Components/admin/CommandPalette';
 import SidebarSearch from '@/Components/admin/SidebarSearch';
 import BrandIcon from '@/Components/brand/BrandIcon';
-import FlashAlert from '@/Components/common/FlashAlert';
+import Breadcrumbs from '@/Components/common/Breadcrumbs';
 import { ADMIN_NAV_SECTIONS } from '@/config/adminNav';
 import { useCommandPalette } from '@/Hooks/useCommandPalette';
 import { useSidebarCollapsed } from '@/Hooks/useSidebarCollapsed';
@@ -13,9 +13,11 @@ import { useCan } from '@/Hooks/useCan';
 import { Link, usePage } from '@inertiajs/react';
 import { LogOut, X } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function SidebarNav({ collapsed, onNavigate }) {
     const can = useCan();
+    const { t } = useTranslation();
 
     return (
         <>
@@ -30,7 +32,7 @@ function SidebarNav({ collapsed, onNavigate }) {
                     <div key={section.label} className="mb-1 px-2">
                         {!collapsed && (
                             <span className="block px-3 py-2.5 text-[10px] font-bold tracking-widest text-ink-500 uppercase">
-                                {section.label}
+                                {t(`nav.${section.labelKey}`)}
                             </span>
                         )}
                         {items.map((item) => {
@@ -42,7 +44,9 @@ function SidebarNav({ collapsed, onNavigate }) {
                                     key={item.href}
                                     href={route(item.href)}
                                     onClick={onNavigate}
-                                    title={collapsed ? item.label : undefined}
+                                    title={
+                                        collapsed ? t(`nav.${item.labelKey}`) : undefined
+                                    }
                                     className={cn(
                                         'rp-sidebar-nav-item',
                                         collapsed && 'justify-center px-2',
@@ -69,7 +73,7 @@ function SidebarNav({ collapsed, onNavigate }) {
                                                 active && 'font-semibold text-white',
                                             )}
                                         >
-                                            {item.label}
+                                            {t(`nav.${item.labelKey}`)}
                                         </span>
                                     )}
                                 </Link>
@@ -85,7 +89,7 @@ function SidebarNav({ collapsed, onNavigate }) {
 export default function AdminLayout({ children }) {
     const user = usePage().props.auth.user;
     const roles = usePage().props.auth.roles ?? [];
-    const flash = usePage().props.flash;
+    const { t } = useTranslation();
 
     const [mobileOpen, setMobileOpen] = useState(false);
     const { collapsed, toggleCollapsed } = useSidebarCollapsed();
@@ -164,8 +168,8 @@ export default function AdminLayout({ children }) {
                                 href={route('logout')}
                                 method="post"
                                 as="button"
-                                className="rounded-lg p-1.5 text-ink-500 transition hover:bg-ink-800 hover:text-white"
-                                title="Log out"
+                                className="rounded-lg p-1.5 text-ink-500 transition hover:bg-ink-800 hover:text-white focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:outline-none"
+                                aria-label={t('common.logOut')}
                             >
                                 <LogOut className="h-4 w-4" />
                             </Link>
@@ -193,7 +197,7 @@ export default function AdminLayout({ children }) {
                     type="button"
                     className="fixed inset-0 z-40 bg-ink-900/50 lg:hidden"
                     onClick={() => setMobileOpen(false)}
-                    aria-label="Close menu"
+                    aria-label={t('common.closeMenu')}
                 />
             )}
 
@@ -206,8 +210,9 @@ export default function AdminLayout({ children }) {
             >
                 <button
                     type="button"
-                    className="absolute top-4 right-4 rounded-lg p-1 text-sand-300 lg:hidden"
+                    className="absolute top-4 right-4 rounded-lg p-1 text-sand-300 focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:outline-none lg:hidden"
                     onClick={() => setMobileOpen(false)}
+                    aria-label={t('common.closeMenu')}
                 >
                     <X className="h-5 w-5" />
                 </button>
@@ -225,7 +230,7 @@ export default function AdminLayout({ children }) {
                 />
 
                 <main className="flex-1 px-4 py-7 sm:px-8">
-                    <FlashAlert flash={flash} />
+                    <Breadcrumbs />
                     {children}
                 </main>
             </div>

@@ -4,9 +4,11 @@ import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function CommandPalette({ open, onClose }) {
     const can = useCan();
+    const { t } = useTranslation();
     const [query, setQuery] = useState('');
     const inputRef = useRef(null);
 
@@ -16,7 +18,7 @@ export default function CommandPalette({ open, onClose }) {
                 .filter((item) => can(item.permission))
                 .map((item) => ({
                     ...item,
-                    section: section.label,
+                    sectionKey: section.labelKey,
                 })),
         );
     }, [can]);
@@ -30,11 +32,11 @@ export default function CommandPalette({ open, onClose }) {
 
         return items.filter(
             (item) =>
-                item.label.toLowerCase().includes(q) ||
-                item.section.toLowerCase().includes(q) ||
+                t(`nav.${item.labelKey}`).toLowerCase().includes(q) ||
+                t(`nav.${item.sectionKey}`).toLowerCase().includes(q) ||
                 item.keywords?.some((keyword) => keyword.includes(q)),
         );
-    }, [items, query]);
+    }, [items, query, t]);
 
     useEffect(() => {
         if (open) {
@@ -58,7 +60,7 @@ export default function CommandPalette({ open, onClose }) {
                 type="button"
                 className="absolute inset-0 bg-ink-900/60 backdrop-blur-sm"
                 onClick={onClose}
-                aria-label="Close search"
+                aria-label={t('common.closeMenu')}
             />
             <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-rp-border bg-rp-surface shadow-2xl">
                 <div className="flex items-center gap-3 border-b border-rp-border px-4 py-3">
@@ -68,7 +70,7 @@ export default function CommandPalette({ open, onClose }) {
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Search pages, users, actions..."
+                        placeholder={t('common.commandPalette')}
                         className="w-full border-0 bg-transparent text-sm text-rp-text outline-none placeholder:text-rp-text-muted"
                     />
                     <kbd className="hidden rounded border border-rp-border bg-rp-surface-inset px-1.5 py-0.5 text-[10px] text-rp-text-muted sm:inline">
@@ -78,7 +80,7 @@ export default function CommandPalette({ open, onClose }) {
                 <ul className="max-h-72 overflow-y-auto p-2">
                     {filtered.length === 0 ? (
                         <li className="px-3 py-6 text-center text-sm text-rp-text-muted">
-                            No results found.
+                            {t('common.noResults')}
                         </li>
                     ) : (
                         filtered.map((item) => {
@@ -99,10 +101,10 @@ export default function CommandPalette({ open, onClose }) {
                                         </span>
                                         <span className="min-w-0 flex-1">
                                             <span className="block text-sm font-medium text-rp-text">
-                                                {item.label}
+                                                {t(`nav.${item.labelKey}`)}
                                             </span>
                                             <span className="block text-xs text-rp-text-muted">
-                                                {item.section}
+                                                {t(`nav.${item.sectionKey}`)}
                                             </span>
                                         </span>
                                     </button>

@@ -1,14 +1,14 @@
 import PageHeader from '@/Components/common/PageHeader';
 import { useCan } from '@/Hooks/useCan';
-import AdminLayout from '@/Layouts/AdminLayout';
+import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, Link } from '@inertiajs/react';
 import { Pencil, Plus } from 'lucide-react';
 
-export default function Index({ permissionGroups }) {
+function Index({ permissionGroups }) {
     const can = useCan();
 
     return (
-        <AdminLayout>
+        <>
             <Head title="Permissions" />
 
             <PageHeader
@@ -71,6 +71,8 @@ export default function Index({ permissionGroups }) {
                     </div>
                 ))}
             </div>
-        </AdminLayout>
+        </>
     );
 }
+
+export default withAdminLayout(Index);

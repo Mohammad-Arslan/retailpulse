@@ -32,8 +32,8 @@ final class RoleController extends Controller
         $this->authorize('viewAny', Role::class);
 
         return Inertia::render('Admin/Roles/Index', [
-            'roles' => $this->roles->paginate($request->only('search')),
-            'filters' => $request->only('search'),
+            'roles' => $this->roles->paginate($request->only('search', 'sort', 'direction')),
+            'filters' => $request->only('search', 'sort', 'direction'),
         ]);
     }
 
