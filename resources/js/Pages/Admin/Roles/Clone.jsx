@@ -1,9 +1,8 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import AdminFormField from '@/Components/common/AdminFormField';
+import FormCard from '@/Components/common/FormCard';
+import PageHeader from '@/Components/common/PageHeader';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Clone({ role }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -16,28 +15,41 @@ export default function Clone({ role }) {
     };
 
     return (
-        <AdminLayout
-            header={
-                <h2 className="text-xl font-semibold text-gray-800">
-                    Clone role: {role.name}
-                </h2>
-            }
-        >
+        <AdminLayout>
             <Head title="Clone role" />
 
-            <form onSubmit={submit} className="max-w-xl space-y-4 rounded-lg bg-white p-6 shadow">
-                <div>
-                    <InputLabel htmlFor="name" value="New role name" />
-                    <TextInput
+            <PageHeader
+                title={`Clone: ${role.name}`}
+                description="Create a copy of this role with a new name."
+            >
+                <Link href={route('admin.roles.index')} className="rp-btn-outline">
+                    Cancel
+                </Link>
+            </PageHeader>
+
+            <form onSubmit={submit}>
+                <FormCard>
+                    <AdminFormField
+                        label="New role name"
                         id="name"
-                        value={data.name}
-                        className="mt-1 block w-full"
-                        onChange={(e) => setData('name', e.target.value)}
-                        required
-                    />
-                    <InputError message={errors.name} />
-                </div>
-                <PrimaryButton disabled={processing}>Clone</PrimaryButton>
+                        error={errors.name}
+                    >
+                        <input
+                            id="name"
+                            value={data.name}
+                            className="rp-form-input"
+                            onChange={(e) => setData('name', e.target.value)}
+                            required
+                        />
+                    </AdminFormField>
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="rp-btn-primary"
+                    >
+                        Clone role
+                    </button>
+                </FormCard>
             </form>
         </AdminLayout>
     );

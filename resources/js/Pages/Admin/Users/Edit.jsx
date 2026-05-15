@@ -1,12 +1,9 @@
-import Checkbox from '@/Components/Checkbox';
-import DangerButton from '@/Components/DangerButton';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import AdminFormField from '@/Components/common/AdminFormField';
+import FormCard from '@/Components/common/FormCard';
+import PageHeader from '@/Components/common/PageHeader';
 import { useCan } from '@/Hooks/useCan';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Edit({ user, roles }) {
     const can = useCan();
@@ -22,7 +19,10 @@ export default function Edit({ user, roles }) {
 
     const toggleRole = (role) => {
         if (data.roles.includes(role)) {
-            setData('roles', data.roles.filter((r) => r !== role));
+            setData(
+                'roles',
+                data.roles.filter((r) => r !== role),
+            );
         } else {
             setData('roles', [...data.roles, role]);
         }
@@ -40,88 +40,113 @@ export default function Edit({ user, roles }) {
     };
 
     return (
-        <AdminLayout
-            header={
-                <h2 className="text-xl font-semibold text-gray-800">Edit user</h2>
-            }
-        >
+        <AdminLayout>
             <Head title="Edit user" />
 
-            <form onSubmit={submit} className="max-w-xl space-y-4 rounded-lg bg-white p-6 shadow">
-                <div>
-                    <InputLabel htmlFor="name" value="Name" />
-                    <TextInput
-                        id="name"
-                        value={data.name}
-                        className="mt-1 block w-full"
-                        onChange={(e) => setData('name', e.target.value)}
-                        required
-                    />
-                    <InputError message={errors.name} />
-                </div>
-                <div>
-                    <InputLabel htmlFor="email" value="Email" />
-                    <TextInput
-                        id="email"
-                        type="email"
-                        value={data.email}
-                        className="mt-1 block w-full"
-                        onChange={(e) => setData('email', e.target.value)}
-                        required
-                    />
-                    <InputError message={errors.email} />
-                </div>
-                <div>
-                    <InputLabel htmlFor="phone" value="Phone" />
-                    <TextInput
-                        id="phone"
-                        value={data.phone}
-                        className="mt-1 block w-full"
-                        onChange={(e) => setData('phone', e.target.value)}
-                    />
-                </div>
-                <div>
-                    <InputLabel htmlFor="password" value="New password (optional)" />
-                    <TextInput
+            <PageHeader title="Edit User" description={user.email}>
+                <Link href={route('admin.users.index')} className="rp-btn-outline">
+                    Back
+                </Link>
+            </PageHeader>
+
+            <form onSubmit={submit}>
+                <FormCard>
+                    <AdminFormField label="Name" id="name" error={errors.name}>
+                        <input
+                            id="name"
+                            value={data.name}
+                            className="rp-form-input"
+                            onChange={(e) => setData('name', e.target.value)}
+                            required
+                        />
+                    </AdminFormField>
+
+                    <AdminFormField label="Email" id="email" error={errors.email}>
+                        <input
+                            id="email"
+                            type="email"
+                            value={data.email}
+                            className="rp-form-input"
+                            onChange={(e) => setData('email', e.target.value)}
+                            required
+                        />
+                    </AdminFormField>
+
+                    <AdminFormField label="Phone" id="phone">
+                        <input
+                            id="phone"
+                            value={data.phone}
+                            className="rp-form-input"
+                            onChange={(e) => setData('phone', e.target.value)}
+                        />
+                    </AdminFormField>
+
+                    <AdminFormField
+                        label="New password (optional)"
                         id="password"
-                        type="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
-                    <InputError message={errors.password} />
-                </div>
-                <label className="flex items-center gap-2">
-                    <Checkbox
-                        checked={data.is_active}
-                        onChange={(e) => setData('is_active', e.target.checked)}
-                    />
-                    <InputLabel value="Active" className="!mb-0" />
-                </label>
-                {can('users.assign-roles') && (
-                    <div>
-                        <InputLabel value="Roles" />
-                        <div className="mt-2 space-y-2">
-                            {roles.map((role) => (
-                                <label key={role} className="flex items-center gap-2">
-                                    <Checkbox
-                                        checked={data.roles.includes(role)}
-                                        onChange={() => toggleRole(role)}
-                                    />
-                                    <span className="text-sm">{role}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                )}
-                <div className="flex gap-2">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
-                    {can('users.delete') && (
-                        <DangerButton type="button" onClick={remove}>
-                            Delete
-                        </DangerButton>
+                        error={errors.password}
+                    >
+                        <input
+                            id="password"
+                            type="password"
+                            value={data.password}
+                            className="rp-form-input"
+                            onChange={(e) => setData('password', e.target.value)}
+                        />
+                    </AdminFormField>
+
+                    <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-500">
+                        <input
+                            type="checkbox"
+                            checked={data.is_active}
+                            onChange={(e) =>
+                                setData('is_active', e.target.checked)
+                            }
+                            className="accent-teal-500"
+                        />
+                        Active account
+                    </label>
+
+                    {can('users.assign-roles') && (
+                        <AdminFormField label="Roles">
+                            <div className="mt-1 space-y-2 rounded-lg border border-sand-200 bg-sand-50 p-3">
+                                {roles.map((role) => (
+                                    <label
+                                        key={role}
+                                        className="flex cursor-pointer items-center gap-2 text-sm text-ink-700"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={data.roles.includes(role)}
+                                            onChange={() => toggleRole(role)}
+                                            className="accent-teal-500"
+                                        />
+                                        {role}
+                                    </label>
+                                ))}
+                            </div>
+                        </AdminFormField>
                     )}
-                </div>
+
+                    <div className="flex flex-wrap gap-2 pt-2">
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="rp-btn-primary"
+                        >
+                            Save changes
+                        </button>
+                        {can('users.delete') && (
+                            <button
+                                type="button"
+                                onClick={remove}
+                                className="rp-btn-outline border-rose-200 text-rose-500 hover:border-rose-500 hover:bg-rose-100 hover:text-rose-500"
+                            >
+                                Delete user
+                            </button>
+                        )}
+                    </div>
+                </FormCard>
             </form>
         </AdminLayout>
     );

@@ -1,0 +1,93 @@
+/* RetailPulse design tokens — matches UI mockup suite */
+
+@theme inline {
+    --font-sans: 'Sora', ui-sans-serif, system-ui, sans-serif;
+    --font-serif: 'Instrument Serif', ui-serif, Georgia, serif;
+
+    --color-sand-50: #faf8f5;
+    --color-sand-100: #f3efe8;
+    --color-sand-200: #e8e0d0;
+    --color-sand-300: #d4c9b0;
+    --color-sand-400: #b8a888;
+
+    --color-ink-900: #1a1714;
+    --color-ink-800: #2d2926;
+    --color-ink-700: #46403a;
+    --color-ink-500: #7a726a;
+    --color-ink-300: #b8b0a8;
+
+    --color-teal-500: #2a7c6f;
+    --color-teal-400: #359080;
+    --color-teal-300: #4db8a8;
+    --color-teal-100: #d0f0eb;
+
+    --color-amber-500: #c8762a;
+    --color-amber-100: #fdecd4;
+
+    --color-rose-500: #c84a4a;
+    --color-rose-100: #fddede;
+
+    --color-violet-500: #6a4ac8;
+    --color-violet-100: #e8e0f8;
+
+    --width-sidebar: 260px;
+}
+
+@utility font-display {
+    font-family: var(--font-serif);
+}
+
+@layer components {
+
+    .rp-form-label {
+        @apply mb-2 block text-xs font-semibold tracking-wide text-ink-700 uppercase;
+    }
+
+    .rp-form-input {
+        @apply w-full rounded-[10px] border-[1.5px] border-sand-200 bg-sand-50 px-4 py-3.5 text-sm text-ink-900 outline-none transition placeholder:text-ink-300 focus:border-teal-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(42,124,111,0.1)];
+    }
+
+    .rp-btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-[9px] border-0 bg-ink-900 px-4 py-2.5 text-[13px] font-semibold text-white transition hover:-translate-y-px hover:bg-teal-500 disabled:pointer-events-none disabled:opacity-60;
+    }
+
+    .rp-btn-outline {
+        @apply inline-flex items-center justify-center gap-2 rounded-[9px] border-[1.5px] border-sand-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-ink-700 transition hover:border-teal-400 hover:text-teal-500 disabled:pointer-events-none disabled:opacity-60;
+    }
+
+    .rp-btn-login {
+        @apply flex w-full items-center justify-center gap-2 rounded-[10px] border-0 bg-ink-900 py-3.5 text-sm font-semibold tracking-wide text-white transition hover:-translate-y-px hover:bg-teal-500 hover:shadow-[0_8px_24px_rgba(42,124,111,0.3)] disabled:pointer-events-none disabled:opacity-60;
+    }
+
+    .rp-card {
+        @apply rounded-2xl border border-sand-200 bg-white p-5;
+    }
+
+    .rp-kpi-card {
+        @apply relative overflow-hidden rounded-2xl border border-sand-200 bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(26,23,20,0.08)];
+    }
+
+    .rp-page-title {
+        @apply font-display text-[26px] leading-tight font-normal text-ink-900;
+    }
+
+    .rp-sidebar-nav-item {
+        @apply mb-px flex items-center gap-2.5 rounded-lg px-3 py-2.5 no-underline transition;
+    }
+
+    .rp-sidebar-nav-item:hover {
+        @apply bg-ink-800;
+    }
+
+    .rp-sidebar-nav-item--active {
+        @apply bg-teal-500 hover:bg-teal-400;
+    }
+
+    .rp-user-table-wrap {
+        @apply overflow-hidden rounded-2xl border border-sand-200 bg-white;
+    }
+
+    .rp-filter-bar {
+        @apply mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-sand-200 bg-white p-3.5;
+    }
+}

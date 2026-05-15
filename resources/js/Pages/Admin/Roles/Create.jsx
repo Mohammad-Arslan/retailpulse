@@ -1,10 +1,10 @@
 import PermissionCheckboxes from '@/Components/admin/PermissionCheckboxes';
 import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import AdminFormField from '@/Components/common/AdminFormField';
+import FormCard from '@/Components/common/FormCard';
+import PageHeader from '@/Components/common/PageHeader';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Create({ permissionGroups }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -19,48 +19,60 @@ export default function Create({ permissionGroups }) {
     };
 
     return (
-        <AdminLayout
-            header={
-                <h2 className="text-xl font-semibold text-gray-800">Create role</h2>
-            }
-        >
+        <AdminLayout>
             <Head title="Create role" />
 
-            <form onSubmit={submit} className="space-y-4">
-                <div className="max-w-xl rounded-lg bg-white p-6 shadow">
-                    <div>
-                        <InputLabel htmlFor="name" value="Name" />
-                        <TextInput
+            <PageHeader
+                title="Create Role"
+                description="Define a new access profile and assign permissions."
+            >
+                <Link href={route('admin.roles.index')} className="rp-btn-outline">
+                    Cancel
+                </Link>
+            </PageHeader>
+
+            <form onSubmit={submit} className="space-y-5">
+                <FormCard>
+                    <AdminFormField label="Name" id="name" error={errors.name}>
+                        <input
                             id="name"
                             value={data.name}
-                            className="mt-1 block w-full"
+                            className="rp-form-input"
                             onChange={(e) => setData('name', e.target.value)}
                             required
                         />
-                        <InputError message={errors.name} />
-                    </div>
-                    <div className="mt-4">
-                        <InputLabel htmlFor="description" value="Description" />
-                        <TextInput
+                    </AdminFormField>
+                    <AdminFormField label="Description" id="description">
+                        <input
                             id="description"
                             value={data.description}
-                            className="mt-1 block w-full"
-                            onChange={(e) => setData('description', e.target.value)}
+                            className="rp-form-input"
+                            onChange={(e) =>
+                                setData('description', e.target.value)
+                            }
                         />
-                    </div>
-                </div>
+                    </AdminFormField>
+                </FormCard>
 
-                <div className="rounded-lg bg-white p-6 shadow">
-                    <InputLabel value="Permissions" />
+                <div className="rp-card max-w-4xl">
+                    <h3 className="rp-form-label mb-3">Permissions</h3>
                     <PermissionCheckboxes
                         permissionGroups={permissionGroups}
                         selected={data.permissions}
-                        onChange={(permissions) => setData('permissions', permissions)}
+                        onChange={(permissions) =>
+                            setData('permissions', permissions)
+                        }
                     />
-                    <InputError message={errors.permissions} />
+                    <InputError message={errors.permissions} className="mt-2" />
                 </div>
 
-                <PrimaryButton disabled={processing}>Create</PrimaryButton>
+                <button
+                    type="submit"
+                    disabled={processing}
+                    className="rp-btn-primary"
+                >
+                    Create role
+                </button>
             </form>
         </AdminLayout>
     );

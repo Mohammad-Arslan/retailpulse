@@ -1,7 +1,8 @@
-import PrimaryButton from '@/Components/PrimaryButton';
+import PageHeader from '@/Components/common/PageHeader';
 import { useCan } from '@/Hooks/useCan';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
+import { Copy, Pencil, Plus, Search } from 'lucide-react';
 
 export default function Index({ roles, filters }) {
     const can = useCan();
@@ -15,85 +16,110 @@ export default function Index({ roles, filters }) {
     };
 
     return (
-        <AdminLayout
-            header={
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-800">Roles</h2>
-                    {can('roles.create') && (
-                        <Link href={route('admin.roles.create')}>
-                            <PrimaryButton>Add role</PrimaryButton>
-                        </Link>
-                    )}
-                </div>
-            }
-        >
+        <AdminLayout>
             <Head title="Roles" />
 
-            <form onSubmit={search} className="mb-4 flex gap-2">
-                <input
-                    name="search"
-                    defaultValue={filters.search ?? ''}
-                    placeholder="Search..."
-                    className="rounded-md border-gray-300 shadow-sm"
-                />
-                <PrimaryButton type="submit">Search</PrimaryButton>
+            <PageHeader
+                title="Roles"
+                description="Define access profiles and assign permissions to each role."
+            >
+                {can('roles.create') && (
+                    <Link href={route('admin.roles.create')} className="rp-btn-primary">
+                        <Plus className="h-4 w-4" />
+                        Add Role
+                    </Link>
+                )}
+            </PageHeader>
+
+            <form onSubmit={search} className="rp-filter-bar">
+                <div className="flex min-w-[200px] flex-1 items-center gap-2 rounded-lg border-[1.5px] border-sand-200 bg-sand-50 px-3 py-2">
+                    <Search className="h-3.5 w-3.5 shrink-0 text-ink-300" />
+                    <input
+                        name="search"
+                        defaultValue={filters.search ?? ''}
+                        placeholder="Search roles..."
+                        className="w-full border-0 bg-transparent text-[13px] text-ink-900 outline-none placeholder:text-ink-300"
+                    />
+                </div>
+                <button type="submit" className="rp-btn-outline">
+                    Search
+                </button>
             </form>
 
-            <div className="overflow-hidden rounded-lg bg-white shadow">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                                Name
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                                Description
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                                Permissions
-                            </th>
-                            <th className="px-4 py-3" />
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                        {roles.data.map((role) => (
-                            <tr key={role.id}>
-                                <td className="px-4 py-3 text-sm font-medium">
-                                    {role.name}
-                                    {role.is_system && (
-                                        <span className="ms-2 text-xs text-gray-400">
-                                            (system)
-                                        </span>
-                                    )}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600">
-                                    {role.description}
-                                </td>
-                                <td className="px-4 py-3 text-sm">
-                                    {role.permissions_count}
-                                </td>
-                                <td className="space-x-2 px-4 py-3 text-right text-sm">
-                                    {can('roles.update') && (
-                                        <Link
-                                            href={route('admin.roles.edit', role.id)}
-                                            className="text-indigo-600 hover:underline"
-                                        >
-                                            Edit
-                                        </Link>
-                                    )}
-                                    {can('roles.clone') && (
-                                        <Link
-                                            href={route('admin.roles.clone', role.id)}
-                                            className="text-indigo-600 hover:underline"
-                                        >
-                                            Clone
-                                        </Link>
-                                    )}
-                                </td>
+            <div className="rp-user-table-wrap">
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr>
+                                <th className="px-4 py-3 text-left text-[11px] font-bold tracking-wider text-ink-300 uppercase">
+                                    Name
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-bold tracking-wider text-ink-300 uppercase">
+                                    Description
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-bold tracking-wider text-ink-300 uppercase">
+                                    Permissions
+                                </th>
+                                <th className="px-4 py-3" />
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {roles.data.map((role) => (
+                                <tr
+                                    key={role.id}
+                                    className="group border-b border-sand-100 last:border-0 hover:bg-teal-500/[0.02]"
+                                >
+                                    <td className="px-4 py-3">
+                                        <span className="text-sm font-semibold text-ink-900">
+                                            {role.name}
+                                        </span>
+                                        {role.is_system && (
+                                            <span className="ms-2 text-[11px] text-ink-300">
+                                                (system)
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-ink-500">
+                                        {role.description || '—'}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className="inline-flex rounded-full bg-teal-100 px-2.5 py-0.5 text-xs font-semibold text-teal-500">
+                                            {role.permissions_count}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex justify-end gap-1.5">
+                                            {can('roles.update') && (
+                                                <Link
+                                                    href={route(
+                                                        'admin.roles.edit',
+                                                        role.id,
+                                                    )}
+                                                    className="flex h-[30px] w-[30px] items-center justify-center rounded-[7px] border border-sand-200 bg-white hover:border-teal-400 hover:bg-teal-100"
+                                                    title="Edit"
+                                                >
+                                                    <Pencil className="h-3.5 w-3.5 text-ink-500" />
+                                                </Link>
+                                            )}
+                                            {can('roles.clone') && (
+                                                <Link
+                                                    href={route(
+                                                        'admin.roles.clone',
+                                                        role.id,
+                                                    )}
+                                                    className="flex h-[30px] w-[30px] items-center justify-center rounded-[7px] border border-sand-200 bg-white hover:border-teal-400 hover:bg-teal-100"
+                                                    title="Clone"
+                                                >
+                                                    <Copy className="h-3.5 w-3.5 text-ink-500" />
+                                                </Link>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </AdminLayout>
     );

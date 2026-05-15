@@ -1,12 +1,10 @@
 import PermissionCheckboxes from '@/Components/admin/PermissionCheckboxes';
-import DangerButton from '@/Components/DangerButton';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import AdminFormField from '@/Components/common/AdminFormField';
+import FormCard from '@/Components/common/FormCard';
+import PageHeader from '@/Components/common/PageHeader';
 import { useCan } from '@/Hooks/useCan';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Edit({ role, permissionGroups }) {
     const can = useCan();
@@ -28,52 +26,66 @@ export default function Edit({ role, permissionGroups }) {
     };
 
     return (
-        <AdminLayout
-            header={
-                <h2 className="text-xl font-semibold text-gray-800">Edit role</h2>
-            }
-        >
+        <AdminLayout>
             <Head title="Edit role" />
 
-            <form onSubmit={submit} className="space-y-4">
-                <div className="max-w-xl rounded-lg bg-white p-6 shadow">
-                    <div>
-                        <InputLabel htmlFor="name" value="Name" />
-                        <TextInput
+            <PageHeader title="Edit Role" description={role.name}>
+                <Link href={route('admin.roles.index')} className="rp-btn-outline">
+                    Back
+                </Link>
+            </PageHeader>
+
+            <form onSubmit={submit} className="space-y-5">
+                <FormCard>
+                    <AdminFormField label="Name" id="name" error={errors.name}>
+                        <input
                             id="name"
                             value={data.name}
-                            className="mt-1 block w-full"
+                            className="rp-form-input"
                             onChange={(e) => setData('name', e.target.value)}
                             required
                             disabled={role.is_system}
                         />
-                        <InputError message={errors.name} />
-                    </div>
-                    <div className="mt-4">
-                        <InputLabel htmlFor="description" value="Description" />
-                        <TextInput
+                    </AdminFormField>
+                    <AdminFormField label="Description" id="description">
+                        <input
                             id="description"
                             value={data.description}
-                            className="mt-1 block w-full"
-                            onChange={(e) => setData('description', e.target.value)}
+                            className="rp-form-input"
+                            onChange={(e) =>
+                                setData('description', e.target.value)
+                            }
                         />
-                    </div>
-                </div>
+                    </AdminFormField>
+                </FormCard>
 
-                <div className="rounded-lg bg-white p-6 shadow">
+                <div className="rp-card max-w-4xl">
+                    <h3 className="rp-form-label mb-3">Permissions</h3>
                     <PermissionCheckboxes
                         permissionGroups={permissionGroups}
                         selected={data.permissions}
-                        onChange={(permissions) => setData('permissions', permissions)}
+                        onChange={(permissions) =>
+                            setData('permissions', permissions)
+                        }
                     />
                 </div>
 
-                <div className="flex gap-2">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="rp-btn-primary"
+                    >
+                        Save changes
+                    </button>
                     {can('roles.delete') && !role.is_system && (
-                        <DangerButton type="button" onClick={remove}>
-                            Delete
-                        </DangerButton>
+                        <button
+                            type="button"
+                            onClick={remove}
+                            className="rp-btn-outline border-rose-200 text-rose-500 hover:border-rose-500 hover:bg-rose-100"
+                        >
+                            Delete role
+                        </button>
                     )}
                 </div>
             </form>
