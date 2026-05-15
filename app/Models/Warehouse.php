@@ -27,4 +27,9 @@ class Warehouse extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+
+    public function inventories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Inventory::class);
+    }
 }

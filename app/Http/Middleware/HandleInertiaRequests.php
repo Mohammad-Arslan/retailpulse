@@ -6,12 +6,51 @@ namespace App\Http\Middleware;
 
 use App\Services\BranchContextService;
 use App\Support\BranchContext;
+use Closure;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Inertia\Middleware;
+use Inertia\SessionKey;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class HandleInertiaRequests extends Middleware
 {
     protected $rootView = 'app';
+
+    /**
+     * Map Laravel `redirect()->with('success'|'error'|'warning')` into Inertia’s `flash` payload
+     * so the SPA receives top-level `flash` (and optional `inertia:flash` events), not only props.
+     */
+    public function handle(Request $request, Closure $next): SymfonyResponse
+    {
+        if ($request->hasSession()) {
+            $this->syncLaravelFlashIntoInertiaFlash($request);
+        }
+
+        return parent::handle($request, $next);
+    }
+
+    private function syncLaravelFlashIntoInertiaFlash(Request $request): void
+    {
+        $laravel = [];
+
+        foreach (['success', 'error', 'warning'] as $key) {
+            if ($request->session()->has($key)) {
+                $laravel[$key] = $request->session()->get($key);
+            }
+        }
+
+        if ($laravel === []) {
+            return;
+        }
+
+        $existing = Inertia::getFlashed($request);
+
+        $request->session()->now(
+            SessionKey::FlashData->value,
+            array_merge($existing, $laravel),
+        );
+    }
 
     public function version(Request $request): ?string
     {

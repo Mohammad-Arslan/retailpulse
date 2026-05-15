@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTOs\Branch;
 
+use App\Enums\PickingStrategy;
 use App\Http\Requests\Admin\UpdateBranchRequest;
 use App\Support\OperatingHours;
 
@@ -18,6 +19,7 @@ final readonly class UpdateBranchData
         public ?string $address,
         public string $currency,
         public string $timezone,
+        public PickingStrategy $pickingStrategy,
         public array $operatingHours,
         public ?string $receiptFooter,
         public bool $isActive,
@@ -32,6 +34,7 @@ final readonly class UpdateBranchData
             address: $request->validated('address'),
             currency: strtoupper($request->validated('currency')),
             timezone: $request->validated('timezone'),
+            pickingStrategy: PickingStrategy::from($request->validated('picking_strategy')),
             operatingHours: OperatingHours::normalize($request->validated('operating_hours')),
             receiptFooter: $request->validated('receipt_footer'),
             isActive: $request->boolean('is_active', true),

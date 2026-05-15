@@ -9,6 +9,9 @@
         "categories": "Categories",
         "brands": "Brands",
         "products": "Products",
+        "inventorySection": "Inventory",
+        "inventory": "Stock levels",
+        "stockTransfers": "Transfers",
         "overview": "Overview",
         "organization": "Organization",
         "admin": "Admin"
@@ -23,6 +26,9 @@
         "addCategory": "Add Category",
         "addBrand": "Add Brand",
         "addProduct": "Add Product",
+        "receiveStock": "Receive stock",
+        "adjustStock": "Adjust stock",
+        "newTransfer": "New transfer",
         "noResults": "No results found.",
         "actions": "Actions",
         "view": "View",
@@ -111,7 +117,82 @@
                 "receiptFooter": "Receipt footer",
                 "defaultWarehouse": "Default warehouse",
                 "warehouseName": "Warehouse name",
-                "warehouseCode": "Warehouse code"
+                "warehouseCode": "Warehouse code",
+                "pickingStrategy": "Picking strategy (FIFO / FEFO)"
+            },
+            "pickingStrategies": {
+                "fifo": "FIFO — first in, first out",
+                "fefo": "FEFO — first expiry, first out"
+            }
+        },
+        "inventory": {
+            "title": "Stock levels",
+            "description": "Real-time on-hand and reserved quantities by warehouse.",
+            "empty": "No inventory records yet. Receive stock to get started.",
+            "searchPlaceholder": "Search SKU or product…",
+            "allWarehouses": "All warehouses",
+            "adjust": "Adjust stock",
+            "receive": "Receive stock",
+            "transfers": "Transfers",
+            "adjustTitle": "Stock adjustment",
+            "adjustDescription": "Correct counts or record damaged goods (use negative quantity to reduce).",
+            "adjustSubmit": "Apply adjustment",
+            "receiveTitle": "Receive stock",
+            "receiveDescription": "Increase on-hand quantity (purchase receive).",
+            "receiveSubmit": "Receive stock",
+            "quantitySignedHint": "Positive adds stock; negative removes (e.g. damaged write-off).",
+            "columns": {
+                "product": "Product",
+                "warehouse": "Warehouse",
+                "batch": "Batch",
+                "onHand": "On hand",
+                "reserved": "Reserved",
+                "available": "Available"
+            },
+            "fields": {
+                "warehouse": "Warehouse",
+                "variant": "Product variant",
+                "quantity": "Quantity",
+                "quantitySigned": "Quantity (+ / −)",
+                "reason": "Reason",
+                "notes": "Notes"
+            }
+        },
+        "stockTransfers": {
+            "title": "Stock transfers",
+            "description": "Move stock between warehouses with ship and receive confirmation.",
+            "empty": "No transfers found.",
+            "searchPlaceholder": "Search reference…",
+            "allStatuses": "All statuses",
+            "create": "New transfer",
+            "createTitle": "Create transfer",
+            "createDescription": "Draft a transfer; stock moves when you ship and receive.",
+            "createSubmit": "Create transfer",
+            "backToList": "Back to transfers",
+            "ship": "Mark shipped",
+            "receive": "Confirm received",
+            "createdBy": "Created by",
+            "shippedBy": "Shipped by",
+            "receivedBy": "Received by",
+            "addLine": "Add line",
+            "sections": {
+                "items": "Line items"
+            },
+            "fields": {
+                "fromWarehouse": "From warehouse",
+                "toWarehouse": "To warehouse"
+            },
+            "columns": {
+                "reference": "Reference",
+                "from": "From",
+                "to": "To",
+                "status": "Status",
+                "created": "Created"
+            },
+            "status": {
+                "draft": "Draft",
+                "shipped": "Shipped",
+                "received": "Received"
             }
         },
         "categories": {
@@ -255,6 +336,8 @@
         "branches": "Branches",
         "categories": "Categories",
         "brands": "Brands",
-        "products": "Products"
+        "products": "Products",
+        "inventory": "Stock levels",
+        "stockTransfers": "Transfers"
     }
 }

@@ -63,4 +63,12 @@ class Product extends Model
         return $this->variants()->where('is_default', true)->first()
             ?? $this->variants()->first();
     }
+
+    public function tracksInventory(): bool
+    {
+        return match ($this->type) {
+            ProductType::Service, ProductType::Digital => false,
+            default => true,
+        };
+    }
 }
