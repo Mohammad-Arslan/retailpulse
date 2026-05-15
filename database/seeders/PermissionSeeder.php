@@ -52,6 +52,12 @@ final class PermissionSeeder extends Seeder
             ['name' => 'products.delete', 'description' => 'Delete products'],
             ['name' => 'products.show-cost', 'description' => 'View cost price columns'],
         ],
+        'inventory' => [
+            ['name' => 'inventory.view', 'description' => 'View stock levels by warehouse'],
+            ['name' => 'inventory.receive', 'description' => 'Receive stock into warehouse'],
+            ['name' => 'inventory.adjust', 'description' => 'Adjust or write off stock'],
+            ['name' => 'inventory.transfer', 'description' => 'Create and process stock transfers'],
+        ],
     ];
 
     public function run(): void

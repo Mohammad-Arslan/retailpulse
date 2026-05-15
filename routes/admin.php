@@ -7,8 +7,10 @@ use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\StockTransferController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +30,19 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::get('product-variants/search', [ProductController::class, 'searchVariants'])
             ->name('product-variants.search');
         Route::resource('products', ProductController::class)->except(['show']);
+
+        Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
+        Route::get('inventory/adjust', [InventoryController::class, 'adjustForm'])->name('inventory.adjust');
+        Route::post('inventory/adjust', [InventoryController::class, 'adjust'])->name('inventory.adjust.store');
+        Route::get('inventory/receive', [InventoryController::class, 'receiveForm'])->name('inventory.receive');
+        Route::post('inventory/receive', [InventoryController::class, 'receive'])->name('inventory.receive.store');
+
+        Route::resource('stock-transfers', StockTransferController::class)
+            ->only(['index', 'create', 'store', 'show']);
+        Route::post('stock-transfers/{stock_transfer}/ship', [StockTransferController::class, 'ship'])
+            ->name('stock-transfers.ship');
+        Route::post('stock-transfers/{stock_transfer}/receive', [StockTransferController::class, 'receive'])
+            ->name('stock-transfers.receive');
         Route::resource('users', UserController::class)->except(['show']);
         Route::resource('roles', RoleController::class)->except(['show']);
         Route::get('roles/{role}/clone', [RoleController::class, 'cloneForm'])->name('roles.clone');

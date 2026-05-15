@@ -16,8 +16,11 @@ use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Repositories\Contracts\BrandRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\IdentifierSequenceRepositoryInterface;
+use App\Repositories\Contracts\InventoryRepositoryInterface;
 use App\Repositories\Contracts\PermissionRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Repositories\Contracts\StockMovementRepositoryInterface;
+use App\Repositories\Contracts\StockTransferRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\UnitRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
@@ -26,8 +29,11 @@ use App\Repositories\Eloquent\BranchRepository;
 use App\Repositories\Eloquent\BrandRepository;
 use App\Repositories\Eloquent\CategoryRepository;
 use App\Repositories\Eloquent\IdentifierSequenceRepository;
+use App\Repositories\Eloquent\InventoryRepository;
 use App\Repositories\Eloquent\PermissionRepository;
 use App\Repositories\Eloquent\ProductRepository;
+use App\Repositories\Eloquent\StockMovementRepository;
+use App\Repositories\Eloquent\StockTransferRepository;
 use App\Repositories\Eloquent\RoleRepository;
 use App\Repositories\Eloquent\UnitRepository;
 use App\Repositories\Eloquent\UserRepository;
@@ -52,6 +58,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UnitRepositoryInterface::class, UnitRepository::class);
         $this->app->bind(ProductRepositoryInterface::class, ProductRepository::class);
         $this->app->bind(IdentifierSequenceRepositoryInterface::class, IdentifierSequenceRepository::class);
+        $this->app->bind(InventoryRepositoryInterface::class, InventoryRepository::class);
+        $this->app->bind(StockMovementRepositoryInterface::class, StockMovementRepository::class);
+        $this->app->bind(StockTransferRepositoryInterface::class, StockTransferRepository::class);
     }
 
     public function boot(): void

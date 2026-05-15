@@ -18,6 +18,7 @@ export default function Edit({ branch, timezones }) {
         address: branch.address ?? '',
         currency: branch.currency,
         timezone: branch.timezone,
+        picking_strategy: branch.picking_strategy ?? 'fifo',
         operating_hours: branch.operating_hours,
         receipt_footer: branch.receipt_footer ?? '',
         is_active: branch.is_active,
@@ -149,6 +150,21 @@ export default function Edit({ branch, timezones }) {
                                         {tz}
                                     </option>
                                 ))}
+                            </select>
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.branches.fields.pickingStrategy')}
+                            id="picking_strategy"
+                            error={errors.picking_strategy}
+                        >
+                            <select
+                                id="picking_strategy"
+                                value={data.picking_strategy}
+                                className="rp-form-input"
+                                onChange={(e) => setData('picking_strategy', e.target.value)}
+                            >
+                                <option value="fifo">{t('pages.branches.pickingStrategies.fifo')}</option>
+                                <option value="fefo">{t('pages.branches.pickingStrategies.fefo')}</option>
                             </select>
                         </AdminFormField>
                     </div>

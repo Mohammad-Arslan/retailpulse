@@ -6,7 +6,9 @@ import {
     Package,
     Shield,
     Tag,
+    Truck,
     Users,
+    Warehouse,
 } from 'lucide-react';
 
 export const ADMIN_NAV_SECTIONS = [
@@ -37,6 +39,30 @@ export const ADMIN_NAV_SECTIONS = [
                 permission: 'branches.view',
                 icon: Building2,
                 keywords: ['stores', 'locations', 'outlets'],
+            },
+        ],
+    },
+    {
+        label: 'Inventory',
+        labelKey: 'inventorySection',
+        items: [
+            {
+                label: 'Stock levels',
+                labelKey: 'inventory',
+                href: 'admin.inventory.index',
+                routeName: 'admin.inventory.*',
+                permission: 'inventory.view',
+                icon: Warehouse,
+                keywords: ['stock', 'warehouse', 'on hand', 'quantity'],
+            },
+            {
+                label: 'Transfers',
+                labelKey: 'stockTransfers',
+                href: 'admin.stock-transfers.index',
+                routeName: 'admin.stock-transfers.*',
+                permission: 'inventory.transfer',
+                icon: Truck,
+                keywords: ['transfer', 'ship', 'receive'],
             },
         ],
     },

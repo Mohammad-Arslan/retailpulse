@@ -77,6 +77,7 @@ final class BranchController extends Controller
                 'address' => $branch->address,
                 'currency' => $branch->currency,
                 'timezone' => $branch->timezone,
+                'picking_strategy' => $branch->picking_strategy?->value ?? 'fifo',
                 'operating_hours' => $branch->operating_hours ?? OperatingHours::defaults(),
                 'receipt_footer' => $branch->receipt_footer,
                 'is_active' => $branch->is_active,

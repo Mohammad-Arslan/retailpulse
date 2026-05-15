@@ -40,6 +40,10 @@ final class RoleSeeder extends Seeder
                 'products.update',
                 'products.delete',
                 'products.show-cost',
+                'inventory.view',
+                'inventory.receive',
+                'inventory.adjust',
+                'inventory.transfer',
             ],
         ],
         'branch-manager' => [
@@ -54,6 +58,10 @@ final class RoleSeeder extends Seeder
                 'products.view',
                 'products.create',
                 'products.update',
+                'inventory.view',
+                'inventory.receive',
+                'inventory.adjust',
+                'inventory.transfer',
             ],
         ],
         'accountant' => [

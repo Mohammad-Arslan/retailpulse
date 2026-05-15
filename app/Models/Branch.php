@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\PickingStrategy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'address',
     'currency',
     'timezone',
+    'picking_strategy',
     'operating_hours',
     'receipt_footer',
     'is_active',
@@ -25,6 +27,7 @@ class Branch extends Model
     protected function casts(): array
     {
         return [
+            'picking_strategy' => PickingStrategy::class,
             'operating_hours' => 'array',
             'is_active' => 'boolean',
         ];
