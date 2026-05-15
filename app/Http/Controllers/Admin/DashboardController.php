@@ -18,6 +18,7 @@ final class DashboardController extends Controller
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $dashboard->stats(),
+            'charts' => $dashboard->charts(),
         ]);
     }
 }

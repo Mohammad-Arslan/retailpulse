@@ -1,3 +1,7 @@
+import PermissionsByGroupChart from '@/Components/charts/PermissionsByGroupChart';
+import UserGrowthChart from '@/Components/charts/UserGrowthChart';
+import UserStatusChart from '@/Components/charts/UserStatusChart';
+import UsersByRoleChart from '@/Components/charts/UsersByRoleChart';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link } from '@inertiajs/react';
 import {
@@ -8,7 +12,7 @@ import {
     Users,
 } from 'lucide-react';
 
-export default function Dashboard({ stats }) {
+export default function Dashboard({ stats, charts }) {
     const today = new Date().toLocaleDateString('en-US', {
         month: 'long',
         day: 'numeric',
@@ -23,7 +27,7 @@ export default function Dashboard({ stats }) {
         {
             label: 'Users',
             value: stats.users,
-            sub: 'Staff accounts',
+            sub: `${stats.active_users} active · ${stats.inactive_users} inactive`,
             icon: Users,
             tone: 'teal',
         },
@@ -99,7 +103,7 @@ export default function Dashboard({ stats }) {
 
             <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="font-display text-[28px] font-normal text-ink-900">
+                    <h1 className="font-display text-[28px] font-normal text-ink-900 dark:text-white">
                         {greeting}, Admin. ☀️
                     </h1>
                     <p className="mt-0.5 text-[13px] text-ink-500">
@@ -107,7 +111,7 @@ export default function Dashboard({ stats }) {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 rounded-lg border border-sand-200 bg-white px-3.5 py-2 text-[13px] font-medium text-ink-700">
+                    <div className="flex items-center gap-1.5 rounded-lg border border-sand-200 bg-white px-3.5 py-2 text-[13px] font-medium text-ink-700 dark:border-ink-700 dark:bg-ink-800 dark:text-sand-300">
                         <Calendar className="h-3.5 w-3.5 text-ink-300" />
                         {today}
                     </div>
@@ -143,6 +147,16 @@ export default function Dashboard({ stats }) {
                         </div>
                     );
                 })}
+            </div>
+
+            <div className="mb-6 grid gap-5 lg:grid-cols-3">
+                <UserGrowthChart data={charts.user_growth} />
+                <UserStatusChart data={charts.user_status} />
+            </div>
+
+            <div className="mb-6 grid gap-5 lg:grid-cols-2">
+                <UsersByRoleChart data={charts.users_by_role} />
+                <PermissionsByGroupChart data={charts.permissions_by_group} />
             </div>
 
             <div className="rp-card">

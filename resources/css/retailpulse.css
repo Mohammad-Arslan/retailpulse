@@ -31,6 +31,7 @@
     --color-violet-100: #e8e0f8;
 
     --width-sidebar: 260px;
+    --width-sidebar-collapsed: 72px;
 }
 
 @utility font-display {
@@ -40,11 +41,11 @@
 @layer components {
 
     .rp-form-label {
-        @apply mb-2 block text-xs font-semibold tracking-wide text-ink-700 uppercase;
+        @apply mb-2 block text-xs font-semibold tracking-wide text-ink-700 uppercase dark:text-sand-300;
     }
 
     .rp-form-input {
-        @apply w-full rounded-[10px] border-[1.5px] border-sand-200 bg-sand-50 px-4 py-3.5 text-sm text-ink-900 outline-none transition placeholder:text-ink-300 focus:border-teal-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(42,124,111,0.1)];
+        @apply w-full rounded-[10px] border-[1.5px] border-sand-200 bg-sand-50 px-4 py-3.5 text-sm text-ink-900 outline-none transition placeholder:text-ink-300 focus:border-teal-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(42,124,111,0.1)] dark:border-ink-700 dark:bg-ink-900 dark:text-white dark:placeholder:text-ink-500 dark:focus:border-teal-400 dark:focus:bg-ink-800;
     }
 
     .rp-btn-primary {
@@ -52,7 +53,7 @@
     }
 
     .rp-btn-outline {
-        @apply inline-flex items-center justify-center gap-2 rounded-[9px] border-[1.5px] border-sand-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-ink-700 transition hover:border-teal-400 hover:text-teal-500 disabled:pointer-events-none disabled:opacity-60;
+        @apply inline-flex items-center justify-center gap-2 rounded-[9px] border-[1.5px] border-sand-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-ink-700 transition hover:border-teal-400 hover:text-teal-500 disabled:pointer-events-none disabled:opacity-60 dark:border-ink-700 dark:bg-ink-800 dark:text-sand-300 dark:hover:border-teal-400 dark:hover:text-teal-300;
     }
 
     .rp-btn-login {
@@ -60,15 +61,15 @@
     }
 
     .rp-card {
-        @apply rounded-2xl border border-sand-200 bg-white p-5;
+        @apply rounded-2xl border border-sand-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800;
     }
 
     .rp-kpi-card {
-        @apply relative overflow-hidden rounded-2xl border border-sand-200 bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(26,23,20,0.08)];
+        @apply relative overflow-hidden rounded-2xl border border-sand-200 bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(26,23,20,0.08)] dark:border-ink-700 dark:bg-ink-800;
     }
 
     .rp-page-title {
-        @apply font-display text-[26px] leading-tight font-normal text-ink-900;
+        @apply font-display text-[26px] leading-tight font-normal text-ink-900 dark:text-white;
     }
 
     .rp-sidebar-nav-item {
@@ -84,10 +85,10 @@
     }
 
     .rp-user-table-wrap {
-        @apply overflow-hidden rounded-2xl border border-sand-200 bg-white;
+        @apply overflow-hidden rounded-2xl border border-sand-200 bg-white dark:border-ink-700 dark:bg-ink-800;
     }
 
     .rp-filter-bar {
-        @apply mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-sand-200 bg-white p-3.5;
+        @apply mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-sand-200 bg-white p-3.5 dark:border-ink-700 dark:bg-ink-800;
     }
 }
