@@ -1,12 +1,16 @@
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
+import { useConfirm } from '@/Components/common/ConfirmDialogProvider';
 import { useCan } from '@/Hooks/useCan';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 export default function Edit({ user, roles }) {
     const can = useCan();
+    const confirm = useConfirm();
+    const { t } = useTranslation();
     const { data, setData, put, processing, errors, delete: destroy } = useForm({
         name: user.name,
         email: user.email,
@@ -33,8 +37,16 @@ export default function Edit({ user, roles }) {
         put(route('admin.users.update', user.id));
     };
 
-    const remove = () => {
-        if (confirm('Delete this user?')) {
+    const remove = async () => {
+        const confirmed = await confirm({
+            title: t('confirm.deleteTitle'),
+            description: t('confirm.deleteUser', { name: user.name }),
+            confirmLabel: t('common.delete'),
+            cancelLabel: t('confirm.cancel'),
+            variant: 'destructive',
+        });
+
+        if (confirmed) {
             destroy(route('admin.users.destroy', user.id));
         }
     };

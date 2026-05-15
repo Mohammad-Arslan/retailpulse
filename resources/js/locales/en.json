@@ -39,6 +39,7 @@
         "deleteDescription": "Delete {{name}}? This cannot be undone.",
         "deleteUser": "Delete {{name}}? This will permanently remove their account and access.",
         "deleteRole": "Delete {{name}}? Users assigned this role may lose access.",
+        "deletePermission": "Delete {{name}}? This will remove the permission from all roles that use it.",
         "confirm": "Confirm",
         "cancel": "Cancel"
     },
