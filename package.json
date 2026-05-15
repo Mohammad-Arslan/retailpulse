@@ -6,11 +6,26 @@
         "build": "vite build",
         "dev": "vite"
     },
+    "dependencies": {
+        "axios": "^1.11.0",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "lucide-react": "^0.511.0",
+        "radix-ui": "^1.4.3",
+        "recharts": "^3.8.1",
+        "tailwind-merge": "^3.3.0"
+    },
     "devDependencies": {
+        "@headlessui/react": "^2.0.0",
+        "@inertiajs/react": "^2.0.0",
         "@tailwindcss/vite": "^4.0.0",
+        "@vitejs/plugin-react": "^5.2.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^3.1",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
         "tailwindcss": "^4.0.0",
+        "tailwindcss-animate": "^1.0.7",
         "vite": "^8.0.0"
     }
 }

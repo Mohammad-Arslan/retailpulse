@@ -17,7 +17,7 @@
 - Multi-cart: hold/suspend carts with visual status indicator
 - Cart line items: qty, discount, notes; server validates stock on add
 - WebSocket warnings: `inventory.stock.changed`, credit limit (Phase 9 hook)
-- Cashier PIN login (Fortify custom guard or secondary auth) — SRS §3.1
+- Cashier PIN login (custom guard or secondary auth alongside Breeze session) — SRS §3.1
 - IndexedDB `offline_sales` queue + service worker skeleton (full sync Phase 16)
 - Permissions: `pos.access`, `pos.discount`, `pos.suspend-cart`
 

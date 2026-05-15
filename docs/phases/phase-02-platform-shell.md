@@ -9,7 +9,7 @@
 
 ## Objective
 
-Upgrade Phase 1 admin screens into a cohesive **enterprise admin shell**: React 19, Inertia 2, shadcn/ui, Tailwind CSS 4, responsive sidebar layout, breadcrumbs, toasts, and a **command palette (⌘K)** skeleton.
+Upgrade Phase 1 admin screens and **Breeze auth pages** (`Pages/Auth/*`) into a cohesive **enterprise admin shell**: React 19, Inertia 2, shadcn/ui, Tailwind CSS 4, responsive sidebar layout, breadcrumbs, toasts, and a **command palette (⌘K)** skeleton.
 
 ## Deliverables
 
