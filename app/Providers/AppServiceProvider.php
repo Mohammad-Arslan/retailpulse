@@ -20,6 +20,7 @@ use App\Repositories\Contracts\InventoryRepositoryInterface;
 use App\Repositories\Contracts\PermissionRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\StockMovementRepositoryInterface;
+use App\Repositories\Contracts\SystemSettingRepositoryInterface;
 use App\Repositories\Contracts\StockTransferRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\UnitRepositoryInterface;
@@ -33,6 +34,7 @@ use App\Repositories\Eloquent\InventoryRepository;
 use App\Repositories\Eloquent\PermissionRepository;
 use App\Repositories\Eloquent\ProductRepository;
 use App\Repositories\Eloquent\StockMovementRepository;
+use App\Repositories\Eloquent\SystemSettingRepository;
 use App\Repositories\Eloquent\StockTransferRepository;
 use App\Repositories\Eloquent\RoleRepository;
 use App\Repositories\Eloquent\UnitRepository;
@@ -61,6 +63,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(InventoryRepositoryInterface::class, InventoryRepository::class);
         $this->app->bind(StockMovementRepositoryInterface::class, StockMovementRepository::class);
         $this->app->bind(StockTransferRepositoryInterface::class, StockTransferRepository::class);
+        $this->app->bind(SystemSettingRepositoryInterface::class, SystemSettingRepository::class);
     }
 
     public function boot(): void

@@ -46,6 +46,11 @@ final class RoleSeeder extends Seeder
                 'inventory.receive',
                 'inventory.adjust',
                 'inventory.transfer',
+                'settings.view',
+                'settings.general.update',
+                'settings.company.update',
+                'settings.notifications.update',
+                'settings.import-export.update',
             ],
         ],
         'branch-manager' => [

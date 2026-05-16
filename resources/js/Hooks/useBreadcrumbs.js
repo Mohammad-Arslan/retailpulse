@@ -26,6 +26,8 @@ const ROUTE_CRUMBS = {
     'Admin/Products/Index': ['home', 'products'],
     'Admin/Products/Create': ['home', 'products', 'create'],
     'Admin/Products/Edit': ['home', 'products', 'edit'],
+    'Admin/Settings/Index': ['home', 'settings'],
+    'Admin/Settings/Edit': ['home', 'settings', 'edit'],
 };
 
 const CRUMB_HREFS = {
@@ -37,6 +39,7 @@ const CRUMB_HREFS = {
     categories: 'admin.categories.index',
     brands: 'admin.brands.index',
     products: 'admin.products.index',
+    settings: 'admin.settings.index',
 };
 
 export function useBreadcrumbs() {

@@ -62,6 +62,13 @@ final class PermissionSeeder extends Seeder
             ['name' => 'inventory.adjust', 'description' => 'Adjust or write off stock'],
             ['name' => 'inventory.transfer', 'description' => 'Create and process stock transfers'],
         ],
+        'settings' => [
+            ['name' => 'settings.view', 'description' => 'View global settings'],
+            ['name' => 'settings.general.update', 'description' => 'Update general settings'],
+            ['name' => 'settings.company.update', 'description' => 'Update company profile settings'],
+            ['name' => 'settings.notifications.update', 'description' => 'Update notification settings'],
+            ['name' => 'settings.import-export.update', 'description' => 'Update import/export storage settings'],
+        ],
     ];
 
     public function run(): void

@@ -14,7 +14,8 @@
         "stockTransfers": "Transfers",
         "overview": "Overview",
         "organization": "Organization",
-        "admin": "Admin"
+        "admin": "Admin",
+        "settings": "Settings"
     },
     "common": {
         "search": "Search",
@@ -322,6 +323,16 @@
                 "option": "Option value",
                 "searchVariants": "Search SKU or product name..."
             }
+        },
+        "settings": {
+            "title": "Settings",
+            "description": "Manage global application configuration by area.",
+            "empty": "You do not have access to any settings groups.",
+            "readOnly": "View only",
+            "readOnlyHint": "You can view these settings but do not have permission to change them.",
+            "back": "All settings",
+            "save": "Save settings",
+            "saving": "Saving…"
         }
     },
     "auth": {
@@ -346,6 +357,7 @@
         "brands": "Brands",
         "products": "Products",
         "inventory": "Stock levels",
-        "stockTransfers": "Transfers"
+        "stockTransfers": "Transfers",
+        "settings": "Settings"
     }
 }

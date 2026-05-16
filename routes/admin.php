@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\StockTransferController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,4 +49,8 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::get('roles/{role}/clone', [RoleController::class, 'cloneForm'])->name('roles.clone');
         Route::post('roles/{role}/clone', [RoleController::class, 'cloneRole'])->name('roles.clone.store');
         Route::resource('permissions', PermissionController::class)->except(['show']);
+
+        Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::get('settings/{group}', [SettingsController::class, 'edit'])->name('settings.edit');
+        Route::put('settings/{group}', [SettingsController::class, 'update'])->name('settings.update');
     });

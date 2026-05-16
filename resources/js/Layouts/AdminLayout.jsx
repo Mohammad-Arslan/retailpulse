@@ -22,7 +22,13 @@ function SidebarNav({ collapsed, onNavigate }) {
     return (
         <>
             {ADMIN_NAV_SECTIONS.map((section) => {
-                const items = section.items.filter((item) => can(item.permission));
+                const items = section.items.filter((item) => {
+                    if (item.permissionsAny?.length) {
+                        return item.permissionsAny.some((p) => can(p));
+                    }
+
+                    return can(item.permission);
+                });
 
                 if (items.length === 0) {
                     return null;
