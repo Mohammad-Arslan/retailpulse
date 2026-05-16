@@ -1,6 +1,6 @@
 # Phase 10 — Supplier & Purchase Order Management
 
-**SRS Reference:** §3.10  
+**SRS Reference:** §3.10, §3.18 (suppliers)  
 **Status:** Planned  
 **Depends on:** Phase 4, Phase 5
 
@@ -26,8 +26,10 @@ Full **procurement cycle** with approval workflows and supplier ledger.
 - Payment recording against invoice
 - Approval: Branch Manager / Owner PIN or permission
 - Permissions: `procurement.*`, `procurement.approve-po`
+- **Bulk import/export (§3.18):** suppliers CSV/Excel; optional historical purchase headers with `is_historical` (reporting only); `suppliers.import`, `suppliers.export`
 
 ## Acceptance Criteria
 
 1. PO → GRN → Invoice → Payment flow updates stock and supplier balance correctly.
 2. PO over configured amount requires approval before send.
+3. Supplier list import creates 50+ suppliers with validation errors surfaced per row.

@@ -107,10 +107,32 @@ Last reviewed: 2026-05-16.
 
 ---
 
+## Cross-cutting — Data import, export & onboarding (SRS §3.18)
+
+**Status:** Spec added 2026-05-16; **not implemented** in codebase (Phases 1–6 complete without bulk tooling).
+
+| ID | Gap | Severity | Target phase |
+| :--- | :--- | :---: | :--- |
+| X-01 | **No bulk product import/export** — only single-record CRUD | **High** | Phase 4 (extend) |
+| X-02 | **No opening stock import** — manual receive only | **High** | Phase 5 (extend) |
+| X-03 | **No shared `import_export_jobs` / ImportExportService** | **High** | Phase 5 (framework) |
+| X-04 | **No historical sales archive import** | **Medium** | Phase 8 |
+| X-05 | **No customer/supplier bulk import** | **Medium** | Phases 9–10 |
+| X-06 | **No COA / opening balance import** | **Medium** | Phase 11 |
+| X-07 | **Report Excel/PDF export** | **Medium** | Phase 13 (already scoped) |
+| X-08 | **Import/export API endpoints** | **Low** | Phase 15 |
+
+**Onboarding critical path (new retailer):** Phase 4 product import → Phase 5 opening stock → go-live (Phase 7+) → optional Phase 8 historical sales for charts.
+
+---
+
 ## Cross-phase dependencies
 
 ```mermaid
 flowchart LR
+  X03[X-03 import framework] --> X01[X-01 product import]
+  X01 --> X02[X-02 opening stock]
+  X02 --> P7[Phase 7 POS go-live]
   P4_01[P4-01 reorder_point UI] --> P5_02[P5-02 low-stock data]
   P4_01 --> P6_09[P6-09 feed alert AC]
   P8[Phase 8 Sales] --> P6_02[P6-02 sales KPIs]
@@ -122,7 +144,8 @@ flowchart LR
 
 ## Recommended fix order
 
-1. **P4-01** — Reorder point on variant/product form (unblocks P5-02, P6-09).  
+1. **X-03**, **X-01**, **X-02** — Import framework + product + opening stock (unblocks customer onboarding before POS).  
+2. **P4-01** — Reorder point on variant/product form (unblocks P5-02, P6-09).  
 2. **P1-02**, **P1-01** — RBAC enforcement and deactivate-only users.  
 3. **P6-05**, **P6-06** — Dashboard permissions and branch-scoped widgets.  
 4. **P4-02** — Serial capture on receive.  
@@ -136,7 +159,7 @@ flowchart LR
 | Severity | Count (approx.) |
 | :--- | :---: |
 | Critical | 0 |
-| High | 8 |
+| High | 11 |
 | Medium | 9 |
 | Low | 5 |
 

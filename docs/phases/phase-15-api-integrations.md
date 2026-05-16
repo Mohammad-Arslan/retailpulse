@@ -1,6 +1,6 @@
 # Phase 15 — API, Webhooks & Third-Party Integrations
 
-**SRS Reference:** §4.5, §6  
+**SRS Reference:** §4.5, §6, §3.18 (API import/export)  
 **Status:** Planned  
 **Depends on:** Phase 1 (Sanctum), core modules through Phase 14
 
@@ -22,6 +22,7 @@
   - **Comms:** Twilio SMS, SendGrid/Mailgun email, WhatsApp Cloud API
   - **Accounting:** Xero/QuickBooks connector stubs
 - Rate limiting per token and per IP
+- **Import/export API (§3.18):** `/api/v1/{resource}/import` and `/export` for products, customers, suppliers (token abilities e.g. `products:import`)
 
 ## Acceptance Criteria
 
