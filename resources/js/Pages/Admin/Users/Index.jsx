@@ -91,14 +91,14 @@ function Index({ users, filters }) {
 
         if (can('users.delete')) {
             actions.push({
-                label: t('common.delete'),
+                label: t('common.deactivate'),
                 type: 'delete',
                 method: 'delete',
                 href: route('admin.users.destroy', user.id),
                 permission: 'users.delete',
                 variant: 'destructive',
                 confirm: {
-                    description: t('confirm.deleteUser', { name: user.name }),
+                    description: t('confirm.deactivateUser', { name: user.name }),
                 },
             });
         }

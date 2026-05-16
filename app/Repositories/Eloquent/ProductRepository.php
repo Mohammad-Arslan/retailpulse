@@ -95,7 +95,7 @@ final class ProductRepository implements ProductRepositoryInterface
 
     public function delete(Product $product): void
     {
-        $product->delete();
+        Product::destroy($product->getKey());
     }
 
     public function searchVariants(string $term, ?int $excludeProductId = null, int $limit = 20): Collection
@@ -130,6 +130,7 @@ final class ProductRepository implements ProductRepositoryInterface
                 'name' => $variant->displayName(),
                 'product_name' => $variant->product?->name ?? '',
                 'sell_price' => (string) $variant->sell_price,
+                'track_serials' => (bool) ($variant->product?->track_serials ?? false),
             ]);
     }
 }

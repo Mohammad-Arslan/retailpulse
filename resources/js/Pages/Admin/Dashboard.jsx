@@ -27,8 +27,11 @@ import {
 const fmtInt = (n) =>
     typeof n === 'number' ? new Intl.NumberFormat(undefined).format(n) : '—';
 
-function Dashboard({ stats, charts, superAdmin }) {
+function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canViewProfit, widgets }) {
     const { auth } = usePage().props;
+    const showSales = canViewProfit && widgets?.includes('sales');
+    const showRevenue = canViewProfit && widgets?.includes('revenue');
+    const showRbac = widgets?.includes('rbac') !== false;
     const rawName = auth?.user?.name?.trim() ?? '';
     const firstName = rawName ? rawName.split(/\s+/)[0] : 'there';
 
@@ -242,6 +245,33 @@ function Dashboard({ stats, charts, superAdmin }) {
                 </div>
             </div>
 
+            {showSales && salesKpis ? (
+                <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    {[
+                        { label: "Today's sales", value: salesKpis.todays_sales, icon: Package },
+                        { label: 'Gross profit', value: salesKpis.gross_profit, icon: Tag },
+                        { label: 'ATV', value: salesKpis.average_transaction_value, icon: LayoutDashboard },
+                        { label: 'Pending approvals', value: salesKpis.pending_approvals, icon: AlertTriangle },
+                    ].map((kpi) => {
+                        const Icon = kpi.icon;
+                        const tone = toneMap.teal;
+                        return (
+                            <div key={kpi.label} className={`rp-kpi-card ${tone.card}`}>
+                                <div className="mb-3.5">
+                                    <div className={tone.icon}>
+                                        <Icon className="h-[18px] w-[18px]" />
+                                    </div>
+                                </div>
+                                <span className="rp-kpi-value">{fmtInt(kpi.value)}</span>
+                                <div className="rp-kpi-label">{kpi.label}</div>
+                                <div className="rp-kpi-sub">Stub until Phase 8 sales</div>
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : null}
+
+            {showRbac ? (
             <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {kpis.map((kpi) => {
                     const Icon = kpi.icon;
@@ -264,6 +294,7 @@ function Dashboard({ stats, charts, superAdmin }) {
                     );
                 })}
             </div>
+            ) : null}
 
             {superAdmin ? (
                 <div className="mb-2 flex items-end justify-between gap-3">

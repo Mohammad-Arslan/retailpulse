@@ -144,6 +144,7 @@ final class ProductService
                 'barcode' => $this->identifiers->nextBarcode(),
                 'cost_price' => $data->defaultCostPrice,
                 'sell_price' => $data->defaultSellPrice,
+                'reorder_point' => $this->resolveReorderPoint($data->variants[0] ?? [], $data->defaultReorderPoint),
                 'attributes' => null,
             ]],
             default => [[
@@ -152,6 +153,7 @@ final class ProductService
                 'barcode' => $data->variants[0]['barcode'] ?? $this->identifiers->nextBarcode(),
                 'cost_price' => $data->variants[0]['cost_price'] ?? $data->defaultCostPrice,
                 'sell_price' => $data->variants[0]['sell_price'] ?? $data->defaultSellPrice,
+                'reorder_point' => $this->resolveReorderPoint($data->variants[0] ?? [], $data->defaultReorderPoint),
                 'attributes' => $data->variants[0]['attributes'] ?? null,
             ]],
         };
@@ -185,6 +187,7 @@ final class ProductService
                 'barcode' => $override['barcode'] ?? $this->identifiers->nextBarcode(),
                 'cost_price' => $override['cost_price'] ?? $defaultCost,
                 'sell_price' => $override['sell_price'] ?? $defaultSell,
+                'reorder_point' => $this->resolveReorderPoint($override, null),
                 'attributes' => $attributes,
             ];
         })->all();
@@ -226,6 +229,7 @@ final class ProductService
                 'name' => $row['name'] ?? null,
                 'cost_price' => $row['cost_price'] ?? 0,
                 'sell_price' => $row['sell_price'] ?? 0,
+                'reorder_point' => $this->resolveReorderPoint($row, null),
             ]);
         }
     }
@@ -249,6 +253,7 @@ final class ProductService
                 'barcode' => $row['barcode'] ?? $this->identifiers->nextBarcode(),
                 'cost_price' => $row['cost_price'] ?? 0,
                 'sell_price' => $row['sell_price'] ?? 0,
+                'reorder_point' => $this->resolveReorderPoint($row, null),
                 'attributes' => $row['attributes'] ?? null,
                 'sort_order' => $index,
                 'is_default' => $index === 0,
@@ -302,6 +307,24 @@ final class ProductService
     /**
      * @param  list<array{branch_id: int, sell_price: float}>  $prices
      */
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function resolveReorderPoint(array $row, ?int $default): ?int
+    {
+        if (array_key_exists('reorder_point', $row)) {
+            $value = $row['reorder_point'];
+
+            if ($value === null || $value === '') {
+                return null;
+            }
+
+            return (int) $value;
+        }
+
+        return $default;
+    }
+
     private function syncBranchPrices(ProductVariant $variant, array $prices): void
     {
         $variant->branchPrices()->delete();

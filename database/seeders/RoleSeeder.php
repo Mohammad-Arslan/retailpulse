@@ -25,6 +25,8 @@ final class RoleSeeder extends Seeder
             'permissions' => [
                 'admin.access',
                 'admin.dashboard.view',
+                'dashboard.view',
+                'dashboard.view-profit',
                 'users.view',
                 'users.create',
                 'users.update',
@@ -52,6 +54,7 @@ final class RoleSeeder extends Seeder
             'permissions' => [
                 'admin.access',
                 'admin.dashboard.view',
+                'dashboard.view',
                 'branches.view',
                 'branches.update',
                 'users.view',
@@ -70,6 +73,7 @@ final class RoleSeeder extends Seeder
             'permissions' => [
                 'admin.access',
                 'admin.dashboard.view',
+                'dashboard.view',
             ],
         ],
         'cashier' => [

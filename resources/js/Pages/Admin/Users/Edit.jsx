@@ -42,8 +42,8 @@ export default function Edit({ user, roles, availableBranches }) {
     const remove = async () => {
         const confirmed = await confirm({
             title: t('confirm.deleteTitle'),
-            description: t('confirm.deleteUser', { name: user.name }),
-            confirmLabel: t('common.delete'),
+            description: t('confirm.deactivateUser', { name: user.name }),
+            confirmLabel: t('common.deactivate'),
             cancelLabel: t('confirm.cancel'),
             variant: 'destructive',
         });
@@ -162,7 +162,7 @@ export default function Edit({ user, roles, availableBranches }) {
                                 onClick={remove}
                                 className="rp-btn-outline border-rose-200 text-rose-500 hover:border-rose-500 hover:bg-rose-100 hover:text-rose-500"
                             >
-                                Delete user
+                                Deactivate user
                             </button>
                         )}
                     </div>

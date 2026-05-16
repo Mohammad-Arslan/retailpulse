@@ -8,10 +8,14 @@ use App\DTOs\Inventory\AdjustStockData;
 use App\DTOs\Inventory\DeductStockData;
 use App\DTOs\Inventory\ReceiveStockData;
 use App\DTOs\Inventory\ReserveStockData;
+use App\Enums\PickingStrategy;
+use App\Enums\SerialStatus;
 use App\Enums\StockMovementReason;
 use App\Events\InventoryStockChanged;
 use App\Models\Inventory;
+use App\Models\ProductSerial;
 use App\Models\ProductVariant;
+use App\Models\Warehouse;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
 use App\Repositories\Contracts\StockMovementRepositoryInterface;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +30,10 @@ final class InventoryService
 
     public function receive(ReceiveStockData $data): Inventory
     {
+        if ($data->serialNumbers !== []) {
+            $this->registerSerials($data->variantId, $data->serialNumbers);
+        }
+
         return $this->applyDelta(
             warehouseId: $data->warehouseId,
             variantId: $data->variantId,
@@ -65,6 +73,7 @@ final class InventoryService
 
     public function deduct(DeductStockData $data): Inventory
     {
+        $variant = ProductVariant::query()->with('product')->find($data->variantId);
         $this->assertTracksInventory($data->variantId);
 
         if ($data->quantity <= 0) {
@@ -73,16 +82,52 @@ final class InventoryService
             ]);
         }
 
-        return $this->applyDelta(
-            warehouseId: $data->warehouseId,
-            variantId: $data->variantId,
-            batchId: $data->batchId,
-            qtyDelta: -$data->quantity,
-            reason: $data->reason,
-            userId: $data->userId,
-            referenceType: $data->referenceType,
-            referenceId: $data->referenceId,
-            notes: $data->notes,
+        if ($data->batchId !== null) {
+            return $this->applyDelta(
+                warehouseId: $data->warehouseId,
+                variantId: $data->variantId,
+                batchId: $data->batchId,
+                qtyDelta: -$data->quantity,
+                reason: $data->reason,
+                userId: $data->userId,
+                referenceType: $data->referenceType,
+                referenceId: $data->referenceId,
+                notes: $data->notes,
+            );
+        }
+
+        $warehouse = Warehouse::query()->with('branch')->findOrFail($data->warehouseId);
+        $strategy = $warehouse->branch?->picking_strategy ?? PickingStrategy::Fifo;
+        $trackBatches = (bool) ($variant?->product?->track_batches ?? false);
+
+        $lines = $this->inventories->allocateDeductionLines(
+            $data->warehouseId,
+            $data->variantId,
+            $data->quantity,
+            $strategy,
+            $trackBatches,
+        );
+
+        $inventory = null;
+
+        foreach ($lines as $line) {
+            $inventory = $this->applyDelta(
+                warehouseId: $data->warehouseId,
+                variantId: $data->variantId,
+                batchId: $line['batch_id'],
+                qtyDelta: -$line['quantity'],
+                reason: $data->reason,
+                userId: $data->userId,
+                referenceType: $data->referenceType,
+                referenceId: $data->referenceId,
+                notes: $data->notes,
+            );
+        }
+
+        return $inventory ?? $this->inventories->lockOrCreate(
+            $data->warehouseId,
+            $data->variantId,
+            null,
         );
     }
 
@@ -264,6 +309,39 @@ final class InventoryService
         if ($variant?->product === null || ! $variant->product->tracksInventory()) {
             throw ValidationException::withMessages([
                 'product_variant_id' => __('This product does not track inventory.'),
+            ]);
+        }
+    }
+
+    /**
+     * @param  list<string>  $serialNumbers
+     */
+    private function registerSerials(int $variantId, array $serialNumbers): void
+    {
+        $variant = ProductVariant::query()->with('product')->find($variantId);
+
+        if ($variant?->product === null || ! $variant->product->track_serials) {
+            throw ValidationException::withMessages([
+                'serial_numbers' => __('This product does not track serial numbers.'),
+            ]);
+        }
+
+        foreach ($serialNumbers as $serialNumber) {
+            $exists = ProductSerial::query()
+                ->where('product_variant_id', $variantId)
+                ->where('serial_number', $serialNumber)
+                ->exists();
+
+            if ($exists) {
+                throw ValidationException::withMessages([
+                    'serial_numbers' => __('Serial number :serial already exists.', ['serial' => $serialNumber]),
+                ]);
+            }
+
+            ProductSerial::query()->create([
+                'product_variant_id' => $variantId,
+                'serial_number' => $serialNumber,
+                'status' => SerialStatus::Available,
             ]);
         }
     }

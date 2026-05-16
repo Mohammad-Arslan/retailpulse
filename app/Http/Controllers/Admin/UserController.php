@@ -60,7 +60,7 @@ final class UserController extends Controller
     {
         $this->authorize('create', User::class);
 
-        $this->userService->create(CreateUserData::fromRequest($request));
+        $this->userService->create($request->user(), CreateUserData::fromRequest($request));
 
         return redirect()
             ->route('admin.users.index')
@@ -97,7 +97,7 @@ final class UserController extends Controller
     {
         $this->authorize('update', $user);
 
-        $this->userService->update($user, UpdateUserData::fromRequest($request));
+        $this->userService->update($request->user(), $user, UpdateUserData::fromRequest($request));
 
         return redirect()
             ->route('admin.users.index')
@@ -108,11 +108,11 @@ final class UserController extends Controller
     {
         $this->authorize('delete', $user);
 
-        $this->userService->delete($user);
+        $this->userService->deactivate($user);
 
         return redirect()
             ->route('admin.users.index')
-            ->with('success', __('User deleted successfully.'));
+            ->with('success', __('User deactivated successfully.'));
     }
 
     /**

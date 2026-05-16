@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\ProductVariant;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 final class ReceiveStockRequest extends FormRequest
 {
@@ -23,7 +25,51 @@ final class ReceiveStockRequest extends FormRequest
             'product_variant_id' => ['required', 'integer', 'exists:product_variants,id'],
             'batch_id' => ['nullable', 'integer', 'exists:product_batches,id'],
             'quantity' => ['required', 'integer', 'min:1'],
+            'serial_numbers' => ['nullable', 'array'],
+            'serial_numbers.*' => ['string', 'max:128', 'distinct'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $variantId = (int) $this->input('product_variant_id');
+            $variant = ProductVariant::query()->with('product')->find($variantId);
+
+            if ($variant?->product === null) {
+                return;
+            }
+
+            $serials = array_values(array_filter(
+                array_map('trim', (array) $this->input('serial_numbers', [])),
+                static fn (string $value): bool => $value !== '',
+            ));
+
+            if ($variant->product->track_serials) {
+                if ($serials === []) {
+                    $validator->errors()->add(
+                        'serial_numbers',
+                        __('Enter one serial number per unit received.'),
+                    );
+
+                    return;
+                }
+
+                $quantity = (int) $this->input('quantity');
+
+                if ($quantity !== count($serials)) {
+                    $validator->errors()->add(
+                        'quantity',
+                        __('Quantity must match the number of serial numbers (:count).', ['count' => count($serials)]),
+                    );
+                }
+            } elseif ($serials !== []) {
+                $validator->errors()->add(
+                    'serial_numbers',
+                    __('Serial numbers are only required for serialized products.'),
+                );
+            }
+        });
     }
 }

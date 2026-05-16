@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Repositories\Eloquent;
 
+use App\Enums\PickingStrategy;
 use App\Models\Inventory;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\ValidationException;
 
 final class InventoryRepository implements InventoryRepositoryInterface
 {
@@ -92,6 +94,68 @@ final class InventoryRepository implements InventoryRepositoryInterface
         $inventory = $this->baseQuery($warehouseId, $variantId, $batchId)->first();
 
         return $inventory?->availableQuantity() ?? 0;
+    }
+
+    public function allocateDeductionLines(
+        int $warehouseId,
+        int $variantId,
+        int $quantity,
+        PickingStrategy $strategy,
+        bool $trackBatches,
+    ): array {
+        if ($quantity <= 0) {
+            return [];
+        }
+
+        if (! $trackBatches) {
+            return [['batch_id' => null, 'quantity' => $quantity]];
+        }
+
+        $query = Inventory::query()
+            ->where('warehouse_id', $warehouseId)
+            ->where('product_variant_id', $variantId)
+            ->whereRaw('quantity_on_hand > quantity_reserved')
+            ->select('inventories.*');
+
+        if ($strategy === PickingStrategy::Fefo) {
+            $query
+                ->leftJoin('product_batches', 'inventories.batch_id', '=', 'product_batches.id')
+                ->orderByRaw('CASE WHEN product_batches.expiry_date IS NULL THEN 1 ELSE 0 END')
+                ->orderBy('product_batches.expiry_date')
+                ->orderBy('inventories.id');
+        } else {
+            $query->orderBy('inventories.created_at')->orderBy('inventories.id');
+        }
+
+        $lines = [];
+        $remaining = $quantity;
+
+        foreach ($query->get() as $inventory) {
+            $available = $inventory->availableQuantity();
+
+            if ($available <= 0) {
+                continue;
+            }
+
+            $take = min($available, $remaining);
+            $lines[] = [
+                'batch_id' => $inventory->batch_id,
+                'quantity' => $take,
+            ];
+            $remaining -= $take;
+
+            if ($remaining <= 0) {
+                break;
+            }
+        }
+
+        if ($remaining > 0) {
+            throw ValidationException::withMessages([
+                'quantity' => __('Insufficient stock on hand.'),
+            ]);
+        }
+
+        return $lines;
     }
 
     private function baseQuery(int $warehouseId, int $variantId, ?int $batchId)

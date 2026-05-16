@@ -1,4 +1,4 @@
-import ComboBundleBuilder from '@/Components/admin/ComboBundleBuilder';
+﻿import ComboBundleBuilder from '@/Components/admin/ComboBundleBuilder';
 import VariantAttributeBuilder from '@/Components/admin/VariantAttributeBuilder';
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
@@ -189,7 +189,7 @@ export default function ProductFormFields({
                 <FormCard>
                     <h3 className="rp-form-label mb-4">{t('pages.products.sections.pricing')}</h3>
                     <p className="mb-3 text-xs text-rp-text-muted">{t('pages.products.autoIdentifiers')}</p>
-                    <div className={`grid gap-4 ${canShowCost ? 'sm:grid-cols-2' : ''}`}>
+                    <div className={`grid gap-4 ${canShowCost ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
                         {canShowCost && (
                             <AdminFormField
                                 label={t('pages.products.fields.costPrice')}
@@ -222,6 +222,22 @@ export default function ProductFormFields({
                                 onChange={(e) => setData('default_sell_price', e.target.value)}
                             />
                         </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.products.fields.reorderPoint')}
+                            id="default_reorder_point"
+                            error={errors.default_reorder_point}
+                        >
+                            <input
+                                id="default_reorder_point"
+                                type="number"
+                                min="0"
+                                step="1"
+                                placeholder={t('pages.products.reorderPointPlaceholder')}
+                                value={data.default_reorder_point ?? ''}
+                                className="rp-form-input"
+                                onChange={(e) => setData('default_reorder_point', e.target.value)}
+                            />
+                        </AdminFormField>
                     </div>
                 </FormCard>
             )}
@@ -238,7 +254,8 @@ export default function ProductFormFields({
                                     {canShowCost && (
                                         <th className="pb-2 pr-4">{t('pages.products.fields.costPrice')}</th>
                                     )}
-                                    <th className="pb-2">{t('pages.products.fields.sellPrice')}</th>
+                                    <th className="pb-2 pr-4">{t('pages.products.fields.sellPrice')}</th>
+                                    <th className="pb-2">{t('pages.products.fields.reorderPoint')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -265,7 +282,7 @@ export default function ProductFormFields({
                                                 />
                                             </td>
                                         )}
-                                        <td className="py-2">
+                                        <td className="py-2 pr-4">
                                             <input
                                                 type="number"
                                                 min="0"
@@ -277,6 +294,24 @@ export default function ProductFormFields({
                                                     variants[index] = {
                                                         ...variant,
                                                         sell_price: e.target.value,
+                                                    };
+                                                    setData('variants', variants);
+                                                }}
+                                            />
+                                        </td>
+                                        <td className="py-2">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="1"
+                                                placeholder="—"
+                                                value={variant.reorder_point ?? ''}
+                                                className="rp-form-input w-20"
+                                                onChange={(e) => {
+                                                    const variants = [...data.variants];
+                                                    variants[index] = {
+                                                        ...variant,
+                                                        reorder_point: e.target.value,
                                                     };
                                                     setData('variants', variants);
                                                 }}

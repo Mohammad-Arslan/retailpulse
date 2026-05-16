@@ -24,6 +24,7 @@ export default function Create({
         is_active: true,
         default_cost_price: '0',
         default_sell_price: '0',
+        default_reorder_point: '',
         variant_attributes: [{ name: 'Size', options: ['S', 'M', 'L'] }],
         variants: [],
         bundle_items: [],
