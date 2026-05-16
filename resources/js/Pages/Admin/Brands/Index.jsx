@@ -1,5 +1,7 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import ImportExportToolbar from '@/Components/import-export/ImportExportToolbar';
+import { useImportJobsTray } from '@/Components/import-export/ImportJobsTray';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
@@ -10,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 function Index({ brands, filters }) {
     const can = useCan();
     const { t } = useTranslation();
+    const { trackJob } = useImportJobsTray();
 
     const search = (e) => {
         e.preventDefault();
@@ -90,12 +93,19 @@ function Index({ brands, filters }) {
         <>
             <Head title={t('nav.brands')} />
             <PageHeader title={t('pages.brands.title')} description={t('pages.brands.description')}>
-                {can('products.create') && (
-                    <Link href={route('admin.brands.create')} className="rp-btn-primary">
-                        <Plus className="h-4 w-4" />
-                        {t('common.addBrand')}
-                    </Link>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                    <ImportExportToolbar
+                        entityType="brands"
+                        entityLabel={t('nav.brands')}
+                        onJobStarted={trackJob}
+                    />
+                    {can('products.create') && (
+                        <Link href={route('admin.brands.create')} className="rp-btn-primary">
+                            <Plus className="h-4 w-4" />
+                            {t('common.addBrand')}
+                        </Link>
+                    )}
+                </div>
             </PageHeader>
             <form onSubmit={search} className="rp-filter-bar">
                 <div className="rp-search-inset">

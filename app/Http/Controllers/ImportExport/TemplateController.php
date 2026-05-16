@@ -6,7 +6,9 @@ namespace App\Http\Controllers\ImportExport;
 
 use App\Http\Controllers\Controller;
 use App\Services\ImportExport\ImportExportRegistry;
+use App\Support\ImportExportAuthorization;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Rap2hpoutre\FastExcel\FastExcel;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -18,8 +20,21 @@ final class TemplateController extends Controller
             abort(404);
         }
 
+        if (! ImportExportAuthorization::canImport($request->user(), $entity)) {
+            abort(Response::HTTP_FORBIDDEN);
+        }
+
         $handler = ImportExportRegistry::importHandler($entity);
-        $headers = collect($handler->columns())->pluck('label', 'key')->keys()->all();
+        $columns = $handler->columns();
+
+        if ($entity === 'products' && ! $request->user()?->can('products.show-cost')) {
+            $columns = array_values(array_filter(
+                $columns,
+                fn (array $col) => $col['key'] !== 'cost_price',
+            ));
+        }
+
+        $headers = collect($columns)->pluck('key')->all();
         $row = array_fill_keys($headers, '');
 
         return response()->streamDownload(function () use ($row, $headers) {

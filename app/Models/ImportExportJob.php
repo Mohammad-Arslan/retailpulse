@@ -166,8 +166,13 @@ class ImportExportJob extends Model
             'error_download_url' => null,
         ];
 
-        if ($this->failed_rows > 0) {
-            $summary['error_download_url'] = route('import-export.errors', ['ulid' => $this->ulid]);
+        $hasErrorReport = $this->failed_rows > 0
+            || $this->skipped_rows > 0
+            || $this->output_file_path !== null
+            || $this->rowErrors()->exists();
+
+        if ($hasErrorReport) {
+            $summary['error_download_url'] = route('admin.import-export.errors', ['ulid' => $this->ulid]);
         }
 
         return $summary;

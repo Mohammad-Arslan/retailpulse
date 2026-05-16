@@ -1,5 +1,7 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import ImportExportToolbar from '@/Components/import-export/ImportExportToolbar';
+import { useImportJobsTray } from '@/Components/import-export/ImportJobsTray';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
@@ -10,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 function Index({ products, filters, productTypes, categories, brands, canShowCost }) {
     const can = useCan();
     const { t } = useTranslation();
+    const { trackJob } = useImportJobsTray();
 
     const search = (e) => {
         e.preventDefault();
@@ -129,12 +132,29 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
                 title={t('pages.products.title')}
                 description={t('pages.products.description')}
             >
-                {can('products.create') && (
-                    <Link href={route('admin.products.create')} className="rp-btn-primary">
-                        <Plus className="h-4 w-4" />
-                        {t('common.addProduct')}
-                    </Link>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                    <ImportExportToolbar
+                        entityType="products"
+                        entityLabel={t('nav.products')}
+                        showMatchField
+                        exportOptions={{
+                            filters: {
+                                search: filters.search ?? undefined,
+                                type: filters.type ?? undefined,
+                                category_id: filters.category_id ?? undefined,
+                                brand_id: filters.brand_id ?? undefined,
+                                is_active: filters.is_active ?? undefined,
+                            },
+                        }}
+                        onJobStarted={trackJob}
+                    />
+                    {can('products.create') && (
+                        <Link href={route('admin.products.create')} className="rp-btn-primary">
+                            <Plus className="h-4 w-4" />
+                            {t('common.addProduct')}
+                        </Link>
+                    )}
+                </div>
             </PageHeader>
             <form onSubmit={search} className="rp-filter-bar flex-wrap gap-2">
                 <div className="rp-search-inset min-w-[200px] flex-1">

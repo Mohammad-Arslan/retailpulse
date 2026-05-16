@@ -42,6 +42,8 @@ final class RoleSeeder extends Seeder
                 'products.update',
                 'products.delete',
                 'products.show-cost',
+                'products.import',
+                'products.export',
                 'inventory.view',
                 'inventory.receive',
                 'inventory.adjust',

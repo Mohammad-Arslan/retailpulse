@@ -65,7 +65,7 @@ final class ImportExportStorageManager
 
         if ($this->diskName === 'local') {
             return url()->temporarySignedRoute(
-                'import-export.stream',
+                'admin.import-export.stream',
                 now()->addMinutes($ttl),
                 ['path' => encrypt($path)],
             );

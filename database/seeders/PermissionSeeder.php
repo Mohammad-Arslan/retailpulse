@@ -55,6 +55,8 @@ final class PermissionSeeder extends Seeder
             ['name' => 'products.update', 'description' => 'Update products'],
             ['name' => 'products.delete', 'description' => 'Delete products'],
             ['name' => 'products.show-cost', 'description' => 'View cost price columns'],
+            ['name' => 'products.import', 'description' => 'Import catalog data from spreadsheets'],
+            ['name' => 'products.export', 'description' => 'Export catalog data to spreadsheets'],
         ],
         'inventory' => [
             ['name' => 'inventory.view', 'description' => 'View stock levels by warehouse'],

@@ -62,9 +62,21 @@ final class GenerateErrorReportJob implements ShouldQueue
             @unlink($tmp);
 
             $path = $this->storeErrorReport($content, $job->ulid);
-            $job->update(['output_file_path' => $path]);
+
+            $errorCount = (int) ImportRowError::query()->where('job_id', $job->id)->count();
+
+            $job->update([
+                'output_file_path' => $path,
+                'processed_rows' => $job->total_rows,
+                'failed_rows' => max($job->failed_rows, $errorCount),
+                'skipped_rows' => max($job->skipped_rows, $errorCount),
+            ]);
+
+            $job->markCompleted();
 
             $summary = $job->buildSummary();
+            $job->update(['summary' => $summary]);
+
             ImportCompleted::dispatch($job->ulid, (int) $job->user_id, $summary);
         } catch (Throwable $e) {
             $job->markFailed($e->getMessage());

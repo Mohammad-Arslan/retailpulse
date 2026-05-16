@@ -17,9 +17,11 @@ use App\Services\ImportExport\SpreadsheetReader;
 use App\Services\ImportExport\Storage\ImportExportStorageManager;
 use App\Services\ImportExport\Validation\RuleMetaRegistry;
 use App\Services\ImportExport\Validation\TransformPipeline;
+use App\Support\ImportExportAuthorization;
 use App\Traits\HandlesImportExportStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 
 final class ImportWizardController extends Controller
 {
@@ -29,6 +31,10 @@ final class ImportWizardController extends Controller
     {
         $user = $request->user();
         $entityType = $request->validated('entity_type');
+
+        if (! ImportExportAuthorization::canImport($user, $entityType)) {
+            abort(Response::HTTP_FORBIDDEN);
+        }
         $handler = ImportExportRegistry::importHandler($entityType);
         $path = $this->storeImportFile($request->file('file'), $entityType);
         $preview = SpreadsheetReader::preview($path);
@@ -69,6 +75,7 @@ final class ImportWizardController extends Controller
     public function headers(string $ulid): JsonResponse
     {
         $job = $this->findJob($ulid);
+        $this->authorizeImport(request(), $job->entity_type);
 
         return response()->json($job->file_preview ?? []);
     }
@@ -76,6 +83,7 @@ final class ImportWizardController extends Controller
     public function saveMapping(SaveMappingRequest $request, string $ulid): JsonResponse
     {
         $job = $this->findJob($ulid);
+        $this->authorizeImport($request, $job->entity_type);
         $job->update([
             'column_mapping' => $request->validated('mapping'),
             'step' => 2,
@@ -91,6 +99,7 @@ final class ImportWizardController extends Controller
     public function getRules(string $ulid): JsonResponse
     {
         $job = $this->findJob($ulid);
+        $this->authorizeImport(request(), $job->entity_type);
         $handler = ImportExportRegistry::importHandler($job->entity_type);
         $tenantId = (int) $job->tenant_id;
         $defaultProfile = ImportValidationProfile::defaultFor($tenantId, $job->entity_type);
@@ -115,6 +124,7 @@ final class ImportWizardController extends Controller
     public function saveRules(SaveRulesRequest $request, string $ulid): JsonResponse
     {
         $job = $this->findJob($ulid);
+        $this->authorizeImport($request, $job->entity_type);
         $columnRules = $request->validated('column_rules');
 
         $job->update([
@@ -142,11 +152,32 @@ final class ImportWizardController extends Controller
     public function confirm(ConfirmImportRequest $request, string $ulid): JsonResponse
     {
         $job = $this->findJob($ulid);
+        $this->authorizeImport($request, $job->entity_type);
+
+        $options = $request->validated('options', []);
+        $mapping = $job->column_mapping ?? [];
+
+        if ($mapping === [] && is_array($job->file_preview['headers'] ?? null)) {
+            $mapping = $this->guessMapping(
+                $job->entity_type,
+                $job->file_preview['headers'],
+            );
+            $job->column_mapping = $mapping;
+        }
+
+        $columnRules = $job->column_rules_snapshot;
+        if ($columnRules === null || $columnRules === []) {
+            $handler = ImportExportRegistry::importHandler($job->entity_type);
+            $defaultProfile = ImportValidationProfile::defaultFor((int) $job->tenant_id, $job->entity_type);
+            $columnRules = $this->buildColumnRules($handler->columns(), $defaultProfile, $mapping);
+        }
 
         $job->update([
             'is_dry_run' => $request->boolean('is_dry_run'),
             'mode' => $request->validated('mode'),
-            'options' => $request->validated('options', []),
+            'options' => $options,
+            'column_mapping' => $mapping,
+            'column_rules_snapshot' => $columnRules,
             'step' => 4,
             'queued_at' => now(),
         ]);
@@ -166,6 +197,49 @@ final class ImportWizardController extends Controller
             ->forCurrentTenant()
             ->byUlid($ulid)
             ->firstOrFail();
+    }
+
+    private function authorizeImport(\Illuminate\Http\Request $request, string $entityType): void
+    {
+        if (! ImportExportAuthorization::canImport($request->user(), $entityType)) {
+            abort(Response::HTTP_FORBIDDEN);
+        }
+    }
+
+    /**
+     * @param  list<string>  $headers
+     * @return array<string, string>
+     */
+    private function guessMapping(string $entityType, array $headers): array
+    {
+        $handler = ImportExportRegistry::importHandler($entityType);
+        $mapping = [];
+
+        foreach ($handler->columns() as $column) {
+            $key = (string) $column['key'];
+            $label = (string) $column['label'];
+
+            if (in_array($key, $headers, true)) {
+                $mapping[$key] = $key;
+
+                continue;
+            }
+
+            if (in_array($label, $headers, true)) {
+                $mapping[$key] = $label;
+
+                continue;
+            }
+
+            foreach ($headers as $header) {
+                if (strcasecmp($header, $key) === 0 || strcasecmp($header, $label) === 0) {
+                    $mapping[$key] = $header;
+                    break;
+                }
+            }
+        }
+
+        return $mapping;
     }
 
     /**

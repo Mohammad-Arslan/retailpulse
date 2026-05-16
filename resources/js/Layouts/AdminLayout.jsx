@@ -1,4 +1,5 @@
 import AdminTopbar from '@/Components/admin/AdminTopbar';
+import { ImportJobsProvider } from '@/Components/import-export/ImportJobsTray';
 import CommandPalette from '@/Components/admin/CommandPalette';
 import SidebarSearch from '@/Components/admin/SidebarSearch';
 import BrandIcon from '@/Components/brand/BrandIcon';
@@ -195,6 +196,7 @@ export default function AdminLayout({ children }) {
         : 'lg:ml-(--width-sidebar)';
 
     return (
+        <ImportJobsProvider>
         <div className="min-h-screen bg-rp-page font-sans">
             <CommandPalette open={paletteOpen} onClose={closePalette} />
 
@@ -241,5 +243,6 @@ export default function AdminLayout({ children }) {
                 </main>
             </div>
         </div>
+        </ImportJobsProvider>
     );
 }

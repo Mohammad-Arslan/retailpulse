@@ -11,6 +11,7 @@ use App\Models\ImportExportJob;
 use App\Models\ImportRowError;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportExportRegistry;
+use App\Services\ImportExport\RowMapper;
 use App\Services\ImportExport\SpreadsheetReader;
 use App\Services\ImportExport\Validation\DynamicRuleEngine;
 use Illuminate\Bus\Queueable;
@@ -44,6 +45,7 @@ final class ProcessImportJob implements ShouldQueue
             $context = ImportContext::fromJob($job);
             $reader = SpreadsheetReader::for((string) $job->input_file_path, 'import_export');
             $columnRules = $job->column_rules_snapshot ?? [];
+            $mapping = $job->column_mapping ?? [];
 
             $errorIndexes = ImportRowError::query()
                 ->where('job_id', $job->id)
@@ -72,9 +74,10 @@ final class ProcessImportJob implements ShouldQueue
 
                     $chunkProcessed++;
                     $transformed = $ruleEngine->applyTransforms($row, $columnRules);
+                    $systemRow = RowMapper::toSystemKeys($transformed, $mapping);
 
                     try {
-                        $result = $handler->processRow($transformed, $context);
+                        $result = $handler->processRow($systemRow, $context);
 
                         if ($result->success) {
                             $chunkSuccess++;

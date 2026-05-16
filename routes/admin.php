@@ -53,4 +53,7 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::get('settings/{group}', [SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('settings/{group}', [SettingsController::class, 'update'])->name('settings.update');
+
+        $registerImportExport = require __DIR__.'/import-export.php';
+        $registerImportExport('import-export.');
     });

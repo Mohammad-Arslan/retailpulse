@@ -9,6 +9,7 @@ use App\Models\ImportExportJob;
 use App\Models\ImportRowError;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportExportRegistry;
+use App\Services\ImportExport\RowMapper;
 use App\Services\ImportExport\SpreadsheetReader;
 use App\Services\ImportExport\Validation\DynamicRuleEngine;
 use Illuminate\Bus\Queueable;
@@ -45,6 +46,7 @@ final class ValidateImportJob implements ShouldQueue
             $job->update(['total_rows' => $totalRows]);
 
             $columnRules = $job->column_rules_snapshot ?? [];
+            $mapping = $job->column_mapping ?? [];
             $processed = 0;
             $errorCount = 0;
             $batch = [];
@@ -52,14 +54,16 @@ final class ValidateImportJob implements ShouldQueue
             foreach ($reader->lazyRows() as $rowIndex => $row) {
                 $processed++;
                 $transformed = $ruleEngine->applyTransforms($row, $columnRules);
-                $errors = $handler->validateRow($transformed, $context);
+                $errors = $this->validateTransformedRow($ruleEngine, $transformed, $columnRules, $context);
+                $systemRow = RowMapper::toSystemKeys($transformed, $mapping);
+                $errors = array_merge($errors, $handler->validateRow($systemRow, $context));
 
                 if ($errors !== []) {
                     $errorCount++;
                     $batch[] = [
                         'job_id' => $job->id,
                         'row_index' => $rowIndex,
-                        'row_data' => json_encode($transformed),
+                        'row_data' => json_encode($systemRow),
                         'errors' => json_encode($errors),
                         'created_at' => now(),
                     ];
@@ -79,10 +83,18 @@ final class ValidateImportJob implements ShouldQueue
                 ImportRowError::query()->insert($batch);
             }
 
-            $hasErrors = ImportRowError::query()->where('job_id', $job->id)->exists();
+            $errorCount = (int) ImportRowError::query()->where('job_id', $job->id)->count();
+            $hasErrors = $errorCount > 0;
             $job->markValidated();
 
+            $this->broadcastProgress($job, 'validated', $totalRows, $totalRows, $errorCount);
+
             if ($job->is_dry_run || ($hasErrors && $context->isStrictMode())) {
+                $job->update([
+                    'processed_rows' => $totalRows,
+                    'failed_rows' => $errorCount,
+                    'skipped_rows' => $errorCount,
+                ]);
                 GenerateErrorReportJob::dispatch($job->id)->onQueue('imports-reports');
 
                 return;
@@ -93,6 +105,33 @@ final class ValidateImportJob implements ShouldQueue
             $job->markFailed($e->getMessage());
             throw $e;
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $transformed
+     * @param  list<array<string, mixed>>  $columnRules
+     * @return array<string, list<string>>
+     */
+    private function validateTransformedRow(
+        DynamicRuleEngine $ruleEngine,
+        array $transformed,
+        array $columnRules,
+        ImportContext $context,
+    ): array {
+        $validator = $ruleEngine->buildValidator([$transformed], $columnRules, $context);
+
+        if (! $validator->fails()) {
+            return [];
+        }
+
+        $errors = [];
+
+        foreach ($validator->errors()->toArray() as $key => $messages) {
+            $field = preg_replace('/^rows\.\d+\./', '', (string) $key) ?: '_row';
+            $errors[$field] = $messages;
+        }
+
+        return $errors;
     }
 
     private function broadcastProgress(
