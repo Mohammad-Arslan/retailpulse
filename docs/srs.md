@@ -29,6 +29,7 @@ Here is the improved and fully documented requirements specification, ready for 
     3.15. Notification Engine
     3.16. Refund, Return & Exchange Management
     3.17. Tax Configuration Engine
+    3.18. Data Import, Export & Customer Onboarding
 4.  **Non-Functional & Operational Requirements**
     4.1. Real-Time Communication
     4.2. Offline Resilience & Synchronization
@@ -154,6 +155,47 @@ The system will follow a **modular, domain-driven, API-first monolith** architec
 #### 3.17. Tax Configuration Engine
 - **Composite Tax Groups:** A "T-shirt Tax" group can include a 5% State Tax and a 2% City Tax, applied as one line item but reported separately.
 - **Inclusive/Exclusive Toggle:** Ability to define at the product or customer group level whether prices are entered inclusive or exclusive of tax.
+
+#### 3.18. Data Import, Export & Customer Onboarding
+Retailers migrating from spreadsheets or another POS need **bulk operations** and controlled **historical data** loading—not only one-by-one CRUD. The system provides a shared import/export framework (CSV and Excel) with validation preview, queued processing for large files, downloadable templates, and full audit logging.
+
+**Shared import/export platform (all modules):**
+- **Formats:** CSV (UTF-8) and Excel (`.xlsx`) for import and export; downloadable **templates** with required columns and inline help.
+- **Workflow:** Upload → validate (dry-run) → review errors/warnings → confirm → background job for files above a configurable row threshold (default 500 rows).
+- **Idempotency:** Imports support `create`, `update`, and `upsert` (match on configurable key: SKU, barcode, email, supplier code, etc.).
+- **Safety:** Row-level error report (downloadable); failed rows do not abort the entire batch unless the operator chooses strict mode. No silent overwrites of cost price or stock without explicit permission.
+- **Audit:** Each import/export run records `user_id`, `entity_type`, `mode`, `file_hash`, row counts, and summary in `import_export_jobs` (linked to `audit_logs`).
+- **Permissions:** `{module}.import`, `{module}.export` (e.g. `products.import`, `inventory.import-opening-stock`).
+- **API:** Matching `/api/v1/.../import` and `/export` endpoints for integrators (Phase 15).
+
+**Entity coverage:**
+
+| Entity | Import | Export | Notes |
+| :--- | :---: | :---: | :--- |
+| Categories, brands, units | Yes | Yes | Reference data; import before products. |
+| Products & variants | Yes | Yes | Standard and variable products; optional branch price columns. |
+| Opening stock (per warehouse) | Yes | Yes | Sets `quantity_on_hand` via opening-balance movement; not a substitute for ongoing receive/adjust workflows. |
+| Stock adjustments (bulk) | Yes | No | Manager-approved bulk corrections with reason code. |
+| Customers | Yes | Yes | Optional loyalty tier, credit limit, opening wallet balance. |
+| Suppliers | Yes | Yes | Contact and payment terms. |
+| Users (staff) | Yes | No | Admin-only; invite/set password flow; no bulk password in file. |
+| Chart of accounts | Yes | Yes | Optional seed from template; used before opening balances. |
+| Opening journal balances | Yes | No | Accountant-only; posts opening entry per account (Phase 11). |
+| Historical sales (archive) | Yes | Yes | **Read-only for analytics**; does not deduct live stock or post live journals unless explicitly enabled in strict migration mode. |
+| Historical purchases | Yes | No | Optional; for supplier spend reports only when marked historical. |
+| Bank statement lines | Yes | No | Already specified in §3.11 reconciliation. |
+| Report result sets | No | Yes | Covered in §3.14 (Excel/PDF). |
+
+**Historical & migration data rules:**
+- **`is_historical` flag:** Imported sales, purchases, and related lines are stored with `is_historical = true` so dashboards, inventory, and GL posting rules exclude them by default.
+- **Go-live cutover:** Operator sets an **opening balance date**; stock and accounting opening imports apply as of that date; live POS transactions must be on or after cutover.
+- **Dashboards:** WoW/MoM and KPI widgets use live data only unless the user filters to "include historical imports."
+- **No double-counting:** Historical sale import must not reduce current stock; opening stock import is the sole source of initial on-hand quantities.
+
+**Out of scope (initial build):**
+- Real-time bi-directional sync with external ERP (use API/webhooks in §4.5 instead).
+- Import of raw payment card tokens (PCI).
+- Fully automated AI mapping of unknown column layouts (manual template mapping only).
 
 ### 4. Non-Functional & Operational Requirements
 

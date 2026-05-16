@@ -1,6 +1,6 @@
 # Phase 13 — Advanced Reporting & Analytics
 
-**SRS Reference:** §3.14  
+**SRS Reference:** §3.14, §3.18 (report export)  
 **Status:** Planned  
 **Depends on:** Phase 5, Phase 8, Phase 11
 

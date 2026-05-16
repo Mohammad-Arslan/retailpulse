@@ -1,6 +1,6 @@
 # Phase 11 — Accounting & Financial Management
 
-**SRS Reference:** §3.11  
+**SRS Reference:** §3.11, §3.18 (opening balances & COA)  
 **Status:** Planned  
 **Depends on:** Phase 8, Phase 10
 
@@ -26,9 +26,11 @@
 - Bank reconciliation: import CSV, match to entries
 - Reports: Trial Balance, P&L, Balance Sheet (date range)
 - Permissions: `accounting.*` (Accountant + Owner)
+- **Bulk import (§3.18):** chart of accounts from template; opening journal balances (debit/credit per account as of cutover date); `accounting.import-coa`, `accounting.import-opening-balances`
 
 ## Acceptance Criteria
 
 1. Completed cash sale auto-creates balanced journal entry.
 2. Trial Balance debits equal credits for any date.
 3. Accountant can reconcile imported bank line to journal entry.
+4. Opening balance import produces balanced journal entry; excluded from live auto-posting rules.

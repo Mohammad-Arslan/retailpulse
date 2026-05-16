@@ -1,6 +1,6 @@
 # Phase 9 — Customer Relationship & Loyalty Management
 
-**SRS Reference:** §3.9  
+**SRS Reference:** §3.9, §3.18 (customers)  
 **Status:** Planned  
 **Depends on:** Phase 8
 
@@ -27,9 +27,11 @@
 - Wallet top-up, pay-with-wallet at checkout
 - Credit limit check on POS (WebSocket warning)
 - Permissions: `customers.*`, `customers.view-credit`
+- **Bulk import/export (§3.18):** template with name, phone, email, tier, credit_limit, opening wallet balance; `customers.import`, `customers.export`
 
 ## Acceptance Criteria
 
 1. Gold tier customer earns 1.5× points on completed sale.
 2. Wallet payment reduces balance and records transaction.
 3. Credit sale blocked when over limit.
+4. Customer import upserts on phone or email without duplicates.

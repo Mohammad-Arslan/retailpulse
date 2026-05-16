@@ -1,6 +1,6 @@
 # Phase 4 — Product Information Management (PIM)
 
-**SRS Reference:** §3.5  
+**SRS Reference:** §3.5, §3.18 (products & catalog)  
 **Status:** Complete  
 **Depends on:** Phase 3
 
@@ -30,9 +30,16 @@ Central **product master data** with rich product types, automated identifiers, 
 - Product change audit trail (via `audit_logs`)
 - Branch pricing overrides table: `branch_product_prices`
 - Permissions: `products.*`, `products.show-cost` (UI cost column gate)
+- **Bulk import/export (§3.18):**
+  - Download Excel/CSV templates for categories, brands, units, products (standard + variable)
+  - Import: validate → preview errors → queue job; modes `create`, `update`, `upsert` on SKU or barcode
+  - Export: full catalog or filtered list (respects `products.show-cost`)
+  - Permissions: `products.import`, `products.export`
 
 ## Acceptance Criteria
 
 1. Create standard and variable products with generated SKUs/barcodes.
 2. Combo product resolves child line items for future POS.
 3. Product edits appear in audit log with old/new JSON.
+4. Operator imports 100+ products from template; invalid rows reported without blocking valid rows.
+5. Operator exports catalog to Excel; re-import with `upsert` updates prices without duplicate SKUs.
