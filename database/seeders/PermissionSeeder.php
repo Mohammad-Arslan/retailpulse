@@ -15,7 +15,11 @@ final class PermissionSeeder extends Seeder
     private const PERMISSIONS = [
         'admin' => [
             ['name' => 'admin.access', 'description' => 'Access the admin panel'],
-            ['name' => 'admin.dashboard.view', 'description' => 'View admin dashboard'],
+            ['name' => 'admin.dashboard.view', 'description' => 'View admin dashboard (legacy alias)'],
+        ],
+        'dashboard' => [
+            ['name' => 'dashboard.view', 'description' => 'View operational dashboard'],
+            ['name' => 'dashboard.view-profit', 'description' => 'View profit-sensitive dashboard widgets'],
         ],
         'users' => [
             ['name' => 'users.view', 'description' => 'View users'],

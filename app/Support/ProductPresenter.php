@@ -42,6 +42,7 @@ final class ProductPresenter
                 'barcode' => $v->barcode,
                 'cost_price' => (string) $v->cost_price,
                 'sell_price' => (string) $v->sell_price,
+                'reorder_point' => $v->reorder_point !== null ? (string) $v->reorder_point : '',
                 'attributes' => $v->attributes ?? [],
                 'is_default' => $v->is_default,
             ])->values()->all(),

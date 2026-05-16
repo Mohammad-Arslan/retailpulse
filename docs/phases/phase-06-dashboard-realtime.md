@@ -1,7 +1,7 @@
 # Phase 6 — Dashboard & Real-Time Business Intelligence
 
 **SRS Reference:** §3.3, §4.1  
-**Status:** Planned  
+**Status:** Complete (sales KPIs stubbed until Phase 8)  
 **Depends on:** Phase 5 (stock alerts), Phase 8 partial (sales KPIs — can stub with zero until sales exist)
 
 ---

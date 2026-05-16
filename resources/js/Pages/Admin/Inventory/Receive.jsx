@@ -4,7 +4,7 @@ import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Receive({ warehouses }) {
@@ -16,14 +16,54 @@ function Receive({ warehouses }) {
         product_variant_id: '',
         batch_id: '',
         quantity: '',
+        serial_numbers: [],
         notes: '',
     });
+
+    const trackSerials = variant?.track_serials ?? false;
+
+    const serialCount = useMemo(
+        () => data.serial_numbers.filter((s) => String(s).trim() !== '').length,
+        [data.serial_numbers],
+    );
 
     useEffect(() => {
         if (variant) {
             setData('product_variant_id', variant.id);
         }
     }, [variant, setData]);
+
+    useEffect(() => {
+        if (!trackSerials) {
+            setData('serial_numbers', []);
+
+            return;
+        }
+
+        const qty = parseInt(data.quantity, 10) || 0;
+
+        if (qty <= 0) {
+            setData('serial_numbers', []);
+
+            return;
+        }
+
+        setData((prev) => {
+            const next = [...(prev.serial_numbers ?? [])];
+
+            while (next.length < qty) {
+                next.push('');
+            }
+
+            return { ...prev, serial_numbers: next.slice(0, qty) };
+        });
+    }, [trackSerials, data.quantity, setData]);
+
+    const updateSerial = (index, value) => {
+        const next = [...data.serial_numbers];
+        next[index] = value;
+        setData('serial_numbers', next);
+    };
 
     const submit = (e) => {
         e.preventDefault();
@@ -93,6 +133,32 @@ function Receive({ warehouses }) {
                             required
                         />
                     </AdminFormField>
+
+                    {trackSerials && data.serial_numbers.length > 0 && (
+                        <AdminFormField
+                            label={t('pages.inventory.fields.serialNumbers')}
+                            error={errors.serial_numbers}
+                        >
+                            <p className="mb-2 text-xs text-rp-text-muted">
+                                {t('pages.inventory.serialNumbersHint', { count: serialCount })}
+                            </p>
+                            <div className="max-h-56 space-y-2 overflow-y-auto">
+                                {data.serial_numbers.map((serial, index) => (
+                                    <input
+                                        key={index}
+                                        type="text"
+                                        value={serial}
+                                        placeholder={t('pages.inventory.serialPlaceholder', {
+                                            n: index + 1,
+                                        })}
+                                        className="rp-form-input font-mono text-sm"
+                                        onChange={(e) => updateSerial(index, e.target.value)}
+                                        required
+                                    />
+                                ))}
+                            </div>
+                        </AdminFormField>
+                    )}
 
                     <AdminFormField label={t('pages.inventory.fields.notes')} id="notes">
                         <textarea

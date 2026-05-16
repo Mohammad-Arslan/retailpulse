@@ -132,21 +132,23 @@ export default function Create({ roles, availableBranches }) {
                         />
                     )}
 
-                    <AdminFormField label="Roles" error={errors.roles}>
-                        <div className="rp-checkbox-group">
-                            {roles.map((role) => (
-                                <label key={role} className="rp-checkbox-label">
-                                    <input
-                                        type="checkbox"
-                                        checked={data.roles.includes(role)}
-                                        onChange={() => toggleRole(role)}
-                                        className="accent-teal-500"
-                                    />
-                                    {role}
-                                </label>
-                            ))}
-                        </div>
-                    </AdminFormField>
+                    {can('users.assign-roles') && (
+                        <AdminFormField label="Roles" error={errors.roles}>
+                            <div className="rp-checkbox-group">
+                                {roles.map((role) => (
+                                    <label key={role} className="rp-checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={data.roles.includes(role)}
+                                            onChange={() => toggleRole(role)}
+                                            className="accent-teal-500"
+                                        />
+                                        {role}
+                                    </label>
+                                ))}
+                            </div>
+                        </AdminFormField>
+                    )}
 
                     <button
                         type="submit"

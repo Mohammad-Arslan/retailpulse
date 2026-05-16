@@ -4,15 +4,29 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\ProductType;
+use App\Enums\StockTransferStatus;
+use App\Models\AuditLog;
+use App\Models\Branch;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Inventory;
 use App\Models\Permission;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Role;
+use App\Models\StockMovement;
+use App\Models\StockTransfer;
 use App\Models\User;
+use App\Models\Warehouse;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 final class DashboardService
 {
     /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return array{
      *     users: int,
      *     roles: int,
@@ -21,10 +35,11 @@ final class DashboardService
      *     inactive_users: int,
      * }
      */
-    public function stats(): array
+    public function stats(?int $branchId = null, ?array $accessibleBranchIds = null): array
     {
-        $users = $this->modelCount(User::class);
-        $activeUsers = (int) User::query()->where('is_active', true)->toBase()->count('*');
+        $userQuery = $this->scopeUsers(User::query(), $branchId, $accessibleBranchIds);
+        $users = (int) (clone $userQuery)->toBase()->count('*');
+        $activeUsers = (int) (clone $userQuery)->where('is_active', true)->toBase()->count('*');
 
         return [
             'users' => $users,
@@ -36,6 +51,7 @@ final class DashboardService
     }
 
     /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return array{
      *     user_growth: list<array{label: string, count: int}>,
      *     users_by_role: list<array{role: string, count: int}>,
@@ -43,24 +59,257 @@ final class DashboardService
      *     user_status: list<array{status: string, count: int}>,
      * }
      */
-    public function charts(): array
+    public function charts(?int $branchId = null, ?array $accessibleBranchIds = null): array
     {
         return [
-            'user_growth' => $this->userGrowthSeries(),
-            'users_by_role' => $this->usersByRoleSeries(),
+            'user_growth' => $this->userGrowthSeries($branchId, $accessibleBranchIds),
+            'users_by_role' => $this->usersByRoleSeries($branchId, $accessibleBranchIds),
             'permissions_by_group' => $this->permissionsByGroupSeries(),
-            'user_status' => $this->userStatusSeries(),
+            'user_status' => $this->userStatusSeries($branchId, $accessibleBranchIds),
         ];
     }
 
     /**
+     * Phase 8 stubs — zero until sales module exists.
+     *
+     * @return array{
+     *     todays_sales: float,
+     *     gross_profit: float,
+     *     average_transaction_value: float,
+     *     low_stock_alerts: int,
+     *     pending_approvals: int,
+     * }
+     */
+    public function salesKpis(): array
+    {
+        return [
+            'todays_sales' => 0.0,
+            'gross_profit' => 0.0,
+            'average_transaction_value' => 0.0,
+            'low_stock_alerts' => 0,
+            'pending_approvals' => 0,
+        ];
+    }
+
+    /**
+     * @return array{
+     *     wow_revenue: list<array{label: string, amount: float}>,
+     *     mom_revenue: list<array{label: string, amount: float}>,
+     * }
+     */
+    public function revenueCharts(): array
+    {
+        $wow = collect(range(6, 0))->map(fn (int $offset): array => [
+            'label' => now()->subWeeks($offset)->format('M j'),
+            'amount' => 0.0,
+        ])->all();
+
+        $mom = collect(range(5, 0))->map(fn (int $offset): array => [
+            'label' => now()->subMonths($offset)->format('M Y'),
+            'amount' => 0.0,
+        ])->all();
+
+        return [
+            'wow_revenue' => $wow,
+            'mom_revenue' => $mom,
+        ];
+    }
+
+    /**
+     * @param  list<int>|null  $accessibleBranchIds
+     * @return array<string, mixed>
+     */
+    public function superAdminOverview(?int $branchId = null, ?array $accessibleBranchIds = null): array
+    {
+        $branchQuery = Branch::query();
+        if ($branchId !== null) {
+            $branchQuery->whereKey($branchId);
+        } elseif ($accessibleBranchIds !== null) {
+            $branchQuery->whereIn('id', $accessibleBranchIds);
+        }
+
+        $branchesTotal = (int) (clone $branchQuery)->toBase()->count('*');
+        $branchesActive = (int) (clone $branchQuery)->where('is_active', true)->toBase()->count('*');
+
+        $inventoryQuery = Inventory::query()
+            ->when($branchId !== null || $accessibleBranchIds !== null, function (Builder $query) use ($branchId, $accessibleBranchIds): void {
+                $query->whereHas('warehouse', function (Builder $warehouse) use ($branchId, $accessibleBranchIds): void {
+                    if ($branchId !== null) {
+                        $warehouse->where('branch_id', $branchId);
+                    } elseif ($accessibleBranchIds !== null) {
+                        $warehouse->whereIn('branch_id', $accessibleBranchIds);
+                    }
+                });
+            });
+
+        $lowStockLines = (int) (clone $inventoryQuery)
+            ->join('product_variants', 'inventories.product_variant_id', '=', 'product_variants.id', 'inner', false)
+            ->join('products', 'product_variants.product_id', '=', 'products.id', 'inner', false)
+            ->whereNotNull('product_variants.reorder_point')
+            ->whereNotIn('products.type', [
+                ProductType::Service->value,
+                ProductType::Digital->value,
+            ])
+            ->whereRaw(
+                'GREATEST(0, inventories.quantity_on_hand - inventories.quantity_reserved) <= product_variants.reorder_point',
+            )
+            ->toBase()
+            ->count('*');
+
+        $transferQuery = StockTransfer::query()
+            ->when($branchId !== null || $accessibleBranchIds !== null, function (Builder $query) use ($branchId, $accessibleBranchIds): void {
+                $query->where(function (Builder $q) use ($branchId, $accessibleBranchIds): void {
+                    $q->whereHas('fromWarehouse', function (Builder $w) use ($branchId, $accessibleBranchIds): void {
+                        if ($branchId !== null) {
+                            $w->where('branch_id', $branchId);
+                        } else {
+                            $w->whereIn('branch_id', $accessibleBranchIds ?? []);
+                        }
+                    })->orWhereHas('toWarehouse', function (Builder $w) use ($branchId, $accessibleBranchIds): void {
+                        if ($branchId !== null) {
+                            $w->where('branch_id', $branchId);
+                        } else {
+                            $w->whereIn('branch_id', $accessibleBranchIds ?? []);
+                        }
+                    });
+                });
+            });
+
+        $warehouseQuery = Warehouse::query();
+        if ($branchId !== null) {
+            $warehouseQuery->where('branch_id', $branchId);
+        } elseif ($accessibleBranchIds !== null) {
+            $warehouseQuery->whereIn('branch_id', $accessibleBranchIds);
+        }
+
+        $movementQuery = StockMovement::query()
+            ->when($branchId !== null || $accessibleBranchIds !== null, function (Builder $query) use ($branchId, $accessibleBranchIds): void {
+                $query->whereHas('warehouse', function (Builder $warehouse) use ($branchId, $accessibleBranchIds): void {
+                    if ($branchId !== null) {
+                        $warehouse->where('branch_id', $branchId);
+                    } else {
+                        $warehouse->whereIn('branch_id', $accessibleBranchIds ?? []);
+                    }
+                });
+            });
+
+        return [
+            'branches_active' => $branchesActive,
+            'branches_total' => $branchesTotal,
+            'warehouses' => (int) (clone $warehouseQuery)->toBase()->count('*'),
+            'products_active' => (int) Product::query()->where('is_active', true)->toBase()->count('*'),
+            'product_variants' => (int) ProductVariant::query()->toBase()->count('*'),
+            'categories' => (int) Category::query()->toBase()->count('*'),
+            'brands' => (int) Brand::query()->toBase()->count('*'),
+            'units_on_hand' => (int) (clone $inventoryQuery)->toBase()->sum('quantity_on_hand'),
+            'low_stock_lines' => $lowStockLines,
+            'stock_movements_today' => (int) (clone $movementQuery)
+                ->whereDate('created_at', '=', today(), 'and')
+                ->toBase()
+                ->count('*'),
+            'transfers_draft' => (int) (clone $transferQuery)
+                ->where('status', StockTransferStatus::Draft)
+                ->toBase()
+                ->count('*'),
+            'transfers_in_transit' => (int) (clone $transferQuery)
+                ->where('status', StockTransferStatus::Shipped)
+                ->toBase()
+                ->count('*'),
+            'admin_logins_24h' => (int) AuditLog::query()
+                ->where('event', 'login')
+                ->where('created_at', '>=', now()->subDay())
+                ->toBase()
+                ->count('*'),
+            'stock_movement_trend' => $this->stockMovementTrendSeries($branchId, $accessibleBranchIds),
+            'branches_preview' => $this->branchesPreview($branchId, $accessibleBranchIds),
+        ];
+    }
+
+    /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return list<array{label: string, count: int}>
      */
-    private function userGrowthSeries(int $days = 7): array
-    {
+    private function stockMovementTrendSeries(
+        ?int $branchId = null,
+        ?array $accessibleBranchIds = null,
+        int $days = 7,
+    ): array {
         $start = now()->subDays($days - 1)->startOfDay();
 
-        $counts = User::query()
+        $query = StockMovement::query()->where('created_at', '>=', $start);
+
+        if ($branchId !== null || $accessibleBranchIds !== null) {
+            $query->whereHas('warehouse', function (Builder $warehouse) use ($branchId, $accessibleBranchIds): void {
+                if ($branchId !== null) {
+                    $warehouse->where('branch_id', $branchId);
+                } else {
+                    $warehouse->whereIn('branch_id', $accessibleBranchIds ?? []);
+                }
+            });
+        }
+
+        $counts = $query
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
+        return collect(range(0, $days - 1))
+            ->map(function (int $offset) use ($start, $counts): array {
+                $date = $start->copy()->addDays($offset);
+                $key = $date->toDateString();
+
+                return [
+                    'label' => $date->format('M j'),
+                    'count' => (int) ($counts[$key] ?? 0),
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * @param  list<int>|null  $accessibleBranchIds
+     * @return list<array{id: int, name: string, code: string, warehouses_count: int, users_count: int}>
+     */
+    private function branchesPreview(
+        ?int $branchId = null,
+        ?array $accessibleBranchIds = null,
+        int $limit = 6,
+    ): array {
+        $query = Branch::query()->where('is_active', true);
+
+        if ($branchId !== null) {
+            $query->whereKey($branchId);
+        } elseif ($accessibleBranchIds !== null) {
+            $query->whereIn('id', $accessibleBranchIds);
+        }
+
+        return $query
+            ->withCount(['warehouses', 'users'])
+            ->orderBy('name')
+            ->limit($limit)
+            ->get()
+            ->map(fn (Branch $branch): array => [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'code' => $branch->code,
+                'warehouses_count' => (int) $branch->warehouses_count,
+                'users_count' => (int) $branch->users_count,
+            ])
+            ->all();
+    }
+
+    /**
+     * @param  list<int>|null  $accessibleBranchIds
+     * @return list<array{label: string, count: int}>
+     */
+    private function userGrowthSeries(
+        ?int $branchId = null,
+        ?array $accessibleBranchIds = null,
+        int $days = 7,
+    ): array {
+        $start = now()->subDays($days - 1)->startOfDay();
+
+        $counts = $this->scopeUsers(User::query(), $branchId, $accessibleBranchIds)
             ->where('created_at', '>=', $start)
             ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
             ->groupBy('day')
@@ -80,13 +329,16 @@ final class DashboardService
     }
 
     /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return list<array{role: string, count: int}>
      */
-    private function usersByRoleSeries(): array
+    private function usersByRoleSeries(?int $branchId = null, ?array $accessibleBranchIds = null): array
     {
         return Role::query()
             ->where('guard_name', 'web')
-            ->withCount('users')
+            ->withCount(['users' => function (Builder $query) use ($branchId, $accessibleBranchIds): void {
+                $this->scopeUsers($query, $branchId, $accessibleBranchIds);
+            }])
             ->orderByDesc('users_count')
             ->get()
             ->map(fn (Role $role): array => [
@@ -117,17 +369,43 @@ final class DashboardService
     }
 
     /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return list<array{status: string, count: int}>
      */
-    private function userStatusSeries(): array
+    private function userStatusSeries(?int $branchId = null, ?array $accessibleBranchIds = null): array
     {
-        $active = (int) User::query()->where('is_active', true)->toBase()->count('*');
-        $inactive = (int) User::query()->where('is_active', false)->toBase()->count('*');
+        $base = $this->scopeUsers(User::query(), $branchId, $accessibleBranchIds);
+        $active = (int) (clone $base)->where('is_active', true)->toBase()->count('*');
+        $inactive = (int) (clone $base)->where('is_active', false)->toBase()->count('*');
 
         return [
             ['status' => 'Active', 'count' => $active],
             ['status' => 'Inactive', 'count' => $inactive],
         ];
+    }
+
+    /**
+     * @param  Builder<User>  $query
+     * @param  list<int>|null  $accessibleBranchIds
+     * @return Builder<User>
+     */
+    private function scopeUsers(Builder $query, ?int $branchId, ?array $accessibleBranchIds): Builder
+    {
+        if ($branchId !== null) {
+            return $query->whereHas(
+                'branches',
+                fn (Builder $branch) => $branch->where('branches.id', $branchId),
+            );
+        }
+
+        if ($accessibleBranchIds !== null) {
+            return $query->whereHas(
+                'branches',
+                fn (Builder $branch) => $branch->whereIn('branches.id', $accessibleBranchIds),
+            );
+        }
+
+        return $query;
     }
 
     /**

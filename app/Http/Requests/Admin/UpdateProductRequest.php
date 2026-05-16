@@ -48,6 +48,7 @@ final class UpdateProductRequest extends FormRequest
             'variants.*.name' => ['nullable', 'string', 'max:255'],
             'variants.*.cost_price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.sell_price' => ['nullable', 'numeric', 'min:0'],
+            'variants.*.reorder_point' => ['nullable', 'integer', 'min:0'],
             'variants.*.attributes' => ['nullable', 'array'],
             'bundle_items' => ['nullable', 'array'],
             'bundle_items.*.child_variant_id' => ['required', 'integer', Rule::exists('product_variants', 'id')],

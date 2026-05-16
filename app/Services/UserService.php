@@ -8,6 +8,7 @@ use App\DTOs\User\CreateUserData;
 use App\DTOs\User\UpdateUserData;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -18,9 +19,9 @@ final class UserService
         private readonly BranchService $branches,
     ) {}
 
-    public function create(CreateUserData $data): User
+    public function create(User $actor, CreateUserData $data): User
     {
-        return DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($actor, $data) {
             $user = $this->users->create([
                 'name' => $data->name,
                 'email' => $data->email,
@@ -30,23 +31,20 @@ final class UserService
             ]);
 
             if ($data->roleNames !== []) {
-                $user->syncRoles($data->roleNames);
+                $this->syncRolesIfAllowed($actor, $user, $data->roleNames);
             }
 
             if ($data->branchAssignments !== []) {
-                $this->branches->syncUserBranches(
-                    $user,
-                    new \App\DTOs\User\BranchAssignmentData($data->branchAssignments),
-                );
+                $this->syncBranchesIfAllowed($actor, $user, $data->branchAssignments);
             }
 
             return $user->load(['roles', 'branches']);
         });
     }
 
-    public function update(User $user, UpdateUserData $data): User
+    public function update(User $actor, User $user, UpdateUserData $data): User
     {
-        return DB::transaction(function () use ($user, $data) {
+        return DB::transaction(function () use ($actor, $user, $data) {
             $attributes = [
                 'name' => $data->name,
                 'email' => $data->email,
@@ -61,23 +59,20 @@ final class UserService
             $user = $this->users->update($user, $attributes);
 
             if ($data->roleNames !== null) {
-                $user->syncRoles($data->roleNames);
+                $this->syncRolesIfAllowed($actor, $user, $data->roleNames);
             }
 
             if ($data->branchAssignments !== null) {
-                $this->branches->syncUserBranches(
-                    $user,
-                    new \App\DTOs\User\BranchAssignmentData($data->branchAssignments),
-                );
+                $this->syncBranchesIfAllowed($actor, $user, $data->branchAssignments);
             }
 
             return $user->load(['roles', 'branches']);
         });
     }
 
-    public function delete(User $user): void
+    public function deactivate(User $user): void
     {
-        DB::transaction(fn () => $this->users->delete($user));
+        DB::transaction(fn () => $this->users->update($user, ['is_active' => false]));
     }
 
     public function recordSuccessfulLogin(User $user, string $ip): void
@@ -100,5 +95,32 @@ final class UserService
         }
 
         $this->users->update($user, $attributes);
+    }
+
+    /**
+     * @param  list<string>  $roleNames
+     */
+    private function syncRolesIfAllowed(User $actor, User $user, array $roleNames): void
+    {
+        if (! $actor->can('users.assign-roles')) {
+            throw new AuthorizationException(__('You are not allowed to assign roles.'));
+        }
+
+        $user->syncRoles($roleNames);
+    }
+
+    /**
+     * @param  list<array{branch_id: int, is_primary: bool}>  $branchAssignments
+     */
+    private function syncBranchesIfAllowed(User $actor, User $user, array $branchAssignments): void
+    {
+        if (! $actor->can('users.assign-branches')) {
+            throw new AuthorizationException(__('You are not allowed to assign branches.'));
+        }
+
+        $this->branches->syncUserBranches(
+            $user,
+            new \App\DTOs\User\BranchAssignmentData($branchAssignments),
+        );
     }
 }

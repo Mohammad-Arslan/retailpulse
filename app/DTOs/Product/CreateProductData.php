@@ -30,6 +30,7 @@ final readonly class CreateProductData
         public array $branchPrices,
         public float $defaultCostPrice,
         public float $defaultSellPrice,
+        public ?int $defaultReorderPoint,
     ) {}
 
     public static function fromRequest(StoreProductRequest $request): self
@@ -49,6 +50,7 @@ final readonly class CreateProductData
             branchPrices: self::normalizeBranchPrices($request->validated('branch_prices', [])),
             defaultCostPrice: (float) $request->validated('default_cost_price', 0),
             defaultSellPrice: (float) $request->validated('default_sell_price', 0),
+            defaultReorderPoint: self::nullableInt($request->validated('default_reorder_point')),
         );
     }
 

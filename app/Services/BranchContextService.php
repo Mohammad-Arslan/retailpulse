@@ -91,6 +91,17 @@ final class BranchContextService
         $request->session()->put(self::SESSION_KEY, $branchId);
     }
 
+    public function sessionBranchId(Request $request): ?int
+    {
+        $sessionId = $request->session()->get(self::SESSION_KEY);
+
+        if ($sessionId === null) {
+            return null;
+        }
+
+        return (int) $sessionId;
+    }
+
     public function initializeSession(Request $request, User $user): void
     {
         if ($request->session()->has(self::SESSION_KEY)) {

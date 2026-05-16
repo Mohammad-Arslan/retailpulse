@@ -34,6 +34,7 @@
         "view": "View",
         "edit": "Edit",
         "delete": "Delete",
+        "deactivate": "Deactivate",
         "clone": "Clone",
         "showing": "Showing {{from}}–{{to}} of {{total}}",
         "branch": "Branch",
@@ -54,6 +55,7 @@
         "deleteTitle": "Confirm deletion",
         "deleteDescription": "Delete {{name}}? This cannot be undone.",
         "deleteUser": "Delete {{name}}? This will permanently remove their account and access.",
+        "deactivateUser": "Deactivate {{name}}? They will no longer be able to sign in.",
         "deleteRole": "Delete {{name}}? Users assigned this role may lose access.",
         "deletePermission": "Delete {{name}}? This will remove the permission from all roles that use it.",
         "deleteBranch": "Delete {{name}}? Warehouses and assignments for this branch will be removed.",
@@ -155,8 +157,11 @@
                 "quantity": "Quantity",
                 "quantitySigned": "Quantity (+ / −)",
                 "reason": "Reason",
-                "notes": "Notes"
-            }
+                "notes": "Notes",
+                "serialNumbers": "Serial numbers"
+            },
+            "serialNumbersHint": "Enter {{count}} unique serial number(s), one per unit.",
+            "serialPlaceholder": "Serial #{{n}}"
         },
         "stockTransfers": {
             "title": "Stock transfers",
@@ -307,8 +312,11 @@
                 "sellPrice": "Sell price",
                 "attributeName": "Attribute name",
                 "attributeOptions": "Options",
-                "variant": "Variant"
+                "variant": "Variant",
+                "reorderPoint": "Reorder point",
+                "serialNumbers": "Serial numbers"
             },
+            "reorderPointPlaceholder": "Low-stock threshold (optional)",
             "placeholders": {
                 "attributeName": "e.g. Size",
                 "option": "Option value",
