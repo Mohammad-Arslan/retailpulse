@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
+use App\Events\UserLoggedIn;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Services\AuditService;
@@ -52,6 +53,10 @@ class AuthenticatedSessionController extends Controller
             return back()->withErrors([
                 'email' => __('You do not have permission to access the admin panel.'),
             ]);
+        }
+
+        if ($user !== null) {
+            event(UserLoggedIn::fromRequest($user, $request));
         }
 
         return redirect()->intended(route('admin.dashboard', absolute: false));

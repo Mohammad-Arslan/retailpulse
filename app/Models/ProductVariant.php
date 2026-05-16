@@ -17,6 +17,7 @@ use Illuminate\Support\Collection;
     'barcode',
     'cost_price',
     'sell_price',
+    'reorder_point',
     'attributes',
     'is_default',
     'sort_order',
@@ -29,6 +30,7 @@ class ProductVariant extends Model
             'attributes' => 'array',
             'cost_price' => 'decimal:4',
             'sell_price' => 'decimal:4',
+            'reorder_point' => 'integer',
             'is_default' => 'boolean',
             'sort_order' => 'integer',
         ];

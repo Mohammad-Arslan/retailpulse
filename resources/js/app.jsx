@@ -1,5 +1,6 @@
 import '../css/app.css';
 import './bootstrap';
+import './echo';
 
 import AppProviders from '@/Components/common/AppProviders';
 import FlashToasts from '@/Components/common/FlashToasts';
