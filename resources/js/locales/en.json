@@ -95,6 +95,10 @@
         "downloadErrors": "Download error report",
         "done": "Done",
         "jobsTrayTitle": "Import / export jobs ({{count}} active)",
+        "trayCompleted": "{{entity}} import/export finished",
+        "trayFailed": "{{entity}} job failed",
+        "trayDismiss": "Dismiss jobs tray",
+        "traySuccess": "ok",
         "download": "Download file"
     },
     "confirm": {

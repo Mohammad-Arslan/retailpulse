@@ -200,7 +200,7 @@ export default function ImportWizardDialog({
 
     return (
         <Modal show={open} onClose={onClose} maxWidth="2xl">
-            <div className="border-b border-ink-200 px-6 py-4 dark:border-ink-700">
+            <div className="border-b border-rp-border px-6 py-4">
                 <h2 className="text-lg font-semibold text-rp-text">
                     {t('importExport.importTitle', { entity: entityLabel })}
                 </h2>
@@ -262,14 +262,14 @@ export default function ImportWizardDialog({
                 {step === 2 && (
                     <div className="space-y-4">
                         {previewRows.length > 0 && (
-                            <div className="overflow-x-auto rounded-lg border border-ink-200 dark:border-ink-700">
-                                <table className="min-w-full text-xs">
-                                    <thead className="bg-ink-50 dark:bg-ink-900">
+                            <div className="overflow-x-auto rounded-lg border border-rp-border">
+                                <table className="min-w-full text-xs text-rp-text">
+                                    <thead className="bg-rp-surface-subtle">
                                         <tr>
                                             {headers.map((header) => (
                                                 <th
                                                     key={header}
-                                                    className="px-2 py-1.5 text-left font-medium"
+                                                    className="px-2 py-1.5 text-left font-medium text-rp-text-secondary"
                                                 >
                                                     {header}
                                                 </th>
@@ -278,9 +278,9 @@ export default function ImportWizardDialog({
                                     </thead>
                                     <tbody>
                                         {previewRows.slice(0, 3).map((row, index) => (
-                                            <tr key={index} className="border-t border-ink-100">
+                                            <tr key={index} className="border-t border-rp-border-subtle">
                                                 {headers.map((header) => (
-                                                    <td key={header} className="px-2 py-1.5">
+                                                    <td key={header} className="px-2 py-1.5 text-rp-text-secondary">
                                                         {String(row[header] ?? '')}
                                                     </td>
                                                 ))}
@@ -340,17 +340,19 @@ export default function ImportWizardDialog({
 
                 {step === 3 && (
                     <div className="space-y-4">
-                        <label className="flex items-center gap-2 text-sm">
+                        <label className="flex items-center gap-2 text-sm text-rp-text">
                             <input
                                 type="checkbox"
+                                className="rounded border-rp-border text-teal-500 focus:ring-teal-500/30"
                                 checked={isDryRun}
                                 onChange={(event) => setIsDryRun(event.target.checked)}
                             />
                             {t('importExport.dryRun')}
                         </label>
-                        <label className="flex items-center gap-2 text-sm">
+                        <label className="flex items-center gap-2 text-sm text-rp-text">
                             <input
                                 type="checkbox"
+                                className="rounded border-rp-border text-teal-500 focus:ring-teal-500/30"
                                 checked={strict}
                                 onChange={(event) => setStrict(event.target.checked)}
                             />
@@ -365,7 +367,7 @@ export default function ImportWizardDialog({
                                     </span>
                                     <span>{progressPercent}%</span>
                                 </div>
-                                <div className="h-2 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800">
+                                <div className="h-2 overflow-hidden rounded-full bg-rp-surface-inset">
                                     <div
                                         className="h-full bg-teal-500 transition-all"
                                         style={{ width: `${progressPercent}%` }}

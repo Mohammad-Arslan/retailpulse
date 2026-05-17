@@ -148,11 +148,15 @@
     }
 
     .rp-sidebar-nav-item:hover {
-        @apply bg-ink-800;
+        @apply bg-rp-surface-inset dark:bg-ink-800;
     }
 
     .rp-sidebar-nav-item--active {
         @apply bg-teal-500 hover:bg-teal-400;
+    }
+
+    .rp-sidebar-nav-item--active:hover {
+        @apply bg-teal-400;
     }
 
     .rp-user-table-wrap {

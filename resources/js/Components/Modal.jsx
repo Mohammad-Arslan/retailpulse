@@ -47,7 +47,7 @@ export default function Modal({
                         leaveTo="opacity-0"
                     >
                         <div
-                            className="fixed inset-0 bg-gray-500/75"
+                            className="fixed inset-0 bg-ink-900/60 backdrop-blur-sm"
                             aria-hidden="true"
                             onClick={closeable ? close : undefined}
                         />
@@ -62,7 +62,7 @@ export default function Modal({
                         leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     >
                         <DialogPanel
-                            className={`relative z-10 mb-6 w-full transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:mx-auto ${maxWidthClass}`}
+                            className={`relative z-10 mb-6 w-full transform overflow-hidden rounded-2xl border border-rp-border bg-rp-surface shadow-2xl transition-all sm:mx-auto ${maxWidthClass}`}
                             onClick={(event) => event.stopPropagation()}
                             onPointerDown={(event) => event.stopPropagation()}
                         >

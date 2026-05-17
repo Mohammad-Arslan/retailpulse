@@ -38,7 +38,7 @@ function SidebarNav({ collapsed, onNavigate }) {
                 return (
                     <div key={section.label} className="mb-1 px-2">
                         {!collapsed && (
-                            <span className="block px-3 py-2.5 text-[10px] font-bold tracking-widest text-ink-500 uppercase">
+                            <span className="block px-3 py-2.5 text-[10px] font-bold tracking-widest text-rp-text-muted uppercase dark:text-ink-500">
                                 {t(`nav.${section.labelKey}`)}
                             </span>
                         )}
@@ -62,13 +62,13 @@ function SidebarNav({ collapsed, onNavigate }) {
                                 >
                                     <span
                                         className={cn(
-                                            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/6',
+                                            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rp-surface-inset dark:bg-white/6',
                                             active && 'bg-white/20',
                                         )}
                                     >
                                         <Icon
                                             className={cn(
-                                                'h-4 w-4 text-sand-300',
+                                                'h-4 w-4 text-rp-text-secondary dark:text-sand-300',
                                                 active && 'text-white',
                                             )}
                                         />
@@ -76,7 +76,7 @@ function SidebarNav({ collapsed, onNavigate }) {
                                     {!collapsed && (
                                         <span
                                             className={cn(
-                                                'flex-1 text-[13px] font-medium text-sand-300',
+                                                'flex-1 text-[13px] font-medium text-rp-text-secondary dark:text-sand-300',
                                                 active && 'font-semibold text-white',
                                             )}
                                         >
@@ -109,7 +109,7 @@ export default function AdminLayout({ children }) {
         <>
             <div
                 className={cn(
-                    'border-b border-ink-800',
+                    'border-b border-rp-border dark:border-ink-800',
                     collapsed ? 'px-3 py-5' : 'px-5 py-6',
                 )}
             >
@@ -128,10 +128,10 @@ export default function AdminLayout({ children }) {
                     />
                     {!collapsed && (
                         <div className="min-w-0">
-                            <span className="font-display block text-[17px] leading-tight text-white">
+                            <span className="font-display block text-[17px] leading-tight text-rp-text dark:text-white">
                                 RetailPulse
                             </span>
-                            <span className="text-[10px] tracking-widest text-sand-300 uppercase">
+                            <span className="text-[10px] tracking-widest text-rp-text-muted uppercase dark:text-sand-300">
                                 v2.0 · Enterprise
                             </span>
                         </div>
@@ -148,7 +148,7 @@ export default function AdminLayout({ children }) {
                 />
             </nav>
 
-            <div className="border-t border-ink-800 p-3">
+            <div className="border-t border-rp-border p-3 dark:border-ink-800">
                 <div
                     className={cn(
                         'flex items-center gap-2.5 rounded-[10px] p-2',
@@ -164,10 +164,10 @@ export default function AdminLayout({ children }) {
                     {!collapsed && (
                         <>
                             <div className="min-w-0 flex-1">
-                                <span className="block truncate text-[13px] font-semibold text-white">
+                                <span className="block truncate text-[13px] font-semibold text-rp-text dark:text-white">
                                     {user?.name}
                                 </span>
-                                <span className="block truncate text-[11px] text-sand-300">
+                                <span className="block truncate text-[11px] text-rp-text-muted dark:text-sand-300">
                                     {roleLabel}
                                 </span>
                             </div>
@@ -175,7 +175,7 @@ export default function AdminLayout({ children }) {
                                 href={route('logout')}
                                 method="post"
                                 as="button"
-                                className="rounded-lg p-1.5 text-ink-500 transition hover:bg-ink-800 hover:text-white focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:outline-none"
+                                className="rounded-lg p-1.5 text-rp-text-muted transition hover:bg-rp-surface-inset hover:text-rp-text focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:outline-none dark:text-ink-500 dark:hover:bg-ink-800 dark:hover:text-white"
                                 aria-label={t('common.logOut')}
                             >
                                 <LogOut className="h-4 w-4" />
@@ -211,14 +211,14 @@ export default function AdminLayout({ children }) {
 
             <aside
                 className={cn(
-                    'fixed top-0 left-0 z-50 flex h-full flex-col bg-ink-900 transition-[width,transform] duration-200 lg:translate-x-0',
+                    'fixed top-0 left-0 z-50 flex h-full flex-col border-r border-rp-border bg-rp-surface transition-[width,transform] duration-200 dark:border-ink-800 dark:bg-ink-900 lg:translate-x-0',
                     sidebarWidth,
                     mobileOpen ? 'translate-x-0' : '-translate-x-full',
                 )}
             >
                 <button
                     type="button"
-                    className="absolute top-4 right-4 rounded-lg p-1 text-sand-300 focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:outline-none lg:hidden"
+                    className="absolute top-4 right-4 rounded-lg p-1 text-rp-text-muted focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:outline-none dark:text-sand-300 lg:hidden"
                     onClick={() => setMobileOpen(false)}
                     aria-label={t('common.closeMenu')}
                 >
