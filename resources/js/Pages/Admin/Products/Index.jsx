@@ -1,5 +1,6 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import Select, { mapToSelectOptions } from '@/Components/ui/select';
 import ImportExportToolbar from '@/Components/import-export/ImportExportToolbar';
 import { useImportJobsTray } from '@/Components/import-export/ImportJobsTray';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
@@ -166,30 +167,27 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
                         className="rp-search-input"
                     />
                 </div>
-                <select
+                <Select
                     name="type"
                     defaultValue={filters.type ?? ''}
-                    className="rp-form-input w-auto"
-                >
-                    <option value="">{t('pages.products.allTypes')}</option>
-                    {productTypes.map((type) => (
-                        <option key={type} value={type}>
-                            {t(`pages.products.types.${type}`, { defaultValue: type })}
-                        </option>
-                    ))}
-                </select>
-                <select
+                    className="w-auto min-w-[10rem]"
+                    options={[
+                        { value: '', label: t('pages.products.allTypes') },
+                        ...productTypes.map((type) => ({
+                            value: type,
+                            label: t(`pages.products.types.${type}`, { defaultValue: type }),
+                        })),
+                    ]}
+                />
+                <Select
                     name="category_id"
                     defaultValue={filters.category_id ?? ''}
-                    className="rp-form-input w-auto"
-                >
-                    <option value="">{t('pages.products.allCategories')}</option>
-                    {categories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                            {c.name}
-                        </option>
-                    ))}
-                </select>
+                    className="w-auto min-w-[10rem]"
+                    options={[
+                        { value: '', label: t('pages.products.allCategories') },
+                        ...mapToSelectOptions(categories),
+                    ]}
+                />
                 <button type="submit" className="rp-btn-outline">
                     {t('common.search')}
                 </button>

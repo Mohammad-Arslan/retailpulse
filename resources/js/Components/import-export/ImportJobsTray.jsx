@@ -158,7 +158,7 @@ export function ImportJobsProvider({ children }) {
             refreshJobs();
 
             if (payload?.download_url) {
-                openExportDownload(payload.job_ulid ?? payload.ulid);
+                openExportDownload(payload.job_ulid ?? payload.ulid, payload.download_url);
             }
         });
 
@@ -262,7 +262,9 @@ function ImportJobsTrayPanel({ jobs, open, onOpenChange, onDismiss }) {
                                         </p>
                                         <JobProgressBar job={job} />
                                     </div>
-                                    {job.type === 'export' && job.status === 'completed' && (
+                                    {job.type === 'export' &&
+                                        job.status === 'completed' &&
+                                        job.output_file_path && (
                                         <button
                                             type="button"
                                             className="shrink-0 rounded p-1 hover:bg-ink-100 dark:hover:bg-ink-800"

@@ -68,10 +68,7 @@ final class ExportController extends Controller
             ->where('type', 'export')
             ->firstOrFail();
 
-        $url = app(ImportExportStorageManager::class)
-            ->temporaryUrl((string) $job->output_file_path);
-
-        return redirect()->away($url);
+        return $this->redirectToOutputFile($job);
     }
 
     public function errors(string $ulid): RedirectResponse
@@ -81,9 +78,23 @@ final class ExportController extends Controller
             ->byUlid($ulid)
             ->firstOrFail();
 
-        $url = app(ImportExportStorageManager::class)
-            ->temporaryUrl((string) $job->output_file_path);
+        return $this->redirectToOutputFile($job);
+    }
 
-        return redirect()->away($url);
+    private function redirectToOutputFile(ImportExportJob $job): RedirectResponse
+    {
+        $path = $job->output_file_path;
+
+        if ($path === null || trim($path) === '') {
+            abort(404, 'No download is available for this job yet.');
+        }
+
+        $storage = app(ImportExportStorageManager::class);
+
+        if (! $storage->exists($path)) {
+            abort(404, 'The file for this job could not be found.');
+        }
+
+        return redirect()->away($storage->temporaryUrl($path));
     }
 }

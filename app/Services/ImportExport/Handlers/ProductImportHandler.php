@@ -14,7 +14,7 @@ use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
 use App\Support\UniqueSlug;
-use Illuminate\Support\Facades\Cache;
+use App\Support\TaggedCache;
 use Illuminate\Support\Facades\DB;
 
 final class ProductImportHandler implements ImportHandler
@@ -247,7 +247,7 @@ final class ProductImportHandler implements ImportHandler
 
     public function afterImport(ImportContext $context): void
     {
-        Cache::tags(["products:tenant:{$context->tenantId}"])->flush();
+        TaggedCache::flush(["products:tenant:{$context->tenantId}"]);
     }
 
     public function chunkSize(): int

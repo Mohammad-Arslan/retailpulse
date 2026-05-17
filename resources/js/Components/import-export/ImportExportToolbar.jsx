@@ -96,6 +96,11 @@ export default function ImportExportToolbar({
     );
 }
 
-export function openExportDownload(ulid) {
-    window.open(route('admin.import-export.jobs.download', ulid, false), '_blank', 'noopener,noreferrer');
+export function openExportDownload(ulid, downloadUrl = null) {
+    const url =
+        downloadUrl && typeof downloadUrl === 'string'
+            ? downloadUrl
+            : route('admin.import-export.jobs.download', ulid, false);
+
+    window.open(url, '_blank', 'noopener,noreferrer');
 }

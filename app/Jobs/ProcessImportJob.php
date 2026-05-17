@@ -119,6 +119,14 @@ final class ProcessImportJob implements ShouldQueue
             }
 
             $handler->afterImport($context);
+            $job->refresh();
+
+            if (ImportRowError::query()->where('job_id', $job->id)->exists()) {
+                GenerateErrorReportJob::dispatch($job->id)->onQueue('imports-reports');
+
+                return;
+            }
+
             $job->markCompleted();
             $job->update(['summary' => $job->buildSummary()]);
 

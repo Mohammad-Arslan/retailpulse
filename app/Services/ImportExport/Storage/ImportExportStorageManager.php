@@ -61,6 +61,16 @@ final class ImportExportStorageManager
 
     public function temporaryUrl(string $path, ?int $ttl = null): string
     {
+        $path = trim($path);
+
+        if ($path === '') {
+            throw new \InvalidArgumentException('Cannot generate a download URL for an empty file path.');
+        }
+
+        if (! $this->exists($path)) {
+            throw new \InvalidArgumentException("Cannot generate a download URL; file not found: {$path}");
+        }
+
         $ttl ??= (int) SystemSetting::get('import_export', 'signed_url_ttl', 30);
 
         if ($this->diskName === 'local') {

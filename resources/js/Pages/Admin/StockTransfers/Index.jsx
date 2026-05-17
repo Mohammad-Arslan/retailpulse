@@ -1,5 +1,6 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
@@ -104,18 +105,18 @@ function Index({ transfers, filters, statuses }) {
                         className="rp-search-input"
                     />
                 </div>
-                <select
+                <Select
                     name="status"
                     defaultValue={filters.status ?? ''}
-                    className="rp-form-input w-auto"
-                >
-                    <option value="">{t('pages.stockTransfers.allStatuses')}</option>
-                    {statuses.map((s) => (
-                        <option key={s} value={s}>
-                            {t(`pages.stockTransfers.status.${s}`)}
-                        </option>
-                    ))}
-                </select>
+                    className="w-auto min-w-[10rem]"
+                    options={[
+                        { value: '', label: t('pages.stockTransfers.allStatuses') },
+                        ...statuses.map((status) => ({
+                            value: status,
+                            label: t(`pages.stockTransfers.status.${status}`),
+                        })),
+                    ]}
+                />
                 <button type="submit" className="rp-btn-outline">
                     {t('common.search')}
                 </button>

@@ -1,4 +1,5 @@
 import AdminFormField from '@/Components/common/AdminFormField';
+import Select, { mapRecordToSelectOptions } from '@/Components/ui/select';
 
 export default function SettingsFields({ fields, values, setValue, errors, disabled }) {
     return (
@@ -43,23 +44,13 @@ export default function SettingsFields({ fields, values, setValue, errors, disab
                                 }
                             />
                         ) : field.type === 'select' ? (
-                            <select
+                            <Select
                                 id={id}
-                                disabled={disabled}
-                                className="rp-form-input"
+                                isDisabled={disabled}
+                                options={mapRecordToSelectOptions(field.options)}
                                 value={values[field.key] ?? ''}
-                                onChange={(e) =>
-                                    setValue(field.key, e.target.value)
-                                }
-                            >
-                                {Object.entries(field.options ?? {}).map(
-                                    ([optValue, optLabel]) => (
-                                        <option key={optValue} value={optValue}>
-                                            {optLabel}
-                                        </option>
-                                    ),
-                                )}
-                            </select>
+                                onChange={(value) => setValue(field.key, value ?? '')}
+                            />
                         ) : field.type === 'encrypted' ? (
                             <input
                                 id={id}

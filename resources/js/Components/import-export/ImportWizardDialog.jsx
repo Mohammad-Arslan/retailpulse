@@ -1,4 +1,5 @@
 import Modal from '@/Components/Modal';
+import Select from '@/Components/ui/select';
 import { useImportExportJob } from '@/Hooks/useImportExportJob';
 import {
     confirmImport,
@@ -223,29 +224,31 @@ export default function ImportWizardDialog({
                         </div>
                         <div>
                             <label className="rp-form-label">{t('importExport.mode')}</label>
-                            <select
-                                className="rp-form-input mt-1 w-full"
+                            <Select
+                                className="mt-1"
                                 value={mode}
-                                onChange={(event) => setMode(event.target.value)}
-                            >
-                                <option value="create">{t('importExport.modes.create')}</option>
-                                <option value="update">{t('importExport.modes.update')}</option>
-                                <option value="upsert">{t('importExport.modes.upsert')}</option>
-                            </select>
+                                onChange={setMode}
+                                options={[
+                                    { value: 'create', label: t('importExport.modes.create') },
+                                    { value: 'update', label: t('importExport.modes.update') },
+                                    { value: 'upsert', label: t('importExport.modes.upsert') },
+                                ]}
+                            />
                         </div>
                         {showMatchField && (
                             <div>
                                 <label className="rp-form-label">
                                     {t('importExport.matchField')}
                                 </label>
-                                <select
-                                    className="rp-form-input mt-1 w-full"
+                                <Select
+                                    className="mt-1"
                                     value={matchField}
-                                    onChange={(event) => setMatchField(event.target.value)}
-                                >
-                                    <option value="sku">SKU</option>
-                                    <option value="barcode">{t('importExport.barcode')}</option>
-                                </select>
+                                    onChange={setMatchField}
+                                    options={[
+                                        { value: 'sku', label: 'SKU' },
+                                        { value: 'barcode', label: t('importExport.barcode') },
+                                    ]}
+                                />
                             </div>
                         )}
                         <div className="flex justify-end gap-2 pt-2">
@@ -302,23 +305,21 @@ export default function ImportWizardDialog({
                                             <span className="text-destructive"> *</span>
                                         )}
                                     </span>
-                                    <select
-                                        className="rp-form-input"
+                                    <Select
                                         value={mapping[field.key] ?? ''}
-                                        onChange={(event) =>
+                                        placeholder={t('importExport.unmapped')}
+                                        isClearable
+                                        onChange={(value) =>
                                             setMapping((current) => ({
                                                 ...current,
-                                                [field.key]: event.target.value,
+                                                [field.key]: value ?? '',
                                             }))
                                         }
-                                    >
-                                        <option value="">{t('importExport.unmapped')}</option>
-                                        {headers.map((header) => (
-                                            <option key={header} value={header}>
-                                                {header}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        options={headers.map((header) => ({
+                                            value: header,
+                                            label: header,
+                                        }))}
+                                    />
                                 </div>
                             ))}
                         </div>

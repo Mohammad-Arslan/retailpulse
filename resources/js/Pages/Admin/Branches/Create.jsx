@@ -2,12 +2,18 @@ import OperatingHoursFields from '@/Components/admin/OperatingHoursFields';
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
+import Select from '@/Components/ui/select';
+import { useMemo } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 
 export default function Create({ defaultOperatingHours, timezones }) {
     const { t } = useTranslation();
+    const timezoneOptions = useMemo(
+        () => timezones.map((tz) => ({ value: tz, label: tz })),
+        [timezones],
+    );
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         code: '',
@@ -122,18 +128,12 @@ export default function Create({ defaultOperatingHours, timezones }) {
                             id="timezone"
                             error={errors.timezone}
                         >
-                            <select
+                            <Select
                                 id="timezone"
+                                options={timezoneOptions}
                                 value={data.timezone}
-                                className="rp-form-input"
-                                onChange={(e) => setData('timezone', e.target.value)}
-                            >
-                                {timezones.map((tz) => (
-                                    <option key={tz} value={tz}>
-                                        {tz}
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={(value) => setData('timezone', value)}
+                            />
                         </AdminFormField>
                     </div>
                     <AdminFormField

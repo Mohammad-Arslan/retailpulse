@@ -58,9 +58,9 @@ final class ImportJobController extends Controller
 
     public function stream(Request $request): StreamedResponse
     {
-        $path = decrypt((string) $request->query('path'));
+        $path = trim(decrypt((string) $request->query('path')));
 
-        if (! $this->importFileExists($path)) {
+        if ($path === '' || ! $this->importFileExists($path)) {
             abort(404);
         }
 

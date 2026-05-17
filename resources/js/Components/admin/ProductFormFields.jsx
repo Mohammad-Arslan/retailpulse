@@ -2,6 +2,8 @@
 import VariantAttributeBuilder from '@/Components/admin/VariantAttributeBuilder';
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
+import Select, { mapToSelectOptions } from '@/Components/ui/select';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const TYPE_LABELS = {
@@ -27,6 +29,29 @@ export default function ProductFormFields({
     productId = null,
 }) {
     const { t } = useTranslation();
+    const typeOptions = useMemo(
+        () =>
+            productTypes.map((type) => ({
+                value: type,
+                label: t(`pages.products.types.${type}`, {
+                    defaultValue: TYPE_LABELS[type] ?? type,
+                }),
+            })),
+        [productTypes, t],
+    );
+    const categoryOptions = useMemo(
+        () => mapToSelectOptions(categories),
+        [categories],
+    );
+    const brandOptions = useMemo(() => mapToSelectOptions(brands), [brands]);
+    const unitOptions = useMemo(
+        () =>
+            units.map((unit) => ({
+                value: String(unit.id),
+                label: `${unit.name} (${unit.abbreviation})`,
+            })),
+        [units],
+    );
     const isVariable = data.type === 'variable';
     const isCombo = data.type === 'combo';
     const isSimple = !isVariable && !isCombo;
@@ -48,20 +73,12 @@ export default function ProductFormFields({
                 <h3 className="rp-form-label mb-4">{t('pages.products.sections.general')}</h3>
                 {!isEdit && (
                     <AdminFormField label={t('pages.products.fields.type')} id="type" error={errors.type}>
-                        <select
+                        <Select
                             id="type"
+                            options={typeOptions}
                             value={data.type}
-                            className="rp-form-input"
-                            onChange={(e) => setData('type', e.target.value)}
-                        >
-                            {productTypes.map((type) => (
-                                <option key={type} value={type}>
-                                    {t(`pages.products.types.${type}`, {
-                                        defaultValue: TYPE_LABELS[type] ?? type,
-                                    })}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(value) => setData('type', value)}
+                        />
                     </AdminFormField>
                 )}
                 <AdminFormField label={t('pages.products.fields.name')} id="name" error={errors.name}>
@@ -84,49 +101,34 @@ export default function ProductFormFields({
                 </AdminFormField>
                 <div className="grid gap-4 sm:grid-cols-3">
                     <AdminFormField label={t('pages.products.fields.category')} id="category_id" error={errors.category_id}>
-                        <select
+                        <Select
                             id="category_id"
+                            options={categoryOptions}
                             value={data.category_id}
-                            className="rp-form-input"
-                            onChange={(e) => setData('category_id', e.target.value || null)}
-                        >
-                            <option value="">{t('pages.products.none')}</option>
-                            {categories.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </select>
+                            placeholder={t('pages.products.none')}
+                            isClearable
+                            onChange={(value) => setData('category_id', value || null)}
+                        />
                     </AdminFormField>
                     <AdminFormField label={t('pages.products.fields.brand')} id="brand_id" error={errors.brand_id}>
-                        <select
+                        <Select
                             id="brand_id"
+                            options={brandOptions}
                             value={data.brand_id}
-                            className="rp-form-input"
-                            onChange={(e) => setData('brand_id', e.target.value || null)}
-                        >
-                            <option value="">{t('pages.products.none')}</option>
-                            {brands.map((b) => (
-                                <option key={b.id} value={b.id}>
-                                    {b.name}
-                                </option>
-                            ))}
-                        </select>
+                            placeholder={t('pages.products.none')}
+                            isClearable
+                            onChange={(value) => setData('brand_id', value || null)}
+                        />
                     </AdminFormField>
                     <AdminFormField label={t('pages.products.fields.unit')} id="unit_id" error={errors.unit_id}>
-                        <select
+                        <Select
                             id="unit_id"
+                            options={unitOptions}
                             value={data.unit_id}
-                            className="rp-form-input"
-                            onChange={(e) => setData('unit_id', e.target.value || null)}
-                        >
-                            <option value="">{t('pages.products.none')}</option>
-                            {units.map((u) => (
-                                <option key={u.id} value={u.id}>
-                                    {u.name} ({u.abbreviation})
-                                </option>
-                            ))}
-                        </select>
+                            placeholder={t('pages.products.none')}
+                            isClearable
+                            onChange={(value) => setData('unit_id', value || null)}
+                        />
                     </AdminFormField>
                 </div>
                 <div className="flex flex-wrap gap-4 pt-2">
