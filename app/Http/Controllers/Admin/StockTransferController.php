@@ -14,6 +14,7 @@ use App\Repositories\Contracts\StockTransferRepositoryInterface;
 use App\Services\BranchContextService;
 use App\Services\StockTransferService;
 use App\Support\BranchContext;
+use App\Support\ListPagination;
 use App\Support\StockTransferPresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,14 +33,18 @@ final class StockTransferController extends Controller
     {
         $this->authorize('viewAny', StockTransfer::class);
 
-        $filters = $request->only('search', 'status');
+        $filters = ListPagination::filters($request, ['search', 'status']);
+
         $branchId = app(BranchContext::class)->branchId;
 
         if ($branchId !== null) {
             $filters['branch_id'] = $branchId;
         }
 
-        $paginator = $this->transfers->paginate($filters);
+        $paginator = $this->transfers->paginate(
+            $filters,
+            ListPagination::resolve($filters['per_page']),
+        );
         $paginator->getCollection()->transform(
             fn (StockTransfer $transfer) => StockTransferPresenter::summary($transfer),
         );

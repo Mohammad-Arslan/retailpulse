@@ -7,6 +7,7 @@ namespace App\Services\ImportExport\Handlers;
 use App\Models\Brand;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\CatalogExportFilters;
 use App\Support\TenantImportScope;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -19,8 +20,15 @@ final class BrandExportHandler implements ExportHandler
 
     public function query(ExportContext $context): Builder
     {
-        return TenantImportScope::constrain(Brand::query(), $context->tenantId)
+        $query = TenantImportScope::constrain(Brand::query(), $context->tenantId)
             ->orderBy('name');
+
+        CatalogExportFilters::applyBrandFilters(
+            $query,
+            $context->options['filters'] ?? [],
+        );
+
+        return $query;
     }
 
     public function map(mixed $record, ExportContext $context): array

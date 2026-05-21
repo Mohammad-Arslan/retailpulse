@@ -16,6 +16,7 @@ use App\Services\BranchContextService;
 use App\Services\InventoryService;
 use App\Support\BranchContext;
 use App\Support\InventoryPresenter;
+use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -33,17 +34,22 @@ final class InventoryController extends Controller
     {
         $this->authorize('viewAny', Inventory::class);
 
-        $filters = $request->only('search', 'warehouse_id', 'sort', 'direction');
+        $filters = ListPagination::filters(
+            $request,
+            ['search', 'warehouse_id', 'sort', 'direction'],
+        );
         $branchId = app(BranchContext::class)->branchId;
 
         if ($branchId !== null) {
             $filters['branch_id'] = $branchId;
         }
 
-        $paginator = $this->inventories->paginateByWarehouse($filters);
-        $paginator->getCollection()->transform(
-            fn ($row) => InventoryPresenter::row($row),
-        );
+        $paginator = $this->inventories
+            ->paginateByWarehouse(
+                $filters,
+                ListPagination::resolve($filters['per_page']),
+            )
+            ->through(fn ($row) => InventoryPresenter::row($row));
 
         return Inertia::render('Admin/Inventory/Index', [
             'inventory' => $paginator,

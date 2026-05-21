@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Admin\BranchContextController;
 use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\Admin\CatalogBulkController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InventoryController;
@@ -28,6 +29,10 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::resource('branches', BranchController::class)->except(['show']);
         Route::resource('categories', CategoryController::class)->except(['show']);
         Route::resource('brands', BrandController::class)->except(['show']);
+        Route::post('catalog/bulk/delete', [CatalogBulkController::class, 'destroy'])
+            ->name('catalog.bulk.delete');
+        Route::post('catalog/bulk/deactivate', [CatalogBulkController::class, 'deactivate'])
+            ->name('catalog.bulk.deactivate');
         Route::get('product-variants/search', [ProductController::class, 'searchVariants'])
             ->name('product-variants.search');
         Route::resource('products', ProductController::class)->except(['show']);

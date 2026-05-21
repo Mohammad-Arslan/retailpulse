@@ -36,6 +36,7 @@ final class ProcessExportJob implements ShouldQueue
     public function handle(ImportExportStorageManager $storage): void
     {
         $job = ImportExportJob::query()->findOrFail($this->jobId);
+        $job->refresh();
         $job->markProcessing();
 
         try {

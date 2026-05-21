@@ -12,6 +12,7 @@ use App\Http\Requests\Admin\UpdateBrandRequest;
 use App\Models\Brand;
 use App\Repositories\Contracts\BrandRepositoryInterface;
 use App\Services\BrandService;
+use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,11 +29,17 @@ final class BrandController extends Controller
     {
         $this->authorize('viewAny', Brand::class);
 
+        $filters = ListPagination::filters(
+            $request,
+            ['search', 'is_active', 'sort', 'direction'],
+        );
+
         return Inertia::render('Admin/Brands/Index', [
             'brands' => $this->brands->paginate(
-                $request->only('search', 'is_active', 'sort', 'direction'),
+                $filters,
+                ListPagination::resolve($filters['per_page']),
             ),
-            'filters' => $request->only('search', 'is_active', 'sort', 'direction'),
+            'filters' => $filters,
         ]);
     }
 

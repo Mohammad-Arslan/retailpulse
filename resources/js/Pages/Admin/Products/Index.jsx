@@ -1,9 +1,12 @@
+import BulkSelectionBar from '@/Components/common/BulkSelectionBar';
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
 import Select, { mapToSelectOptions } from '@/Components/ui/select';
 import ImportExportToolbar from '@/Components/import-export/ImportExportToolbar';
 import { useImportJobsTray } from '@/Components/import-export/ImportJobsTray';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
+import { useCatalogBulkActions } from '@/Hooks/useCatalogBulkActions';
+import { useRowSelection } from '@/Hooks/useRowSelection';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
 import { Package, Plus, Search } from 'lucide-react';
@@ -14,6 +17,30 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
     const can = useCan();
     const { t } = useTranslation();
     const { trackJob } = useImportJobsTray();
+    const selection = useRowSelection();
+    const pageRowIds = useMemo(
+        () => (products.data ?? []).map((product) => product.id),
+        [products.data],
+    );
+    const exportOptions = useMemo(
+        () => ({
+            filters: {
+                search: filters.search ?? undefined,
+                type: filters.type ?? undefined,
+                category_id: filters.category_id ?? undefined,
+                brand_id: filters.brand_id ?? undefined,
+                is_active: filters.is_active ?? undefined,
+            },
+        }),
+        [filters],
+    );
+    const bulkActions = useCatalogBulkActions({
+        entityType: 'products',
+        selectedArray: selection.selectedArray,
+        onClear: selection.clearSelection,
+        onJobStarted: trackJob,
+        exportOptions,
+    });
 
     const search = (e) => {
         e.preventDefault();
@@ -138,15 +165,7 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
                         entityType="products"
                         entityLabel={t('nav.products')}
                         showMatchField
-                        exportOptions={{
-                            filters: {
-                                search: filters.search ?? undefined,
-                                type: filters.type ?? undefined,
-                                category_id: filters.category_id ?? undefined,
-                                brand_id: filters.brand_id ?? undefined,
-                                is_active: filters.is_active ?? undefined,
-                            },
-                        }}
+                        exportOptions={exportOptions}
                         onJobStarted={trackJob}
                     />
                     {can('products.create') && (
@@ -200,6 +219,15 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
                 indexRoute="admin.products.index"
                 rowActions={rowActions}
                 emptyMessage={t('pages.products.empty')}
+                selectable
+                selectedIds={selection.selectedIds}
+                onToggleRow={selection.toggleRow}
+                onToggleAll={() => selection.toggleAll(pageRowIds)}
+            />
+            <BulkSelectionBar
+                selectedCount={selection.selectedCount}
+                onClear={selection.clearSelection}
+                actions={bulkActions}
             />
         </>
     );

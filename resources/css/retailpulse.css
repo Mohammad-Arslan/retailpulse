@@ -163,6 +163,11 @@
         @apply overflow-hidden rounded-2xl border border-rp-border bg-rp-surface;
     }
 
+    .rp-table-pagination {
+        @apply min-w-0 overflow-x-auto;
+        scrollbar-width: thin;
+    }
+
     .rp-filter-bar {
         @apply mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-rp-border bg-rp-surface p-3.5;
     }

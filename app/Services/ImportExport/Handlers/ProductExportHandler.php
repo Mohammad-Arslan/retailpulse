@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\ImportExport\Handlers;
 
-use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\CatalogExportFilters;
 use App\Support\TenantImportScope;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -26,37 +26,10 @@ final class ProductExportHandler implements ExportHandler
             ->orderBy('product_id')
             ->orderBy('sort_order');
 
-        $productFilters = $context->options['filters'] ?? [];
-
-        if (! empty($productFilters['category_id'])) {
-            $query->whereHas(
-                'product',
-                fn ($q) => $q->where('category_id', (int) $productFilters['category_id']),
-            );
-        }
-
-        if (! empty($productFilters['brand_id'])) {
-            $query->whereHas(
-                'product',
-                fn ($q) => $q->where('brand_id', (int) $productFilters['brand_id']),
-            );
-        }
-
-        if (! empty($productFilters['type'])) {
-            $query->whereHas(
-                'product',
-                fn ($q) => $q->where('type', (string) $productFilters['type']),
-            );
-        }
-
-        if (! empty($productFilters['search'])) {
-            $search = (string) $productFilters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('sku', 'like', "%{$search}%")
-                    ->orWhere('barcode', 'like', "%{$search}%")
-                    ->orWhereHas('product', fn ($pq) => $pq->where('name', 'like', "%{$search}%"));
-            });
-        }
+        CatalogExportFilters::applyProductVariantFilters(
+            $query,
+            $context->options['filters'] ?? [],
+        );
 
         return $query;
     }

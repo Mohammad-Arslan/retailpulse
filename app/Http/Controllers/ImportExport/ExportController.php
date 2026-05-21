@@ -9,6 +9,7 @@ use App\Jobs\ProcessExportJob;
 use App\Models\ImportExportJob;
 use App\Services\ImportExport\ImportExportRegistry;
 use App\Services\ImportExport\Storage\ImportExportStorageManager;
+use App\Support\CatalogExportFilters;
 use App\Support\ImportExportAuthorization;
 use App\Support\TenantImportScope;
 use Illuminate\Http\JsonResponse;
@@ -37,6 +38,10 @@ final class ExportController extends Controller
 
         $user = $request->user();
         $options = $validated['options'] ?? [];
+
+        if (isset($options['filters']) && is_array($options['filters'])) {
+            $options['filters'] = CatalogExportFilters::normalize($options['filters']);
+        }
 
         if ($entityType === 'products') {
             $options['can_show_cost'] = $user->can('products.show-cost');

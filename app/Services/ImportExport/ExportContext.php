@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ImportExport;
 
 use App\Models\ImportExportJob;
+use App\Support\CatalogExportFilters;
 use App\Support\TenantImportScope;
 
 final readonly class ExportContext
@@ -21,11 +22,17 @@ final readonly class ExportContext
 
     public static function fromJob(ImportExportJob $job): self
     {
+        $options = $job->options ?? [];
+
+        if (isset($options['filters']) && is_array($options['filters'])) {
+            $options['filters'] = CatalogExportFilters::normalize($options['filters']);
+        }
+
         return new self(
             jobId: (int) $job->id,
             tenantId: TenantImportScope::normalize($job->tenant_id),
             userId: (int) $job->user_id,
-            options: $job->options ?? [],
+            options: $options,
         );
     }
 }
