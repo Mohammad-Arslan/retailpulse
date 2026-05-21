@@ -8,6 +8,7 @@ use App\Models\Unit;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
+use App\Support\TenantImportScope;
 use Illuminate\Support\Facades\DB;
 
 final class UnitImportHandler implements ImportHandler
@@ -43,8 +44,7 @@ final class UnitImportHandler implements ImportHandler
     {
         $errors = [];
         $name = (string) ($row['name'] ?? '');
-        $exists = Unit::query()
-            ->where('tenant_id', $context->tenantId)
+        $exists = TenantImportScope::constrain(Unit::query(), $context->tenantId)
             ->where('name', $name)
             ->exists();
 
@@ -67,8 +67,7 @@ final class UnitImportHandler implements ImportHandler
 
         return DB::transaction(function () use ($row, $context) {
             $name = (string) ($row['name'] ?? '');
-            $unit = Unit::query()
-                ->where('tenant_id', $context->tenantId)
+            $unit = TenantImportScope::constrain(Unit::query(), $context->tenantId)
                 ->where('name', $name)
                 ->first();
 

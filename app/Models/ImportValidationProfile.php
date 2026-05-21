@@ -33,10 +33,14 @@ class ImportValidationProfile extends Model
         return $this->hasMany(ImportColumnRule::class, 'profile_id')->orderBy('sort_order');
     }
 
-    public static function defaultFor(int $tenantId, string $entityType): ?self
+    public static function defaultFor(?int $tenantId, string $entityType): ?self
     {
         return self::query()
-            ->where('tenant_id', $tenantId)
+            ->when(
+                $tenantId === null,
+                fn (Builder $query) => $query->whereNull('tenant_id'),
+                fn (Builder $query) => $query->where('tenant_id', $tenantId),
+            )
             ->where('entity_type', $entityType)
             ->where('is_default', true)
             ->with('columnRules')
@@ -46,10 +50,14 @@ class ImportValidationProfile extends Model
     /**
      * @return Builder<self>
      */
-    public static function forTenantAndEntity(int $tenantId, string $entityType): Builder
+    public static function forTenantAndEntity(?int $tenantId, string $entityType): Builder
     {
         return self::query()
-            ->where('tenant_id', $tenantId)
+            ->when(
+                $tenantId === null,
+                fn (Builder $query) => $query->whereNull('tenant_id'),
+                fn (Builder $query) => $query->where('tenant_id', $tenantId),
+            )
             ->where('entity_type', $entityType);
     }
 

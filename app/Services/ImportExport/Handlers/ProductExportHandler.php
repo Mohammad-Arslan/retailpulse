@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\TenantImportScope;
 use Illuminate\Database\Eloquent\Builder;
 
 final class ProductExportHandler implements ExportHandler
@@ -20,7 +21,7 @@ final class ProductExportHandler implements ExportHandler
     public function query(ExportContext $context): Builder
     {
         $query = ProductVariant::query()
-            ->whereHas('product', fn ($q) => $q->where('tenant_id', $context->tenantId))
+            ->whereHas('product', fn ($q) => TenantImportScope::constrain($q, $context->tenantId))
             ->with(['product.category', 'product.brand', 'product.unit'])
             ->orderBy('product_id')
             ->orderBy('sort_order');
@@ -69,7 +70,9 @@ final class ProductExportHandler implements ExportHandler
             'name' => $product->name,
             'sku' => $record->sku,
             'category_code' => $product->category?->slug ?? '',
+            'category_slug' => $product->category?->slug ?? '',
             'brand_code' => $product->brand?->slug ?? '',
+            'brand_slug' => $product->brand?->slug ?? '',
             'unit_name' => $product->unit?->name ?? '',
             'barcode' => $record->barcode ?? '',
             'sell_price' => $record->sell_price,

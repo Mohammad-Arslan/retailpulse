@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ImportExport;
 
 use App\Models\ImportExportJob;
+use App\Support\TenantImportScope;
 
 final readonly class ExportContext
 {
@@ -13,7 +14,7 @@ final readonly class ExportContext
      */
     public function __construct(
         public int $jobId,
-        public int $tenantId,
+        public ?int $tenantId,
         public int $userId,
         public array $options,
     ) {}
@@ -22,7 +23,7 @@ final readonly class ExportContext
     {
         return new self(
             jobId: (int) $job->id,
-            tenantId: (int) $job->tenant_id,
+            tenantId: TenantImportScope::normalize($job->tenant_id),
             userId: (int) $job->user_id,
             options: $job->options ?? [],
         );

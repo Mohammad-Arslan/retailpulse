@@ -8,6 +8,7 @@ use App\Models\Brand;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
+use App\Support\TenantImportScope;
 use App\Support\UniqueSlug;
 use Illuminate\Support\Facades\DB;
 
@@ -55,8 +56,7 @@ final class BrandImportHandler implements ImportHandler
     {
         $errors = [];
         $code = (string) ($row['code'] ?? '');
-        $exists = Brand::query()
-            ->where('tenant_id', $context->tenantId)
+        $exists = TenantImportScope::constrain(Brand::query(), $context->tenantId)
             ->where('slug', $code)
             ->exists();
 
@@ -79,8 +79,7 @@ final class BrandImportHandler implements ImportHandler
 
         return DB::transaction(function () use ($row, $context) {
             $code = (string) ($row['code'] ?? '');
-            $brand = Brand::query()
-                ->where('tenant_id', $context->tenantId)
+            $brand = TenantImportScope::constrain(Brand::query(), $context->tenantId)
                 ->where('slug', $code)
                 ->first();
 

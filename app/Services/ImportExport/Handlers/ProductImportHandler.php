@@ -15,7 +15,10 @@ use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
 use App\Support\UniqueSlug;
 use App\Support\TaggedCache;
+use App\Support\TenantImportScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final class ProductImportHandler implements ImportHandler
 {
@@ -42,12 +45,22 @@ final class ProductImportHandler implements ImportHandler
             [
                 'key' => 'category_code',
                 'label' => 'Category Code',
-                'required' => true,
+                'required' => false,
                 'default_rules' => [
-                    ['rule' => 'required'],
-                    ['rule' => 'exists_in_db', 'table' => 'categories', 'column' => 'slug', 'scope' => 'tenant'],
+                    ['rule' => 'nullable'],
+                    ['rule' => 'string', 'max' => 128],
                 ],
-                'default_transforms' => ['trim', 'slug'],
+                'default_transforms' => ['trim', 'nullify_empty'],
+            ],
+            [
+                'key' => 'category_slug',
+                'label' => 'Category Slug',
+                'required' => false,
+                'default_rules' => [
+                    ['rule' => 'nullable'],
+                    ['rule' => 'string', 'max' => 128],
+                ],
+                'default_transforms' => ['trim', 'nullify_empty'],
             ],
             [
                 'key' => 'brand_code',
@@ -55,9 +68,19 @@ final class ProductImportHandler implements ImportHandler
                 'required' => false,
                 'default_rules' => [
                     ['rule' => 'nullable'],
-                    ['rule' => 'exists_in_db', 'table' => 'brands', 'column' => 'slug', 'scope' => 'tenant'],
+                    ['rule' => 'string', 'max' => 128],
                 ],
-                'default_transforms' => ['trim', 'slug', 'nullify_empty'],
+                'default_transforms' => ['trim', 'nullify_empty'],
+            ],
+            [
+                'key' => 'brand_slug',
+                'label' => 'Brand Slug',
+                'required' => false,
+                'default_rules' => [
+                    ['rule' => 'nullable'],
+                    ['rule' => 'string', 'max' => 128],
+                ],
+                'default_transforms' => ['trim', 'nullify_empty'],
             ],
             [
                 'key' => 'unit_name',
@@ -138,6 +161,20 @@ final class ProductImportHandler implements ImportHandler
             $errors['barcode'] = ['Barcode is required when matching by barcode.'];
         }
 
+        $categoryReference = $this->categoryReference($row);
+
+        if ($categoryReference === '') {
+            $errors['category_code'] = ['Category code or slug is required.'];
+        } elseif ($this->findCategory($categoryReference, $context->tenantId) === null) {
+            $errors['category_code'] = ['Category not found.'];
+        }
+
+        $brandReference = $this->brandReference($row);
+
+        if ($brandReference !== '' && $this->findBrand($brandReference, $context->tenantId) === null) {
+            $errors['brand_code'] = ['Brand not found.'];
+        }
+
         return $errors;
     }
 
@@ -148,21 +185,17 @@ final class ProductImportHandler implements ImportHandler
         }
 
         return DB::transaction(function () use ($row, $context) {
-            $category = Category::query()
-                ->where('tenant_id', $context->tenantId)
-                ->where('slug', (string) ($row['category_code'] ?? ''))
-                ->first();
+            $category = $this->findCategory($this->categoryReference($row), $context->tenantId);
 
             if ($category === null) {
                 return ImportRowResult::failure('Category not found.');
             }
 
             $brandId = null;
-            if (! empty($row['brand_code'])) {
-                $brand = Brand::query()
-                    ->where('tenant_id', $context->tenantId)
-                    ->where('slug', (string) $row['brand_code'])
-                    ->first();
+            $brandReference = $this->brandReference($row);
+
+            if ($brandReference !== '') {
+                $brand = $this->findBrand($brandReference, $context->tenantId);
 
                 if ($brand === null) {
                     return ImportRowResult::failure('Brand not found.');
@@ -173,8 +206,7 @@ final class ProductImportHandler implements ImportHandler
 
             $unitId = null;
             if (! empty($row['unit_name'])) {
-                $unit = Unit::query()
-                    ->where('tenant_id', $context->tenantId)
+                $unit = TenantImportScope::constrain(Unit::query(), $context->tenantId)
                     ->where('name', (string) $row['unit_name'])
                     ->first();
 
@@ -247,7 +279,7 @@ final class ProductImportHandler implements ImportHandler
 
     public function afterImport(ImportContext $context): void
     {
-        TaggedCache::flush(["products:tenant:{$context->tenantId}"]);
+        TaggedCache::flush(['products:tenant:'.TenantImportScope::cacheKeySuffix($context->tenantId)]);
     }
 
     public function chunkSize(): int
@@ -275,8 +307,79 @@ final class ProductImportHandler implements ImportHandler
 
         return ProductVariant::query()
             ->where($matchField, $value)
-            ->whereHas('product', fn ($q) => $q->where('tenant_id', $context->tenantId))
+            ->whereHas('product', fn ($q) => TenantImportScope::constrain($q, $context->tenantId))
             ->with('product')
+            ->first();
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function categoryReference(array $row): string
+    {
+        foreach (['category_slug', 'category_code'] as $field) {
+            $value = trim((string) ($row[$field] ?? ''));
+
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function brandReference(array $row): string
+    {
+        foreach (['brand_slug', 'brand_code'] as $field) {
+            $value = trim((string) ($row[$field] ?? ''));
+
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return '';
+    }
+
+    private function findCategory(string $reference, ?int $tenantId): ?Category
+    {
+        return $this->findTenantScopedRecord(Category::query(), $reference, $tenantId);
+    }
+
+    private function findBrand(string $reference, ?int $tenantId): ?Brand
+    {
+        return $this->findTenantScopedRecord(Brand::query(), $reference, $tenantId);
+    }
+
+    /**
+     * @param  Builder<Category|Brand>  $query
+     * @return Category|Brand|null
+     */
+    private function findTenantScopedRecord(Builder $query, string $reference, ?int $tenantId): Category|Brand|null
+    {
+        $reference = trim($reference);
+
+        if ($reference === '') {
+            return null;
+        }
+
+        $slugCandidate = Str::slug($reference);
+        $referenceLower = mb_strtolower($reference);
+        $slugCandidateLower = mb_strtolower($slugCandidate);
+
+        return TenantImportScope::constrain($query, $tenantId)
+            ->where(function (Builder $scopedQuery) use ($referenceLower, $slugCandidateLower): void {
+                $scopedQuery->whereRaw('LOWER(slug) = ?', [$referenceLower]);
+
+                if ($slugCandidateLower !== '' && $slugCandidateLower !== $referenceLower) {
+                    $scopedQuery->orWhereRaw('LOWER(slug) = ?', [$slugCandidateLower]);
+                }
+
+                $scopedQuery->orWhereRaw('LOWER(name) = ?', [$referenceLower]);
+            })
             ->first();
     }
 }

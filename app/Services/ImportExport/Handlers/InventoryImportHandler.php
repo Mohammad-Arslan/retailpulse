@@ -12,6 +12,7 @@ use App\Models\Warehouse;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
+use App\Support\TenantImportScope;
 use App\Services\InventoryService;
 
 final class InventoryImportHandler implements ImportHandler
@@ -74,7 +75,7 @@ final class InventoryImportHandler implements ImportHandler
 
         $warehouse = Warehouse::query()
             ->where('code', $row['warehouse_code'])
-            ->whereHas('branch', fn ($q) => $q->where('tenant_id', $context->tenantId))
+            ->whereHas('branch', fn ($q) => TenantImportScope::constrain($q, $context->tenantId))
             ->first();
 
         if ($warehouse === null) {
@@ -85,7 +86,7 @@ final class InventoryImportHandler implements ImportHandler
 
         $variant = ProductVariant::query()
             ->where('sku', $row['sku'])
-            ->whereHas('product', fn ($q) => $q->where('tenant_id', $context->tenantId))
+            ->whereHas('product', fn ($q) => TenantImportScope::constrain($q, $context->tenantId))
             ->first();
 
         if ($variant === null) {

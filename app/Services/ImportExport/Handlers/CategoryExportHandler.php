@@ -7,6 +7,7 @@ namespace App\Services\ImportExport\Handlers;
 use App\Models\Category;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\TenantImportScope;
 use Illuminate\Database\Eloquent\Builder;
 
 final class CategoryExportHandler implements ExportHandler
@@ -18,8 +19,7 @@ final class CategoryExportHandler implements ExportHandler
 
     public function query(ExportContext $context): Builder
     {
-        return Category::query()
-            ->where('tenant_id', $context->tenantId)
+        return TenantImportScope::constrain(Category::query(), $context->tenantId)
             ->with('parent')
             ->orderBy('sort_order')
             ->orderBy('name');

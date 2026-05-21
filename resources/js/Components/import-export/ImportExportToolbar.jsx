@@ -1,7 +1,8 @@
+import ImportLogsDialog from '@/Components/import-export/ImportLogsDialog';
 import ImportWizardDialog from '@/Components/import-export/ImportWizardDialog';
 import { useCan } from '@/Hooks/useCan';
 import { initiateExport, templateDownloadUrl } from '@/lib/importExportApi';
-import { Download, FileDown, Upload } from 'lucide-react';
+import { Download, FileDown, FileText, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -24,7 +25,9 @@ export default function ImportExportToolbar({
     const can = useCan();
     const { t } = useTranslation();
     const [wizardOpen, setWizardOpen] = useState(false);
+    const [logsOpen, setLogsOpen] = useState(false);
     const [exporting, setExporting] = useState(false);
+    const [recentImportUlid, setRecentImportUlid] = useState(null);
 
     const permissions = ENTITY_PERMISSIONS[entityType] ?? ENTITY_PERMISSIONS.products;
     const canImport = can(permissions.import);
@@ -48,6 +51,14 @@ export default function ImportExportToolbar({
         }
     };
 
+    const handleImportStarted = (payload) => {
+        if (payload?.ulid) {
+            setRecentImportUlid(payload.ulid);
+        }
+
+        onJobStarted?.(payload);
+    };
+
     return (
         <>
             <div className="flex flex-wrap items-center gap-2">
@@ -68,6 +79,14 @@ export default function ImportExportToolbar({
                             <Upload className="h-4 w-4" />
                             {t('importExport.import')}
                         </button>
+                        <button
+                            type="button"
+                            className="rp-btn-outline"
+                            onClick={() => setLogsOpen(true)}
+                        >
+                            <FileText className="h-4 w-4" />
+                            {t('importExport.logs')}
+                        </button>
                     </>
                 )}
                 {canExport && (
@@ -83,14 +102,23 @@ export default function ImportExportToolbar({
                 )}
             </div>
             {canImport && (
-                <ImportWizardDialog
-                    open={wizardOpen}
-                    onClose={() => setWizardOpen(false)}
-                    entityType={entityType}
-                    entityLabel={entityLabel}
-                    showMatchField={showMatchField}
-                    onJobStarted={onJobStarted}
-                />
+                <>
+                    <ImportWizardDialog
+                        open={wizardOpen}
+                        onClose={() => setWizardOpen(false)}
+                        entityType={entityType}
+                        entityLabel={entityLabel}
+                        showMatchField={showMatchField}
+                        onJobStarted={handleImportStarted}
+                    />
+                    <ImportLogsDialog
+                        open={logsOpen}
+                        onClose={() => setLogsOpen(false)}
+                        entityType={entityType}
+                        entityLabel={entityLabel}
+                        ulid={recentImportUlid}
+                    />
+                </>
             )}
         </>
     );

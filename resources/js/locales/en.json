@@ -176,7 +176,27 @@
         "trayFailed": "{{entity}} job failed",
         "trayDismiss": "Dismiss jobs tray",
         "traySuccess": "ok",
-        "download": "Download file"
+        "download": "Download file",
+        "logs": "Logs",
+        "logsTitle": "{{entity}} import log",
+        "logsSubtitle": "Shows the most recent import for this module. Starting a new import replaces the previous log.",
+        "logsLoading": "Loading import log…",
+        "logsEmptyTitle": "No import logs yet",
+        "logsEmptyDescription": "Run an import first. Only the latest import is kept here.",
+        "logsFile": "File",
+        "logsStatus": "Status",
+        "logsStarted": "Started",
+        "logsFinished": "Finished",
+        "logsStatuses": {
+            "pending": "Pending",
+            "validating": "Validating",
+            "validated": "Validated",
+            "processing": "Processing",
+            "completing": "Completing",
+            "completed": "Completed",
+            "failed": "Failed",
+            "cancelled": "Cancelled"
+        }
     },
     "confirm": {
         "defaultTitle": "Are you sure?",

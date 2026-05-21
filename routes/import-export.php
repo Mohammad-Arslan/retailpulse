@@ -23,6 +23,7 @@ return function (string $namePrefix): void {
         Route::post('imports/{ulid}/confirm', [ImportWizardController::class, 'confirm'])->name('imports.confirm');
 
         Route::get('jobs', [ImportJobController::class, 'index'])->name('jobs.index');
+        Route::get('jobs/latest-import/{entityType}', [ImportJobController::class, 'latestImport'])->name('jobs.latest-import');
         Route::get('jobs/{ulid}', [ImportJobController::class, 'show'])->name('jobs.show');
         Route::get('jobs/{ulid}/row-errors', [ImportJobController::class, 'rowErrors'])->name('jobs.row-errors');
         Route::post('jobs/{ulid}/cancel', [ImportJobController::class, 'cancel'])->name('jobs.cancel');

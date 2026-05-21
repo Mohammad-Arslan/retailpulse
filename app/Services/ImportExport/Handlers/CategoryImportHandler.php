@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
+use App\Support\TenantImportScope;
 use App\Support\UniqueSlug;
 use Illuminate\Support\Facades\DB;
 
@@ -72,8 +73,7 @@ final class CategoryImportHandler implements ImportHandler
     {
         $errors = [];
         $code = (string) ($row['code'] ?? '');
-        $exists = Category::query()
-            ->where('tenant_id', $context->tenantId)
+        $exists = TenantImportScope::constrain(Category::query(), $context->tenantId)
             ->where('slug', $code)
             ->exists();
 
@@ -100,15 +100,13 @@ final class CategoryImportHandler implements ImportHandler
 
         return DB::transaction(function () use ($row, $context) {
             $code = (string) ($row['code'] ?? '');
-            $category = Category::query()
-                ->where('tenant_id', $context->tenantId)
+            $category = TenantImportScope::constrain(Category::query(), $context->tenantId)
                 ->where('slug', $code)
                 ->first();
 
             $parentId = null;
             if (! empty($row['parent_code'])) {
-                $parent = Category::query()
-                    ->where('tenant_id', $context->tenantId)
+                $parent = TenantImportScope::constrain(Category::query(), $context->tenantId)
                     ->where('slug', (string) $row['parent_code'])
                     ->first();
 

@@ -182,7 +182,6 @@ export default function ImportWizardDialog({
             setSystemFields(data.system_fields ?? []);
             setMapping(guessMapping(data.system_fields ?? [], data.headers ?? []));
             setStep(2);
-            onJobStarted?.(data);
         } catch (error) {
             toast.error(error?.response?.data?.message ?? t('importExport.uploadFailed'));
         } finally {

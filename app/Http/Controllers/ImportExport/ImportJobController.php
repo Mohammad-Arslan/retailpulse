@@ -31,6 +31,21 @@ final class ImportJobController extends Controller
         return response()->json(['jobs' => $jobs]);
     }
 
+    public function latestImport(Request $request, string $entityType): JsonResponse
+    {
+        $job = ImportExportJob::query()
+            ->where('user_id', $request->user()->id)
+            ->forCurrentTenant()
+            ->where('entity_type', $entityType)
+            ->where('type', 'import')
+            ->whereNotNull('queued_at')
+            ->withCount('rowErrors')
+            ->orderByDesc('created_at')
+            ->first();
+
+        return response()->json(['job' => $job]);
+    }
+
     public function show(string $ulid): JsonResponse
     {
         $job = ImportExportJob::query()

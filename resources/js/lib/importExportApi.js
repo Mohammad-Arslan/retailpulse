@@ -65,6 +65,12 @@ export async function fetchJobs() {
     return data.jobs ?? [];
 }
 
+export async function fetchLatestImport(entityType) {
+    const data = await get(apiRoute('admin.import-export.jobs.latest-import', entityType));
+
+    return data.job ?? null;
+}
+
 export async function fetchJob(ulid) {
     const data = await get(apiRoute('admin.import-export.jobs.show', ulid));
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ImportExport;
 
 use App\Models\ImportExportJob;
+use App\Support\TenantImportScope;
 
 final readonly class ImportContext
 {
@@ -13,7 +14,7 @@ final readonly class ImportContext
      */
     public function __construct(
         public int $jobId,
-        public int $tenantId,
+        public ?int $tenantId,
         public int $userId,
         public string $mode,
         public bool $isDryRun,
@@ -26,7 +27,7 @@ final readonly class ImportContext
     {
         return new self(
             jobId: (int) $job->id,
-            tenantId: (int) $job->tenant_id,
+            tenantId: TenantImportScope::normalize($job->tenant_id),
             userId: (int) $job->user_id,
             mode: (string) ($job->mode ?? 'create'),
             isDryRun: (bool) $job->is_dry_run,

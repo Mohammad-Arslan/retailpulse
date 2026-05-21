@@ -6,6 +6,7 @@ namespace App\Services\ImportExport\Validation\Resolvers;
 
 use App\Services\ImportExport\Contracts\RuleResolver;
 use App\Services\ImportExport\ImportContext;
+use App\Support\TenantImportScope;
 use Illuminate\Validation\Rule;
 
 final class UniqueInDbRuleResolver implements RuleResolver
@@ -25,7 +26,7 @@ final class UniqueInDbRuleResolver implements RuleResolver
         $rule = Rule::unique($table, $column);
 
         if (($ruleDef['scope'] ?? null) === 'tenant') {
-            $rule = $rule->where('tenant_id', $context->tenantId);
+            $rule = TenantImportScope::constrainUnique($rule, $context->tenantId);
         }
 
         return [$rule];

@@ -7,6 +7,7 @@ namespace App\Services\ImportExport\Handlers;
 use App\Models\Inventory;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\TenantImportScope;
 use Illuminate\Database\Eloquent\Builder;
 
 final class InventoryExportHandler implements ExportHandler
@@ -20,7 +21,7 @@ final class InventoryExportHandler implements ExportHandler
     {
         return Inventory::query()
             ->with(['warehouse.branch', 'variant.product', 'batch'])
-            ->whereHas('warehouse.branch', fn ($q) => $q->where('tenant_id', $context->tenantId));
+            ->whereHas('warehouse.branch', fn ($q) => TenantImportScope::constrain($q, $context->tenantId));
     }
 
     public function map(mixed $record, ExportContext $context): array

@@ -19,6 +19,7 @@ use App\Services\ImportExport\Validation\ImportBehaviorMetaRegistry;
 use App\Services\ImportExport\Validation\RuleMetaRegistry;
 use App\Services\ImportExport\Validation\TransformPipeline;
 use App\Support\ImportExportAuthorization;
+use App\Support\TenantImportScope;
 use App\Traits\HandlesImportExportStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
@@ -40,11 +41,11 @@ final class ImportWizardController extends Controller
         $path = $this->storeImportFile($request->file('file'), $entityType);
         $preview = SpreadsheetReader::preview($path);
         $totalRows = SpreadsheetReader::for($path, 'import_export')->count();
-        $tenantId = (int) $user->tenant_id;
+        $tenantId = TenantImportScope::normalize($user->tenant_id);
         $defaultProfile = ImportValidationProfile::defaultFor($tenantId, $entityType);
 
         $job = ImportExportJob::query()->create([
-            'tenant_id' => $tenantId,
+            'tenant_id' => TenantImportScope::persist($user->tenant_id),
             'user_id' => $user->id,
             'ulid' => (string) Str::ulid(),
             'type' => 'import',
@@ -104,7 +105,7 @@ final class ImportWizardController extends Controller
         $job = $this->findJob($ulid);
         $this->authorizeImport(request(), $job->entity_type);
         $handler = ImportExportRegistry::importHandler($job->entity_type);
-        $tenantId = (int) $job->tenant_id;
+        $tenantId = TenantImportScope::normalize($job->tenant_id);
         $defaultProfile = ImportValidationProfile::defaultFor($tenantId, $job->entity_type);
         $columnRules = $this->buildColumnRules($handler->columns(), $defaultProfile, $job->column_mapping ?? []);
 
@@ -129,7 +130,7 @@ final class ImportWizardController extends Controller
     {
         $job = $this->findJob($ulid);
         $this->authorizeImport($request, $job->entity_type);
-        $columnRules = $request->validated('column_rules');
+        $columnRules = $this->enrichColumnRules($job->entity_type, $request->validated('column_rules'));
 
         $job->update([
             'column_rules_snapshot' => $columnRules,
@@ -172,9 +173,14 @@ final class ImportWizardController extends Controller
 
         if ($columnRules === null || $columnRules === []) {
             $handler = ImportExportRegistry::importHandler($job->entity_type);
-            $defaultProfile = ImportValidationProfile::defaultFor((int) $job->tenant_id, $job->entity_type);
+            $defaultProfile = ImportValidationProfile::defaultFor(
+                TenantImportScope::normalize($job->tenant_id),
+                $job->entity_type,
+            );
             $columnRules = $this->buildColumnRules($handler->columns(), $defaultProfile, $mapping);
         }
+
+        $columnRules = $this->enrichColumnRules($job->entity_type, $columnRules);
 
         if (($options['auto_trim'] ?? true) === true) {
             $columnRules = $this->applyAutoTrim($columnRules);
@@ -330,5 +336,94 @@ final class ImportWizardController extends Controller
 
             return $columnRule;
         }, $columnRules);
+    }
+
+    /**
+     * Fill missing exists_in_db / unique_in_db options from handler defaults.
+     * The validation UI can re-enable rules with only { rule: "exists_in_db" }.
+     *
+     * @param  list<array<string, mixed>>  $columnRules
+     * @return list<array<string, mixed>>
+     */
+    private function enrichColumnRules(string $entityType, array $columnRules): array
+    {
+        $defaultsByKey = collect(ImportExportRegistry::importHandler($entityType)->columns())
+            ->keyBy('key');
+
+        return array_map(function (array $columnRule) use ($defaultsByKey): array {
+            $systemKey = $this->resolveSystemColumnKey($columnRule, $defaultsByKey->all());
+            $handlerColumn = $defaultsByKey->get($systemKey);
+
+            if ($handlerColumn === null) {
+                return $columnRule;
+            }
+
+            $columnRule['rules'] = $this->mergeRuleDefinitions(
+                is_array($columnRule['rules'] ?? null) ? $columnRule['rules'] : [],
+                $handlerColumn['default_rules'] ?? [],
+            );
+
+            return $columnRule;
+        }, $columnRules);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $defaultsByKey
+     */
+    private function resolveSystemColumnKey(array $columnRule, array $defaultsByKey): string
+    {
+        foreach (['system_key', 'column_key', 'mapped_to'] as $field) {
+            $candidate = (string) ($columnRule[$field] ?? '');
+
+            if ($candidate !== '' && isset($defaultsByKey[$candidate])) {
+                return $candidate;
+            }
+        }
+
+        $label = (string) ($columnRule['display_label'] ?? '');
+
+        foreach ($defaultsByKey as $key => $column) {
+            if ($label !== '' && strcasecmp($label, (string) ($column['label'] ?? '')) === 0) {
+                return (string) $key;
+            }
+        }
+
+        return (string) ($columnRule['column_key'] ?? '');
+    }
+
+    /**
+     * @param  list<array<string, mixed>|string>  $savedRules
+     * @param  list<array<string, mixed>|string>  $defaultRules
+     * @return list<array<string, mixed>|string>
+     */
+    private function mergeRuleDefinitions(array $savedRules, array $defaultRules): array
+    {
+        $defaultsByName = [];
+
+        foreach ($defaultRules as $defaultRule) {
+            $name = is_string($defaultRule) ? $defaultRule : ($defaultRule['rule'] ?? null);
+
+            if ($name === null) {
+                continue;
+            }
+
+            $defaultsByName[$name] = is_array($defaultRule) ? $defaultRule : ['rule' => $defaultRule];
+        }
+
+        return array_map(function (mixed $rule) use ($defaultsByName): mixed {
+            if (is_string($rule)) {
+                return $defaultsByName[$rule] ?? $rule;
+            }
+
+            $name = $rule['rule'] ?? null;
+
+            if ($name === null) {
+                return $rule;
+            }
+
+            $default = $defaultsByName[$name] ?? [];
+
+            return array_merge($default, $rule);
+        }, $savedRules);
     }
 }

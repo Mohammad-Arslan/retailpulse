@@ -10,6 +10,7 @@ use App\Models\ImportExportJob;
 use App\Services\ImportExport\ImportExportRegistry;
 use App\Services\ImportExport\Storage\ImportExportStorageManager;
 use App\Support\ImportExportAuthorization;
+use App\Support\TenantImportScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,7 +43,7 @@ final class ExportController extends Controller
         }
 
         $job = ImportExportJob::query()->create([
-            'tenant_id' => (int) $user->tenant_id,
+            'tenant_id' => TenantImportScope::persist($user->tenant_id),
             'user_id' => $user->id,
             'ulid' => (string) Str::ulid(),
             'type' => 'export',
