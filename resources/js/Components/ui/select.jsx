@@ -77,7 +77,7 @@ const selectStyles = {
     }),
     menuPortal: (base) => ({
         ...base,
-        zIndex: 60,
+        zIndex: 200,
     }),
     menu: (base) => ({
         ...base,

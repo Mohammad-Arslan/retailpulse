@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ImportExport\Validation;
 
 use App\Services\ImportExport\ImportContext;
+use App\Services\ImportExport\ImportErrorFormatter;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Support\Facades\Validator as ValidatorFacade;
 
@@ -49,7 +50,14 @@ final class DynamicRuleEngine
             $rules["rows.*.{$field}"] = $fieldRules;
         }
 
-        return ValidatorFacade::make(['rows' => $rows], $rules);
+        $formatter = new ImportErrorFormatter($columnRules);
+
+        return ValidatorFacade::make(
+            ['rows' => $rows],
+            $rules,
+            $formatter->validationMessages(),
+            $formatter->validationAttributes(),
+        );
     }
 
     /**

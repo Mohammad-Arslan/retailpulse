@@ -4,12 +4,17 @@ import './echo';
 
 import AppProviders from '@/Components/common/AppProviders';
 import FlashToasts from '@/Components/common/FlashToasts';
-import { createInertiaApp } from '@inertiajs/react';
+import { syncCsrfToken } from '@/lib/csrf';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+router.on('success', (event) => {
+    syncCsrfToken(event.detail.page.props?.csrf_token);
+});
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -19,6 +24,8 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.jsx'),
         ),
     setup({ el, App, props }) {
+        syncCsrfToken(props.initialPage?.props?.csrf_token);
+
         const root = createRoot(el);
 
         root.render(

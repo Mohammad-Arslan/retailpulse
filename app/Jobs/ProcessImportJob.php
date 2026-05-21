@@ -107,14 +107,16 @@ final class ProcessImportJob implements ShouldQueue
                 $skipped += $chunkSkipped;
 
                 $job->incrementCounters($chunkProcessed, $chunkSuccess, $chunkFailed, $chunkSkipped);
+                $job->refresh();
 
                 ImportProgressUpdated::dispatch($job->ulid, (int) $job->user_id, [
                     'phase' => 'processing',
-                    'processed' => $processed,
-                    'total' => $job->total_rows,
-                    'success' => $success,
-                    'failed' => $failed,
-                    'skipped' => $skipped,
+                    'processed' => (int) $job->processed_rows,
+                    'total' => (int) $job->total_rows,
+                    'success' => (int) $job->success_rows,
+                    'failed' => (int) $job->failed_rows,
+                    'skipped' => (int) $job->skipped_rows,
+                    'errors' => (int) ImportRowError::query()->where('job_id', $job->id)->count(),
                 ]);
             }
 

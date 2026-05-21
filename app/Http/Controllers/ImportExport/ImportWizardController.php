@@ -15,6 +15,7 @@ use App\Models\ImportValidationProfile;
 use App\Services\ImportExport\ImportExportRegistry;
 use App\Services\ImportExport\SpreadsheetReader;
 use App\Services\ImportExport\Storage\ImportExportStorageManager;
+use App\Services\ImportExport\Validation\ImportBehaviorMetaRegistry;
 use App\Services\ImportExport\Validation\RuleMetaRegistry;
 use App\Services\ImportExport\Validation\TransformPipeline;
 use App\Support\ImportExportAuthorization;
@@ -38,6 +39,7 @@ final class ImportWizardController extends Controller
         $handler = ImportExportRegistry::importHandler($entityType);
         $path = $this->storeImportFile($request->file('file'), $entityType);
         $preview = SpreadsheetReader::preview($path);
+        $totalRows = SpreadsheetReader::for($path, 'import_export')->count();
         $tenantId = (int) $user->tenant_id;
         $defaultProfile = ImportValidationProfile::defaultFor($tenantId, $entityType);
 
@@ -65,6 +67,7 @@ final class ImportWizardController extends Controller
             'ulid' => $job->ulid,
             'headers' => $preview['headers'],
             'preview_rows' => $preview['rows'],
+            'total_rows' => $totalRows,
             'system_fields' => $handler->columns(),
             'default_profile' => $defaultProfile,
             'saved_profiles' => $savedProfiles,
@@ -116,6 +119,7 @@ final class ImportWizardController extends Controller
             'column_rules' => $columnRules,
             'available_rules' => RuleMetaRegistry::allRuleMeta(),
             'available_transforms' => TransformPipeline::allMeta(),
+            'import_behaviors' => ImportBehaviorMetaRegistry::allBehaviorMeta(),
             'saved_profiles' => $savedProfiles,
             'step' => 3,
         ]);
@@ -156,6 +160,7 @@ final class ImportWizardController extends Controller
 
         $options = $request->validated('options', []);
         $mapping = $job->column_mapping ?? [];
+        $columnRules = $job->column_rules_snapshot;
 
         if ($mapping === [] && is_array($job->file_preview['headers'] ?? null)) {
             $mapping = $this->guessMapping(
@@ -165,11 +170,18 @@ final class ImportWizardController extends Controller
             $job->column_mapping = $mapping;
         }
 
-        $columnRules = $job->column_rules_snapshot;
         if ($columnRules === null || $columnRules === []) {
             $handler = ImportExportRegistry::importHandler($job->entity_type);
             $defaultProfile = ImportValidationProfile::defaultFor((int) $job->tenant_id, $job->entity_type);
             $columnRules = $this->buildColumnRules($handler->columns(), $defaultProfile, $mapping);
+        }
+
+        if (($options['auto_trim'] ?? true) === true) {
+            $columnRules = $this->applyAutoTrim($columnRules);
+        }
+
+        if (($options['duplicate_check'] ?? true) !== true) {
+            $columnRules = $this->stripDuplicateRules($columnRules);
         }
 
         $job->update([
@@ -275,5 +287,48 @@ final class ImportWizardController extends Controller
         }
 
         return $rules;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $columnRules
+     * @return list<array<string, mixed>>
+     */
+    private function applyAutoTrim(array $columnRules): array
+    {
+        return array_map(function (array $columnRule): array {
+            $transforms = $columnRule['transform'] ?? [];
+
+            if (! is_array($transforms)) {
+                $transforms = [$transforms];
+            }
+
+            if (! in_array('trim', $transforms, true)) {
+                array_unshift($transforms, 'trim');
+            }
+
+            $columnRule['transform'] = array_values($transforms);
+
+            return $columnRule;
+        }, $columnRules);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $columnRules
+     * @return list<array<string, mixed>>
+     */
+    private function stripDuplicateRules(array $columnRules): array
+    {
+        return array_map(function (array $columnRule): array {
+            $rules = $columnRule['rules'] ?? [];
+
+            if (is_array($rules)) {
+                $columnRule['rules'] = array_values(array_filter(
+                    $rules,
+                    fn (mixed $rule): bool => ! is_array($rule) || ($rule['rule'] ?? null) !== 'unique_in_db',
+                ));
+            }
+
+            return $columnRule;
+        }, $columnRules);
     }
 }

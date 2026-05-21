@@ -90,6 +90,34 @@ class ImportExportJob extends Model
         return $query->when($tenantId !== null, fn (Builder $q) => $q->where('tenant_id', $tenantId));
     }
 
+    public function isTrayActive(): bool
+    {
+        if (in_array($this->status, ['validating', 'validated', 'processing', 'completing'], true)) {
+            return true;
+        }
+
+        return $this->status === 'pending' && $this->queued_at !== null;
+    }
+
+    public function isWizardDraft(): bool
+    {
+        return $this->status === 'pending' && $this->queued_at === null;
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeTrayActive(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q): void {
+            $q->whereIn('status', ['validating', 'validated', 'processing', 'completing'])
+                ->orWhere(function (Builder $inner): void {
+                    $inner->where('status', 'pending')->whereNotNull('queued_at');
+                });
+        });
+    }
+
     public function markValidating(): void
     {
         $this->status = 'validating';

@@ -85,6 +85,7 @@ class HandleInertiaRequests extends Middleware
             'app' => [
                 'name' => config('app.name'),
             ],
+            'csrf_token' => fn () => csrf_token(),
         ];
     }
 

@@ -1,17 +1,20 @@
 import { fetchJob } from '@/lib/importExportApi';
+import { cumulativeImportProgress, mergeImportProgress } from '@/lib/importProgress';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const TERMINAL_STATUSES = ['completed', 'failed', 'cancelled'];
 
 function progressFromJob(job) {
+    const phase = job.status === 'validated' ? 'validated' : job.status;
+
     return {
-        phase: job.status,
+        phase,
         processed: job.processed_rows ?? 0,
         total: job.total_rows ?? 0,
         success: job.success_rows ?? 0,
         failed: job.failed_rows ?? 0,
         skipped: job.skipped_rows ?? 0,
-        errors: job.row_errors_count ?? 0,
+        errors: job.row_errors_count ?? job.failed_rows ?? 0,
     };
 }
 
@@ -20,8 +23,26 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
     const [status, setStatus] = useState('pending');
     const handlersRef = useRef({ onCompleted, onFailed });
     const completedRef = useRef(false);
+    const maxPercentRef = useRef(0);
 
     handlersRef.current = { onCompleted, onFailed };
+
+    const applyProgress = useCallback((incoming, nextStatus) => {
+        setProgress((current) => {
+            const merged = mergeImportProgress(current, incoming);
+            const percent = cumulativeImportProgress(merged, nextStatus ?? merged.phase ?? 'processing');
+            maxPercentRef.current = Math.max(maxPercentRef.current, percent);
+
+            if (percent < maxPercentRef.current && nextStatus !== 'completed') {
+                return {
+                    ...merged,
+                    processed: Math.max(Number(current?.processed) || 0, Number(merged?.processed) || 0),
+                };
+            }
+
+            return merged;
+        });
+    }, []);
 
     const applyJob = useCallback((job) => {
         if (!job) {
@@ -29,10 +50,11 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
         }
 
         setStatus(job.status);
-        setProgress(progressFromJob(job));
+        applyProgress(progressFromJob(job), job.status);
 
         if (job.status === 'completed' && !completedRef.current) {
             completedRef.current = true;
+            maxPercentRef.current = 100;
             const summary =
                 job.summary && typeof job.summary === 'object'
                     ? job.summary
@@ -43,7 +65,7 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
         if (job.status === 'failed') {
             handlersRef.current.onFailed?.(job);
         }
-    }, []);
+    }, [applyProgress]);
 
     const refresh = useCallback(async () => {
         if (!ulid) {
@@ -58,6 +80,7 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
 
     useEffect(() => {
         completedRef.current = false;
+        maxPercentRef.current = 0;
     }, [ulid]);
 
     useEffect(() => {
@@ -68,14 +91,15 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
         const channel = window.Echo.private(`import-job.${ulid}`);
 
         channel.listen('.progress.updated', (payload) => {
-            setProgress(payload);
+            applyProgress(payload, payload.phase ?? 'processing');
             setStatus(payload.phase ?? 'processing');
         });
 
         channel.listen('.import.completed', (payload) => {
             if (!completedRef.current) {
                 completedRef.current = true;
-                setProgress(payload);
+                maxPercentRef.current = 100;
+                applyProgress(payload, 'completed');
                 setStatus('completed');
                 handlersRef.current.onCompleted?.(payload);
             }
@@ -84,7 +108,8 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
         channel.listen('.export.completed', (payload) => {
             if (!completedRef.current) {
                 completedRef.current = true;
-                setProgress(payload);
+                maxPercentRef.current = 100;
+                applyProgress(payload, 'completed');
                 setStatus('completed');
                 handlersRef.current.onCompleted?.(payload);
             }
@@ -93,7 +118,7 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
         return () => {
             window.Echo.leave(`import-job.${ulid}`);
         };
-    }, [ulid]);
+    }, [ulid, applyProgress]);
 
     useEffect(() => {
         if (!ulid) {

@@ -8,6 +8,7 @@ use App\Events\ImportExport\ImportProgressUpdated;
 use App\Models\ImportExportJob;
 use App\Models\ImportRowError;
 use App\Services\ImportExport\ImportContext;
+use App\Services\ImportExport\ImportErrorFormatter;
 use App\Services\ImportExport\ImportExportRegistry;
 use App\Services\ImportExport\RowMapper;
 use App\Services\ImportExport\SpreadsheetReader;
@@ -47,6 +48,7 @@ final class ValidateImportJob implements ShouldQueue
 
             $columnRules = $job->column_rules_snapshot ?? [];
             $mapping = $job->column_mapping ?? [];
+            $errorFormatter = ImportErrorFormatter::forJob($job);
             $processed = 0;
             $errorCount = 0;
             $batch = [];
@@ -60,6 +62,7 @@ final class ValidateImportJob implements ShouldQueue
 
                 if ($errors !== []) {
                     $errorCount++;
+                    $errors = $errorFormatter->formatErrors($errors, $systemRow);
                     $batch[] = [
                         'job_id' => $job->id,
                         'row_index' => $rowIndex,
@@ -75,6 +78,7 @@ final class ValidateImportJob implements ShouldQueue
                 }
 
                 if ($processed % 100 === 0) {
+                    $job->update(['processed_rows' => $processed]);
                     $this->broadcastProgress($job, 'validating', $processed, $totalRows, $errorCount);
                 }
             }
@@ -86,6 +90,7 @@ final class ValidateImportJob implements ShouldQueue
             $errorCount = (int) ImportRowError::query()->where('job_id', $job->id)->count();
             $hasErrors = $errorCount > 0;
             $job->markValidated();
+            $job->update(['processed_rows' => $totalRows]);
 
             $this->broadcastProgress($job, 'validated', $totalRows, $totalRows, $errorCount);
 
@@ -100,6 +105,7 @@ final class ValidateImportJob implements ShouldQueue
                 return;
             }
 
+            $job->update(['processed_rows' => 0]);
             ProcessImportJob::dispatch($job->id)->onQueue('imports-heavy');
         } catch (Throwable $e) {
             $job->markFailed($e->getMessage());
@@ -128,7 +134,7 @@ final class ValidateImportJob implements ShouldQueue
 
         foreach ($validator->errors()->toArray() as $key => $messages) {
             $field = preg_replace('/^rows\.\d+\./', '', (string) $key) ?: '_row';
-            $errors[$field] = $messages;
+            $errors[$field] = array_map('strval', $messages);
         }
 
         return $errors;
@@ -146,6 +152,9 @@ final class ValidateImportJob implements ShouldQueue
             'processed' => $processed,
             'total' => $total,
             'errors' => $errorCount,
+            'failed' => $errorCount,
+            'success' => max(0, $processed - $errorCount),
+            'skipped' => 0,
         ]);
     }
 }

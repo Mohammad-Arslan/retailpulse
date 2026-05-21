@@ -40,4 +40,13 @@ final readonly class ImportContext
     {
         return (bool) ($this->options['strict'] ?? false);
     }
+
+    public function shouldSkipInvalidRows(): bool
+    {
+        if ($this->isStrictMode()) {
+            return false;
+        }
+
+        return ($this->options['skip_invalid_rows'] ?? true) !== false;
+    }
 }

@@ -24,6 +24,7 @@ return function (string $namePrefix): void {
 
         Route::get('jobs', [ImportJobController::class, 'index'])->name('jobs.index');
         Route::get('jobs/{ulid}', [ImportJobController::class, 'show'])->name('jobs.show');
+        Route::get('jobs/{ulid}/row-errors', [ImportJobController::class, 'rowErrors'])->name('jobs.row-errors');
         Route::post('jobs/{ulid}/cancel', [ImportJobController::class, 'cancel'])->name('jobs.cancel');
         Route::get('jobs/{ulid}/errors', [ExportController::class, 'errors'])->name('errors');
         Route::get('jobs/{ulid}/download', [ExportController::class, 'download'])->name('jobs.download');

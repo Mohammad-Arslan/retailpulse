@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Events\ImportExport\ImportCompleted;
 use App\Models\ImportExportJob;
 use App\Models\ImportRowError;
+use App\Services\ImportExport\ImportErrorFormatter;
 use App\Traits\HandlesImportExportStorage;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -35,19 +36,29 @@ final class GenerateErrorReportJob implements ShouldQueue
         $job = ImportExportJob::query()->findOrFail($this->jobId);
 
         try {
+            $formatter = ImportErrorFormatter::forJob($job);
+
             $rows = ImportRowError::query()
                 ->where('job_id', $job->id)
                 ->orderBy('row_index')
                 ->get()
-                ->flatMap(function (ImportRowError $error) {
+                ->flatMap(function (ImportRowError $error) use ($formatter) {
                     $lines = [];
+                    $rowData = is_array($error->row_data) ? $error->row_data : [];
+
                     foreach ($error->errors as $field => $messages) {
                         foreach ((array) $messages as $message) {
                             $lines[] = [
                                 'Row Number' => $error->row_index,
-                                'Field' => $field,
-                                'Error' => $message,
-                                'Original Value' => json_encode($error->row_data[$field] ?? $error->row_data),
+                                'Field' => $field === '_row' ? '—' : $formatter->fieldLabel((string) $field),
+                                'Error' => $formatter->formatMessage(
+                                    (string) $field,
+                                    (string) $message,
+                                    $rowData[$field] ?? null,
+                                ),
+                                'Original Value' => is_scalar($rowData[$field] ?? null)
+                                    ? (string) ($rowData[$field] ?? '')
+                                    : json_encode($rowData[$field] ?? $rowData),
                             ];
                         }
                     }
