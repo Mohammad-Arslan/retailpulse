@@ -7,6 +7,7 @@ namespace App\Services\ImportExport\Handlers;
 use App\Models\Unit;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\CatalogExportFilters;
 use App\Support\TenantImportScope;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -19,8 +20,15 @@ final class UnitExportHandler implements ExportHandler
 
     public function query(ExportContext $context): Builder
     {
-        return TenantImportScope::constrain(Unit::query(), $context->tenantId)
+        $query = TenantImportScope::constrain(Unit::query(), $context->tenantId)
             ->orderBy('name');
+
+        CatalogExportFilters::applyUnitFilters(
+            $query,
+            $context->options['filters'] ?? [],
+        );
+
+        return $query;
     }
 
     public function map(mixed $record, ExportContext $context): array

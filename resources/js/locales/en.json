@@ -8,6 +8,7 @@
         "catalog": "Catalog",
         "categories": "Categories",
         "brands": "Brands",
+        "units": "Units",
         "products": "Products",
         "inventorySection": "Inventory",
         "inventory": "Stock levels",
@@ -26,6 +27,7 @@
         "addBranch": "Add Branch",
         "addCategory": "Add Category",
         "addBrand": "Add Brand",
+        "addUnit": "Add Unit",
         "addProduct": "Add Product",
         "receiveStock": "Receive stock",
         "adjustStock": "Adjust stock",
@@ -230,6 +232,7 @@
         "deleteBranch": "Delete {{name}}? Warehouses and assignments for this branch will be removed.",
         "deleteCategory": "Delete {{name}}? Products in this category will be uncategorized.",
         "deleteBrand": "Delete {{name}}? Products for this brand will be unbranded.",
+        "deleteUnit": "Delete {{name}}? Products using this unit must be updated first.",
         "deleteProduct": "Delete {{name}}? All variants and identifiers will be removed.",
         "confirm": "Confirm",
         "cancel": "Cancel"
@@ -418,6 +421,30 @@
                 "active": "Active brand"
             }
         },
+        "units": {
+            "title": "Units of measure",
+            "description": "Manage measurement units used by products (each, kg, liter, etc.).",
+            "empty": "No units found.",
+            "searchPlaceholder": "Search units...",
+            "createTitle": "Create Unit",
+            "createDescription": "Add a unit of measure for product catalog items.",
+            "createSubmit": "Create unit",
+            "editTitle": "Edit {{name}}",
+            "saveChanges": "Save changes",
+            "active": "Active",
+            "inactive": "Inactive",
+            "columns": {
+                "name": "Unit",
+                "products": "Products",
+                "status": "Status"
+            },
+            "fields": {
+                "name": "Name",
+                "abbreviation": "Abbreviation",
+                "active": "Active unit"
+            },
+            "abbreviationHint": "Auto-generated from the unit name."
+        },
         "products": {
             "title": "Products",
             "description": "Product master data, variants, bundles, and identifiers.",
@@ -523,6 +550,7 @@
         "branches": "Branches",
         "categories": "Categories",
         "brands": "Brands",
+        "units": "Units",
         "products": "Products",
         "inventory": "Stock levels",
         "stockTransfers": "Transfers",

@@ -159,4 +159,30 @@ final class CatalogExportFilters
             });
         }
     }
+
+    /**
+     * @param  Builder<\App\Models\Unit>  $query
+     * @param  array<string, mixed>  $filters
+     */
+    public static function applyUnitFilters(Builder $query, array $filters): void
+    {
+        $filters = self::normalize($filters);
+
+        if (isset($filters['ids'])) {
+            $query->whereIn('id', $filters['ids']);
+        }
+
+        if (isset($filters['is_active'])) {
+            $query->where('is_active', $filters['is_active']);
+        }
+
+        if (isset($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function (Builder $unitQuery) use ($search): void {
+                $unitQuery
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('abbreviation', 'like', "%{$search}%");
+            });
+        }
+    }
 }

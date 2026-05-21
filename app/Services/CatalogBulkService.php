@@ -7,10 +7,12 @@ namespace App\Services;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Unit;
 use App\Models\User;
 use App\Repositories\Contracts\BrandRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Repositories\Contracts\UnitRepositoryInterface;
 use App\Support\TenantImportScope;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
@@ -24,9 +26,11 @@ final class CatalogBulkService
         private readonly ProductService $productService,
         private readonly CategoryService $categoryService,
         private readonly BrandService $brandService,
+        private readonly UnitService $unitService,
         private readonly ProductRepositoryInterface $products,
         private readonly CategoryRepositoryInterface $categories,
         private readonly BrandRepositoryInterface $brands,
+        private readonly UnitRepositoryInterface $units,
     ) {}
 
     /**
@@ -57,6 +61,7 @@ final class CatalogBulkService
                     'products' => $this->productService->delete($model),
                     'categories' => $this->categoryService->delete($model),
                     'brands' => $this->brandService->delete($model),
+                    'units' => $this->unitService->delete($model),
                     default => throw new AuthorizationException,
                 };
 
@@ -108,6 +113,7 @@ final class CatalogBulkService
                     'products' => $this->products->update($model, ['is_active' => false]),
                     'categories' => $this->categories->update($model, ['is_active' => false]),
                     'brands' => $this->brands->update($model, ['is_active' => false]),
+                    'units' => $this->units->update($model, ['is_active' => false]),
                     default => null,
                 };
 
@@ -118,7 +124,7 @@ final class CatalogBulkService
         });
     }
 
-    private function resolveModel(string $entity, int $id, User $user): Product|Category|Brand|null
+    private function resolveModel(string $entity, int $id, User $user): Product|Category|Brand|Unit|null
     {
         $tenantId = TenantImportScope::normalize($user->tenant_id);
 
@@ -126,6 +132,7 @@ final class CatalogBulkService
             'products' => $this->findScoped(Product::query(), $tenantId, $id),
             'categories' => $this->findScoped(Category::query(), $tenantId, $id),
             'brands' => $this->findScoped(Brand::query(), $tenantId, $id),
+            'units' => $this->findScoped(Unit::query(), $tenantId, $id),
             default => null,
         };
     }
@@ -133,9 +140,9 @@ final class CatalogBulkService
     /**
      * @param  \Illuminate\Database\Eloquent\Builder<Model>  $query
      */
-    private function findScoped($query, ?int $tenantId, int $id): Product|Category|Brand|null
+    private function findScoped($query, ?int $tenantId, int $id): Product|Category|Brand|Unit|null
     {
-        /** @var Product|Category|Brand|null $model */
+        /** @var Product|Category|Brand|Unit|null $model */
         $model = TenantImportScope::constrain($query, $tenantId)
             ->whereKey($id)
             ->first();

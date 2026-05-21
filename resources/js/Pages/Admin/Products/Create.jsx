@@ -48,7 +48,7 @@ export default function Create({
                     {t('confirm.cancel')}
                 </Link>
             </PageHeader>
-            <form onSubmit={submit} className="max-w-3xl space-y-5">
+            <form onSubmit={submit} className="space-y-5">
                 <ProductFormFields
                     data={data}
                     setData={setData}

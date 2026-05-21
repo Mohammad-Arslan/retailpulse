@@ -24,6 +24,11 @@ const ENTITY_PERMISSIONS = {
         update: 'products.update',
         delete: 'products.delete',
     },
+    units: {
+        export: 'products.export',
+        update: 'products.update',
+        delete: 'products.delete',
+    },
 };
 
 export function useCatalogBulkActions({

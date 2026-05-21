@@ -20,7 +20,7 @@ final class BulkCatalogActionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'entity' => ['required', 'string', Rule::in(['products', 'categories', 'brands'])],
+            'entity' => ['required', 'string', Rule::in(['products', 'categories', 'brands', 'units'])],
             'ids' => ['required', 'array', 'min:1'],
             'ids.*' => ['integer', 'min:1'],
         ];

@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\StockTransferController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +30,7 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::resource('branches', BranchController::class)->except(['show']);
         Route::resource('categories', CategoryController::class)->except(['show']);
         Route::resource('brands', BrandController::class)->except(['show']);
+        Route::resource('units', UnitController::class)->except(['show']);
         Route::post('catalog/bulk/delete', [CatalogBulkController::class, 'destroy'])
             ->name('catalog.bulk.delete');
         Route::post('catalog/bulk/deactivate', [CatalogBulkController::class, 'deactivate'])

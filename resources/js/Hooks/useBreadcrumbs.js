@@ -23,6 +23,9 @@ const ROUTE_CRUMBS = {
     'Admin/Brands/Index': ['home', 'brands'],
     'Admin/Brands/Create': ['home', 'brands', 'create'],
     'Admin/Brands/Edit': ['home', 'brands', 'edit'],
+    'Admin/Units/Index': ['home', 'units'],
+    'Admin/Units/Create': ['home', 'units', 'create'],
+    'Admin/Units/Edit': ['home', 'units', 'edit'],
     'Admin/Products/Index': ['home', 'products'],
     'Admin/Products/Create': ['home', 'products', 'create'],
     'Admin/Products/Edit': ['home', 'products', 'edit'],
@@ -38,6 +41,7 @@ const CRUMB_HREFS = {
     branches: 'admin.branches.index',
     categories: 'admin.categories.index',
     brands: 'admin.brands.index',
+    units: 'admin.units.index',
     products: 'admin.products.index',
     settings: 'admin.settings.index',
 };

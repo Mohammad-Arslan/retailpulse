@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\BulkCatalogActionRequest;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Unit;
 use App\Services\CatalogBulkService;
 use Illuminate\Http\RedirectResponse;
 
@@ -88,6 +89,7 @@ final class CatalogBulkController extends Controller
             'products' => Product::class,
             'categories' => Category::class,
             'brands' => Brand::class,
+            'units' => Unit::class,
             default => Product::class,
         };
 

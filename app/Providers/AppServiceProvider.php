@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\Role;
+use App\Models\Unit;
 use App\Models\User;
 use App\Observers\AuditObserver;
 use App\Models\Branch;
@@ -76,6 +77,7 @@ class AppServiceProvider extends ServiceProvider
         Branch::observe(AuditObserver::class);
         Category::observe(AuditObserver::class);
         Brand::observe(AuditObserver::class);
+        Unit::observe(AuditObserver::class);
         Product::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
