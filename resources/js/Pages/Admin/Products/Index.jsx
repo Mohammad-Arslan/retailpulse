@@ -62,9 +62,18 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
                             <Package className="h-4 w-4" />
                         </span>
                         <div>
-                            <div className="text-sm font-semibold text-rp-text">
-                                {row.original.name}
-                            </div>
+                            {can('products.view') ? (
+                                <Link
+                                    href={route('admin.products.show', row.original.id)}
+                                    className="text-sm font-semibold text-rp-text hover:text-teal-600 dark:hover:text-teal-300"
+                                >
+                                    {row.original.name}
+                                </Link>
+                            ) : (
+                                <div className="text-sm font-semibold text-rp-text">
+                                    {row.original.name}
+                                </div>
+                            )}
                             <div className="text-xs text-rp-text-muted">
                                 {row.original.default_variant?.sku ?? '—'}
                             </div>
@@ -125,10 +134,18 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
         );
 
         return cols;
-    }, [t, canShowCost]);
+    }, [t, canShowCost, can]);
 
     const rowActions = (product) => {
         const actions = [];
+        if (can('products.view')) {
+            actions.push({
+                label: t('common.view'),
+                type: 'view',
+                href: route('admin.products.show', product.id),
+                permission: 'products.view',
+            });
+        }
         if (can('products.update')) {
             actions.push({
                 label: t('common.edit'),

@@ -37,7 +37,7 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             ->name('catalog.bulk.deactivate');
         Route::get('product-variants/search', [ProductController::class, 'searchVariants'])
             ->name('product-variants.search');
-        Route::resource('products', ProductController::class)->except(['show']);
+        Route::resource('products', ProductController::class);
 
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
         Route::get('inventory/adjust', [InventoryController::class, 'adjustForm'])->name('inventory.adjust');

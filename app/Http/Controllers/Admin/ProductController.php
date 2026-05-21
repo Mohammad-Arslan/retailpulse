@@ -94,6 +94,18 @@ final class ProductController extends Controller
             ->with('success', __('Product created successfully.'));
     }
 
+    public function show(Request $request, Product $product): Response
+    {
+        $this->authorize('view', $product);
+
+        $product = $this->products->findByIdWithRelations($product->id) ?? $product;
+
+        return Inertia::render('Admin/Products/Show', [
+            'product' => ProductPresenter::forDetail($product),
+            'canShowCost' => $request->user()?->can('products.show-cost') ?? false,
+        ]);
+    }
+
     public function edit(Request $request, Product $product): Response
     {
         $this->authorize('update', $product);

@@ -28,6 +28,7 @@ const ROUTE_CRUMBS = {
     'Admin/Units/Edit': ['home', 'units', 'edit'],
     'Admin/Products/Index': ['home', 'products'],
     'Admin/Products/Create': ['home', 'products', 'create'],
+    'Admin/Products/Show': ['home', 'products', 'view'],
     'Admin/Products/Edit': ['home', 'products', 'edit'],
     'Admin/Settings/Index': ['home', 'settings'],
     'Admin/Settings/Edit': ['home', 'settings', 'edit'],

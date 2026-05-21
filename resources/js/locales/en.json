@@ -55,7 +55,9 @@
         "switchToLight": "Switch to light mode",
         "switchToDark": "Switch to dark mode",
         "commandPalette": "Search pages, users, actions...",
-        "continue": "Continue"
+        "continue": "Continue",
+        "yes": "Yes",
+        "no": "No"
     },
     "bulk": {
         "selectionBar": "Bulk actions",
@@ -455,6 +457,9 @@
             "createSubmit": "Create product",
             "editTitle": "Edit {{name}}",
             "saveChanges": "Save changes",
+            "backToList": "Back to products",
+            "createdAt": "Created",
+            "updatedAt": "Last updated",
             "active": "Active",
             "inactive": "Inactive",
             "none": "None",
@@ -546,6 +551,7 @@
         "permissions": "Permissions",
         "create": "Create",
         "edit": "Edit",
+        "view": "View",
         "clone": "Clone",
         "branches": "Branches",
         "categories": "Categories",
