@@ -1,6 +1,12 @@
+import BulkSelectionBar from '@/Components/common/BulkSelectionBar';
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import Select, { mapToSelectOptions } from '@/Components/ui/select';
+import ImportExportToolbar from '@/Components/import-export/ImportExportToolbar';
+import { useImportJobsTray } from '@/Components/import-export/ImportJobsTray';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
+import { useCatalogBulkActions } from '@/Hooks/useCatalogBulkActions';
+import { useRowSelection } from '@/Hooks/useRowSelection';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
 import { Package, Plus, Search } from 'lucide-react';
@@ -10,6 +16,31 @@ import { useTranslation } from 'react-i18next';
 function Index({ products, filters, productTypes, categories, brands, canShowCost }) {
     const can = useCan();
     const { t } = useTranslation();
+    const { trackJob } = useImportJobsTray();
+    const selection = useRowSelection();
+    const pageRowIds = useMemo(
+        () => (products.data ?? []).map((product) => product.id),
+        [products.data],
+    );
+    const exportOptions = useMemo(
+        () => ({
+            filters: {
+                search: filters.search ?? undefined,
+                type: filters.type ?? undefined,
+                category_id: filters.category_id ?? undefined,
+                brand_id: filters.brand_id ?? undefined,
+                is_active: filters.is_active ?? undefined,
+            },
+        }),
+        [filters],
+    );
+    const bulkActions = useCatalogBulkActions({
+        entityType: 'products',
+        selectedArray: selection.selectedArray,
+        onClear: selection.clearSelection,
+        onJobStarted: trackJob,
+        exportOptions,
+    });
 
     const search = (e) => {
         e.preventDefault();
@@ -31,9 +62,18 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
                             <Package className="h-4 w-4" />
                         </span>
                         <div>
-                            <div className="text-sm font-semibold text-rp-text">
-                                {row.original.name}
-                            </div>
+                            {can('products.view') ? (
+                                <Link
+                                    href={route('admin.products.show', row.original.id)}
+                                    className="text-sm font-semibold text-rp-text hover:text-teal-600 dark:hover:text-teal-300"
+                                >
+                                    {row.original.name}
+                                </Link>
+                            ) : (
+                                <div className="text-sm font-semibold text-rp-text">
+                                    {row.original.name}
+                                </div>
+                            )}
                             <div className="text-xs text-rp-text-muted">
                                 {row.original.default_variant?.sku ?? '—'}
                             </div>
@@ -94,10 +134,18 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
         );
 
         return cols;
-    }, [t, canShowCost]);
+    }, [t, canShowCost, can]);
 
     const rowActions = (product) => {
         const actions = [];
+        if (can('products.view')) {
+            actions.push({
+                label: t('common.view'),
+                type: 'view',
+                href: route('admin.products.show', product.id),
+                permission: 'products.view',
+            });
+        }
         if (can('products.update')) {
             actions.push({
                 label: t('common.edit'),
@@ -129,12 +177,21 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
                 title={t('pages.products.title')}
                 description={t('pages.products.description')}
             >
-                {can('products.create') && (
-                    <Link href={route('admin.products.create')} className="rp-btn-primary">
-                        <Plus className="h-4 w-4" />
-                        {t('common.addProduct')}
-                    </Link>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                    <ImportExportToolbar
+                        entityType="products"
+                        entityLabel={t('nav.products')}
+                        showMatchField
+                        exportOptions={exportOptions}
+                        onJobStarted={trackJob}
+                    />
+                    {can('products.create') && (
+                        <Link href={route('admin.products.create')} className="rp-btn-primary">
+                            <Plus className="h-4 w-4" />
+                            {t('common.addProduct')}
+                        </Link>
+                    )}
+                </div>
             </PageHeader>
             <form onSubmit={search} className="rp-filter-bar flex-wrap gap-2">
                 <div className="rp-search-inset min-w-[200px] flex-1">
@@ -146,30 +203,27 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
                         className="rp-search-input"
                     />
                 </div>
-                <select
+                <Select
                     name="type"
                     defaultValue={filters.type ?? ''}
-                    className="rp-form-input w-auto"
-                >
-                    <option value="">{t('pages.products.allTypes')}</option>
-                    {productTypes.map((type) => (
-                        <option key={type} value={type}>
-                            {t(`pages.products.types.${type}`, { defaultValue: type })}
-                        </option>
-                    ))}
-                </select>
-                <select
+                    className="w-auto min-w-[10rem]"
+                    options={[
+                        { value: '', label: t('pages.products.allTypes') },
+                        ...productTypes.map((type) => ({
+                            value: type,
+                            label: t(`pages.products.types.${type}`, { defaultValue: type }),
+                        })),
+                    ]}
+                />
+                <Select
                     name="category_id"
                     defaultValue={filters.category_id ?? ''}
-                    className="rp-form-input w-auto"
-                >
-                    <option value="">{t('pages.products.allCategories')}</option>
-                    {categories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                            {c.name}
-                        </option>
-                    ))}
-                </select>
+                    className="w-auto min-w-[10rem]"
+                    options={[
+                        { value: '', label: t('pages.products.allCategories') },
+                        ...mapToSelectOptions(categories),
+                    ]}
+                />
                 <button type="submit" className="rp-btn-outline">
                     {t('common.search')}
                 </button>
@@ -182,6 +236,15 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
                 indexRoute="admin.products.index"
                 rowActions={rowActions}
                 emptyMessage={t('pages.products.empty')}
+                selectable
+                selectedIds={selection.selectedIds}
+                onToggleRow={selection.toggleRow}
+                onToggleAll={() => selection.toggleAll(pageRowIds)}
+            />
+            <BulkSelectionBar
+                selectedCount={selection.selectedCount}
+                onClear={selection.clearSelection}
+                actions={bulkActions}
             />
         </>
     );

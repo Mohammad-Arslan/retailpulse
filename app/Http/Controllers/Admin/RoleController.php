@@ -14,6 +14,7 @@ use App\Models\Role;
 use App\Repositories\Contracts\PermissionRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Services\RoleService;
+use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -31,9 +32,17 @@ final class RoleController extends Controller
     {
         $this->authorize('viewAny', Role::class);
 
+        $filters = ListPagination::filters(
+            $request,
+            ['search', 'sort', 'direction'],
+        );
+
         return Inertia::render('Admin/Roles/Index', [
-            'roles' => $this->roles->paginate($request->only('search', 'sort', 'direction')),
-            'filters' => $request->only('search', 'sort', 'direction'),
+            'roles' => $this->roles->paginate(
+                $filters,
+                ListPagination::resolve($filters['per_page']),
+            ),
+            'filters' => $filters,
         ]);
     }
 

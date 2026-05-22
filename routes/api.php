@@ -12,3 +12,12 @@ Route::prefix('v1')
         Route::post('inventory/check-availability', [InventoryController::class, 'checkAvailability'])
             ->name('inventory.check-availability');
     });
+
+/*
+| Legacy /api/import-export/* — kept for cached JS bundles. Uses web session (not Sanctum).
+*/
+Route::middleware(['web', 'auth', 'admin', 'branch.context'])
+    ->group(function () {
+        $registerImportExport = require __DIR__.'/import-export.php';
+        $registerImportExport('import-export.');
+    });

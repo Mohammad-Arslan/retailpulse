@@ -51,19 +51,36 @@ final class ProductIdentifierService
         $raw = $sequence->prefix.$number.$sequence->suffix;
 
         return match ($sequence->format) {
-            BarcodeFormat::Ean13 => $this->formatEan13($raw),
+            BarcodeFormat::Ean13 => $this->formatEan13($sequence->last_value),
             BarcodeFormat::Upca => $this->formatUpca($raw),
             BarcodeFormat::Code128 => strtoupper($sequence->prefix.$number),
             default => $raw,
         };
     }
 
-    private function formatEan13(string $raw): string
+    private function formatEan13(int $sequenceValue): string
     {
-        $digits = preg_replace('/\D/', '', $raw) ?? '';
-        $companyPrefix = (string) config('products.identifiers.barcode.ean_company_prefix', '5900000');
-        $body = substr($companyPrefix.$digits, 0, 12);
-        $body = str_pad($body, 12, '0', STR_PAD_LEFT);
+        $companyPrefix = preg_replace(
+            '/\D/',
+            '',
+            (string) config('products.identifiers.barcode.ean_company_prefix', '5900000'),
+        ) ?? '';
+
+        if ($companyPrefix === '' || strlen($companyPrefix) >= 12) {
+            throw new \InvalidArgumentException('EAN-13 company prefix must be between 1 and 11 digits.');
+        }
+
+        $itemLength = 12 - strlen($companyPrefix);
+        $itemReference = (string) $sequenceValue;
+
+        if (strlen($itemReference) > $itemLength) {
+            throw new \OverflowException(
+                "Barcode sequence exceeded capacity (max {$itemLength} digit item reference for this prefix).",
+            );
+        }
+
+        $itemReference = str_pad($itemReference, $itemLength, '0', STR_PAD_LEFT);
+        $body = $companyPrefix.$itemReference;
 
         return $body.$this->eanCheckDigit($body);
     }

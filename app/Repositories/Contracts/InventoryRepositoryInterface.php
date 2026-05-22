@@ -6,7 +6,7 @@ namespace App\Repositories\Contracts;
 
 use App\Enums\PickingStrategy;
 use App\Models\Inventory;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 interface InventoryRepositoryInterface
 {

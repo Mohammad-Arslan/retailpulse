@@ -1,0 +1,160 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Jobs;
+
+use App\Events\ImportExport\ImportProgressUpdated;
+use App\Models\ImportExportJob;
+use App\Models\ImportRowError;
+use App\Services\ImportExport\ImportContext;
+use App\Services\ImportExport\ImportErrorFormatter;
+use App\Services\ImportExport\ImportExportRegistry;
+use App\Services\ImportExport\RowMapper;
+use App\Services\ImportExport\SpreadsheetReader;
+use App\Services\ImportExport\Validation\DynamicRuleEngine;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Throwable;
+
+final class ValidateImportJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $tries = 1;
+
+    public int $timeout = 300;
+
+    public function __construct(
+        public int $jobId,
+    ) {
+        $this->onQueue('imports-validation');
+    }
+
+    public function handle(DynamicRuleEngine $ruleEngine): void
+    {
+        $job = ImportExportJob::query()->findOrFail($this->jobId);
+        $job->markValidating();
+
+        try {
+            $handler = ImportExportRegistry::importHandler($job->entity_type);
+            $context = ImportContext::fromJob($job);
+            $reader = SpreadsheetReader::for((string) $job->input_file_path, 'import_export');
+            $totalRows = $reader->count();
+            $job->update(['total_rows' => $totalRows]);
+
+            $columnRules = $job->column_rules_snapshot ?? [];
+            $mapping = $job->column_mapping ?? [];
+            $errorFormatter = ImportErrorFormatter::forJob($job);
+            $processed = 0;
+            $errorCount = 0;
+            $batch = [];
+
+            foreach ($reader->lazyRows() as $rowIndex => $row) {
+                $processed++;
+                $transformed = $ruleEngine->applyTransforms($row, $columnRules);
+                $errors = $this->validateTransformedRow($ruleEngine, $transformed, $columnRules, $context);
+                $systemRow = RowMapper::toSystemKeys($transformed, $mapping);
+                $errors = array_merge($errors, $handler->validateRow($systemRow, $context));
+
+                if ($errors !== []) {
+                    $errorCount++;
+                    $errors = $errorFormatter->formatErrors($errors, $systemRow);
+                    $batch[] = [
+                        'job_id' => $job->id,
+                        'row_index' => $rowIndex,
+                        'row_data' => json_encode($systemRow),
+                        'errors' => json_encode($errors),
+                        'created_at' => now(),
+                    ];
+                }
+
+                if (count($batch) >= 500) {
+                    ImportRowError::query()->insert($batch);
+                    $batch = [];
+                }
+
+                if ($processed % 100 === 0) {
+                    $job->update(['processed_rows' => $processed]);
+                    $this->broadcastProgress($job, 'validating', $processed, $totalRows, $errorCount);
+                }
+            }
+
+            if ($batch !== []) {
+                ImportRowError::query()->insert($batch);
+            }
+
+            $errorCount = (int) ImportRowError::query()->where('job_id', $job->id)->count();
+            $hasErrors = $errorCount > 0;
+            $job->markValidated();
+            $job->update(['processed_rows' => $totalRows]);
+
+            $this->broadcastProgress($job, 'validated', $totalRows, $totalRows, $errorCount);
+
+            if ($job->is_dry_run || ($hasErrors && $context->isStrictMode())) {
+                $job->update([
+                    'processed_rows' => $totalRows,
+                    'failed_rows' => $errorCount,
+                    'skipped_rows' => $errorCount,
+                ]);
+                GenerateErrorReportJob::dispatch($job->id)->onQueue('imports-reports');
+
+                return;
+            }
+
+            $job->update(['processed_rows' => 0]);
+            ProcessImportJob::dispatch($job->id)->onQueue('imports-heavy');
+        } catch (Throwable $e) {
+            $job->markFailed($e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $transformed
+     * @param  list<array<string, mixed>>  $columnRules
+     * @return array<string, list<string>>
+     */
+    private function validateTransformedRow(
+        DynamicRuleEngine $ruleEngine,
+        array $transformed,
+        array $columnRules,
+        ImportContext $context,
+    ): array {
+        $validator = $ruleEngine->buildValidator([$transformed], $columnRules, $context);
+
+        if (! $validator->fails()) {
+            return [];
+        }
+
+        $errors = [];
+
+        foreach ($validator->errors()->toArray() as $key => $messages) {
+            $field = preg_replace('/^rows\.\d+\./', '', (string) $key) ?: '_row';
+            $errors[$field] = array_map('strval', $messages);
+        }
+
+        return $errors;
+    }
+
+    private function broadcastProgress(
+        ImportExportJob $job,
+        string $phase,
+        int $processed,
+        int $total,
+        int $errorCount,
+    ): void {
+        ImportProgressUpdated::dispatch($job->ulid, (int) $job->user_id, [
+            'phase' => $phase,
+            'processed' => $processed,
+            'total' => $total,
+            'errors' => $errorCount,
+            'failed' => $errorCount,
+            'success' => max(0, $processed - $errorCount),
+            'skipped' => 0,
+        ]);
+    }
+}

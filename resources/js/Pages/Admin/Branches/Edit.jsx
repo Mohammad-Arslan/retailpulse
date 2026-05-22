@@ -2,6 +2,8 @@ import OperatingHoursFields from '@/Components/admin/OperatingHoursFields';
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
+import Select from '@/Components/ui/select';
+import { useMemo } from 'react';
 import { useConfirm } from '@/Components/common/ConfirmDialogProvider';
 import { useCan } from '@/Hooks/useCan';
 import AdminLayout from '@/Layouts/AdminLayout';
@@ -12,6 +14,18 @@ export default function Edit({ branch, timezones }) {
     const can = useCan();
     const confirm = useConfirm();
     const { t } = useTranslation();
+    const timezoneOptions = useMemo(
+        () => timezones.map((tz) => ({ value: tz, label: tz })),
+        [timezones],
+    );
+    const warehouseOptions = useMemo(
+        () =>
+            branch.warehouses.map((warehouse) => ({
+                value: String(warehouse.id),
+                label: `${warehouse.name} (${warehouse.code})`,
+            })),
+        [branch.warehouses],
+    );
     const { data, setData, put, processing, errors, delete: destroy } = useForm({
         name: branch.name,
         code: branch.code,
@@ -139,33 +153,33 @@ export default function Edit({ branch, timezones }) {
                             id="timezone"
                             error={errors.timezone}
                         >
-                            <select
+                            <Select
                                 id="timezone"
+                                options={timezoneOptions}
                                 value={data.timezone}
-                                className="rp-form-input"
-                                onChange={(e) => setData('timezone', e.target.value)}
-                            >
-                                {timezones.map((tz) => (
-                                    <option key={tz} value={tz}>
-                                        {tz}
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={(value) => setData('timezone', value)}
+                            />
                         </AdminFormField>
                         <AdminFormField
                             label={t('pages.branches.fields.pickingStrategy')}
                             id="picking_strategy"
                             error={errors.picking_strategy}
                         >
-                            <select
+                            <Select
                                 id="picking_strategy"
                                 value={data.picking_strategy}
-                                className="rp-form-input"
-                                onChange={(e) => setData('picking_strategy', e.target.value)}
-                            >
-                                <option value="fifo">{t('pages.branches.pickingStrategies.fifo')}</option>
-                                <option value="fefo">{t('pages.branches.pickingStrategies.fefo')}</option>
-                            </select>
+                                onChange={(value) => setData('picking_strategy', value)}
+                                options={[
+                                    {
+                                        value: 'fifo',
+                                        label: t('pages.branches.pickingStrategies.fifo'),
+                                    },
+                                    {
+                                        value: 'fefo',
+                                        label: t('pages.branches.pickingStrategies.fefo'),
+                                    },
+                                ]}
+                            />
                         </AdminFormField>
                     </div>
                     <AdminFormField
@@ -173,20 +187,12 @@ export default function Edit({ branch, timezones }) {
                         id="default_warehouse_id"
                         error={errors.default_warehouse_id}
                     >
-                        <select
+                        <Select
                             id="default_warehouse_id"
+                            options={warehouseOptions}
                             value={data.default_warehouse_id}
-                            className="rp-form-input"
-                            onChange={(e) =>
-                                setData('default_warehouse_id', e.target.value)
-                            }
-                        >
-                            {branch.warehouses.map((w) => (
-                                <option key={w.id} value={w.id}>
-                                    {w.name} ({w.code})
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(value) => setData('default_warehouse_id', value)}
+                        />
                     </AdminFormField>
                     <AdminFormField
                         label={t('pages.branches.fields.receiptFooter')}

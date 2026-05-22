@@ -16,6 +16,7 @@ use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Services\BranchContextService;
 use App\Services\UserService;
 use App\Support\BranchContext;
+use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -35,12 +36,18 @@ final class UserController extends Controller
     {
         $this->authorize('viewAny', User::class);
 
+        $filters = ListPagination::filters(
+            $request,
+            ['search', 'is_active', 'sort', 'direction'],
+        );
+
         return Inertia::render('Admin/Users/Index', [
             'users' => $this->users->paginate(
-                $request->only('search', 'is_active', 'sort', 'direction'),
+                $filters,
                 $this->userBranchFilterIds($request),
+                ListPagination::resolve($filters['per_page']),
             ),
-            'filters' => $request->only('search', 'is_active', 'sort', 'direction'),
+            'filters' => $filters,
         ]);
     }
 

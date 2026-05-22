@@ -7,7 +7,7 @@ namespace App\Repositories\Eloquent;
 use App\Enums\PickingStrategy;
 use App\Models\Inventory;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 
 final class InventoryRepository implements InventoryRepositoryInterface

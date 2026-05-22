@@ -12,6 +12,7 @@ use App\Http\Requests\Admin\UpdateCategoryRequest;
 use App\Models\Category;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Services\CategoryService;
+use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,11 +29,17 @@ final class CategoryController extends Controller
     {
         $this->authorize('viewAny', Category::class);
 
+        $filters = ListPagination::filters(
+            $request,
+            ['search', 'is_active', 'sort', 'direction'],
+        );
+
         return Inertia::render('Admin/Categories/Index', [
             'categories' => $this->categories->paginate(
-                $request->only('search', 'is_active', 'sort', 'direction'),
+                $filters,
+                ListPagination::resolve($filters['per_page']),
             ),
-            'filters' => $request->only('search', 'is_active', 'sort', 'direction'),
+            'filters' => $filters,
         ]);
     }
 

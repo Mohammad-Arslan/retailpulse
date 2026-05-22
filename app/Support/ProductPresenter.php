@@ -12,6 +12,73 @@ final class ProductPresenter
     /**
      * @return array<string, mixed>
      */
+    public static function forDetail(Product $product): array
+    {
+        $product->loadMissing([
+            'category:id,name',
+            'brand:id,name',
+            'unit:id,name,abbreviation',
+            'variants.bundleItems.childVariant.product:id,name',
+            'variants.branchPrices.branch:id,name',
+        ]);
+
+        $defaultVariant = $product->variants->firstWhere('is_default', true)
+            ?? $product->variants->first();
+
+        return [
+            'id' => $product->id,
+            'type' => $product->type->value,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'description' => $product->description,
+            'is_active' => $product->is_active,
+            'track_batches' => $product->track_batches,
+            'track_serials' => $product->track_serials,
+            'category' => $product->category?->only('id', 'name'),
+            'brand' => $product->brand?->only('id', 'name'),
+            'unit' => $product->unit?->only('id', 'name', 'abbreviation'),
+            'variant_attributes' => $product->variant_attributes ?? [],
+            'variants' => $product->variants->map(fn (ProductVariant $v) => [
+                'id' => $v->id,
+                'name' => $v->displayName(),
+                'sku' => $v->sku,
+                'barcode' => $v->barcode,
+                'cost_price' => (string) $v->cost_price,
+                'sell_price' => (string) $v->sell_price,
+                'reorder_point' => $v->reorder_point,
+                'attributes' => $v->attributes ?? [],
+                'is_default' => $v->is_default,
+            ])->values()->all(),
+            'bundle_items' => $defaultVariant
+                ?->bundleItems
+                ->map(fn ($item) => [
+                    'quantity' => (string) $item->quantity,
+                    'child' => [
+                        'id' => $item->childVariant?->id,
+                        'sku' => $item->childVariant?->sku,
+                        'name' => $item->childVariant?->displayName(),
+                        'product_name' => $item->childVariant?->product?->name,
+                    ],
+                ])
+                ->values()
+                ->all() ?? [],
+            'branch_prices' => $defaultVariant
+                ?->branchPrices
+                ->map(fn ($price) => [
+                    'branch_id' => $price->branch_id,
+                    'branch_name' => $price->branch?->name,
+                    'sell_price' => (string) $price->sell_price,
+                ])
+                ->values()
+                ->all() ?? [],
+            'created_at' => $product->created_at?->toIso8601String(),
+            'updated_at' => $product->updated_at?->toIso8601String(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public static function forForm(Product $product): array
     {
         $product->loadMissing([

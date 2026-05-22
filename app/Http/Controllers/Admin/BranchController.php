@@ -13,6 +13,7 @@ use App\Models\Branch;
 use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Services\BranchContextService;
 use App\Services\BranchService;
+use App\Support\ListPagination;
 use App\Support\OperatingHours;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,12 +34,18 @@ final class BranchController extends Controller
 
         $accessibleIds = $this->branchContext->accessibleBranchIds($request->user());
 
+        $filters = ListPagination::filters(
+            $request,
+            ['search', 'is_active', 'sort', 'direction'],
+        );
+
         return Inertia::render('Admin/Branches/Index', [
             'branches' => $this->branches->paginate(
-                $request->only('search', 'is_active', 'sort', 'direction'),
+                $filters,
                 $accessibleIds,
+                ListPagination::resolve($filters['per_page']),
             ),
-            'filters' => $request->only('search', 'is_active', 'sort', 'direction'),
+            'filters' => $filters,
         ]);
     }
 

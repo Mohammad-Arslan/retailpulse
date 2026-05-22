@@ -1,6 +1,11 @@
+import BulkSelectionBar from '@/Components/common/BulkSelectionBar';
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import ImportExportToolbar from '@/Components/import-export/ImportExportToolbar';
+import { useImportJobsTray } from '@/Components/import-export/ImportJobsTray';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
+import { useCatalogBulkActions } from '@/Hooks/useCatalogBulkActions';
+import { useRowSelection } from '@/Hooks/useRowSelection';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
 import { FolderTree, Plus, Search } from 'lucide-react';
@@ -10,6 +15,24 @@ import { useTranslation } from 'react-i18next';
 function Index({ categories, filters }) {
     const can = useCan();
     const { t } = useTranslation();
+    const { trackJob } = useImportJobsTray();
+    const selection = useRowSelection();
+    const pageRowIds = useMemo(
+        () => (categories.data ?? []).map((category) => category.id),
+        [categories.data],
+    );
+    const bulkActions = useCatalogBulkActions({
+        entityType: 'categories',
+        selectedArray: selection.selectedArray,
+        onClear: selection.clearSelection,
+        onJobStarted: trackJob,
+        exportOptions: {
+            filters: {
+                search: filters.search ?? undefined,
+                is_active: filters.is_active ?? undefined,
+            },
+        },
+    });
 
     const search = (e) => {
         e.preventDefault();
@@ -103,12 +126,25 @@ function Index({ categories, filters }) {
                 title={t('pages.categories.title')}
                 description={t('pages.categories.description')}
             >
-                {can('products.create') && (
-                    <Link href={route('admin.categories.create')} className="rp-btn-primary">
-                        <Plus className="h-4 w-4" />
-                        {t('common.addCategory')}
-                    </Link>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                    <ImportExportToolbar
+                        entityType="categories"
+                        entityLabel={t('nav.categories')}
+                        exportOptions={{
+                            filters: {
+                                search: filters.search ?? undefined,
+                                is_active: filters.is_active ?? undefined,
+                            },
+                        }}
+                        onJobStarted={trackJob}
+                    />
+                    {can('products.create') && (
+                        <Link href={route('admin.categories.create')} className="rp-btn-primary">
+                            <Plus className="h-4 w-4" />
+                            {t('common.addCategory')}
+                        </Link>
+                    )}
+                </div>
             </PageHeader>
             <form onSubmit={search} className="rp-filter-bar">
                 <div className="rp-search-inset">
@@ -132,6 +168,15 @@ function Index({ categories, filters }) {
                 indexRoute="admin.categories.index"
                 rowActions={rowActions}
                 emptyMessage={t('pages.categories.empty')}
+                selectable
+                selectedIds={selection.selectedIds}
+                onToggleRow={selection.toggleRow}
+                onToggleAll={() => selection.toggleAll(pageRowIds)}
+            />
+            <BulkSelectionBar
+                selectedCount={selection.selectedCount}
+                onClear={selection.clearSelection}
+                actions={bulkActions}
             />
         </>
     );

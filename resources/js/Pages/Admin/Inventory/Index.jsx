@@ -1,5 +1,6 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
@@ -119,18 +120,18 @@ function Index({ inventory, filters, warehouses }) {
                         className="rp-search-input"
                     />
                 </div>
-                <select
+                <Select
                     name="warehouse_id"
                     defaultValue={filters.warehouse_id ?? ''}
-                    className="rp-form-input w-auto min-w-[10rem]"
-                >
-                    <option value="">{t('pages.inventory.allWarehouses')}</option>
-                    {warehouses.map((w) => (
-                        <option key={w.id} value={w.id}>
-                            {w.name} ({w.branch_name})
-                        </option>
-                    ))}
-                </select>
+                    className="w-auto min-w-[10rem]"
+                    options={[
+                        { value: '', label: t('pages.inventory.allWarehouses') },
+                        ...warehouses.map((warehouse) => ({
+                            value: String(warehouse.id),
+                            label: `${warehouse.name} (${warehouse.branch_name})`,
+                        })),
+                    ]}
+                />
                 <button type="submit" className="rp-btn-outline">
                     {t('common.search')}
                 </button>

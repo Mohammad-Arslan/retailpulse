@@ -2,14 +2,31 @@ import VariantSearchPicker from '@/Components/admin/VariantSearchPicker';
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
+import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Adjust({ warehouses, reasons }) {
     const { t } = useTranslation();
     const [variant, setVariant] = useState(null);
+    const warehouseOptions = useMemo(
+        () =>
+            warehouses.map((warehouse) => ({
+                value: String(warehouse.id),
+                label: `${warehouse.name} — ${warehouse.branch_name}`,
+            })),
+        [warehouses],
+    );
+    const reasonOptions = useMemo(
+        () =>
+            reasons.map((reason) => ({
+                value: reason.value,
+                label: reason.label,
+            })),
+        [reasons],
+    );
 
     const { data, setData, post, processing, errors } = useForm({
         warehouse_id: warehouses[0]?.id ?? '',
@@ -53,19 +70,13 @@ function Adjust({ warehouses, reasons }) {
                         id="warehouse_id"
                         error={errors.warehouse_id}
                     >
-                        <select
+                        <Select
                             id="warehouse_id"
+                            options={warehouseOptions}
                             value={data.warehouse_id}
-                            className="rp-form-input"
-                            onChange={(e) => setData('warehouse_id', e.target.value)}
+                            onChange={(value) => setData('warehouse_id', value)}
                             required
-                        >
-                            {warehouses.map((w) => (
-                                <option key={w.id} value={w.id}>
-                                    {w.name} — {w.branch_name}
-                                </option>
-                            ))}
-                        </select>
+                        />
                     </AdminFormField>
 
                     <AdminFormField
@@ -84,18 +95,12 @@ function Adjust({ warehouses, reasons }) {
                         id="reason"
                         error={errors.reason}
                     >
-                        <select
+                        <Select
                             id="reason"
+                            options={reasonOptions}
                             value={data.reason}
-                            className="rp-form-input"
-                            onChange={(e) => setData('reason', e.target.value)}
-                        >
-                            {reasons.map((r) => (
-                                <option key={r.value} value={r.value}>
-                                    {r.label}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(value) => setData('reason', value)}
+                        />
                     </AdminFormField>
 
                     <AdminFormField

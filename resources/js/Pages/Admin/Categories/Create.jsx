@@ -1,12 +1,18 @@
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
+import Select, { mapToSelectOptions } from '@/Components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function Create({ parentCategories }) {
     const { t } = useTranslation();
+    const parentOptions = useMemo(
+        () => mapToSelectOptions(parentCategories),
+        [parentCategories],
+    );
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         parent_id: '',
@@ -43,19 +49,14 @@ export default function Create({ parentCategories }) {
                         />
                     </AdminFormField>
                     <AdminFormField label={t('pages.categories.fields.parent')} id="parent_id" error={errors.parent_id}>
-                        <select
+                        <Select
                             id="parent_id"
+                            options={parentOptions}
                             value={data.parent_id}
-                            className="rp-form-input"
-                            onChange={(e) => setData('parent_id', e.target.value || null)}
-                        >
-                            <option value="">{t('pages.categories.noParent')}</option>
-                            {parentCategories.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </select>
+                            placeholder={t('pages.categories.noParent')}
+                            isClearable
+                            onChange={(value) => setData('parent_id', value || null)}
+                        />
                     </AdminFormField>
                     <AdminFormField label={t('pages.categories.fields.description')} id="description" error={errors.description}>
                         <textarea

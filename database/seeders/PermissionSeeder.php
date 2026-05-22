@@ -55,12 +55,21 @@ final class PermissionSeeder extends Seeder
             ['name' => 'products.update', 'description' => 'Update products'],
             ['name' => 'products.delete', 'description' => 'Delete products'],
             ['name' => 'products.show-cost', 'description' => 'View cost price columns'],
+            ['name' => 'products.import', 'description' => 'Import catalog data from spreadsheets'],
+            ['name' => 'products.export', 'description' => 'Export catalog data to spreadsheets'],
         ],
         'inventory' => [
             ['name' => 'inventory.view', 'description' => 'View stock levels by warehouse'],
             ['name' => 'inventory.receive', 'description' => 'Receive stock into warehouse'],
             ['name' => 'inventory.adjust', 'description' => 'Adjust or write off stock'],
             ['name' => 'inventory.transfer', 'description' => 'Create and process stock transfers'],
+        ],
+        'settings' => [
+            ['name' => 'settings.view', 'description' => 'View global settings'],
+            ['name' => 'settings.general.update', 'description' => 'Update general settings'],
+            ['name' => 'settings.company.update', 'description' => 'Update company profile settings'],
+            ['name' => 'settings.notifications.update', 'description' => 'Update notification settings'],
+            ['name' => 'settings.import-export.update', 'description' => 'Update import/export storage settings'],
         ],
     ];
 

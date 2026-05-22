@@ -2,10 +2,11 @@ import VariantSearchPicker from '@/Components/admin/VariantSearchPicker';
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
+import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function emptyLine() {
@@ -13,6 +14,14 @@ function emptyLine() {
 }
 
 function Create({ warehouses }) {
+    const warehouseOptions = useMemo(
+        () =>
+            warehouses.map((warehouse) => ({
+                value: String(warehouse.id),
+                label: `${warehouse.name} (${warehouse.branch_name})`,
+            })),
+        [warehouses],
+    );
     const { t } = useTranslation();
     const [lines, setLines] = useState([emptyLine()]);
 
@@ -75,33 +84,21 @@ function Create({ warehouses }) {
                             label={t('pages.stockTransfers.fields.fromWarehouse')}
                             error={errors.from_warehouse_id}
                         >
-                            <select
+                            <Select
+                                options={warehouseOptions}
                                 value={data.from_warehouse_id}
-                                className="rp-form-input"
-                                onChange={(e) => setData('from_warehouse_id', e.target.value)}
-                            >
-                                {warehouses.map((w) => (
-                                    <option key={w.id} value={w.id}>
-                                        {w.name} ({w.branch_name})
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={(value) => setData('from_warehouse_id', value)}
+                            />
                         </AdminFormField>
                         <AdminFormField
                             label={t('pages.stockTransfers.fields.toWarehouse')}
                             error={errors.to_warehouse_id}
                         >
-                            <select
+                            <Select
+                                options={warehouseOptions}
                                 value={data.to_warehouse_id}
-                                className="rp-form-input"
-                                onChange={(e) => setData('to_warehouse_id', e.target.value)}
-                            >
-                                {warehouses.map((w) => (
-                                    <option key={w.id} value={w.id}>
-                                        {w.name} ({w.branch_name})
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={(value) => setData('to_warehouse_id', value)}
+                            />
                         </AdminFormField>
                     </div>
                     {errors.lines && (

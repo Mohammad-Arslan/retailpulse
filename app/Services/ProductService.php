@@ -150,7 +150,7 @@ final class ProductService
             default => [[
                 'name' => $data->variants[0]['name'] ?? $product->name,
                 'sku' => $data->variants[0]['sku'] ?? $this->identifiers->nextSku(),
-                'barcode' => $data->variants[0]['barcode'] ?? $this->identifiers->nextBarcode(),
+                'barcode' => $this->resolveBarcode($data->variants[0]['barcode'] ?? null),
                 'cost_price' => $data->variants[0]['cost_price'] ?? $data->defaultCostPrice,
                 'sell_price' => $data->variants[0]['sell_price'] ?? $data->defaultSellPrice,
                 'reorder_point' => $this->resolveReorderPoint($data->variants[0] ?? [], $data->defaultReorderPoint),
@@ -184,7 +184,7 @@ final class ProductService
             return [
                 'name' => $override['name'] ?? VariantMatrix::label($attributes),
                 'sku' => $override['sku'] ?? $this->identifiers->nextSku(),
-                'barcode' => $override['barcode'] ?? $this->identifiers->nextBarcode(),
+                'barcode' => $this->resolveBarcode($override['barcode'] ?? null),
                 'cost_price' => $override['cost_price'] ?? $defaultCost,
                 'sell_price' => $override['sell_price'] ?? $defaultSell,
                 'reorder_point' => $this->resolveReorderPoint($override, null),
@@ -250,7 +250,7 @@ final class ProductService
             $payload = [
                 'name' => $row['name'] ?? $product->name,
                 'sku' => $row['sku'] ?? $this->identifiers->nextSku(),
-                'barcode' => $row['barcode'] ?? $this->identifiers->nextBarcode(),
+                'barcode' => $this->resolveBarcode($row['barcode'] ?? null),
                 'cost_price' => $row['cost_price'] ?? 0,
                 'sell_price' => $row['sell_price'] ?? 0,
                 'reorder_point' => $this->resolveReorderPoint($row, null),
@@ -307,6 +307,13 @@ final class ProductService
     /**
      * @param  list<array{branch_id: int, sell_price: float}>  $prices
      */
+    private function resolveBarcode(?string $barcode): string
+    {
+        $barcode = $barcode !== null ? trim($barcode) : '';
+
+        return $barcode !== '' ? $barcode : $this->identifiers->nextBarcode();
+    }
+
     /**
      * @param  array<string, mixed>  $row
      */

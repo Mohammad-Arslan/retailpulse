@@ -18,6 +18,7 @@ use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\UnitRepositoryInterface;
 use App\Services\BranchContextService;
 use App\Services\ProductService;
+use App\Support\ListPagination;
 use App\Support\ProductPresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -41,8 +42,14 @@ final class ProductController extends Controller
     {
         $this->authorize('viewAny', Product::class);
 
+        $filters = ListPagination::filters(
+            $request,
+            ['search', 'type', 'category_id', 'brand_id', 'is_active', 'sort', 'direction'],
+        );
+
         $paginator = $this->products->paginate(
-            $request->only('search', 'type', 'category_id', 'brand_id', 'is_active', 'sort', 'direction'),
+            $filters,
+            ListPagination::resolve($filters['per_page']),
         );
 
         $paginator->getCollection()->transform(fn (Product $product) => [
@@ -61,7 +68,7 @@ final class ProductController extends Controller
 
         return Inertia::render('Admin/Products/Index', [
             'products' => $paginator,
-            'filters' => $request->only('search', 'type', 'category_id', 'brand_id', 'is_active', 'sort', 'direction'),
+            'filters' => $filters,
             'productTypes' => ProductType::values(),
             'categories' => $this->categories->allActive(),
             'brands' => $this->brands->allActive(),
@@ -85,6 +92,18 @@ final class ProductController extends Controller
         return redirect()
             ->route('admin.products.edit', $product)
             ->with('success', __('Product created successfully.'));
+    }
+
+    public function show(Request $request, Product $product): Response
+    {
+        $this->authorize('view', $product);
+
+        $product = $this->products->findByIdWithRelations($product->id) ?? $product;
+
+        return Inertia::render('Admin/Products/Show', [
+            'product' => ProductPresenter::forDetail($product),
+            'canShowCost' => $request->user()?->can('products.show-cost') ?? false,
+        ]);
     }
 
     public function edit(Request $request, Product $product): Response
