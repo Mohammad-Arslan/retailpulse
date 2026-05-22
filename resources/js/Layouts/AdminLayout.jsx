@@ -129,10 +129,7 @@ export default function AdminLayout({ children }) {
                     {!collapsed && (
                         <div className="min-w-0">
                             <span className="font-display block text-[17px] leading-tight text-rp-text dark:text-white">
-                                RetailPulse
-                            </span>
-                            <span className="text-[10px] tracking-widest text-rp-text-muted uppercase dark:text-sand-300">
-                                v2.0 · Enterprise
+                                Retail<span className="text-teal-500 dark:text-teal-300">Pulse</span>
                             </span>
                         </div>
                     )}
@@ -141,7 +138,7 @@ export default function AdminLayout({ children }) {
 
             <SidebarSearch collapsed={collapsed} onOpen={openPalette} />
 
-            <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2">
+            <nav className="rp-sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden py-2">
                 <SidebarNav
                     collapsed={collapsed}
                     onNavigate={() => setMobileOpen(false)}

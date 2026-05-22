@@ -4,22 +4,20 @@ export default function BrandIcon({ className, iconClassName }) {
     return (
         <div
             className={cn(
-                'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-500',
+                'flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-linear-to-br from-teal-300 to-teal-500',
+                'shadow-[0_2px_10px_rgba(42,124,111,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]',
                 className,
             )}
         >
             <svg
-                viewBox="0 0 24 24"
+                viewBox="0 0 20 20"
                 fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className={cn('h-6 w-6 text-white', iconClassName)}
+                className={cn('h-4.5 w-4.5', iconClassName)}
             >
-                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <path d="M16 10a4 4 0 01-8 0" />
+                <rect x="2" y="12" width="4" height="7" rx="1.25" fill="rgba(255,255,255,0.4)" />
+                <rect x="8" y="7.5" width="4" height="11.5" rx="1.25" fill="rgba(255,255,255,0.65)" />
+                <rect x="14" y="3" width="4" height="16" rx="1.25" fill="white" />
+                <circle cx="16" cy="2.5" r="1.5" fill="rgba(255,255,255,0.9)" />
             </svg>
         </div>
     );
