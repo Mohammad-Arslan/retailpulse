@@ -137,7 +137,7 @@ function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canVie
                       href: route('admin.dashboard'),
                       icon: LayoutDashboard,
                       iconClass:
-                          'bg-sand-100 text-ink-500 dark:bg-ink-700 dark:text-sand-300',
+                          'bg-sand-100 text-ink-500 dark:bg-ink-700 dark:text-ink-300',
                   },
               ]
             : []),

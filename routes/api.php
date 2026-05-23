@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\Pos\InventoryController as PosInventoryController;
 use App\Http\Controllers\Api\V1\InventoryController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,6 +12,16 @@ Route::prefix('v1')
     ->group(function () {
         Route::post('inventory/check-availability', [InventoryController::class, 'checkAvailability'])
             ->name('inventory.check-availability');
+    });
+
+Route::prefix('pos')
+    ->middleware('auth:sanctum')
+    ->name('api.pos.')
+    ->group(function () {
+        Route::post('stock-check', [PosInventoryController::class, 'stockCheck'])
+            ->name('stock-check');
+        Route::post('stock-deduct', [PosInventoryController::class, 'stockDeduct'])
+            ->name('stock-deduct');
     });
 
 /*

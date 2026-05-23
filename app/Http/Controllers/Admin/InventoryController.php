@@ -112,6 +112,7 @@ final class InventoryController extends Controller
 
         return Warehouse::query()
             ->with('branch')
+            ->where('is_active', true)
             ->when($branchId !== null, fn ($q) => $q->where('branch_id', $branchId))
             ->when(
                 $accessibleIds !== null,

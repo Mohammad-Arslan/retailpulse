@@ -6,6 +6,8 @@ namespace App\Services;
 
 use App\DTOs\Inventory\DeductStockData;
 use App\DTOs\StockTransfer\CreateStockTransferData;
+use App\DTOs\StockTransfer\ReceiveStockTransferData;
+use App\DTOs\StockTransfer\ReceiveTransferLineData;
 use App\DTOs\StockTransfer\TransferLineData;
 use App\Enums\StockMovementReason;
 use App\Enums\StockTransferStatus;
@@ -48,7 +50,8 @@ final class StockTransferService
                 $transfer->items()->create([
                     'product_variant_id' => $line->variantId,
                     'batch_id' => $line->batchId,
-                    'quantity' => $line->quantity,
+                    'qty_requested' => $line->quantity,
+                    'qty_received' => 0,
                 ]);
             }
 
@@ -77,7 +80,7 @@ final class StockTransferService
                     warehouseId: $transfer->from_warehouse_id,
                     variantId: $item->product_variant_id,
                     batchId: $item->batch_id,
-                    quantity: $item->quantity,
+                    quantity: $item->qty_requested,
                     reason: StockMovementReason::TransferOut,
                     userId: $userId,
                     referenceType: StockTransfer::class,
@@ -95,34 +98,60 @@ final class StockTransferService
         });
     }
 
-    public function receive(StockTransfer $transfer, int $userId): StockTransfer
+    public function receive(StockTransfer $transfer, ReceiveStockTransferData $data): StockTransfer
     {
         if (! $transfer->status->canReceive()) {
             throw ValidationException::withMessages([
-                'status' => __('Only shipped transfers can be received.'),
+                'status' => __('Only shipped or partially received transfers can be received.'),
             ]);
         }
 
         $transfer->load('items');
+        $receiveLines = $this->resolveReceiveLines($transfer, $data->lines);
 
-        return DB::transaction(function () use ($transfer, $userId) {
-            foreach ($transfer->items as $item) {
+        return DB::transaction(function () use ($transfer, $data, $receiveLines) {
+            foreach ($receiveLines as $line) {
+                /** @var StockTransferItem $item */
+                $item = $transfer->items->firstWhere('id', $line->itemId);
+
+                if ($item === null) {
+                    continue;
+                }
+
+                if ($line->quantity <= 0 || $line->quantity > $item->qtyRemaining()) {
+                    throw ValidationException::withMessages([
+                        'lines' => __('Receive quantity exceeds remaining in-transit quantity for one or more items.'),
+                    ]);
+                }
+
                 $this->inventory->applyDelta(
                     warehouseId: $transfer->to_warehouse_id,
                     variantId: $item->product_variant_id,
                     batchId: $item->batch_id,
-                    qtyDelta: $item->quantity,
+                    qtyDelta: $line->quantity,
                     reason: StockMovementReason::TransferIn,
-                    userId: $userId,
+                    userId: $data->userId,
                     referenceType: StockTransfer::class,
                     referenceId: $transfer->id,
                 );
+
+                $item->update([
+                    'qty_received' => $item->qty_received + $line->quantity,
+                ]);
             }
 
+            $transfer->refresh()->load('items');
+
+            $allReceived = $transfer->items->every(
+                fn (StockTransferItem $item) => $item->isFullyReceived(),
+            );
+
             $this->transfers->update($transfer, [
-                'status' => StockTransferStatus::Received,
-                'received_by' => $userId,
-                'received_at' => now(),
+                'status' => $allReceived
+                    ? StockTransferStatus::Received
+                    : StockTransferStatus::PartiallyReceived,
+                'received_by' => $data->userId,
+                'received_at' => $allReceived ? now() : $transfer->received_at,
             ]);
 
             return $this->transfers->findByIdWithRelations($transfer->id) ?? $transfer;
@@ -158,8 +187,28 @@ final class StockTransferService
             ->map(fn (StockTransferItem $item) => new TransferLineData(
                 variantId: $item->product_variant_id,
                 batchId: $item->batch_id,
-                quantity: $item->quantity,
+                quantity: $item->qty_requested,
             ))
             ->all();
+    }
+
+    /**
+     * @param  list<ReceiveTransferLineData>  $lines
+     * @return list<ReceiveTransferLineData>
+     */
+    private function resolveReceiveLines(StockTransfer $transfer, array $lines): array
+    {
+        if ($lines === []) {
+            return $transfer->items
+                ->filter(fn (StockTransferItem $item) => $item->qtyRemaining() > 0)
+                ->map(fn (StockTransferItem $item) => new ReceiveTransferLineData(
+                    itemId: $item->id,
+                    quantity: $item->qtyRemaining(),
+                ))
+                ->values()
+                ->all();
+        }
+
+        return $lines;
     }
 }

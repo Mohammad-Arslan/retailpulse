@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Events;
 
+use App\Enums\StockMovementReason;
 use App\Models\Inventory;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -20,6 +21,8 @@ final class InventoryStockChanged implements ShouldBroadcastNow
     public function __construct(
         public readonly Inventory $inventory,
         public readonly int $previousOnHand,
+        public readonly int $previousReserved,
+        public readonly StockMovementReason $reason,
     ) {}
 
     public function broadcastWhen(): bool
@@ -30,7 +33,7 @@ final class InventoryStockChanged implements ShouldBroadcastNow
     }
 
     /**
-     * @return array<int, \Illuminate\Broadcasting\PrivateChannel>
+     * @return array<int, PrivateChannel>
      */
     public function broadcastOn(): array
     {
@@ -67,14 +70,19 @@ final class InventoryStockChanged implements ShouldBroadcastNow
             'inventory_id' => $this->inventory->id,
             'warehouse_id' => $this->inventory->warehouse_id,
             'branch_id' => $this->inventory->warehouse?->branch_id,
-            'product_variant_id' => $this->inventory->product_variant_id,
+            'variant_id' => $this->inventory->product_variant_id,
+            'batch_id' => $this->inventory->batch_id,
             'sku' => $variant?->sku,
             'variant_name' => $variant?->displayName(),
             'product_name' => $product?->name,
+            'new_qty_on_hand' => $this->inventory->quantity_on_hand,
+            'new_qty_reserved' => $this->inventory->quantity_reserved,
             'quantity_on_hand' => $this->inventory->quantity_on_hand,
             'quantity_reserved' => $this->inventory->quantity_reserved,
             'available' => $available,
             'previous_on_hand' => $this->previousOnHand,
+            'previous_reserved' => $this->previousReserved,
+            'reason' => $this->reason->value,
             'reorder_point' => $reorderPoint,
             'is_low_stock' => $isLowStock,
             'at' => now()->toIso8601String(),

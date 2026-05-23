@@ -21,11 +21,12 @@ final class InventoryController extends Controller
         $lines = $request->validated('lines');
 
         $results = $this->inventory->checkAvailability($warehouseId, $lines);
-        $sufficient = collect($results)->every(fn (array $line) => $line['sufficient']);
+        $canSell = collect($results)->every(fn (array $line) => $line['can_sell']);
 
         return response()->json([
-            'sufficient' => $sufficient,
+            'can_sell' => $canSell,
+            'sufficient' => $canSell,
             'lines' => $results,
-        ], $sufficient ? 200 : 422);
+        ], $canSell ? 200 : 422);
     }
 }

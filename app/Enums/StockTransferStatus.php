@@ -8,6 +8,7 @@ enum StockTransferStatus: string
 {
     case Draft = 'draft';
     case Shipped = 'shipped';
+    case PartiallyReceived = 'partially_received';
     case Received = 'received';
 
     /**
@@ -25,7 +26,7 @@ enum StockTransferStatus: string
 
     public function canReceive(): bool
     {
-        return $this === self::Shipped;
+        return $this === self::Shipped || $this === self::PartiallyReceived;
     }
 
     public function isEditable(): bool

@@ -15,6 +15,7 @@ use App\Events\InventoryStockChanged;
 use App\Models\Inventory;
 use App\Models\ProductSerial;
 use App\Models\ProductVariant;
+use App\Models\StockReservation;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
 use App\Repositories\Contracts\StockMovementRepositoryInterface;
@@ -53,6 +54,8 @@ final class InventoryService
             ]);
         }
 
+        $this->assertBatchProvidedForTrackedVariant($data->variantId, $data->batchId);
+
         $reason = $data->reason;
         $qtyDelta = $data->quantity;
 
@@ -71,8 +74,85 @@ final class InventoryService
         );
     }
 
+    public function setOpeningBalance(
+        int $warehouseId,
+        int $variantId,
+        ?int $batchId,
+        int $quantity,
+        ?int $userId = null,
+        ?string $notes = null,
+    ): Inventory {
+        if ($quantity < 0) {
+            throw ValidationException::withMessages([
+                'quantity' => __('Opening balance quantity cannot be negative.'),
+            ]);
+        }
+
+        $this->assertTracksInventory($variantId);
+        $this->assertBatchProvidedForTrackedVariant($variantId, $batchId);
+
+        if ($this->movements->hasOpeningBalance($warehouseId, $variantId, $batchId)) {
+            throw ValidationException::withMessages([
+                'sku' => __('Opening balance already exists for this warehouse, variant, and batch.'),
+            ]);
+        }
+
+        return DB::transaction(function () use (
+            $warehouseId,
+            $variantId,
+            $batchId,
+            $quantity,
+            $userId,
+            $notes,
+        ) {
+            $inventory = $this->inventories->lockOrCreate($warehouseId, $variantId, $batchId);
+            $previousOnHand = $inventory->quantity_on_hand;
+            $previousReserved = $inventory->quantity_reserved;
+
+            if ($quantity < $inventory->quantity_reserved) {
+                throw ValidationException::withMessages([
+                    'quantity' => __('Opening balance cannot be less than reserved quantity.'),
+                ]);
+            }
+
+            $delta = $quantity - $previousOnHand;
+
+            if ($delta === 0) {
+                return $inventory;
+            }
+
+            $inventory->update(['quantity_on_hand' => $quantity]);
+
+            $this->movements->create([
+                'warehouse_id' => $warehouseId,
+                'product_variant_id' => $variantId,
+                'batch_id' => $batchId,
+                'reason' => StockMovementReason::OpeningBalance,
+                'qty_delta' => $delta,
+                'quantity_on_hand_after' => $quantity,
+                'user_id' => $userId,
+                'notes' => $notes ?? 'Opening balance import',
+            ]);
+
+            $inventory = $inventory->fresh() ?? $inventory;
+
+            $this->dispatchStockChanged(
+                $inventory,
+                $previousOnHand,
+                $previousReserved,
+                StockMovementReason::OpeningBalance,
+            );
+
+            return $inventory;
+        });
+    }
+
     public function deduct(DeductStockData $data): Inventory
     {
+        if ($data->reason === StockMovementReason::Sale) {
+            $this->assertPosSalesAllowed($data->warehouseId);
+        }
+
         $variant = ProductVariant::query()->with('product')->find($data->variantId);
         $this->assertTracksInventory($data->variantId);
 
@@ -83,17 +163,7 @@ final class InventoryService
         }
 
         if ($data->batchId !== null) {
-            return $this->applyDelta(
-                warehouseId: $data->warehouseId,
-                variantId: $data->variantId,
-                batchId: $data->batchId,
-                qtyDelta: -$data->quantity,
-                reason: $data->reason,
-                userId: $data->userId,
-                referenceType: $data->referenceType,
-                referenceId: $data->referenceId,
-                notes: $data->notes,
-            );
+            return $this->deductFromInventoryRow($data, $data->batchId, $data->quantity);
         }
 
         $warehouse = Warehouse::query()->with('branch')->findOrFail($data->warehouseId);
@@ -111,16 +181,10 @@ final class InventoryService
         $inventory = null;
 
         foreach ($lines as $line) {
-            $inventory = $this->applyDelta(
-                warehouseId: $data->warehouseId,
-                variantId: $data->variantId,
-                batchId: $line['batch_id'],
-                qtyDelta: -$line['quantity'],
-                reason: $data->reason,
-                userId: $data->userId,
-                referenceType: $data->referenceType,
-                referenceId: $data->referenceId,
-                notes: $data->notes,
+            $inventory = $this->deductFromInventoryRow(
+                $data,
+                $line['batch_id'],
+                $line['quantity'],
             );
         }
 
@@ -134,6 +198,7 @@ final class InventoryService
     public function reserve(ReserveStockData $data): Inventory
     {
         $this->assertTracksInventory($data->variantId);
+        $this->assertBatchProvidedForTrackedVariant($data->variantId, $data->batchId);
 
         if ($data->quantity <= 0) {
             throw ValidationException::withMessages([
@@ -148,6 +213,9 @@ final class InventoryService
                 $data->batchId,
             );
 
+            $previousOnHand = $inventory->quantity_on_hand;
+            $previousReserved = $inventory->quantity_reserved;
+
             if ($inventory->availableQuantity() < $data->quantity) {
                 throw ValidationException::withMessages([
                     'quantity' => __('Insufficient stock available to reserve.'),
@@ -155,8 +223,39 @@ final class InventoryService
             }
 
             $inventory->increment('quantity_reserved', $data->quantity, []);
+            $inventory = $inventory->fresh() ?? $inventory;
 
-            return $inventory->fresh() ?? $inventory;
+            $this->movements->create([
+                'warehouse_id' => $data->warehouseId,
+                'product_variant_id' => $data->variantId,
+                'batch_id' => $data->batchId,
+                'reason' => StockMovementReason::Reserved,
+                'qty_delta' => 0,
+                'quantity_on_hand_after' => $inventory->quantity_on_hand,
+                'reference_type' => $data->referenceType,
+                'reference_id' => $data->referenceId,
+                'user_id' => $data->userId,
+                'notes' => null,
+            ]);
+
+            StockReservation::query()->create([
+                'warehouse_id' => $data->warehouseId,
+                'product_variant_id' => $data->variantId,
+                'batch_id' => $data->batchId,
+                'quantity' => $data->quantity,
+                'reference_type' => $data->referenceType,
+                'reference_id' => $data->referenceId,
+                'expires_at' => now()->addMinutes((int) config('inventory.reservation_ttl_minutes', 30)),
+            ]);
+
+            $this->dispatchStockChanged(
+                $inventory,
+                $previousOnHand,
+                $previousReserved,
+                StockMovementReason::Reserved,
+            );
+
+            return $inventory;
         });
     }
 
@@ -181,10 +280,65 @@ final class InventoryService
                 ]);
             }
 
-            $inventory->decrement('quantity_reserved', $data->quantity, []);
+            $previousOnHand = $inventory->quantity_on_hand;
+            $previousReserved = $inventory->quantity_reserved;
 
-            return $inventory->fresh() ?? $inventory;
+            $inventory->decrement('quantity_reserved', $data->quantity, []);
+            $inventory = $inventory->fresh() ?? $inventory;
+
+            $this->movements->create([
+                'warehouse_id' => $data->warehouseId,
+                'product_variant_id' => $data->variantId,
+                'batch_id' => $data->batchId,
+                'reason' => StockMovementReason::ReservationReleased,
+                'qty_delta' => 0,
+                'quantity_on_hand_after' => $inventory->quantity_on_hand,
+                'reference_type' => $data->referenceType,
+                'reference_id' => $data->referenceId,
+                'user_id' => $data->userId,
+                'notes' => null,
+            ]);
+
+            $this->markReservationsReleased($data, $data->quantity);
+
+            $this->dispatchStockChanged(
+                $inventory,
+                $previousOnHand,
+                $previousReserved,
+                StockMovementReason::ReservationReleased,
+            );
+
+            return $inventory;
         });
+    }
+
+    public function releaseExpiredReservations(): int
+    {
+        $released = 0;
+
+        StockReservation::query()
+            ->whereNull('released_at')
+            ->where('expires_at', '<=', now())
+            ->orderBy('id')
+            ->chunkById(100, function ($reservations) use (&$released): void {
+                foreach ($reservations as $reservation) {
+                    $this->release(new ReserveStockData(
+                        warehouseId: (int) $reservation->warehouse_id,
+                        variantId: (int) $reservation->product_variant_id,
+                        batchId: $reservation->batch_id !== null ? (int) $reservation->batch_id : null,
+                        quantity: (int) $reservation->quantity,
+                        userId: null,
+                        referenceType: $reservation->reference_type,
+                        referenceId: $reservation->reference_id !== null
+                            ? (int) $reservation->reference_id
+                            : null,
+                    ));
+
+                    $released++;
+                }
+            });
+
+        return $released;
     }
 
     public function availableQuantity(int $warehouseId, int $variantId, ?int $batchId = null): int
@@ -194,7 +348,7 @@ final class InventoryService
 
     /**
      * @param  list<array{variant_id: int, batch_id: int|null, quantity: int}>  $lines
-     * @return list<array{variant_id: int, batch_id: int|null, requested: int, available: int, sufficient: bool}>
+     * @return list<array{variant_id: int, batch_id: int|null, requested: int, available: int, can_sell: bool, sufficient: bool}>
      */
     public function checkAvailability(int $warehouseId, array $lines): array
     {
@@ -213,6 +367,7 @@ final class InventoryService
                     'batch_id' => $batchId,
                     'requested' => $requested,
                     'available' => PHP_INT_MAX,
+                    'can_sell' => true,
                     'sufficient' => true,
                 ];
 
@@ -220,13 +375,15 @@ final class InventoryService
             }
 
             $available = $this->availableQuantity($warehouseId, $variantId, $batchId);
+            $sufficient = $available >= $requested;
 
             $results[] = [
                 'variant_id' => $variantId,
                 'batch_id' => $batchId,
                 'requested' => $requested,
                 'available' => $available,
-                'sufficient' => $available >= $requested,
+                'can_sell' => $sufficient,
+                'sufficient' => $sufficient,
             ];
         }
 
@@ -246,7 +403,11 @@ final class InventoryService
     ): Inventory {
         $this->assertTracksInventory($variantId);
 
-        if ($qtyDelta === 0) {
+        if ($reason === StockMovementReason::Sale) {
+            $this->assertPosSalesAllowed($warehouseId);
+        }
+
+        if ($qtyDelta === 0 && $reason->affectsOnHand()) {
             throw ValidationException::withMessages([
                 'quantity' => __('Quantity must not be zero.'),
             ]);
@@ -265,6 +426,7 @@ final class InventoryService
         ) {
             $inventory = $this->inventories->lockOrCreate($warehouseId, $variantId, $batchId);
             $previousOnHand = $inventory->quantity_on_hand;
+            $previousReserved = $inventory->quantity_reserved;
             $newOnHand = $previousOnHand + $qtyDelta;
 
             if ($newOnHand < 0) {
@@ -296,10 +458,100 @@ final class InventoryService
 
             $inventory = $inventory->fresh() ?? $inventory;
 
-            event(new InventoryStockChanged($inventory, $previousOnHand));
+            $this->dispatchStockChanged($inventory, $previousOnHand, $previousReserved, $reason);
 
             return $inventory;
         });
+    }
+
+    private function deductFromInventoryRow(DeductStockData $data, ?int $batchId, int $quantity): Inventory
+    {
+        return DB::transaction(function () use ($data, $batchId, $quantity) {
+            $inventory = $this->inventories->lockOrCreate(
+                $data->warehouseId,
+                $data->variantId,
+                $batchId,
+            );
+
+            $previousOnHand = $inventory->quantity_on_hand;
+            $previousReserved = $inventory->quantity_reserved;
+
+            if ($inventory->availableQuantity() < $quantity) {
+                throw ValidationException::withMessages([
+                    'quantity' => __('Insufficient stock on hand.'),
+                ]);
+            }
+
+            $reservedRelease = min($quantity, $inventory->quantity_reserved);
+            $newOnHand = $inventory->quantity_on_hand - $quantity;
+            $newReserved = $inventory->quantity_reserved - $reservedRelease;
+
+            $inventory->update([
+                'quantity_on_hand' => $newOnHand,
+                'quantity_reserved' => $newReserved,
+            ]);
+
+            $this->movements->create([
+                'warehouse_id' => $data->warehouseId,
+                'product_variant_id' => $data->variantId,
+                'batch_id' => $batchId,
+                'reason' => $data->reason,
+                'qty_delta' => -$quantity,
+                'quantity_on_hand_after' => $newOnHand,
+                'reference_type' => $data->referenceType,
+                'reference_id' => $data->referenceId,
+                'user_id' => $data->userId,
+                'notes' => $data->notes,
+            ]);
+
+            if ($reservedRelease > 0) {
+                $this->markReservationsReleased(
+                    new ReserveStockData(
+                        warehouseId: $data->warehouseId,
+                        variantId: $data->variantId,
+                        batchId: $batchId,
+                        quantity: $reservedRelease,
+                        referenceType: $data->referenceType,
+                        referenceId: $data->referenceId,
+                    ),
+                    $reservedRelease,
+                );
+            }
+
+            $inventory = $inventory->fresh() ?? $inventory;
+
+            $this->dispatchStockChanged(
+                $inventory,
+                $previousOnHand,
+                $previousReserved,
+                $data->reason,
+            );
+
+            return $inventory;
+        });
+    }
+
+    private function assertPosSalesAllowed(int $warehouseId): void
+    {
+        $warehouse = Warehouse::query()->with('branch')->find($warehouseId);
+        $cutover = $warehouse?->branch?->cutover_date;
+
+        if ($cutover !== null && now()->lt($cutover)) {
+            throw ValidationException::withMessages([
+                'cutover_date' => __('Live POS sales are blocked until the go-live cutover date.'),
+            ]);
+        }
+    }
+
+    private function assertBatchProvidedForTrackedVariant(int $variantId, ?int $batchId): void
+    {
+        $variant = ProductVariant::query()->with('product')->find($variantId);
+
+        if ($variant?->product?->track_batches && $batchId === null) {
+            throw ValidationException::withMessages([
+                'batch_id' => __('Batch is required for batch-tracked products.'),
+            ]);
+        }
     }
 
     private function assertTracksInventory(int $variantId): void
@@ -311,6 +563,57 @@ final class InventoryService
                 'product_variant_id' => __('This product does not track inventory.'),
             ]);
         }
+    }
+
+    private function dispatchStockChanged(
+        Inventory $inventory,
+        int $previousOnHand,
+        int $previousReserved,
+        StockMovementReason $reason,
+    ): void {
+        event(new InventoryStockChanged(
+            inventory: $inventory,
+            previousOnHand: $previousOnHand,
+            previousReserved: $previousReserved,
+            reason: $reason,
+        ));
+    }
+
+    private function markReservationsReleased(ReserveStockData $data, int $quantity): void
+    {
+        $remaining = $quantity;
+
+        StockReservation::query()
+            ->whereNull('released_at')
+            ->where('warehouse_id', $data->warehouseId)
+            ->where('product_variant_id', $data->variantId)
+            ->when(
+                $data->batchId === null,
+                fn ($q) => $q->whereNull('batch_id'),
+                fn ($q) => $q->where('batch_id', $data->batchId),
+            )
+            ->when($data->referenceType !== null, fn ($q) => $q->where('reference_type', $data->referenceType))
+            ->when($data->referenceId !== null, fn ($q) => $q->where('reference_id', $data->referenceId))
+            ->orderBy('expires_at')
+            ->orderBy('id')
+            ->get()
+            ->each(function (StockReservation $reservation) use (&$remaining): void {
+                if ($remaining <= 0) {
+                    return;
+                }
+
+                if ((int) $reservation->quantity <= $remaining) {
+                    $reservation->update(['released_at' => now()]);
+                    $remaining -= (int) $reservation->quantity;
+
+                    return;
+                }
+
+                $reservation->update([
+                    'quantity' => (int) $reservation->quantity - $remaining,
+                ]);
+                $remaining = 0;
+            });
     }
 
     /**

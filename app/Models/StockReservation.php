@@ -4,41 +4,28 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\StockMovementReason;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 #[Fillable([
     'warehouse_id',
     'product_variant_id',
     'batch_id',
-    'reason',
-    'qty_delta',
-    'quantity_on_hand_after',
+    'quantity',
     'reference_type',
     'reference_id',
-    'user_id',
-    'notes',
+    'expires_at',
+    'released_at',
 ])]
-class StockMovement extends Model
+class StockReservation extends Model
 {
-    public $timestamps = false;
-
-    protected static function booted(): void
-    {
-        static::updating(static fn () => false);
-        static::deleting(static fn () => false);
-    }
-
     protected function casts(): array
     {
         return [
-            'reason' => StockMovementReason::class,
-            'qty_delta' => 'integer',
-            'quantity_on_hand_after' => 'integer',
-            'created_at' => 'datetime',
+            'quantity' => 'integer',
+            'expires_at' => 'datetime',
+            'released_at' => 'datetime',
         ];
     }
 
@@ -57,13 +44,8 @@ class StockMovement extends Model
         return $this->belongsTo(ProductBatch::class, 'batch_id');
     }
 
-    public function user(): BelongsTo
+    public function isActive(): bool
     {
-        return $this->belongsTo(User::class);
-    }
-
-    public function reference(): MorphTo
-    {
-        return $this->morphTo();
+        return $this->released_at === null;
     }
 }

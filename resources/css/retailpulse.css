@@ -18,20 +18,24 @@
 }
 
 .dark {
-    --rp-page-bg: #1a1714;
-    --rp-surface: #2d2926;
-    --rp-surface-subtle: #363230;
-    --rp-surface-inset: #1f1c1a;
-    --rp-border: #46403a;
-    --rp-border-subtle: #363230;
-    --rp-text: #faf8f5;
-    --rp-text-secondary: #d4c9b0;
-    --rp-text-muted: #b8b0a8;
-    --rp-chart-grid: #46403a;
-    --rp-chart-tick: #d4c9b0;
-    --rp-tooltip-bg: #2d2926;
-    --rp-tooltip-border: #46403a;
-    --rp-tooltip-text: #faf8f5;
+    /* Surface layers — cool charcoal-slate, not warm brown */
+    --rp-page-bg: #0f1117;
+    --rp-surface: #161c2c;
+    --rp-surface-subtle: #1c2438;
+    --rp-surface-inset: #0a0d13;
+    /* Borders — visible but not harsh */
+    --rp-border: #293048;
+    --rp-border-subtle: #141b2e;
+    /* Text hierarchy */
+    --rp-text: #ecf0f9;
+    --rp-text-secondary: #8a96b0;
+    --rp-text-muted: #4a5568;
+    /* Chart / tooltip tokens */
+    --rp-chart-grid: #141b2e;
+    --rp-chart-tick: #8a96b0;
+    --rp-tooltip-bg: #1c2438;
+    --rp-tooltip-border: #293048;
+    --rp-tooltip-text: #ecf0f9;
 }
 
 @theme inline {
@@ -44,11 +48,12 @@
     --color-sand-300: #d4c9b0;
     --color-sand-400: #b8a888;
 
-    --color-ink-900: #1a1714;
-    --color-ink-800: #2d2926;
-    --color-ink-700: #46403a;
-    --color-ink-500: #7a726a;
-    --color-ink-300: #b8b0a8;
+    /* Cool charcoal-slate scale — replaces warm ink */
+    --color-ink-900: #0f1117;
+    --color-ink-800: #1c2438;
+    --color-ink-700: #293048;
+    --color-ink-500: #4a5568;
+    --color-ink-300: #8a96b0;
 
     --color-teal-500: #2a7c6f;
     --color-teal-400: #359080;
@@ -97,6 +102,14 @@
 
     .rp-btn-outline {
         @apply inline-flex items-center justify-center gap-2 rounded-[9px] border-[1.5px] border-rp-border bg-rp-surface px-4 py-2.5 text-[13px] font-semibold text-rp-text-secondary transition hover:border-teal-400 hover:text-teal-500 disabled:pointer-events-none disabled:opacity-60;
+    }
+
+    .rp-btn-ghost {
+        @apply inline-flex items-center justify-center gap-1.5 rounded-[9px] border-0 bg-transparent px-3 py-2 text-[13px] font-medium text-rp-text-muted transition hover:bg-rp-surface-inset hover:text-rp-text-secondary disabled:pointer-events-none disabled:opacity-60;
+    }
+
+    .rp-btn-emphasis {
+        @apply px-5 py-3 text-sm shadow-sm;
     }
 
     .rp-btn-login {

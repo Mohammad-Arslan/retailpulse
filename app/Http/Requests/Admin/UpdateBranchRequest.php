@@ -52,6 +52,7 @@ final class UpdateBranchRequest extends FormRequest
                 'integer',
                 Rule::exists('warehouses', 'id')->where('branch_id', $branch->id),
             ],
+            'cutover_date' => ['nullable', 'date'],
         ];
     }
 }

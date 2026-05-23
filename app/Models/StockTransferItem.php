@@ -12,14 +12,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'stock_transfer_id',
     'product_variant_id',
     'batch_id',
-    'quantity',
+    'qty_requested',
+    'qty_received',
 ])]
 class StockTransferItem extends Model
 {
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
+            'qty_requested' => 'integer',
+            'qty_received' => 'integer',
         ];
     }
 
@@ -36,5 +38,15 @@ class StockTransferItem extends Model
     public function batch(): BelongsTo
     {
         return $this->belongsTo(ProductBatch::class, 'batch_id');
+    }
+
+    public function qtyRemaining(): int
+    {
+        return max(0, $this->qty_requested - $this->qty_received);
+    }
+
+    public function isFullyReceived(): bool
+    {
+        return $this->qty_received >= $this->qty_requested;
     }
 }

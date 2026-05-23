@@ -12,4 +12,6 @@ interface StockMovementRepositoryInterface
      * @param  array<string, mixed>  $attributes
      */
     public function create(array $attributes): StockMovement;
+
+    public function hasOpeningBalance(int $warehouseId, int $variantId, ?int $batchId): bool;
 }

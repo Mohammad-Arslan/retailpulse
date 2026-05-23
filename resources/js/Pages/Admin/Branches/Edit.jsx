@@ -37,6 +37,7 @@ export default function Edit({ branch, timezones }) {
         receipt_footer: branch.receipt_footer ?? '',
         is_active: branch.is_active,
         default_warehouse_id: branch.default_warehouse_id ?? '',
+        cutover_date: branch.cutover_date ?? '',
     });
 
     const submit = (e) => {
@@ -180,6 +181,22 @@ export default function Edit({ branch, timezones }) {
                                     },
                                 ]}
                             />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.branches.fields.cutoverDate')}
+                            id="cutover_date"
+                            error={errors.cutover_date}
+                        >
+                            <input
+                                id="cutover_date"
+                                type="datetime-local"
+                                value={data.cutover_date}
+                                className="rp-form-input"
+                                onChange={(e) => setData('cutover_date', e.target.value)}
+                            />
+                            <p className="mt-1 text-xs text-rp-text-muted">
+                                {t('pages.branches.cutoverHint')}
+                            </p>
                         </AdminFormField>
                     </div>
                     <AdminFormField
