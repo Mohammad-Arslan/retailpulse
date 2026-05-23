@@ -1,9 +1,23 @@
 import ProductFormFields from '@/Components/admin/ProductFormFields';
 import PageHeader from '@/Components/common/PageHeader';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import {
+    productImageSyncErrorMessage,
+    syncProductImages,
+} from '@/lib/productImagesApi';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+
+function clearPendingImages(pendingImages, setPendingImages) {
+    pendingImages.forEach((item) => {
+        if (item.previewUrl) {
+            URL.revokeObjectURL(item.previewUrl);
+        }
+    });
+    setPendingImages([]);
+}
 
 export default function Create({
     productTypes,
@@ -15,7 +29,8 @@ export default function Create({
 }) {
     const { t } = useTranslation();
     const [pendingImages, setPendingImages] = useState([]);
-    const { data, setData, post, processing, errors, transform } = useForm({
+    const [isSyncingImages, setIsSyncingImages] = useState(false);
+    const { data, setData, post, processing, errors } = useForm({
         type: 'standard',
         name: '',
         description: '',
@@ -34,22 +49,43 @@ export default function Create({
         regenerate_variants: false,
     });
 
-    transform((formData) => {
-        if (pendingImages.length === 0) {
-            return formData;
-        }
-
-        return {
-            ...formData,
-            images: pendingImages.map((item) => item.file),
-        };
-    });
-
     const submit = (e) => {
         e.preventDefault();
-        const options = pendingImages.length > 0 ? { forceFormData: true } : {};
-        post(route('admin.products.store'), options);
+
+        const pendingFiles = pendingImages.map((item) => item.file);
+        const hasPendingImages = pendingFiles.length > 0;
+
+        post(route('admin.products.store'), {
+            onSuccess: async (page) => {
+                if (!hasPendingImages) {
+                    return;
+                }
+
+                const productId = page.props.product?.id;
+
+                if (!productId) {
+                    toast.error(t('pages.products.imageSyncFailed'));
+                    return;
+                }
+
+                setIsSyncingImages(true);
+
+                try {
+                    await syncProductImages(productId, { images: pendingFiles });
+                    clearPendingImages(pendingImages, setPendingImages);
+                    router.reload({ only: ['product'] });
+                } catch (error) {
+                    toast.error(
+                        productImageSyncErrorMessage(error, t('pages.products.imageSyncFailed')),
+                    );
+                } finally {
+                    setIsSyncingImages(false);
+                }
+            },
+        });
     };
+
+    const isSubmitting = processing || isSyncingImages;
 
     return (
         <AdminLayout>
@@ -78,7 +114,7 @@ export default function Create({
                     removedImageIds={[]}
                     onRemovedImageIdsChange={() => {}}
                 />
-                <button type="submit" disabled={processing} className="rp-btn-primary">
+                <button type="submit" disabled={isSubmitting} className="rp-btn-primary">
                     {t('pages.products.createSubmit')}
                 </button>
             </form>

@@ -19,6 +19,7 @@ final class ProductRepository implements ProductRepositoryInterface
                 'category:id,name',
                 'brand:id,name',
                 'variants' => fn ($q) => $q->where('is_default', true),
+                'primaryImage',
             ])
             ->withCount('variants');
 

@@ -11,6 +11,40 @@ final class UpdateProductRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
+        if ($this->input('type') !== 'variable') {
+            $this->merge(['variant_attributes' => null]);
+        } else {
+            $attributes = $this->input('variant_attributes', []);
+
+            if (is_array($attributes)) {
+                $attributes = array_values(array_filter(
+                    $attributes,
+                    static fn (mixed $attribute): bool => is_array($attribute)
+                        && trim((string) ($attribute['name'] ?? '')) !== '',
+                ));
+
+                $this->merge([
+                    'variant_attributes' => $attributes === [] ? null : $attributes,
+                ]);
+            }
+        }
+
+        $variants = $this->input('variants', []);
+
+        if (is_array($variants)) {
+            foreach ($variants as $index => $variant) {
+                if (! is_array($variant)) {
+                    continue;
+                }
+
+                if (array_key_exists('reorder_point', $variant) && $variant['reorder_point'] === '') {
+                    $variants[$index]['reorder_point'] = null;
+                }
+            }
+
+            $this->merge(['variants' => $variants]);
+        }
+
         $this->merge([
             'category_id' => $this->input('category_id') ?: null,
             'brand_id' => $this->input('brand_id') ?: null,

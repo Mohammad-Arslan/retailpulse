@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn, randomId } from '@/lib/utils';
 import { ImagePlus, Star, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 const ACCEPT = 'image/jpeg,image/png,image/webp';
 
 function pendingImageId() {
-    return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return randomId();
 }
 
 export default function ProductImageUploader({

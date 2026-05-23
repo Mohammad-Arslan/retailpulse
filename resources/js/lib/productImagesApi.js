@@ -5,6 +5,19 @@ function apiRoute(name, params = undefined) {
 }
 
 /**
+ * @param {unknown} error
+ * @param {string} fallback
+ */
+export function productImageSyncErrorMessage(error, fallback) {
+    const responseData = error?.response?.data;
+    const firstFieldError = responseData?.errors
+        ? Object.values(responseData.errors).flat()[0]
+        : null;
+
+    return firstFieldError ?? responseData?.message ?? fallback;
+}
+
+/**
  * @param {number} productId
  * @param {{ images?: File[], removeImageIds?: number[] }} payload
  */

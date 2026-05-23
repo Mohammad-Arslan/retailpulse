@@ -424,14 +424,23 @@ export default function ProductFormFields({
         </FormCard>
     );
 
-    const leftColumn = [generalCard, imagesCard, attributesCard, bundleCard].filter(Boolean);
-    const rightColumn = [pricingCard, branchPricingCard, identifiersCard].filter(Boolean);
 
     return (
         <div className="space-y-5">
             <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-                <div className="space-y-5">{leftColumn}</div>
-                <div className="space-y-5">{rightColumn.length > 0 && rightColumn}</div>
+                <div className="space-y-5">
+                    {generalCard}
+                    {imagesCard}
+                    {attributesCard}
+                    {bundleCard}
+                </div>
+                {(pricingCard || branchPricingCard || identifiersCard) && (
+                    <div className="space-y-5">
+                        {pricingCard}
+                        {branchPricingCard}
+                        {identifiersCard}
+                    </div>
+                )}
             </div>
             {variantsCard}
         </div>

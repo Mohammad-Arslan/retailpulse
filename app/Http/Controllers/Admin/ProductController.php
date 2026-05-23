@@ -18,6 +18,7 @@ use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\UnitRepositoryInterface;
 use App\Services\BranchContextService;
 use App\Services\ProductService;
+use App\Support\ImagePresenter;
 use App\Support\ListPagination;
 use App\Support\ProductPresenter;
 use Illuminate\Http\JsonResponse;
@@ -64,6 +65,9 @@ final class ProductController extends Controller
             'default_variant' => $product->variants->first()?->only([
                 'sku', 'sell_price', 'cost_price',
             ]),
+            'primary_image' => $product->primaryImage !== null
+                ? ImagePresenter::forImage($product->primaryImage)
+                : null,
         ]);
 
         return Inertia::render('Admin/Products/Index', [

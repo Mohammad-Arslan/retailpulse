@@ -58,9 +58,22 @@ function Index({ products, filters, productTypes, categories, brands, canShowCos
                 header: t('pages.products.columns.name'),
                 cell: ({ row }) => (
                     <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-100 text-teal-600 dark:bg-teal-500/20 dark:text-teal-300">
-                            <Package className="h-4 w-4" />
-                        </span>
+                        {row.original.primary_image ? (
+                            <span className="flex h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-rp-border bg-rp-surface-inset">
+                                <img
+                                    src={
+                                        row.original.primary_image.thumbnail_url
+                                        ?? row.original.primary_image.url
+                                    }
+                                    alt={row.original.name}
+                                    className="h-full w-full object-cover"
+                                />
+                            </span>
+                        ) : (
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-600 dark:bg-teal-500/20 dark:text-teal-300">
+                                <Package className="h-4 w-4" />
+                            </span>
+                        )}
                         <div>
                             {can('products.view') ? (
                                 <Link
