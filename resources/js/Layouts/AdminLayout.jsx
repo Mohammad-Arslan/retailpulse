@@ -68,7 +68,7 @@ function SidebarNav({ collapsed, onNavigate }) {
                                     >
                                         <Icon
                                             className={cn(
-                                                'h-4 w-4 text-rp-text-secondary dark:text-sand-300',
+                                                'h-4 w-4 text-rp-text-secondary dark:text-ink-300',
                                                 active && 'text-white',
                                             )}
                                         />
@@ -76,7 +76,7 @@ function SidebarNav({ collapsed, onNavigate }) {
                                     {!collapsed && (
                                         <span
                                             className={cn(
-                                                'flex-1 text-[13px] font-medium text-rp-text-secondary dark:text-sand-300',
+                                                'flex-1 text-[13px] font-medium text-rp-text-secondary dark:text-ink-300',
                                                 active && 'font-semibold text-white',
                                             )}
                                         >
@@ -164,7 +164,7 @@ export default function AdminLayout({ children }) {
                                 <span className="block truncate text-[13px] font-semibold text-rp-text dark:text-white">
                                     {user?.name}
                                 </span>
-                                <span className="block truncate text-[11px] text-rp-text-muted dark:text-sand-300">
+                                <span className="block truncate text-[11px] text-rp-text-muted dark:text-ink-300">
                                     {roleLabel}
                                 </span>
                             </div>
@@ -215,7 +215,7 @@ export default function AdminLayout({ children }) {
             >
                 <button
                     type="button"
-                    className="absolute top-4 right-4 rounded-lg p-1 text-rp-text-muted focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:outline-none dark:text-sand-300 lg:hidden"
+                    className="absolute top-4 right-4 rounded-lg p-1 text-rp-text-muted focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:outline-none dark:text-ink-300 lg:hidden"
                     onClick={() => setMobileOpen(false)}
                     aria-label={t('common.closeMenu')}
                 >

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories\Eloquent;
 
+use App\Enums\StockMovementReason;
 use App\Models\StockMovement;
 use App\Repositories\Contracts\StockMovementRepositoryInterface;
 

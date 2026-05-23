@@ -1,0 +1,86 @@
+warehouse_code,sku,qty_delta,reason,batch_no,notes
+MAIN,TEA-TAP-900,-5,damaged,,Water damage found during shelf inspection
+MAIN,TEA-TAP-450,10,adjustment,,Stock recount — found extra carton in back store
+MAIN,TEA-BB-900,-3,damaged,,Torn packaging — unsellable
+FLOOR,TEA-LIP-200,-2,damaged,,Leaking pouches removed from display
+MAIN,COF-NES-200,8,adjustment,,Supplier short-shipped corrected on recount
+FLOOR,COF-NES3IN1-10,-4,damaged,,Crushed sachets from mishandled delivery
+MAIN,SOD-PEP-15L,-12,damaged,,Burst bottles from temperature exposure
+FLOOR,SOD-PEP-15L,-6,damaged,,Burst bottles from temperature exposure
+MAIN,SOD-PEP-345ML,24,adjustment,,Recount after rack reorganisation
+MAIN,SOD-CC-15L,-8,damaged,,Expired batch pulled from shelf
+FLOOR,SOD-SPR-345ML,12,adjustment,,Found misplaced stock in storage room
+MAIN,ENR-RB-250ML,-5,damaged,,Dented cans removed from floor
+MAIN,JUI-SHMNG-1L,15,adjustment,,Stock recount variance corrected
+FLOOR,JUI-SHAPL-1L,-3,damaged,,Leaking cartons disposed
+MAIN,SNK-LAYS-34G,-18,damaged,,Crushed bags from warehouse pallet collapse
+FLOOR,SNK-LAYS-34G,-9,damaged,,Crushed bags from warehouse pallet collapse
+MAIN,SNK-LAYS-154G,20,adjustment,,Recount after new rack setup
+MAIN,BISK-ORE-137G,-6,damaged,,Moisture damage — biscuits soggy
+FLOOR,BISK-ORDS-157G,10,adjustment,,Found mislabelled stock — correctly assigned
+MAIN,CRL-KCF-300G,-4,damaged,,Box damage — cereal exposed
+MAIN,CHOC-CDM-49G,-15,damaged,,Melted stock from cooling system failure
+FLOOR,CHOC-CDM-49G,-8,damaged,,Melted stock from cooling system failure
+MAIN,CHOC-KK2F-21G,-10,damaged,,Melted stock from cooling system failure
+MAIN,MILK-OLP-1L,-20,damaged,,Expired cartons removed from cold storage
+FLOOR,MILK-OLP-1L,-10,damaged,,Expired cartons removed from cold storage
+MAIN,MILK-OLP-500ML,-15,damaged,,Expired cartons removed from cold storage
+MAIN,SPC-SHBIR-60G,25,adjustment,,Recount after re-shelving — variance found
+MAIN,SPC-SHTIK-50G,-5,damaged,,Torn pouches from handling
+FLOOR,SPC-NATKAR-100G,8,adjustment,,Misplaced stock recovered from storeroom
+MAIN,NOOD-KNC-66G,-10,damaged,,Pest damage — batch quarantined
+MAIN,KETCH-HNZ-570G,-3,damaged,,Broken glass bottles
+FLOOR,KETCH-HNZ-300G,6,adjustment,,Recount variance after physical audit
+MAIN,PHON-SGA55-256,-1,damaged,,Screen cracked in warehouse — written off
+FLOOR,PHON-SGA35-128,2,adjustment,,Transferred units reclassified to floor stock
+MAIN,PHON-IP15-128,-1,damaged,,Water damage — customer return written off
+MAIN,PHON-XIRN13-128,3,adjustment,,Stock recount — 3 units found in secure cabinet
+FLOOR,PHON-XIRN13-256,-1,damaged,,Defective unit — display model written off
+MAIN,TAB-IPAD10-64,-1,damaged,,Cracked screen — display unit written off
+MAIN,LAP-DEL15I5-512,2,adjustment,,Recount — 2 units found in transit holding area
+MAIN,LAP-MBAM3-256,-1,damaged,,Water-damaged unit during transit
+MAIN,TV-SG43-4K,-1,damaged,,Panel damage from forklift contact in warehouse
+FLOOR,TV-LG43-4K,1,adjustment,,Recount — misassigned to wrong branch
+MAIN,AUD-JBLF6,5,adjustment,,Found 5 units in transit box — not recorded at receiving
+FLOOR,AUD-JBLF6,-2,damaged,,Speaker units damaged by water ingress
+MAIN,AUD-JBLC5,-1,damaged,,Unit fell from shelf — casing cracked
+MAIN,ACC-SG45W,-8,damaged,,Faulty units identified during QC spot check
+FLOOR,ACC-SG45W,10,adjustment,,Stock recount after display reorganisation
+MAIN,ACC-APLCBL-1M,-12,damaged,,Frayed cables — safety hazard removed
+MAIN,ACC-SGUSBC-2M,15,adjustment,,Found unsealed box of cables in receiving bay
+MAIN,NET-TPC6-AC12,-2,damaged,,Damaged packaging — units unusable
+MAIN,PRN-EP664BK,5,adjustment,,Recount after stockroom audit
+FLOOR,PRN-EP664CLR,-2,damaged,,Leaking ink bottles — disposed safely
+MAIN,APRL-NKDFT-M,-4,damaged,,Stained items from storage leak — unsellable
+FLOOR,APRL-NKDFT-M,6,adjustment,,Recount after seasonal reorganisation
+MAIN,APRL-LEV501-M,-3,damaged,,Water damaged during roof leak
+MAIN,SHOE-NKAM270,-2,damaged,,Sole separation defect — pulled from sale
+FLOOR,SHOE-CONVCT,4,adjustment,,Found extra stock in fitting room storage
+MAIN,SHOE-BATOXF-M,-3,damaged,,Scratched during shelf handling
+MAIN,MED-PANEXT-10,-15,damaged,,Expired blister packs removed
+FLOOR,MED-PANEXT-10,-8,damaged,,Expired blister packs removed
+MAIN,MED-DIS-10,20,adjustment,,Recount — full box found in medical storage cabinet
+MAIN,VIT-CEN-30,-6,damaged,,Damaged bottles — seal broken
+FLOOR,VIT-ENSCH-400G,-3,damaged,,Expired tins removed from shelf
+MAIN,SKIN-NEUHBWG-50G,10,adjustment,,Recount after product line reorganisation
+MAIN,SKIN-VASIC-200ML,-5,damaged,,Cracked jars from dropping
+FLOOR,ORAL-COLGWTW-150G,15,adjustment,,Recount variance after physical stock count
+MAIN,ORAL-COLG360-1,-10,damaged,,Bristle contamination — batch recalled
+MAIN,SOAP-DETORG-175G,-12,damaged,,Soap bars cracked from freezing storage
+FLOOR,SOAP-LUXSR-150G,20,adjustment,,Recount — case found behind rack
+MAIN,SOAP-SFGPW-175G,-8,damaged,,Packaging torn — loose bars removed
+MAIN,DIAP-PAMABM-40,-10,damaged,,Packaging compromised — hygiene concern
+FLOOR,DIAP-HUGDCM-46,8,adjustment,,Recount after display shelf restock
+MAIN,BBATH-JOHSHM-200ML,-5,damaged,,Cracked bottles from pallet drop
+MAIN,TOY-HW20CP,-3,damaged,,Open boxes — items missing
+FLOOR,TOY-HSBMONO,2,adjustment,,Found sealed stock in games section stockroom
+MAIN,AUTO-SHLHU-5W304L,-4,damaged,,Leaking oil cans — disposed
+FLOOR,AUTO-CASGTX-20W50,6,adjustment,,Recount after automotive section audit
+MAIN,STAT-PILG2B-12,12,adjustment,,Found 1 master carton not booked in
+MAIN,STAT-STABHLT-4,-5,damaged,,Dried-out highlighters — removed from sale
+FLOOR,PET-PEDADCP-400G,-6,damaged,,Torn pouches — disposed
+MAIN,PET-WHSADCP-85G,15,adjustment,,Recount — found extra tray in pet section
+MAIN,CLEN-DETAPC-500ML,-8,damaged,,Leaking bottles from damaged batch
+FLOOR,CLEN-SFXFL-2KG,10,adjustment,,Recount after cleaning section reorganisation
+MAIN,CRIC-KKTURF-BALL,-4,damaged,,Balls deformed from heat exposure
+MAIN,FIT-NKYOGA-6MM,-2,damaged,,Torn mats from forklift contact

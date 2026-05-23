@@ -55,7 +55,7 @@ export default function Index({ groups }) {
                                     <h3 className="font-semibold text-ink-900 dark:text-white">
                                         {group.label}
                                     </h3>
-                                    <p className="mt-1 text-sm text-ink-500 dark:text-sand-400">
+                                    <p className="mt-1 text-sm text-ink-500 dark:text-ink-300">
                                         {group.description}
                                     </p>
                                 </div>

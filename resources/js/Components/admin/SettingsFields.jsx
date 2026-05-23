@@ -28,7 +28,7 @@ export default function SettingsFields({ fields, values, setValue, errors, disab
                                         setValue(field.key, e.target.checked)
                                     }
                                 />
-                                <span className="text-sm text-ink-600 dark:text-sand-300">
+                                <span className="text-sm text-ink-600 dark:text-ink-300">
                                     {field.label}
                                 </span>
                             </label>
