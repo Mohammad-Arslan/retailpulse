@@ -6,7 +6,9 @@ namespace App\Services;
 
 use App\DTOs\Branch\CreateBranchData;
 use App\DTOs\Branch\UpdateBranchData;
+use App\DTOs\User\BranchAssignmentData;
 use App\Models\Branch;
+use App\Models\User;
 use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Repositories\Contracts\WarehouseRepositoryInterface;
 use Illuminate\Support\Facades\DB;
@@ -58,6 +60,7 @@ final class BranchService
                 'operating_hours' => $data->operatingHours,
                 'receipt_footer' => $data->receiptFooter,
                 'is_active' => $data->isActive,
+                'cutover_date' => $data->cutoverDate,
             ]);
 
             if ($data->defaultWarehouseId !== null) {
@@ -83,7 +86,7 @@ final class BranchService
         DB::transaction(fn () => $this->branches->delete($branch));
     }
 
-    public function syncUserBranches(\App\Models\User $user, \App\DTOs\User\BranchAssignmentData $data): void
+    public function syncUserBranches(User $user, BranchAssignmentData $data): void
     {
         DB::transaction(function () use ($user, $data) {
             $sync = [];

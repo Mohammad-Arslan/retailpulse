@@ -16,8 +16,12 @@ final class ImportExportAuthorization
     {
         return match ($entityType) {
             'inventory' => [
-                'import' => 'inventory.adjust',
-                'export' => 'inventory.view',
+                'import' => 'inventory.import-opening-stock',
+                'export' => 'inventory.reports',
+            ],
+            'inventory-adjustments' => [
+                'import' => 'inventory.bulk-adjustment-import',
+                'export' => 'inventory.reports',
             ],
             'categories', 'brands', 'units', 'products' => [
                 'import' => 'products.import',

@@ -24,6 +24,7 @@ final readonly class UpdateBranchData
         public ?string $receiptFooter,
         public bool $isActive,
         public ?int $defaultWarehouseId,
+        public ?string $cutoverDate,
     ) {}
 
     public static function fromRequest(UpdateBranchRequest $request): self
@@ -39,6 +40,7 @@ final readonly class UpdateBranchData
             receiptFooter: $request->validated('receipt_footer'),
             isActive: $request->boolean('is_active', true),
             defaultWarehouseId: $request->validated('default_warehouse_id'),
+            cutoverDate: $request->validated('cutover_date'),
         );
     }
 }

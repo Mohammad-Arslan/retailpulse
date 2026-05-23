@@ -294,8 +294,10 @@
                 "defaultWarehouse": "Default warehouse",
                 "warehouseName": "Warehouse name",
                 "warehouseCode": "Warehouse code",
-                "pickingStrategy": "Picking strategy (FIFO / FEFO)"
+                "pickingStrategy": "Picking strategy (FIFO / FEFO)",
+                "cutoverDate": "Go-live cutover date"
             },
+            "cutoverHint": "Live POS sale deductions are blocked until this date. Imports and manual adjustments are unaffected.",
             "pickingStrategies": {
                 "fifo": "FIFO — first in, first out",
                 "fefo": "FEFO — first expiry, first out"
@@ -308,8 +310,12 @@
             "searchPlaceholder": "Search SKU or product…",
             "allWarehouses": "All warehouses",
             "adjust": "Adjust stock",
+            "adjustShort": "Adjust",
             "receive": "Receive stock",
+            "receiveShort": "Receive",
             "transfers": "Transfers",
+            "openingStockImport": "Opening stock",
+            "bulkAdjustmentsImport": "Bulk adjustments",
             "adjustTitle": "Stock adjustment",
             "adjustDescription": "Correct counts or record damaged goods (use negative quantity to reduce).",
             "adjustSubmit": "Apply adjustment",
@@ -361,17 +367,21 @@
                 "fromWarehouse": "From warehouse",
                 "toWarehouse": "To warehouse"
             },
+            "status": {
+                "draft": "Draft",
+                "shipped": "Shipped",
+                "partially_received": "Partially received",
+                "received": "Received"
+            },
             "columns": {
                 "reference": "Reference",
                 "from": "From",
                 "to": "To",
                 "status": "Status",
-                "created": "Created"
-            },
-            "status": {
-                "draft": "Draft",
-                "shipped": "Shipped",
-                "received": "Received"
+                "created": "Created",
+                "requested": "Requested",
+                "received": "Received",
+                "receiveNow": "Receive now"
             }
         },
         "categories": {

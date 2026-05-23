@@ -11,5 +11,8 @@ final readonly class ReserveStockData
         public int $variantId,
         public ?int $batchId,
         public int $quantity,
+        public ?int $userId = null,
+        public ?string $referenceType = null,
+        public ?int $referenceId = null,
     ) {}
 }

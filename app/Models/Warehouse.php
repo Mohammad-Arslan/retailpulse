@@ -7,12 +7,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'branch_id',
     'name',
     'code',
     'is_default',
+    'is_active',
 ])]
 class Warehouse extends Model
 {
@@ -20,6 +22,7 @@ class Warehouse extends Model
     {
         return [
             'is_default' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -28,7 +31,7 @@ class Warehouse extends Model
         return $this->belongsTo(Branch::class);
     }
 
-    public function inventories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function inventories(): HasMany
     {
         return $this->hasMany(Inventory::class);
     }

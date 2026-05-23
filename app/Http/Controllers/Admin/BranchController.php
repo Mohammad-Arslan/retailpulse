@@ -88,6 +88,7 @@ final class BranchController extends Controller
                 'operating_hours' => $branch->operating_hours ?? OperatingHours::defaults(),
                 'receipt_footer' => $branch->receipt_footer,
                 'is_active' => $branch->is_active,
+                'cutover_date' => $branch->cutover_date?->format('Y-m-d\TH:i'),
                 'warehouses' => $branch->warehouses->map(fn ($w) => [
                     'id' => $w->id,
                     'name' => $w->name,

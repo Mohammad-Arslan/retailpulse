@@ -12,7 +12,11 @@ const ENTITY_PERMISSIONS = {
     brands: { import: 'products.import', export: 'products.export' },
     units: { import: 'products.import', export: 'products.export' },
     products: { import: 'products.import', export: 'products.export' },
-    inventory: { import: 'inventory.adjust', export: 'inventory.view' },
+    inventory: { import: 'inventory.import-opening-stock', export: 'inventory.reports' },
+    'inventory-adjustments': {
+        import: 'inventory.bulk-adjustment-import',
+        export: 'inventory.reports',
+    },
 };
 
 export default function ImportExportToolbar({
@@ -20,6 +24,8 @@ export default function ImportExportToolbar({
     entityLabel,
     exportOptions = {},
     showMatchField = false,
+    showImport = true,
+    showExport = true,
     onJobStarted,
 }) {
     const can = useCan();
@@ -30,8 +36,8 @@ export default function ImportExportToolbar({
     const [recentImportUlid, setRecentImportUlid] = useState(null);
 
     const permissions = ENTITY_PERMISSIONS[entityType] ?? ENTITY_PERMISSIONS.products;
-    const canImport = can(permissions.import);
-    const canExport = can(permissions.export);
+    const canImport = showImport && can(permissions.import);
+    const canExport = showExport && can(permissions.export);
 
     if (!canImport && !canExport) {
         return null;

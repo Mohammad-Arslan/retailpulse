@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\ImportExport\Handlers;
 
+use App\DTOs\Inventory\AdjustStockData;
+use App\Enums\StockMovementReason;
 use App\Exceptions\ImportExport\ImportRowException;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
@@ -12,7 +14,7 @@ use App\Services\ImportExport\Support\InventoryImportSupport;
 use App\Services\InventoryService;
 use Illuminate\Validation\ValidationException;
 
-final class InventoryImportHandler implements ImportHandler
+final class InventoryAdjustmentImportHandler implements ImportHandler
 {
     public function __construct(
         private readonly InventoryService $inventory,
@@ -21,7 +23,7 @@ final class InventoryImportHandler implements ImportHandler
 
     public function columns(): array
     {
-        return InventoryImportSupport::openingStockColumns();
+        return InventoryImportSupport::adjustmentColumns();
     }
 
     public function validateRow(array $row, ImportContext $context): array
@@ -37,25 +39,36 @@ final class InventoryImportHandler implements ImportHandler
 
         $warehouse = $this->support->resolveWarehouse($row, $context);
         $variant = $this->support->resolveVariant($row, $context);
-        $qty = (int) ($row['qty'] ?? 0);
+        $qtyDelta = (int) ($row['qty_delta'] ?? 0);
 
-        if ($qty < 0) {
+        if ($qtyDelta === 0) {
             throw ImportRowException::fromValidationErrors([
-                'qty' => ['Opening stock quantity cannot be negative.'],
+                'qty_delta' => ['Quantity delta must not be zero.'],
             ]);
         }
 
+        $reasonValue = strtolower(trim((string) ($row['reason'] ?? '')));
+        $reason = match ($reasonValue) {
+            'adjustment' => StockMovementReason::Adjustment,
+            'damaged' => StockMovementReason::Damaged,
+            default => throw ImportRowException::fromValidationErrors([
+                'reason' => ['Reason must be adjustment or damaged for bulk import.'],
+            ]),
+        };
+
         $batchId = $this->support->resolveBatchId($variant, $row);
+        $notes = trim((string) ($row['notes'] ?? ''));
 
         try {
-            $this->inventory->setOpeningBalance(
+            $this->inventory->adjust(new AdjustStockData(
                 warehouseId: $warehouse->id,
                 variantId: $variant->id,
                 batchId: $batchId,
-                quantity: $qty,
+                quantity: $qtyDelta,
+                reason: $reason,
                 userId: $context->userId,
-                notes: 'Opening balance import',
-            );
+                notes: $notes !== '' ? $notes : null,
+            ));
         } catch (ValidationException $e) {
             throw ImportRowException::fromValidationErrors($e->errors());
         }

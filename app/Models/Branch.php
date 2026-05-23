@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'operating_hours',
     'receipt_footer',
     'is_active',
+    'cutover_date',
 ])]
 class Branch extends Model
 {
@@ -30,6 +31,7 @@ class Branch extends Model
             'picking_strategy' => PickingStrategy::class,
             'operating_hours' => 'array',
             'is_active' => 'boolean',
+            'cutover_date' => 'datetime',
         ];
     }
 

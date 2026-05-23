@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
     'ulid',
     'type',
     'entity_type',
+    'warehouse_id',
     'mode',
     'is_dry_run',
     'input_file_path',

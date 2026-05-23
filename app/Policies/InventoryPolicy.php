@@ -10,7 +10,7 @@ final class InventoryPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('inventory.view');
+        return $user->can('inventory.reports') || $user->can('inventory.view');
     }
 
     public function adjust(User $user): bool

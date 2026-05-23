@@ -99,6 +99,14 @@
         @apply inline-flex items-center justify-center gap-2 rounded-[9px] border-[1.5px] border-rp-border bg-rp-surface px-4 py-2.5 text-[13px] font-semibold text-rp-text-secondary transition hover:border-teal-400 hover:text-teal-500 disabled:pointer-events-none disabled:opacity-60;
     }
 
+    .rp-btn-ghost {
+        @apply inline-flex items-center justify-center gap-1.5 rounded-[9px] border-0 bg-transparent px-3 py-2 text-[13px] font-medium text-rp-text-muted transition hover:bg-rp-surface-inset hover:text-rp-text-secondary disabled:pointer-events-none disabled:opacity-60;
+    }
+
+    .rp-btn-emphasis {
+        @apply px-5 py-3 text-sm shadow-sm;
+    }
+
     .rp-btn-login {
         @apply flex w-full items-center justify-center gap-2 rounded-[10px] border-0 bg-ink-900 py-3.5 text-sm font-semibold tracking-wide text-white transition hover:-translate-y-px hover:bg-teal-500 hover:shadow-[0_8px_24px_rgba(42,124,111,0.3)] disabled:pointer-events-none disabled:opacity-60 dark:bg-teal-500 dark:hover:bg-teal-400 dark:hover:shadow-[0_8px_24px_rgba(42,124,111,0.3)];
     }

@@ -1,16 +1,26 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import InventoryPageActions from '@/Components/admin/InventoryPageActions';
+import { useImportJobsTray } from '@/Components/import-export/ImportJobsTray';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
-import { useCan } from '@/Hooks/useCan';
-import { Head, Link, router } from '@inertiajs/react';
-import { ArrowDownToLine, Package, Search, SlidersHorizontal, Truck } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { Package, Search } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Index({ inventory, filters, warehouses }) {
-    const can = useCan();
     const { t } = useTranslation();
+    const { trackJob } = useImportJobsTray();
+    const exportOptions = useMemo(
+        () => ({
+            filters: {
+                search: filters.search ?? undefined,
+                warehouse_id: filters.warehouse_id ?? undefined,
+            },
+        }),
+        [filters],
+    );
 
     const search = (e) => {
         e.preventDefault();
@@ -88,26 +98,7 @@ function Index({ inventory, filters, warehouses }) {
                 title={t('pages.inventory.title')}
                 description={t('pages.inventory.description')}
             >
-                <div className="flex flex-wrap gap-2">
-                    {can('inventory.transfer') && (
-                        <Link href={route('admin.stock-transfers.index')} className="rp-btn-outline">
-                            <Truck className="h-4 w-4" />
-                            {t('pages.inventory.transfers')}
-                        </Link>
-                    )}
-                    {can('inventory.receive') && (
-                        <Link href={route('admin.inventory.receive')} className="rp-btn-outline">
-                            <ArrowDownToLine className="h-4 w-4" />
-                            {t('pages.inventory.receive')}
-                        </Link>
-                    )}
-                    {can('inventory.adjust') && (
-                        <Link href={route('admin.inventory.adjust')} className="rp-btn-primary">
-                            <SlidersHorizontal className="h-4 w-4" />
-                            {t('pages.inventory.adjust')}
-                        </Link>
-                    )}
-                </div>
+                <InventoryPageActions exportOptions={exportOptions} onJobStarted={trackJob} />
             </PageHeader>
 
             <form onSubmit={search} className="rp-filter-bar">

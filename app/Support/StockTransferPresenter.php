@@ -56,7 +56,9 @@ final class StockTransferPresenter
             ],
             'items' => $transfer->items->map(fn ($item) => [
                 'id' => $item->id,
-                'quantity' => $item->quantity,
+                'qty_requested' => $item->qty_requested,
+                'qty_received' => $item->qty_received,
+                'qty_remaining' => $item->qtyRemaining(),
                 'variant' => [
                     'id' => $item->variant->id,
                     'sku' => $item->variant->sku,

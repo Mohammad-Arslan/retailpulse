@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\DTOs\StockTransfer\CreateStockTransferData;
+use App\DTOs\StockTransfer\ReceiveStockTransferData;
+use App\DTOs\StockTransfer\ReceiveTransferLineData;
 use App\Enums\StockTransferStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ReceiveStockTransferRequest;
 use App\Http\Requests\Admin\StoreStockTransferRequest;
 use App\Models\StockTransfer;
 use App\Models\Warehouse;
@@ -100,11 +103,25 @@ final class StockTransferController extends Controller
             ->with('success', __('Transfer marked as shipped.'));
     }
 
-    public function receive(Request $request, StockTransfer $stockTransfer): RedirectResponse
+    public function receive(ReceiveStockTransferRequest $request, StockTransfer $stockTransfer): RedirectResponse
     {
         $this->authorize('receive', $stockTransfer);
 
-        $this->transferService->receive($stockTransfer, (int) $request->user()->id);
+        $lines = collect($request->validated('lines', []))
+            ->map(fn (array $line) => new ReceiveTransferLineData(
+                itemId: (int) $line['item_id'],
+                quantity: (int) $line['quantity'],
+            ))
+            ->all();
+
+        $this->transferService->receive(
+            $stockTransfer,
+            new ReceiveStockTransferData(
+                transferId: $stockTransfer->id,
+                userId: (int) $request->user()->id,
+                lines: $lines,
+            ),
+        );
 
         return redirect()
             ->route('admin.stock-transfers.show', $stockTransfer)
@@ -121,6 +138,7 @@ final class StockTransferController extends Controller
 
         return Warehouse::query()
             ->with('branch')
+            ->where('is_active', true)
             ->when(
                 $accessibleIds !== null,
                 fn ($q) => $q->whereIn('branch_id', $accessibleIds),

@@ -8,6 +8,8 @@ use App\Services\ImportExport\Handlers\BrandExportHandler;
 use App\Services\ImportExport\Handlers\BrandImportHandler;
 use App\Services\ImportExport\Handlers\CategoryExportHandler;
 use App\Services\ImportExport\Handlers\CategoryImportHandler;
+use App\Services\ImportExport\Handlers\InventoryAdjustmentExportHandler;
+use App\Services\ImportExport\Handlers\InventoryAdjustmentImportHandler;
 use App\Services\ImportExport\Handlers\InventoryExportHandler;
 use App\Services\ImportExport\Handlers\InventoryImportHandler;
 use App\Services\ImportExport\Handlers\ProductExportHandler;
@@ -36,5 +38,10 @@ final class ImportExportServiceProvider extends ServiceProvider
         ImportExportRegistry::register('units', UnitImportHandler::class, UnitExportHandler::class);
         ImportExportRegistry::register('products', ProductImportHandler::class, ProductExportHandler::class);
         ImportExportRegistry::register('inventory', InventoryImportHandler::class, InventoryExportHandler::class);
+        ImportExportRegistry::register(
+            'inventory-adjustments',
+            InventoryAdjustmentImportHandler::class,
+            InventoryAdjustmentExportHandler::class,
+        );
     }
 }

@@ -60,9 +60,12 @@ final class PermissionSeeder extends Seeder
         ],
         'inventory' => [
             ['name' => 'inventory.view', 'description' => 'View stock levels by warehouse'],
+            ['name' => 'inventory.reports', 'description' => 'View and export stock reports'],
             ['name' => 'inventory.receive', 'description' => 'Receive stock into warehouse'],
             ['name' => 'inventory.adjust', 'description' => 'Adjust or write off stock'],
             ['name' => 'inventory.transfer', 'description' => 'Create and process stock transfers'],
+            ['name' => 'inventory.import-opening-stock', 'description' => 'Import opening stock balances from spreadsheets'],
+            ['name' => 'inventory.bulk-adjustment-import', 'description' => 'Bulk import stock adjustments from spreadsheets'],
         ],
         'settings' => [
             ['name' => 'settings.view', 'description' => 'View global settings'],
