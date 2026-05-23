@@ -59,6 +59,8 @@ final class StoreProductRequest extends FormRequest
             'branch_prices' => ['nullable', 'array'],
             'branch_prices.*.branch_id' => ['required', 'integer', Rule::exists('branches', 'id')],
             'branch_prices.*.sell_price' => ['required', 'numeric', 'min:0'],
+            'images' => ['nullable', 'array', 'max:'.config('media.max_images_per_model', 10)],
+            'images.*' => ['image', 'mimes:jpeg,jpg,png,webp', 'max:'.config('media.max_upload_kb', 5120)],
         ];
     }
 }

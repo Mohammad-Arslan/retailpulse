@@ -22,6 +22,7 @@ final class ProductService
     public function __construct(
         private readonly ProductRepositoryInterface $products,
         private readonly ProductIdentifierService $identifiers,
+        private readonly ImageService $images,
     ) {}
 
     public function create(CreateProductData $data): Product
@@ -64,6 +65,10 @@ final class ProductService
 
             if ($defaultVariant !== null) {
                 $this->syncBranchPrices($defaultVariant, $data->branchPrices);
+            }
+
+            if ($data->images !== []) {
+                $this->images->attachMany($product, $data->images);
             }
 
             return $this->products->findByIdWithRelations($product->id) ?? $product;
@@ -123,7 +128,10 @@ final class ProductService
 
     public function delete(Product $product): void
     {
-        DB::transaction(fn () => $this->products->delete($product));
+        DB::transaction(function () use ($product) {
+            $this->images->purgeFor($product);
+            $this->products->delete($product);
+        });
     }
 
     /**

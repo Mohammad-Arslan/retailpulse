@@ -77,6 +77,7 @@ final class ProductRepository implements ProductRepositoryInterface
                 'unit:id,name,abbreviation',
                 'variants.bundleItems.childVariant.product:id,name,type',
                 'variants.branchPrices.branch:id,name',
+                'images',
             ])
             ->find($id);
     }

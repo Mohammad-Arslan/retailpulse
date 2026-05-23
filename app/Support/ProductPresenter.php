@@ -6,6 +6,7 @@ namespace App\Support;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Support\ImagePresenter;
 
 final class ProductPresenter
 {
@@ -20,6 +21,7 @@ final class ProductPresenter
             'unit:id,name,abbreviation',
             'variants.bundleItems.childVariant.product:id,name',
             'variants.branchPrices.branch:id,name',
+            'images',
         ]);
 
         $defaultVariant = $product->variants->firstWhere('is_default', true)
@@ -73,6 +75,7 @@ final class ProductPresenter
                 ->all() ?? [],
             'created_at' => $product->created_at?->toIso8601String(),
             'updated_at' => $product->updated_at?->toIso8601String(),
+            'images' => ImagePresenter::collection($product->images),
         ];
     }
 
@@ -87,6 +90,7 @@ final class ProductPresenter
             'unit:id,name,abbreviation',
             'variants.bundleItems.childVariant.product:id,name',
             'variants.branchPrices.branch:id,name',
+            'images',
         ]);
 
         return [
@@ -138,6 +142,7 @@ final class ProductPresenter
                 ])
                 ->values()
                 ->all() ?? [],
+            'images' => ImagePresenter::collection($product->images),
         ];
     }
 }

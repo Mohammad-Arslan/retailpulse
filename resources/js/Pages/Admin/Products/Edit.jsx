@@ -3,7 +3,9 @@ import PageHeader from '@/Components/common/PageHeader';
 import { useConfirm } from '@/Components/common/ConfirmDialogProvider';
 import { useCan } from '@/Hooks/useCan';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { syncProductImages } from '@/lib/productImagesApi';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function Edit({
@@ -18,6 +20,9 @@ export default function Edit({
     const can = useCan();
     const confirm = useConfirm();
     const { t } = useTranslation();
+    const [pendingImages, setPendingImages] = useState([]);
+    const [removedImageIds, setRemovedImageIds] = useState([]);
+    const [imageSyncError, setImageSyncError] = useState(null);
     const { data, setData, put, processing, errors, delete: destroy } = useForm({
         name: product.name,
         description: product.description ?? '',
@@ -40,7 +45,47 @@ export default function Edit({
 
     const submit = (e) => {
         e.preventDefault();
-        put(route('admin.products.update', product.id));
+        setImageSyncError(null);
+
+        const hasImageChanges = pendingImages.length > 0 || removedImageIds.length > 0;
+        const pendingFiles = pendingImages.map((item) => item.file);
+        const removeIds = [...removedImageIds];
+
+        put(route('admin.products.update', product.id), {
+            preserveScroll: true,
+            onSuccess: async () => {
+                if (!hasImageChanges) {
+                    return;
+                }
+
+                try {
+                    await syncProductImages(product.id, {
+                        images: pendingFiles,
+                        removeImageIds: removeIds,
+                    });
+
+                    pendingImages.forEach((item) => {
+                        if (item.previewUrl) {
+                            URL.revokeObjectURL(item.previewUrl);
+                        }
+                    });
+                    setPendingImages([]);
+                    setRemovedImageIds([]);
+                    router.reload({ only: ['product'] });
+                } catch (error) {
+                    const responseData = error?.response?.data;
+                    const firstFieldError = responseData?.errors
+                        ? Object.values(responseData.errors).flat()[0]
+                        : null;
+                    const message =
+                        firstFieldError ??
+                        responseData?.message ??
+                        t('pages.products.imageSyncFailed');
+
+                    setImageSyncError(message);
+                }
+            },
+        });
     };
 
     const remove = async () => {
@@ -78,7 +123,15 @@ export default function Edit({
                     canShowCost={canShowCost}
                     isEdit
                     productId={product.id}
+                    existingImages={product.images ?? []}
+                    pendingImages={pendingImages}
+                    onPendingImagesChange={setPendingImages}
+                    removedImageIds={removedImageIds}
+                    onRemovedImageIdsChange={setRemovedImageIds}
                 />
+                {imageSyncError && (
+                    <p className="text-sm text-red-600">{imageSyncError}</p>
+                )}
                 <div className="flex items-center gap-3">
                     <button type="submit" disabled={processing} className="rp-btn-primary">
                         {t('pages.products.saveChanges')}

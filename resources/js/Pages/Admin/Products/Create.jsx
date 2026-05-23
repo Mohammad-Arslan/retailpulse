@@ -2,6 +2,7 @@ import ProductFormFields from '@/Components/admin/ProductFormFields';
 import PageHeader from '@/Components/common/PageHeader';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function Create({
@@ -13,7 +14,8 @@ export default function Create({
     canShowCost,
 }) {
     const { t } = useTranslation();
-    const { data, setData, post, processing, errors } = useForm({
+    const [pendingImages, setPendingImages] = useState([]);
+    const { data, setData, post, processing, errors, transform } = useForm({
         type: 'standard',
         name: '',
         description: '',
@@ -32,9 +34,21 @@ export default function Create({
         regenerate_variants: false,
     });
 
+    transform((formData) => {
+        if (pendingImages.length === 0) {
+            return formData;
+        }
+
+        return {
+            ...formData,
+            images: pendingImages.map((item) => item.file),
+        };
+    });
+
     const submit = (e) => {
         e.preventDefault();
-        post(route('admin.products.store'));
+        const options = pendingImages.length > 0 ? { forceFormData: true } : {};
+        post(route('admin.products.store'), options);
     };
 
     return (
@@ -59,6 +73,10 @@ export default function Create({
                     units={units}
                     branches={branches}
                     canShowCost={canShowCost}
+                    pendingImages={pendingImages}
+                    onPendingImagesChange={setPendingImages}
+                    removedImageIds={[]}
+                    onRemovedImageIdsChange={() => {}}
                 />
                 <button type="submit" disabled={processing} className="rp-btn-primary">
                     {t('pages.products.createSubmit')}
