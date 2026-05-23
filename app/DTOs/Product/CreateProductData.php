@@ -6,6 +6,7 @@ namespace App\DTOs\Product;
 
 use App\Enums\ProductType;
 use App\Http\Requests\Admin\StoreProductRequest;
+use Illuminate\Http\UploadedFile;
 
 final readonly class CreateProductData
 {
@@ -14,6 +15,7 @@ final readonly class CreateProductData
      * @param  list<array{sku?: string|null, barcode?: string|null, name?: string|null, cost_price: float, sell_price: float, attributes?: array<string, string>|null, is_default?: bool}>  $variants
      * @param  list<array{child_variant_id: int, quantity: float}>  $bundleItems
      * @param  list<array{branch_id: int, sell_price: float}>  $branchPrices
+     * @param  list<UploadedFile>  $images
      */
     public function __construct(
         public ProductType $type,
@@ -31,6 +33,7 @@ final readonly class CreateProductData
         public float $defaultCostPrice,
         public float $defaultSellPrice,
         public ?int $defaultReorderPoint,
+        public array $images,
     ) {}
 
     public static function fromRequest(StoreProductRequest $request): self
@@ -51,7 +54,31 @@ final readonly class CreateProductData
             defaultCostPrice: (float) $request->validated('default_cost_price', 0),
             defaultSellPrice: (float) $request->validated('default_sell_price', 0),
             defaultReorderPoint: self::nullableInt($request->validated('default_reorder_point')),
+            images: self::normalizeUploadedFiles($request->file('images')),
         );
+    }
+
+    /**
+     * @return list<UploadedFile>
+     */
+    private static function normalizeUploadedFiles(mixed $files): array
+    {
+        if ($files === null) {
+            return [];
+        }
+
+        if ($files instanceof UploadedFile) {
+            return [$files];
+        }
+
+        if (! is_array($files)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $files,
+            static fn (mixed $file): bool => $file instanceof UploadedFile,
+        ));
     }
 
     private static function nullableInt(mixed $value): ?int

@@ -44,9 +44,23 @@ function Show({ product, canShowCost }) {
             </PageHeader>
 
             <div className="mb-6 flex flex-wrap items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 text-teal-600 dark:bg-teal-500/20 dark:text-teal-300">
-                    <Package className="h-5 w-5" />
-                </span>
+                {product.images?.length > 0 ? (
+                    <div className="flex h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-rp-border">
+                        <img
+                            src={
+                                (product.images.find((image) => image.is_primary) ?? product.images[0])
+                                    ?.thumbnail_url ??
+                                (product.images.find((image) => image.is_primary) ?? product.images[0])?.url
+                            }
+                            alt={product.name}
+                            className="h-full w-full object-cover"
+                        />
+                    </div>
+                ) : (
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 text-teal-600 dark:bg-teal-500/20 dark:text-teal-300">
+                        <Package className="h-5 w-5" />
+                    </span>
+                )}
                 <span className="rounded-md bg-ink-100 px-2.5 py-1 text-xs font-medium capitalize dark:bg-ink-800">
                     {t(`pages.products.types.${product.type}`, { defaultValue: product.type })}
                 </span>
@@ -64,6 +78,36 @@ function Show({ product, canShowCost }) {
             </div>
 
             <div className="space-y-6">
+                {product.images?.length > 0 && (
+                    <section className="rp-card space-y-4">
+                        <h2 className="text-sm font-semibold text-rp-text">
+                            {t('pages.products.sections.images')}
+                        </h2>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                            {product.images.map((image) => (
+                                <a
+                                    key={image.id}
+                                    href={image.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="group relative overflow-hidden rounded-xl border border-rp-border"
+                                >
+                                    <img
+                                        src={image.thumbnail_url ?? image.url}
+                                        alt={image.alt ?? product.name}
+                                        className="aspect-square w-full object-cover transition group-hover:scale-105"
+                                    />
+                                    {image.is_primary && (
+                                        <span className="absolute left-2 top-2 rounded-full bg-teal-600/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                                            {t('pages.products.primaryImage')}
+                                        </span>
+                                    )}
+                                </a>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
                 <section className="rp-card space-y-5">
                     <h2 className="text-sm font-semibold text-rp-text">
                         {t('pages.products.sections.general')}

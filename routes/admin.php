@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductImageController;
 use App\Http\Controllers\Admin\StockTransferController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -38,6 +39,8 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::get('product-variants/search', [ProductController::class, 'searchVariants'])
             ->name('product-variants.search');
         Route::resource('products', ProductController::class);
+        Route::post('products/{product}/images', [ProductImageController::class, 'sync'])
+            ->name('products.images.sync');
 
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
         Route::get('inventory/adjust', [InventoryController::class, 'adjustForm'])->name('inventory.adjust');

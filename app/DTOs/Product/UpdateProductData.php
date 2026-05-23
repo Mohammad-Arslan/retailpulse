@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\DTOs\Product;
 
-use App\Enums\ProductType;
 use App\Http\Requests\Admin\UpdateProductRequest;
 
 final readonly class UpdateProductData
@@ -40,7 +39,7 @@ final readonly class UpdateProductData
             unitId: self::nullableInt($request->validated('unit_id')),
             trackBatches: $request->boolean('track_batches'),
             isActive: $request->boolean('is_active', true),
-            variantAttributes: $request->validated('variant_attributes', []),
+            variantAttributes: (array) ($request->validated('variant_attributes') ?? []),
             variants: self::normalizeVariants($request->validated('variants', [])),
             bundleItems: self::normalizeBundleItems($request->validated('bundle_items', [])),
             branchPrices: self::normalizeBranchPrices($request->validated('branch_prices', [])),

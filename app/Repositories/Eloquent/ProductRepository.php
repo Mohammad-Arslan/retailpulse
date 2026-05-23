@@ -19,6 +19,7 @@ final class ProductRepository implements ProductRepositoryInterface
                 'category:id,name',
                 'brand:id,name',
                 'variants' => fn ($q) => $q->where('is_default', true),
+                'primaryImage',
             ])
             ->withCount('variants');
 
@@ -77,6 +78,7 @@ final class ProductRepository implements ProductRepositoryInterface
                 'unit:id,name,abbreviation',
                 'variants.bundleItems.childVariant.product:id,name,type',
                 'variants.branchPrices.branch:id,name',
+                'images',
             ])
             ->find($id);
     }

@@ -1,4 +1,5 @@
 ﻿import ComboBundleBuilder from '@/Components/admin/ComboBundleBuilder';
+import ProductImageUploader from '@/Components/admin/ProductImageUploader';
 import VariantAttributeBuilder from '@/Components/admin/VariantAttributeBuilder';
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
@@ -27,6 +28,11 @@ export default function ProductFormFields({
     canShowCost,
     isEdit = false,
     productId = null,
+    existingImages = [],
+    pendingImages = [],
+    onPendingImagesChange,
+    removedImageIds = [],
+    onRemovedImageIdsChange,
 }) {
     const { t } = useTranslation();
     const typeOptions = useMemo(
@@ -405,14 +411,36 @@ export default function ProductFormFields({
         </FormCard>
     ) : null;
 
-    const leftColumn = [generalCard, attributesCard, bundleCard].filter(Boolean);
-    const rightColumn = [pricingCard, branchPricingCard, identifiersCard].filter(Boolean);
+    const imagesCard = (
+        <FormCard className="max-w-none w-full">
+            <ProductImageUploader
+                existingImages={existingImages}
+                removedImageIds={removedImageIds}
+                onRemovedChange={onRemovedImageIdsChange}
+                pendingImages={pendingImages}
+                onPendingChange={onPendingImagesChange}
+                errors={errors}
+            />
+        </FormCard>
+    );
+
 
     return (
         <div className="space-y-5">
             <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-                <div className="space-y-5">{leftColumn}</div>
-                <div className="space-y-5">{rightColumn.length > 0 && rightColumn}</div>
+                <div className="space-y-5">
+                    {generalCard}
+                    {imagesCard}
+                    {attributesCard}
+                    {bundleCard}
+                </div>
+                {(pricingCard || branchPricingCard || identifiersCard) && (
+                    <div className="space-y-5">
+                        {pricingCard}
+                        {branchPricingCard}
+                        {identifiersCard}
+                    </div>
+                )}
             </div>
             {variantsCard}
         </div>

@@ -474,6 +474,14 @@
             "bundleHint": "Bundle resolves child line items for POS checkout.",
             "useDefaultPrice": "Default",
             "branchPricingHint": "Optional sell price overrides per branch.",
+            "imagesHint": "JPEG, PNG, or WebP up to 5 MB each. Maximum {{max}} images. Images are resized on upload.",
+            "addImages": "Add images",
+            "primaryImage": "Primary",
+            "pendingUpload": "Pending",
+            "removeImage": "Remove image",
+            "removedImagesNotice": "{{count}} image(s) will be removed when you save.",
+            "undoRemove": "Restore {{name}}",
+            "imageSyncFailed": "Product saved, but images could not be uploaded. Try again.",
             "types": {
                 "standard": "Standard",
                 "variable": "Variable",
@@ -493,6 +501,7 @@
             },
             "sections": {
                 "general": "General",
+                "images": "Images",
                 "attributes": "Variant attributes",
                 "bundle": "Bundle components",
                 "pricing": "Pricing",
