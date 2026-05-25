@@ -1,19 +1,13 @@
 import { useEffect, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { Search } from 'lucide-react';
 
 function ConnectivityIndicator({ online }) {
     return (
         <div className="flex items-center gap-1.5">
             <span
-                className={`h-2 w-2 rounded-full ${
-                    online ? 'bg-emerald-500' : 'animate-pulse bg-amber-500'
-                }`}
+                className={`h-2 w-2 rounded-full ${online ? 'bg-emerald-500' : 'animate-pulse bg-amber-500'}`}
             />
-            <span
-                className={`text-xs font-medium ${
-                    online ? 'text-emerald-500' : 'text-amber-500'
-                }`}
-            >
+            <span className={`text-xs font-medium ${online ? 'text-emerald-500' : 'text-amber-500'}`}>
                 {online ? 'Online' : 'Offline'}
             </span>
         </div>
@@ -30,34 +24,26 @@ function SessionTimer({ startedAt }) {
         return () => clearInterval(interval);
     }, [startedAt]);
 
-    const m = Math.floor(elapsed / 60);
+    const h = Math.floor(elapsed / 3600);
+    const m = Math.floor((elapsed % 3600) / 60);
     const s = elapsed % 60;
-    const label = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    const label =
+        h > 0
+            ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+            : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 
-    return (
-        <span className="text-xs text-rp-text-muted">
-            Session {label}
-        </span>
-    );
+    return <span className="text-xs text-rp-text-muted">Session {label}</span>;
 }
 
-function UserAvatar({ name }) {
-    const initials = (name || '?')
-        .split(' ')
-        .map((part) => part[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase();
-
-    return (
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[11px] font-bold text-white">
-            {initials}
-        </span>
-    );
-}
-
-export function PosHeader({ cartCount, sessionStart }) {
-    const { auth, app } = usePage().props;
+export function PosHeader({
+    cartCount,
+    sessionStart,
+    searchQuery,
+    onSearchChange,
+    onSearchKeyDown,
+    searchInputRef,
+    searchLoading,
+}) {
     const [online, setOnline] = useState(navigator.onLine);
 
     useEffect(() => {
@@ -72,28 +58,39 @@ export function PosHeader({ cartCount, sessionStart }) {
     }, []);
 
     return (
-        <header className="flex h-12 shrink-0 items-center justify-between border-b border-rp-border bg-rp-surface px-5">
-            <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-rp-text">
-                    {app?.name || 'RetailPulse'} POS
-                </span>
+        <header className="flex h-14 shrink-0 items-center gap-4 border-b border-rp-border bg-rp-surface px-4">
+            <div className="flex min-w-[120px] items-center gap-2">
+                <span className="text-sm font-semibold text-rp-text">Point of Sale</span>
                 <ConnectivityIndicator online={online} />
             </div>
 
-            <div className="flex items-center gap-4">
-                <SessionTimer startedAt={sessionStart} />
+            <div className="relative mx-auto w-full max-w-2xl flex-1">
+                <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-rp-text-muted" />
+                <input
+                    ref={searchInputRef}
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    onKeyDown={onSearchKeyDown}
+                    placeholder="Search by name, SKU or scan barcode…"
+                    className="w-full rounded-xl border border-rp-border bg-rp-surface-inset py-2.5 pr-14 pl-10 text-sm text-rp-text outline-none placeholder:text-rp-text-muted focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20"
+                    autoComplete="off"
+                />
+                <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded-md border border-rp-border bg-rp-surface px-1.5 py-0.5 text-[10px] font-medium text-rp-text-muted">
+                    F2
+                </span>
+                {searchLoading && (
+                    <div className="absolute top-1/2 right-12 -translate-y-1/2">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                    </div>
+                )}
+            </div>
 
-                <span className="text-xs text-rp-text-muted">
+            <div className="flex min-w-[200px] items-center justify-end gap-3">
+                <SessionTimer startedAt={sessionStart} />
+                <span className="hidden text-xs text-rp-text-muted sm:inline">
                     {cartCount} cart{cartCount !== 1 ? 's' : ''} open
                 </span>
-
-                <div className="flex items-center gap-2 rounded-full border border-rp-border bg-rp-surface-subtle py-1 pr-3 pl-1">
-                    <UserAvatar name={auth?.user?.name} />
-                    <div className="text-xs leading-tight">
-                        <span className="font-medium text-rp-text">{auth?.user?.name}</span>
-                        <span className="text-rp-text-muted"> — Admin</span>
-                    </div>
-                </div>
             </div>
         </header>
     );

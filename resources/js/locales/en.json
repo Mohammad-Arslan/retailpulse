@@ -1,6 +1,7 @@
 {
     "nav": {
         "dashboard": "Dashboard",
+        "pos": "Point of Sale",
         "users": "Users",
         "roles": "Roles",
         "permissions": "Permissions",

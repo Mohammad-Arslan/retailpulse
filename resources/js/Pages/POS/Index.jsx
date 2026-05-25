@@ -1,20 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
-import PosLayout from '@/Layouts/PosLayout';
+import { Head, usePage } from '@inertiajs/react';
+import AdminLayout from '@/Layouts/AdminLayout';
 import { PosHeader } from '@/Components/pos/PosHeader';
 import { PinModal } from '@/Components/pos/PinModal';
-import { ProductSearch } from '@/Components/pos/ProductSearch';
+import { CategoryFilters } from '@/Components/pos/CategoryFilters';
+import { ProductGrid } from '@/Components/pos/ProductGrid';
 import { CartPanel } from '@/Components/pos/CartPanel';
 import { CartTabs } from '@/Components/pos/CartTabs';
-import { cartApi, cartItemApi } from '@/lib/posApi';
+import { cartApi, cartItemApi, searchApi } from '@/lib/posApi';
 import { usePosDialog } from '@/Hooks/usePosDialog';
 import { usePosKeyboard } from '@/Hooks/usePosKeyboard';
 import { usePosWebSocket } from '@/Hooks/usePosWebSocket';
+import { useBarcodeScanner } from '@/Hooks/useBarcodeScanner';
 import { useCan } from '@/Hooks/useCan';
 
 const PIN_INACTIVITY_MS = 30 * 60 * 1000;
+const SEARCH_DEBOUNCE_MS = 300;
 
-export default function PosIndex({ hasPin, lockout: initialLockout }) {
+export default function PosIndex({ hasPin, lockout: initialLockout, categories = [] }) {
     const { branch } = usePage().props;
     const can = useCan();
     const { error, warning, success, confirmVoidCart, confirmCloseCart } = usePosDialog();
@@ -31,6 +34,15 @@ export default function PosIndex({ hasPin, lockout: initialLockout }) {
     const [stockWarnings, setStockWarnings] = useState({});
     const [processing, setProcessing] = useState(false);
     const [undoStack, setUndoStack] = useState([]);
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
+    const [categoryId, setCategoryId] = useState(null);
+    const [products, setProducts] = useState([]);
+    const [catalogMeta, setCatalogMeta] = useState(null);
+    const [catalogLoading, setCatalogLoading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(24);
 
     const searchInputRef = useRef(null);
 
@@ -144,6 +156,51 @@ export default function PosIndex({ hasPin, lockout: initialLockout }) {
     );
 
     usePosWebSocket(activeCart?.items, handleStockChanged);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedQuery(searchQuery), SEARCH_DEBOUNCE_MS);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedQuery, categoryId, perPage]);
+
+    useEffect(() => {
+        if (!pinVerified || !branchId) return;
+
+        setCatalogLoading(true);
+        searchApi
+            .catalog({
+                branch_id: branchId,
+                category_id: categoryId ?? undefined,
+                q: debouncedQuery || undefined,
+                page,
+                per_page: perPage,
+            })
+            .then((data) => {
+                setProducts(data.results || []);
+                setCatalogMeta(data.meta || null);
+            })
+            .catch(() => {
+                setProducts([]);
+                setCatalogMeta(null);
+            })
+            .finally(() => setCatalogLoading(false));
+    }, [pinVerified, branchId, categoryId, debouncedQuery, page, perPage]);
+
+    const handleBarcodeDetected = useCallback((barcode) => {
+        setSearchQuery(barcode);
+        searchInputRef.current?.focus();
+    }, []);
+
+    useBarcodeScanner(handleBarcodeDetected, pinVerified);
+
+    function handleSearchKeyDown(e) {
+        if (e.key === 'Escape') {
+            setSearchQuery('');
+        }
+    }
 
     async function createNewCart() {
         if (carts.length >= 5) {
@@ -376,22 +433,35 @@ export default function PosIndex({ hasPin, lockout: initialLockout }) {
 
     if (!pinVerified) {
         return (
-            <PosLayout title="POS — PIN Required">
-                <PinModal
-                    lockout={pinLockout}
-                    onVerified={() => {
-                        setPinVerified(true);
-                        lastActivityRef.current = Date.now();
-                        sessionStartRef.current = Date.now();
-                    }}
-                />
-            </PosLayout>
+            <AdminLayout fullHeight>
+                <Head title="POS — PIN Required" />
+                <div className="flex flex-1 items-center justify-center">
+                    <PinModal
+                        lockout={pinLockout}
+                        onVerified={() => {
+                            setPinVerified(true);
+                            lastActivityRef.current = Date.now();
+                            sessionStartRef.current = Date.now();
+                        }}
+                    />
+                </div>
+            </AdminLayout>
         );
     }
 
     return (
-        <PosLayout title="Point of Sale">
-            <PosHeader cartCount={carts.length} sessionStart={sessionStartRef.current} />
+        <AdminLayout fullHeight>
+            <Head title="Point of Sale" />
+            <div className="flex min-h-0 flex-1 flex-col">
+            <PosHeader
+                cartCount={carts.length}
+                sessionStart={sessionStartRef.current}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onSearchKeyDown={handleSearchKeyDown}
+                searchInputRef={searchInputRef}
+                searchLoading={catalogLoading}
+            />
 
             <CartTabs
                 carts={carts}
@@ -403,56 +473,49 @@ export default function PosIndex({ hasPin, lockout: initialLockout }) {
                 processing={processing}
             />
 
-            <div className="flex min-h-0 flex-1 divide-x divide-rp-border">
-                <div className="flex w-1/2 flex-col p-5 xl:w-3/5">
-                    <ProductSearch
-                        branchId={branchId}
-                        onAddProduct={handleAddProduct}
-                        inputRef={searchInputRef}
+            <div className="flex min-h-0 flex-1">
+                <div className="flex min-w-0 flex-1 flex-col">
+                    <CategoryFilters
+                        categories={categories}
+                        activeId={categoryId}
+                        onSelect={setCategoryId}
                     />
 
-                    {!activeCart && carts.length === 0 && (
-                        <div className="mt-8 flex flex-1 items-center justify-center">
-                            <div className="text-center text-rp-text-muted">
-                                <p className="text-5xl opacity-40">🛒</p>
-                                <p className="mt-3 text-base font-medium text-rp-text-secondary">
-                                    No carts open
-                                </p>
-                                <p className="mt-1 text-sm">
-                                    Search for a product to start a new cart
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={createNewCart}
-                                    disabled={processing}
-                                    className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-                                >
-                                    + New Cart
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex w-1/2 flex-col xl:w-2/5">
-                    <CartPanel
-                        cart={activeCart}
-                        stockWarnings={stockWarnings}
-                        onItemUpdated={(item) =>
-                            activeCart && updateItemInCart(activeCart.id, item)
-                        }
-                        onItemRemoved={(itemId) =>
-                            activeCart && removeItemFromCart(activeCart.id, itemId)
-                        }
-                        onCheckout={handleCheckout}
-                        onSuspend={handleSuspend}
-                        onVoid={handleVoid}
-                        onReopen={handleReopenCart}
-                        canDiscount={can('pos.discount')}
+                    <ProductGrid
+                        products={products}
+                        loading={catalogLoading}
+                        meta={catalogMeta}
+                        perPage={perPage}
+                        onPageChange={setPage}
+                        onPerPageChange={setPerPage}
+                        onAddProduct={handleAddProduct}
                         processing={processing}
                     />
                 </div>
+
+                <CartPanel
+                    cart={activeCart}
+                    stockWarnings={stockWarnings}
+                    onItemUpdated={(item) =>
+                        activeCart && updateItemInCart(activeCart.id, item)
+                    }
+                    onItemRemoved={(itemId) =>
+                        activeCart && removeItemFromCart(activeCart.id, itemId)
+                    }
+                    onCheckout={handleCheckout}
+                    onSuspend={handleSuspend}
+                    onVoid={handleVoid}
+                    onReopen={handleReopenCart}
+                    onAddDiscount={() =>
+                        warning('Select an item in the cart and use + Discount on that row.')
+                    }
+                    onNote={() => warning('Cart notes are coming in a future update.')}
+                    onCustomer={() => warning('Customer linking is coming in Phase 9.')}
+                    canDiscount={can('pos.discount')}
+                    processing={processing}
+                />
             </div>
-        </PosLayout>
+            </div>
+        </AdminLayout>
     );
 }

@@ -45,13 +45,13 @@ class AuthenticatedSessionController extends Controller
             $this->branchContext->initializeSession($request, $user);
         }
 
-        if ($user !== null && ! $user->can('admin.access')) {
+        if ($user !== null && ! $user->can('admin.access') && ! $user->can('pos.access')) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
             return back()->withErrors([
-                'email' => __('You do not have permission to access the admin panel.'),
+                'email' => __('You do not have permission to access the application.'),
             ]);
         }
 
@@ -59,7 +59,11 @@ class AuthenticatedSessionController extends Controller
             event(UserLoggedIn::fromRequest($user, $request));
         }
 
-        return redirect()->intended(route('admin.dashboard', absolute: false));
+        $home = $user !== null && $user->can('admin.access')
+            ? route('admin.dashboard', absolute: false)
+            : route('admin.pos.index', absolute: false);
+
+        return redirect()->intended($home);
     }
 
     public function destroy(Request $request): RedirectResponse

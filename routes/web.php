@@ -2,13 +2,20 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\PosController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     if (Auth::check()) {
-        return redirect()->route('admin.dashboard');
+        $user = Auth::user();
+
+        if ($user?->can('admin.access')) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        if ($user?->can('pos.access')) {
+            return redirect()->route('admin.pos.index');
+        }
     }
 
     return redirect()->route('login');
@@ -21,11 +28,6 @@ Route::middleware('auth')->group(function () {
     require __DIR__.'/admin.php';
 });
 
-Route::middleware(['auth', 'pos.access'])
-    ->prefix('pos')
-    ->name('pos.')
-    ->group(function () {
-        Route::get('/', [PosController::class, 'index'])->name('index');
-    });
+Route::redirect('/pos', '/admin/pos');
 
 require __DIR__.'/auth.php';

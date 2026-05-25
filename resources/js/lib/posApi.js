@@ -41,6 +41,7 @@ export const pinApi = {
 export const searchApi = {
     search: (q, branchId) =>
         get(r('api.v1.pos.products.search'), { q, branch_id: branchId }),
+    catalog: (params) => get(r('api.v1.pos.products.catalog'), params),
 };
 
 // Carts

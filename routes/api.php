@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\Pos\CartController;
 use App\Http\Controllers\Api\V1\Pos\CartItemController;
 use App\Http\Controllers\Api\V1\Pos\PinController;
+use App\Http\Controllers\Api\V1\Pos\ProductCatalogController;
 use App\Http\Controllers\Api\V1\Pos\ProductSearchController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,7 @@ Route::prefix('v1/pos')
         // All remaining POS routes require pos.access
         Route::middleware('pos.access')->group(function () {
             Route::get('products/search', ProductSearchController::class)->name('products.search');
+            Route::get('products/catalog', ProductCatalogController::class)->name('products.catalog');
 
             Route::get('carts', [CartController::class, 'index'])->name('carts.index');
             Route::post('carts', [CartController::class, 'store'])->name('carts.store');

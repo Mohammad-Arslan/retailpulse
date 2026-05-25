@@ -93,10 +93,13 @@ function SidebarNav({ collapsed, onNavigate }) {
     );
 }
 
-export default function AdminLayout({ children }) {
+export default function AdminLayout({ children, fullHeight = false }) {
     const user = usePage().props.auth.user;
     const roles = usePage().props.auth.roles ?? [];
+    const can = useCan();
     const { t } = useTranslation();
+
+    const homeRoute = can('admin.dashboard.view') ? 'admin.dashboard' : 'admin.pos.index';
 
     const [mobileOpen, setMobileOpen] = useState(false);
     const { collapsed, toggleCollapsed } = useSidebarCollapsed();
@@ -114,7 +117,7 @@ export default function AdminLayout({ children }) {
                 )}
             >
                 <Link
-                    href={route('admin.dashboard')}
+                    href={route(homeRoute)}
                     className={cn(
                         'flex items-center gap-3',
                         collapsed && 'justify-center',
@@ -224,7 +227,13 @@ export default function AdminLayout({ children }) {
                 {sidebarContent}
             </aside>
 
-            <div className={cn('flex min-h-screen flex-col transition-[margin] duration-200', mainOffset)}>
+            <div
+                className={cn(
+                    'flex flex-col transition-[margin] duration-200',
+                    fullHeight ? 'h-screen min-h-0' : 'min-h-screen',
+                    mainOffset,
+                )}
+            >
                 <AdminTopbar
                     collapsed={collapsed}
                     isDark={isDark}
@@ -234,8 +243,13 @@ export default function AdminLayout({ children }) {
                     onOpenMobileMenu={() => setMobileOpen(true)}
                 />
 
-                <main className="flex-1 px-4 py-7 sm:px-8">
-                    <Breadcrumbs />
+                <main
+                    className={cn(
+                        'flex min-h-0 flex-1 flex-col',
+                        fullHeight ? 'overflow-hidden' : 'px-4 py-7 sm:px-8',
+                    )}
+                >
+                    {!fullHeight && <Breadcrumbs />}
                     {children}
                 </main>
             </div>
