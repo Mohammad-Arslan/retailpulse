@@ -26,6 +26,8 @@ use Spatie\Permission\Traits\HasRoles;
     'last_login_ip',
     'failed_login_attempts',
     'locked_until',
+    'pos_pin_hash',
+    'pos_pin_updated_at',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable

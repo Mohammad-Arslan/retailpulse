@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAdminAccess;
+use App\Http\Middleware\EnsurePosAccess;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetBranchContext;
 use Illuminate\Console\Scheduling\Schedule;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => EnsureAdminAccess::class,
             'branch.context' => SetBranchContext::class,
+            'pos.access' => EnsurePosAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

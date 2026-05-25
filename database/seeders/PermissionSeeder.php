@@ -74,6 +74,15 @@ final class PermissionSeeder extends Seeder
             ['name' => 'settings.notifications.update', 'description' => 'Update notification settings'],
             ['name' => 'settings.import-export.update', 'description' => 'Update import/export storage settings'],
         ],
+        'pos' => [
+            ['name' => 'pos.access', 'description' => 'Enter and operate the POS screen'],
+            ['name' => 'pos.discount', 'description' => 'Apply discounts up to 30% on line items'],
+            ['name' => 'pos.approve-discount', 'description' => 'Approve discounts above 30%'],
+            ['name' => 'pos.suspend-cart', 'description' => 'Suspend and resume carts'],
+            ['name' => 'pos.void-cart', 'description' => 'Void any cart'],
+            ['name' => 'pos.override-stock', 'description' => 'Override out-of-stock warning with manager PIN'],
+            ['name' => 'pos.admin', 'description' => 'Reset PIN lockouts and manage POS sessions'],
+        ],
     ];
 
     public function run(): void

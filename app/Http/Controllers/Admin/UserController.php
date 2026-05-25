@@ -14,6 +14,7 @@ use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Services\BranchContextService;
+use App\Services\PosPinService;
 use App\Services\UserService;
 use App\Support\BranchContext;
 use App\Support\ListPagination;
@@ -30,6 +31,7 @@ final class UserController extends Controller
         private readonly BranchRepositoryInterface $branches,
         private readonly UserService $userService,
         private readonly BranchContextService $branchContext,
+        private readonly PosPinService $posPin,
     ) {}
 
     public function index(Request $request): Response
@@ -92,6 +94,8 @@ final class UserController extends Controller
                     'branch_id' => $b->id,
                     'is_primary' => (bool) $b->pivot->is_primary,
                 ]),
+                'has_pos_pin' => $this->posPin->hasPin($user),
+                'pos_pin_lockout' => $this->posPin->getLockoutStatus($user),
             ],
             'roles' => $this->roles->allWithPermissions()->pluck('name'),
             'availableBranches' => $this->branches->allActive(
@@ -109,6 +113,15 @@ final class UserController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('success', __('User updated successfully.'));
+    }
+
+    public function resetPosPinLockout(User $user): RedirectResponse
+    {
+        $this->authorize('pos.admin');
+
+        $this->posPin->resetLockout($user);
+
+        return back()->with('success', __('POS PIN lockout cleared for :name.', ['name' => $user->name]));
     }
 
     public function destroy(User $user): RedirectResponse

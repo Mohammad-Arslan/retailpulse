@@ -56,6 +56,13 @@ final class RoleSeeder extends Seeder
                 'settings.company.update',
                 'settings.notifications.update',
                 'settings.import-export.update',
+                'pos.access',
+                'pos.discount',
+                'pos.approve-discount',
+                'pos.suspend-cart',
+                'pos.void-cart',
+                'pos.override-stock',
+                'pos.admin',
             ],
         ],
         'branch-manager' => [
@@ -92,7 +99,12 @@ final class RoleSeeder extends Seeder
         'cashier' => [
             'description' => 'POS only',
             'is_system' => true,
-            'permissions' => [],
+            'permissions' => [
+                'pos.access',
+                'pos.discount',
+                'pos.suspend-cart',
+                'pos.void-cart',
+            ],
         ],
     ];
 

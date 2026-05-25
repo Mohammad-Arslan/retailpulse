@@ -1,0 +1,24 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Api\Pos;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class SetPinRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user() !== null;
+    }
+
+    /** @return array<string, mixed> */
+    public function rules(): array
+    {
+        return [
+            'pin' => ['required', 'string', 'regex:/^\d{6}$/', 'confirmed'],
+            'pin_confirmation' => ['required', 'string'],
+        ];
+    }
+}

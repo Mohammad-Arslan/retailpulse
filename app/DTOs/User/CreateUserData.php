@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\DTOs\User;
 
-use App\DTOs\User\BranchAssignmentData;
 use App\Http\Requests\Admin\StoreUserRequest;
 
 final readonly class CreateUserData
@@ -21,6 +20,7 @@ final readonly class CreateUserData
         public bool $isActive,
         public array $roleNames,
         public array $branchAssignments,
+        public ?string $posPin,
     ) {}
 
     public static function fromRequest(StoreUserRequest $request): self
@@ -35,6 +35,7 @@ final readonly class CreateUserData
             branchAssignments: BranchAssignmentData::fromInput(
                 $request->validated('branches'),
             )->assignments,
+            posPin: $request->validated('pos_pin'),
         );
     }
 }

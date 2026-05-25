@@ -4,6 +4,7 @@ export default function AdminFormField({
     label,
     id,
     error,
+    hint,
     children,
     className = '',
 }) {
@@ -15,6 +16,9 @@ export default function AdminFormField({
                 </label>
             )}
             {children}
+            {hint && !error && (
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{hint}</p>
+            )}
             {error && <InputError message={error} className="mt-2" />}
         </div>
     );

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Branch;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Permission;
@@ -12,34 +13,35 @@ use App\Models\Role;
 use App\Models\Unit;
 use App\Models\User;
 use App\Observers\AuditObserver;
-use App\Models\Branch;
 use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Repositories\Contracts\BrandRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
-use App\Repositories\Contracts\ImageRepositoryInterface;
 use App\Repositories\Contracts\IdentifierSequenceRepositoryInterface;
+use App\Repositories\Contracts\ImageRepositoryInterface;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
 use App\Repositories\Contracts\PermissionRepositoryInterface;
+use App\Repositories\Contracts\PosCartRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
-use App\Repositories\Contracts\StockMovementRepositoryInterface;
-use App\Repositories\Contracts\SystemSettingRepositoryInterface;
-use App\Repositories\Contracts\StockTransferRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
+use App\Repositories\Contracts\StockMovementRepositoryInterface;
+use App\Repositories\Contracts\StockTransferRepositoryInterface;
+use App\Repositories\Contracts\SystemSettingRepositoryInterface;
 use App\Repositories\Contracts\UnitRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\WarehouseRepositoryInterface;
 use App\Repositories\Eloquent\BranchRepository;
 use App\Repositories\Eloquent\BrandRepository;
 use App\Repositories\Eloquent\CategoryRepository;
-use App\Repositories\Eloquent\ImageRepository;
 use App\Repositories\Eloquent\IdentifierSequenceRepository;
+use App\Repositories\Eloquent\ImageRepository;
 use App\Repositories\Eloquent\InventoryRepository;
 use App\Repositories\Eloquent\PermissionRepository;
+use App\Repositories\Eloquent\PosCartRepository;
 use App\Repositories\Eloquent\ProductRepository;
-use App\Repositories\Eloquent\StockMovementRepository;
-use App\Repositories\Eloquent\SystemSettingRepository;
-use App\Repositories\Eloquent\StockTransferRepository;
 use App\Repositories\Eloquent\RoleRepository;
+use App\Repositories\Eloquent\StockMovementRepository;
+use App\Repositories\Eloquent\StockTransferRepository;
+use App\Repositories\Eloquent\SystemSettingRepository;
 use App\Repositories\Eloquent\UnitRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\WarehouseRepository;
@@ -53,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(PosCartRepositoryInterface::class, PosCartRepository::class);
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(RoleRepositoryInterface::class, RoleRepository::class);
         $this->app->bind(PermissionRepositoryInterface::class, PermissionRepository::class);
