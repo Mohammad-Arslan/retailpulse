@@ -17,6 +17,8 @@ export default function Create({ roles, availableBranches }) {
         is_active: true,
         roles: [],
         branches: [],
+        pos_pin: '',
+        pos_pin_confirmation: '',
     });
 
     const toggleRole = (role) => {
@@ -147,6 +149,45 @@ export default function Create({ roles, availableBranches }) {
                                     </label>
                                 ))}
                             </div>
+                        </AdminFormField>
+                    )}
+
+                    <AdminFormField
+                        label="POS PIN (optional)"
+                        id="pos_pin"
+                        error={errors.pos_pin}
+                        hint="6-digit numeric PIN for POS access. Leave blank to set later."
+                    >
+                        <input
+                            id="pos_pin"
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={6}
+                            placeholder="6 digits"
+                            value={data.pos_pin}
+                            className="rp-form-input"
+                            onChange={(e) => setData('pos_pin', e.target.value)}
+                            autoComplete="new-password"
+                        />
+                    </AdminFormField>
+
+                    {data.pos_pin && (
+                        <AdminFormField
+                            label="Confirm POS PIN"
+                            id="pos_pin_confirmation"
+                            error={errors.pos_pin_confirmation}
+                        >
+                            <input
+                                id="pos_pin_confirmation"
+                                type="password"
+                                inputMode="numeric"
+                                maxLength={6}
+                                placeholder="Repeat PIN"
+                                value={data.pos_pin_confirmation}
+                                className="rp-form-input"
+                                onChange={(e) => setData('pos_pin_confirmation', e.target.value)}
+                                autoComplete="new-password"
+                            />
                         </AdminFormField>
                     )}
 

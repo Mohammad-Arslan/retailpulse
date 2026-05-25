@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\DTOs\User\BranchAssignmentData;
 use App\DTOs\User\CreateUserData;
 use App\DTOs\User\UpdateUserData;
 use App\Models\User;
@@ -17,6 +18,7 @@ final class UserService
     public function __construct(
         private readonly UserRepositoryInterface $users,
         private readonly BranchService $branches,
+        private readonly PosPinService $posPin,
     ) {}
 
     public function create(User $actor, CreateUserData $data): User
@@ -36,6 +38,10 @@ final class UserService
 
             if ($data->branchAssignments !== []) {
                 $this->syncBranchesIfAllowed($actor, $user, $data->branchAssignments);
+            }
+
+            if ($data->posPin !== null && $data->posPin !== '') {
+                $this->posPin->setPin($user, $data->posPin);
             }
 
             return $user->load(['roles', 'branches']);
@@ -64,6 +70,13 @@ final class UserService
 
             if ($data->branchAssignments !== null) {
                 $this->syncBranchesIfAllowed($actor, $user, $data->branchAssignments);
+            }
+
+            if ($data->posPin !== null && $data->posPin !== '') {
+                $this->posPin->setPin($user, $data->posPin);
+            } elseif ($data->clearPosPin) {
+                $user->update(['pos_pin_hash' => null, 'pos_pin_updated_at' => null]);
+                $this->posPin->resetLockout($user);
             }
 
             return $user->load(['roles', 'branches']);
@@ -120,7 +133,7 @@ final class UserService
 
         $this->branches->syncUserBranches(
             $user,
-            new \App\DTOs\User\BranchAssignmentData($branchAssignments),
+            new BranchAssignmentData($branchAssignments),
         );
     }
 }

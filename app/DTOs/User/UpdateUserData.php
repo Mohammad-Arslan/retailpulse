@@ -20,6 +20,8 @@ final readonly class UpdateUserData
         public bool $isActive,
         public ?array $roleNames,
         public ?array $branchAssignments,
+        public ?string $posPin,
+        public bool $clearPosPin,
     ) {}
 
     public static function fromRequest(UpdateUserRequest $request): self
@@ -34,6 +36,8 @@ final readonly class UpdateUserData
             branchAssignments: $request->has('branches')
                 ? BranchAssignmentData::fromInput($request->validated('branches'))->assignments
                 : null,
+            posPin: $request->validated('pos_pin'),
+            clearPosPin: $request->boolean('clear_pos_pin', false),
         );
     }
 }

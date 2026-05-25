@@ -33,6 +33,9 @@ final class UpdateUserRequest extends FormRequest
             'branches' => ['nullable', 'array'],
             'branches.*.branch_id' => ['required_with:branches', 'integer', 'exists:branches,id'],
             'branches.*.is_primary' => ['boolean'],
+            'pos_pin' => ['nullable', 'string', 'regex:/^\d{6}$/', 'confirmed'],
+            'pos_pin_confirmation' => ['nullable', 'string'],
+            'clear_pos_pin' => ['boolean'],
         ];
     }
 }
