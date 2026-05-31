@@ -2,12 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\Checkout\CheckoutController;
+use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\Pos\CartController;
 use App\Http\Controllers\Api\V1\Pos\CartItemController;
 use App\Http\Controllers\Api\V1\Pos\PinController;
 use App\Http\Controllers\Api\V1\Pos\ProductCatalogController;
 use App\Http\Controllers\Api\V1\Pos\ProductSearchController;
+use App\Http\Controllers\Api\V1\Sales\HistoricalSaleImportController;
+use App\Http\Controllers\Api\V1\Sales\SaleController;
+use App\Http\Controllers\Api\V1\Sales\SaleExportController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')
@@ -52,6 +57,34 @@ Route::prefix('v1/pos')
             Route::patch('carts/{cartId}/items/{itemId}', [CartItemController::class, 'update'])->name('cart-items.update');
             Route::delete('carts/{cartId}/items/{itemId}', [CartItemController::class, 'destroy'])->name('cart-items.destroy');
         }); // end pos.access group
+    });
+
+Route::prefix('v1')
+    ->middleware(['web', 'auth', 'pos.access'])
+    ->name('api.v1.')
+    ->group(function () {
+        Route::get('checkout/{cartId}', [CheckoutController::class, 'show'])->name('checkout.show');
+        Route::post('checkout/{cartId}/confirm', [CheckoutController::class, 'confirm'])->name('checkout.confirm');
+        Route::post('checkout/{cartId}/abandon', [CheckoutController::class, 'abandon'])->name('checkout.abandon');
+
+        Route::post('sales/{id}/payments', [SaleController::class, 'addPayment'])->name('sales.payments.store');
+        Route::post('sales/{id}/void', [SaleController::class, 'void'])->name('sales.void');
+    });
+
+Route::prefix('v1')
+    ->middleware(['web', 'auth'])
+    ->name('api.v1.')
+    ->group(function () {
+        Route::get('customers', [CustomerController::class, 'search'])->name('customers.search');
+
+        // Static sale routes must precede the {id} wildcard
+        Route::post('sales/import-historical', HistoricalSaleImportController::class)->name('sales.import-historical');
+        Route::get('sales/export', SaleExportController::class)->name('sales.export');
+
+        Route::get('sales/{id}', [SaleController::class, 'show'])->name('sales.show');
+        Route::get('sales/{id}/invoice', [SaleController::class, 'invoice'])->name('sales.invoice');
+        Route::post('sales/{id}/invoice/pdf', [SaleController::class, 'generatePdf'])->name('sales.invoice.pdf');
+        Route::post('sales/{id}/invoice/share', [SaleController::class, 'share'])->name('sales.invoice.share');
     });
 
 /*

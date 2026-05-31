@@ -11,7 +11,7 @@ import {
     Wallet,
 } from 'lucide-react';
 import { CartItemRow } from './CartItemRow';
-import { computeCartTotals, formatPkr } from '@/lib/posCartTotals';
+import { computeCartTotals, estimateCartTax, formatPkr } from '@/lib/posCartTotals';
 import { cn } from '@/lib/utils';
 
 function ToolbarButton({ icon: Icon, label, onClick, disabled, destructive }) {
@@ -37,6 +37,10 @@ function ToolbarButton({ icon: Icon, label, onClick, disabled, destructive }) {
 export function CartPanel({
     cart,
     stockWarnings,
+    taxEnabled = true,
+    taxMode = 'exclusive',
+    defaultTaxRate = '0.00',
+    currency = 'PKR',
     onItemUpdated,
     onItemRemoved,
     onCheckout,
@@ -59,7 +63,10 @@ export function CartPanel({
 
     const items = cart.items || [];
     const { subtotal, grandTotal, discount } = computeCartTotals(items);
-    const tax = 0;
+    const { taxAmount, grandTotalIncTax } = taxEnabled
+        ? estimateCartTax(grandTotal, defaultTaxRate, taxMode)
+        : { taxAmount: 0, grandTotalIncTax: grandTotal };
+    const taxRatePct = Math.round(parseFloat(defaultTaxRate) * 100);
     const hasWarnings = Object.keys(stockWarnings || {}).length > 0;
     const isCompleting = cart.status === 'completing';
     const isEditable = cart.status === 'active' || cart.status === 'suspended';
@@ -73,7 +80,7 @@ export function CartPanel({
                         <p className="text-sm font-semibold text-rp-text">Cart {cart.slot}</p>
                         {items.length > 0 && (
                             <p className="text-xs text-blue-400">
-                                {items.length} items · PKR {formatPkr(grandTotal)}
+                                {items.length} items · {currency} {formatPkr(grandTotalIncTax)}
                             </p>
                         )}
                     </div>
@@ -149,7 +156,7 @@ export function CartPanel({
                     <div className="space-y-1.5 text-sm">
                         <div className="flex justify-between text-rp-text-secondary">
                             <span>Subtotal</span>
-                            <span>PKR {formatPkr(subtotal)}</span>
+                            <span>{currency} {formatPkr(subtotal)}</span>
                         </div>
                         {discount > 0 && (
                             <div className="flex justify-between text-emerald-400">
@@ -157,16 +164,23 @@ export function CartPanel({
                                     <Tag className="h-3.5 w-3.5" />
                                     Discount
                                 </span>
-                                <span>- PKR {formatPkr(discount)}</span>
+                                <span>- {currency} {formatPkr(discount)}</span>
                             </div>
                         )}
-                        <div className="flex justify-between text-rp-text-secondary">
-                            <span>Tax (16%)</span>
-                            <span>PKR {formatPkr(tax)}</span>
-                        </div>
+                        {taxEnabled && taxAmount > 0 && (
+                            <div className="flex justify-between text-rp-text-secondary">
+                                <span>
+                                    Tax{taxRatePct > 0 ? ` (${taxRatePct}%)` : ''}
+                                    {taxMode === 'inclusive' && (
+                                        <span className="ml-1 text-xs opacity-60">incl.</span>
+                                    )}
+                                </span>
+                                <span>{currency} {formatPkr(taxAmount)}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between border-t border-rp-border pt-2 text-xl font-bold text-rp-text">
                             <span>Total</span>
-                            <span>PKR {formatPkr(grandTotal + tax)}</span>
+                            <span>{currency} {formatPkr(grandTotalIncTax)}</span>
                         </div>
                     </div>
                 </div>

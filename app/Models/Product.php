@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'slug',
     'description',
     'tax_group_id',
+    'tax_rate',
     'variant_attributes',
     'track_batches',
     'track_serials',

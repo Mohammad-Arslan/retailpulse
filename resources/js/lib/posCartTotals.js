@@ -62,3 +62,26 @@ export function computeCartTotals(items = []) {
         itemCount: items.length,
     };
 }
+
+/**
+ * Estimate tax for the POS cart totals display.
+ * Returns { taxAmount, grandTotalIncTax }.
+ * For exclusive mode: tax is added on top of afterDiscount.
+ * For inclusive mode: tax is already embedded in the price — back-calculate it.
+ */
+export function estimateCartTax(afterDiscount, taxRateStr, taxMode) {
+    const rate = parseFloat(taxRateStr) || 0;
+
+    if (rate <= 0) {
+        return { taxAmount: 0, grandTotalIncTax: afterDiscount };
+    }
+
+    if (taxMode === 'inclusive') {
+        const taxAmount = roundMoney(afterDiscount - afterDiscount / (1 + rate));
+        return { taxAmount, grandTotalIncTax: afterDiscount };
+    }
+
+    // exclusive (default)
+    const taxAmount = roundMoney(afterDiscount * rate);
+    return { taxAmount, grandTotalIncTax: roundMoney(afterDiscount + taxAmount) };
+}

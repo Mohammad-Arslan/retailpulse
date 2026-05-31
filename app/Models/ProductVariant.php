@@ -17,6 +17,7 @@ use Illuminate\Support\Collection;
     'barcode',
     'cost_price',
     'sell_price',
+    'tax_rate',
     'reorder_point',
     'attributes',
     'is_default',

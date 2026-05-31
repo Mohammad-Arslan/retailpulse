@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\StockTransferController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\CheckoutPageController;
 use App\Http\Controllers\PosController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +26,7 @@ Route::middleware(['auth', 'branch.context', 'pos.access'])
     ->name('admin.')
     ->group(function () {
         Route::get('pos', [PosController::class, 'index'])->name('pos.index');
+        Route::get('checkout/{cartId}', [CheckoutPageController::class, 'show'])->name('checkout.show');
     });
 
 Route::middleware(['auth', 'admin', 'branch.context'])

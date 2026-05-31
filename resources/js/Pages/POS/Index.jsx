@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { PosHeader } from '@/Components/pos/PosHeader';
 import { PinModal } from '@/Components/pos/PinModal';
@@ -17,7 +17,7 @@ import { useCan } from '@/Hooks/useCan';
 const PIN_INACTIVITY_MS = 30 * 60 * 1000;
 const SEARCH_DEBOUNCE_MS = 300;
 
-export default function PosIndex({ hasPin, lockout: initialLockout, categories = [] }) {
+export default function PosIndex({ hasPin, lockout: initialLockout, categories = [], posConfig = {} }) {
     const { branch } = usePage().props;
     const can = useCan();
     const { error, warning, success, confirmVoidCart, confirmCloseCart } = usePosDialog();
@@ -375,9 +375,8 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
         }
         setProcessing(true);
         try {
-            const payload = await cartApi.checkout(activeCart.id);
-            sessionStorage.setItem('pos_checkout_payload', JSON.stringify(payload));
-            success('Checkout ready', `Cart ID: ${payload.cart_id} · Total: PKR ${payload.grand_total.toLocaleString()}`);
+            await cartApi.checkout(activeCart.id);
+            router.visit(route('admin.checkout.show', { cartId: activeCart.id }));
         } catch (err) {
             error(err?.response?.data?.message || 'Checkout failed.');
         } finally {
@@ -496,6 +495,10 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
                 <CartPanel
                     cart={activeCart}
                     stockWarnings={stockWarnings}
+                    taxEnabled={posConfig.tax_enabled ?? true}
+                    taxMode={posConfig.tax_mode ?? 'exclusive'}
+                    defaultTaxRate={posConfig.default_tax_rate ?? '0.00'}
+                    currency={posConfig.currency ?? 'PKR'}
                     onItemUpdated={(item) =>
                         activeCart && updateItemInCart(activeCart.id, item)
                     }
