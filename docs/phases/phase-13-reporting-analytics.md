@@ -23,3 +23,25 @@ Operational and financial **reports** with custom report builder and export.
 1. Inventory valuation matches manual calculation for sample SKUs.
 2. Custom report saves and re-runs with same filters.
 3. Export > 10k rows processes via queue without timeout.
+
+---
+
+## Phase Enhancements (SRS v3.0)
+
+### BI-Ready Export Schema (§3.29)
+- All report exports include a machine-readable manifest file (`report_manifest.json`) alongside the CSV/XLSX, describing column names, data types, and grain (row = one what?).
+- Export scheduler: admins can configure any saved report definition to run on a cron (daily/weekly/monthly) and email the result to a recipient list.
+
+### Nightly ETL Snapshot Job
+- A scheduled `AggregateDataMartsJob` runs nightly after midnight and populates `data_mart_sales` and `data_mart_inventory` from live transactional tables.
+- The job is idempotent: if run twice for the same date, it upserts rather than duplicates.
+- Failed runs dispatch a `DataMartEtlFailed` alert to system administrators.
+
+### Pre-Built Data Mart Tables
+- `data_mart_sales`: columns — `date`, `branch_id`, `product_variant_id`, `customer_id` (nullable), `cashier_id`, `quantity_sold`, `gross_revenue`, `discount_amount`, `net_revenue`, `cost_of_goods`, `gross_profit`, `tax_collected`.
+- `data_mart_inventory`: columns — `date`, `branch_id`, `product_variant_id`, `opening_qty`, `closing_qty`, `net_movement`, `value_at_cost_fifo`.
+- Both tables are indexed on `(date, branch_id)` for BI query performance.
+- These tables back the enhanced Dashboard analytics added in Phase 27.
+
+### Link to Phase 27 (BI Layer)
+- This phase creates the mart schema and ETL infrastructure; Phase 27 adds the Power BI connector, Tableau template files, and the AI demand forecast stub.

@@ -32,3 +32,33 @@
 1. Return outside 30-day window blocked unless override permission.
 2. Composite tax on product shows correct breakdown on invoice.
 3. Low-stock email sent only to users who opted in.
+
+---
+
+## Phase Enhancements (SRS v3.0)
+
+### Fraud & Operational Controls (§4.4)
+
+**Price Override Logging**
+- Every manual line-item discount or price override at POS is recorded in `price_override_logs`: `sale_item_id`, `original_price`, `overridden_price`, `override_reason`, `approved_by` (manager user_id if approval was required), `created_at`.
+- Threshold-based approval: discounts exceeding `pos.max_discount_pct` (configurable) require manager PIN before applying.
+
+**Refund Approval Flow Enhancement**
+- Refunds above `returns.manager_approval_threshold` (configurable) are blocked until a manager provides their PIN or approves via the Workflow Engine (Phase 29 hook).
+- All refund approvals/rejections are audit-logged.
+
+**Void Sale Tracking**
+- `void_logs` table: `sale_id`, `voided_by`, `void_reason`, `approved_by` (manager), `voided_at`.
+- Void report filterable by cashier, branch, date range — surfaces in the Fraud Controls section of Reporting (Phase 13).
+
+**No-Sale Drawer Log (§3.20)**
+- Every manual cash drawer open (without a sale) creates a `no_sale_logs` record: `register_id`, `opened_by`, `reason`, `opened_at`.
+- No-sale count by cashier shown on the X/Z report (Phase 17).
+
+**Suspicious Activity Detection**
+- A rule-based `SuspiciousActivityService` evaluates the following signals after each transaction:
+    - More than N voids in a single shift by the same cashier.
+    - Refund amount > sale amount.
+    - Discount rate exceeding the configured threshold without manager approval.
+    - Multiple payment reversals within a short window.
+- Triggered events dispatch a `SuspiciousActivityDetected` notification to the branch manager and log to `audit_logs` with `event = suspicious_activity`.

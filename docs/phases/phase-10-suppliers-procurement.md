@@ -33,3 +33,17 @@ Full **procurement cycle** with approval workflows and supplier ledger.
 1. PO → GRN → Invoice → Payment flow updates stock and supplier balance correctly.
 2. PO over configured amount requires approval before send.
 3. Supplier list import creates 50+ suppliers with validation errors surfaced per row.
+
+---
+
+## Phase Enhancements (SRS v3.0)
+
+### Purchase Approval Workflow Hook (§3.29 — Phase 29)
+- The existing approval threshold logic (PO amount > configurable limit requires manager PIN) is extended to optionally route through the generic Workflow Engine when Phase 29 is active.
+- When `feature_flags.procurement.workflow_approval` is enabled, PO approval triggers a `WorkflowInstance` instead of a direct PIN prompt.
+- Backwards compatible: when the feature flag is off, the existing PIN-based approval remains.
+
+### Supplier Performance Scoring (stub)
+- `suppliers` table gains: `on_time_delivery_rate` (decimal), `quality_rejection_rate` (decimal), `last_scored_at` (timestamp).
+- A scheduled job (monthly) calculates scores from GRN delivery dates vs PO expected dates and rejection notes.
+- Scores are displayed on the Supplier show page; no automated action taken (advisory only in this phase).

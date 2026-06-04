@@ -22,6 +22,19 @@ This folder breaks the [SRS](../srs.md) into sequential, shippable phases. Each 
 | **14** | [phase-14-notifications-returns-tax.md](./phase-14-notifications-returns-tax.md) | 3.15, 3.16, 3.17 | Notifications, refunds/returns, tax engine |
 | **15** | [phase-15-api-integrations.md](./phase-15-api-integrations.md) | 4.5, 6 | REST API v1, Sanctum tokens, webhooks, payment/comms integrations |
 | **16** | [phase-16-hardening-deployment.md](./phase-16-hardening-deployment.md) | 4.2–4.8, 7 | 2FA, sessions, caching, i18n, audit compliance, DevOps |
+| **17** | [phase-17-shift-register-management.md](./phase-17-shift-register-management.md) | 3.20 | Registers, shift open/close, X/Z reports, variance approval, no-sale log |
+| **18** | [phase-18-pricing-promotions.md](./phase-18-pricing-promotions.md) | 3.21 | Price lists, BOGO/bundle/cart/category promotions, coupon engine |
+| **19** | [phase-19-restaurant-core.md](./phase-19-restaurant-core.md) | 3.19 | Floors, tables, KOT lifecycle, order types, service charge, real-time updates |
+| **20** | [phase-20-restaurant-advanced.md](./phase-20-restaurant-advanced.md) | 3.19 | Waiter panel, KDS, split billing, modifiers, reservations, delivery stubs |
+| **21** | [phase-21-hardware-integration.md](./phase-21-hardware-integration.md) | 3.22 | ESC/POS printers, cash drawer, barcode scanner, scale stub, card terminal stub |
+| **22** | [phase-22-recipe-ingredients.md](./phase-22-recipe-ingredients.md) | 3.23 | Raw materials, BOM service, auto-deduct on sale, production batches |
+| **23** | [phase-23-module-config-engine.md](./phase-23-module-config-engine.md) | 3.24, 3.25 | Module registry, feature flags, CheckModuleEnabled middleware, dynamic sidebar, 4-tier config |
+| **24** | [phase-24-gift-cards-store-credits.md](./phase-24-gift-cards-store-credits.md) | 3.26 | Gift card issuance (physical/digital), POS redemption, store credits on returns |
+| **25** | [phase-25-ecommerce-integration.md](./phase-25-ecommerce-integration.md) | 3.27 | Shopify/WooCommerce product sync, inventory push, order pull, customer merge |
+| **26** | [phase-26-mobile-apps.md](./phase-26-mobile-apps.md) | 3.28 | Customer, Waiter, Scanner & Manager apps (React Native + FCM push) |
+| **27** | [phase-27-bi-analytics.md](./phase-27-bi-analytics.md) | 3.29, 3.30 | Data mart ETL, Power BI/Tableau connector, AI demand forecast stub |
+| **28** | [phase-28-saas-multitenancy.md](./phase-28-saas-multitenancy.md) | 4.8, 3.24 | Tenant isolation, plans, subscriptions, onboarding wizard, Stripe stub |
+| **29** | [phase-29-workflow-engine.md](./phase-29-workflow-engine.md) | 3.10, 3.16, 3.24 | Configurable approval workflows, pre-built definitions, visual builder |
 
 ## Dependency Graph
 
@@ -59,14 +72,39 @@ flowchart TD
     P8 --> P14
     P1 --> P15
     P14 --> P16
+
+    P8  --> P17
+    P17 --> P19
+    P4  --> P18
+    P9  --> P18
+    P19 --> P20
+    P5  --> P22
+    P19 --> P22
+    P8  --> P21
+    P17 --> P21
+    P16 --> P23
+    P9  --> P24
+    P8  --> P24
+    P15 --> P25
+    P23 --> P25
+    P23 --> P26
+    P25 --> P26
+    P13 --> P27
+    P23 --> P27
+    P16 --> P28
+    P23 --> P28
+    P12 --> P29
+    P23 --> P29
 ```
 
 ## Current Status
 
 | Phase | Status |
 | :--- | :--- |
-| 1 | **Not started** — ready for implementation |
-| 2–16 | Planned |
+| 1–7 | ✅ Complete |
+| 8 | 🔄 In Progress |
+| 9–16 | 📋 Planned (original roadmap) |
+| 17–29 | 📋 Planned (SRS v3.0 additions) |
 
 ---
 
