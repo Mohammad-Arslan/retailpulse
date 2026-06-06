@@ -63,7 +63,7 @@ final class CartController extends Controller
         $cart = $this->findOwnedCart($request, $cartId);
         $cart = $this->cartService->suspendCart($cart);
 
-        return response()->json($this->formatCart($cart));
+        return response()->json($this->formatCart($cart->load('items')));
     }
 
     public function resume(Request $request, string $cartId): JsonResponse

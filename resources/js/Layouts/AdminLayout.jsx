@@ -93,7 +93,7 @@ function SidebarNav({ collapsed, onNavigate }) {
     );
 }
 
-export default function AdminLayout({ children, fullHeight = false }) {
+export default function AdminLayout({ children, fullHeight = false, posMode = false, hideTopbar = false }) {
     const user = usePage().props.auth.user;
     const roles = usePage().props.auth.roles ?? [];
     const can = useCan();
@@ -234,14 +234,17 @@ export default function AdminLayout({ children, fullHeight = false }) {
                     mainOffset,
                 )}
             >
-                <AdminTopbar
-                    collapsed={collapsed}
-                    isDark={isDark}
-                    onToggleCollapse={toggleCollapsed}
-                    onOpenSearch={openPalette}
-                    onToggleTheme={toggleTheme}
-                    onOpenMobileMenu={() => setMobileOpen(true)}
-                />
+                {!hideTopbar && (
+                    <AdminTopbar
+                        collapsed={collapsed}
+                        isDark={isDark}
+                        onToggleCollapse={toggleCollapsed}
+                        onOpenSearch={openPalette}
+                        onToggleTheme={toggleTheme}
+                        onOpenMobileMenu={() => setMobileOpen(true)}
+                        posMode={posMode}
+                    />
+                )}
 
                 <main
                     className={cn(

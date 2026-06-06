@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
+import { Scan, Search, X } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { PosHeader } from '@/Components/pos/PosHeader';
+import { PosTopbar } from '@/Components/pos/PosTopbar';
 import { PinModal } from '@/Components/pos/PinModal';
-import { CategoryFilters } from '@/Components/pos/CategoryFilters';
-import { ProductGrid } from '@/Components/pos/ProductGrid';
-import { CartPanel } from '@/Components/pos/CartPanel';
 import { CartTabs } from '@/Components/pos/CartTabs';
+import { CartTable } from '@/Components/pos/CartTable';
+import { CartBottomBar } from '@/Components/pos/CartBottomBar';
 import { cartApi, cartItemApi, searchApi } from '@/lib/posApi';
 import { usePosDialog } from '@/Hooks/usePosDialog';
 import { usePosKeyboard } from '@/Hooks/usePosKeyboard';
@@ -16,6 +16,56 @@ import { useCan } from '@/Hooks/useCan';
 
 const PIN_INACTIVITY_MS = 30 * 60 * 1000;
 const SEARCH_DEBOUNCE_MS = 300;
+
+function ProductDropdown({ results, loading, query, onAdd, processing }) {
+    if (!query) return null;
+
+    if (loading) {
+        return (
+            <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl border border-rp-border bg-rp-surface p-3 shadow-xl">
+                <p className="text-xs text-rp-text-muted">Searching…</p>
+            </div>
+        );
+    }
+    if (results.length === 0) {
+        return (
+            <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl border border-rp-border bg-rp-surface p-3 shadow-xl">
+                <p className="text-xs text-rp-text-muted">No products found for "{query}"</p>
+            </div>
+        );
+    }
+    return (
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-rp-border bg-rp-surface py-1 shadow-xl">
+            {results.map((variant) => (
+                <button
+                    key={variant.id}
+                    type="button"
+                    // onMouseDown prevents the input blur from firing before onClick,
+                    // which would close the dropdown before the click is processed.
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => onAdd(variant)}
+                    disabled={processing || !variant.in_stock}
+                    className="flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-rp-surface-subtle disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <div>
+                        <p className="text-sm font-medium text-rp-text">{variant.name}</p>
+                        <p className="text-xs text-rp-text-muted">{variant.sku}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-sm font-semibold text-rp-text">
+                            PKR {variant.unit_price?.toLocaleString?.() ?? variant.unit_price}
+                        </p>
+                        {!variant.in_stock ? (
+                            <p className="text-xs text-red-400">Out of stock</p>
+                        ) : (
+                            <p className="text-xs text-emerald-400">{variant.available_stock} in stock</p>
+                        )}
+                    </div>
+                </button>
+            ))}
+        </div>
+    );
+}
 
 export default function PosIndex({ hasPin, lockout: initialLockout, categories = [], posConfig = {} }) {
     const { branch } = usePage().props;
@@ -37,19 +87,21 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
 
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
-    const [categoryId, setCategoryId] = useState(null);
     const [products, setProducts] = useState([]);
-    const [catalogMeta, setCatalogMeta] = useState(null);
     const [catalogLoading, setCatalogLoading] = useState(false);
-    const [page, setPage] = useState(1);
-    const [perPage, setPerPage] = useState(24);
+    const [searchFocused, setSearchFocused] = useState(false);
 
     const searchInputRef = useRef(null);
+    const searchWrapRef = useRef(null);
+    // Cache: query string → results array. Avoids re-fetching the same query.
+    const searchCacheRef = useRef(new Map());
 
     const activeCart = useMemo(
         () => carts.find((c) => c.id === activeCartId) ?? null,
         [carts, activeCartId],
     );
+
+    const taxRatePct = parseFloat(posConfig.default_tax_rate ?? '0') * 100;
 
     useEffect(() => {
         if ('serviceWorker' in navigator) {
@@ -163,31 +215,32 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
     }, [searchQuery]);
 
     useEffect(() => {
-        setPage(1);
-    }, [debouncedQuery, categoryId, perPage]);
+        if (!pinVerified || !branchId || !debouncedQuery) {
+            setProducts([]);
+            return;
+        }
 
-    useEffect(() => {
-        if (!pinVerified || !branchId) return;
+        // Return cached results instantly — no spinner, no wait.
+        if (searchCacheRef.current.has(debouncedQuery)) {
+            setProducts(searchCacheRef.current.get(debouncedQuery));
+            return;
+        }
 
+        let cancelled = false;
         setCatalogLoading(true);
         searchApi
-            .catalog({
-                branch_id: branchId,
-                category_id: categoryId ?? undefined,
-                q: debouncedQuery || undefined,
-                page,
-                per_page: perPage,
-            })
+            .search(debouncedQuery, branchId)
             .then((data) => {
-                setProducts(data.results || []);
-                setCatalogMeta(data.meta || null);
+                if (cancelled) return;
+                const results = data.results || [];
+                searchCacheRef.current.set(debouncedQuery, results);
+                setProducts(results);
             })
-            .catch(() => {
-                setProducts([]);
-                setCatalogMeta(null);
-            })
-            .finally(() => setCatalogLoading(false));
-    }, [pinVerified, branchId, categoryId, debouncedQuery, page, perPage]);
+            .catch(() => { if (!cancelled) setProducts([]); })
+            .finally(() => { if (!cancelled) setCatalogLoading(false); });
+
+        return () => { cancelled = true; };
+    }, [pinVerified, branchId, debouncedQuery]);
 
     const handleBarcodeDetected = useCallback((barcode) => {
         setSearchQuery(barcode);
@@ -199,6 +252,7 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
     function handleSearchKeyDown(e) {
         if (e.key === 'Escape') {
             setSearchQuery('');
+            searchInputRef.current?.blur();
         }
     }
 
@@ -326,6 +380,9 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
                 }),
             );
             setUndoStack((prev) => [...prev, { cartId: cart.id, itemId: item.id }]);
+            // Invalidate cache for current query so stock counts refresh next search.
+            searchCacheRef.current.delete(debouncedQuery);
+            setSearchQuery('');
         } catch (err) {
             const msg =
                 err?.response?.data?.errors?.quantity?.[0] ||
@@ -369,6 +426,10 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
 
     async function handleCheckout() {
         if (!activeCart || (activeCart.items || []).length === 0) return;
+        if (activeCart.status === 'completing') {
+            router.visit(route('admin.checkout.show', { cartId: activeCart.id }));
+            return;
+        }
         if (Object.keys(stockWarnings).length > 0) {
             warning('Resolve stock warnings before proceeding to payment.');
             return;
@@ -376,6 +437,9 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
         setProcessing(true);
         try {
             await cartApi.checkout(activeCart.id);
+            setCarts((prev) =>
+                prev.map((c) => (c.id === activeCart.id ? { ...c, status: 'completing' } : c)),
+            );
             router.visit(route('admin.checkout.show', { cartId: activeCart.id }));
         } catch (err) {
             error(err?.response?.data?.message || 'Checkout failed.');
@@ -448,76 +512,103 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
         );
     }
 
+    const showDropdown = searchFocused && searchQuery.length > 0;
+
     return (
-        <AdminLayout fullHeight>
+        <AdminLayout fullHeight hideTopbar>
             <Head title="Point of Sale" />
+
             <div className="flex min-h-0 flex-1 flex-col">
-            <PosHeader
-                cartCount={carts.length}
-                sessionStart={sessionStartRef.current}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                onSearchKeyDown={handleSearchKeyDown}
-                searchInputRef={searchInputRef}
-                searchLoading={catalogLoading}
-            />
+                {/* Unified POS topbar */}
+                <PosTopbar
+                    cartCount={carts.length}
+                    sessionStart={sessionStartRef.current}
+                />
 
-            <CartTabs
-                carts={carts}
-                activeCartId={activeCartId}
-                onSelect={handleSelectCart}
-                onNew={createNewCart}
-                onRemove={handleRemoveCart}
-                maxReached={carts.length >= 5}
-                processing={processing}
-            />
+                {/* Cart tabs */}
+                <CartTabs
+                    carts={carts}
+                    activeCartId={activeCartId}
+                    onSelect={handleSelectCart}
+                    onNew={createNewCart}
+                    onRemove={handleRemoveCart}
+                    maxReached={carts.length >= 5}
+                    processing={processing}
+                />
 
-            <div className="flex min-h-0 flex-1">
-                <div className="flex min-w-0 flex-1 flex-col">
-                    <CategoryFilters
-                        categories={categories}
-                        activeId={categoryId}
-                        onSelect={setCategoryId}
-                    />
+                {/* Search bar row */}
+                <div className="shrink-0 border-b border-rp-border bg-rp-surface px-4 py-2">
+                    <div ref={searchWrapRef} className="relative">
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <Scan className="h-4 w-4 text-rp-text-muted" />
+                        </div>
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={handleSearchKeyDown}
+                            onFocus={() => setSearchFocused(true)}
+                            onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                            placeholder="Scan barcode or type product name, SKU…"
+                            className="w-full rounded-xl border border-rp-border bg-rp-surface-inset py-2.5 pl-9 pr-20 text-sm text-rp-text placeholder:text-rp-text-muted focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-3">
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery('')}
+                                    className="flex h-5 w-5 items-center justify-center rounded text-rp-text-muted hover:text-rp-text"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </button>
+                            )}
+                            <kbd className="rounded border border-rp-border bg-rp-surface px-1.5 py-0.5 text-[10px] text-rp-text-muted">
+                                F2
+                            </kbd>
+                        </div>
 
-                    <ProductGrid
-                        products={products}
-                        loading={catalogLoading}
-                        meta={catalogMeta}
-                        perPage={perPage}
-                        onPageChange={setPage}
-                        onPerPageChange={setPerPage}
-                        onAddProduct={handleAddProduct}
-                        processing={processing}
-                    />
+                        {showDropdown && (
+                            <ProductDropdown
+                                results={products}
+                                loading={catalogLoading}
+                                query={searchQuery}
+                                onAdd={handleAddProduct}
+                                processing={processing}
+                            />
+                        )}
+                    </div>
                 </div>
 
-                <CartPanel
+                {/* Cart table — flex-1 so it fills remaining space */}
+                <CartTable
                     cart={activeCart}
                     stockWarnings={stockWarnings}
                     taxEnabled={posConfig.tax_enabled ?? true}
                     taxMode={posConfig.tax_mode ?? 'exclusive'}
                     defaultTaxRate={posConfig.default_tax_rate ?? '0.00'}
                     currency={posConfig.currency ?? 'PKR'}
-                    onItemUpdated={(item) =>
-                        activeCart && updateItemInCart(activeCart.id, item)
-                    }
-                    onItemRemoved={(itemId) =>
-                        activeCart && removeItemFromCart(activeCart.id, itemId)
-                    }
+                    onItemUpdated={(item) => activeCart && updateItemInCart(activeCart.id, item)}
+                    onItemRemoved={(itemId) => activeCart && removeItemFromCart(activeCart.id, itemId)}
+                    canDiscount={can('pos.discount')}
+                    processing={processing}
+                />
+
+                {/* Bottom action bar + totals + Pay */}
+                <CartBottomBar
+                    cart={activeCart}
+                    taxEnabled={posConfig.tax_enabled ?? true}
+                    taxMode={posConfig.tax_mode ?? 'exclusive'}
+                    defaultTaxRate={posConfig.default_tax_rate ?? '0.00'}
+                    taxRatePct={taxRatePct}
+                    currency={posConfig.currency ?? 'PKR'}
+                    processing={processing}
                     onCheckout={handleCheckout}
                     onSuspend={handleSuspend}
                     onVoid={handleVoid}
                     onReopen={handleReopenCart}
-                    onAddDiscount={() =>
-                        warning('Select an item in the cart and use + Discount on that row.')
-                    }
-                    onNote={() => warning('Cart notes are coming in a future update.')}
-                    onCustomer={() => warning('Customer linking is coming in Phase 9.')}
-                    canDiscount={can('pos.discount')}
-                    processing={processing}
+                    canSuspend={can('pos.suspend-cart')}
                 />
-            </div>
             </div>
         </AdminLayout>
     );

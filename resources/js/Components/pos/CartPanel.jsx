@@ -167,10 +167,10 @@ export function CartPanel({
                                 <span>- {currency} {formatPkr(discount)}</span>
                             </div>
                         )}
-                        {taxEnabled && taxAmount > 0 && (
+                        {taxEnabled && taxRatePct > 0 && (
                             <div className="flex justify-between text-rp-text-secondary">
                                 <span>
-                                    Tax{taxRatePct > 0 ? ` (${taxRatePct}%)` : ''}
+                                    Tax ({taxRatePct}%)
                                     {taxMode === 'inclusive' && (
                                         <span className="ml-1 text-xs opacity-60">incl.</span>
                                     )}
@@ -191,7 +191,7 @@ export function CartPanel({
                     type="button"
                     onClick={onCheckout}
                     disabled={processing || items.length === 0 || hasWarnings || !isEditable}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-blue-500 disabled:opacity-40"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-40"
                 >
                     <CreditCard className="h-4 w-4" />
                     Pay
