@@ -12,13 +12,7 @@ final class SuperAdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $password = env('SUPER_ADMIN_PASSWORD');
-
-        if (empty($password)) {
-            $this->command?->warn('SUPER_ADMIN_PASSWORD is not set. Skipping Super Admin user seed.');
-
-            return;
-        }
+        $password = env('SUPER_ADMIN_PASSWORD', 'Password@123');
 
         $user = User::query()->updateOrCreate(
             ['email' => env('SUPER_ADMIN_EMAIL', 'admin@retailpulse.local')],
