@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ImportExport\Support;
 
 use App\Exceptions\ImportExport\ImportRowException;
+use App\Models\BinLocation;
 use App\Models\ProductBatch;
 use App\Models\ProductVariant;
 use App\Models\Warehouse;
@@ -86,6 +87,29 @@ final class InventoryImportSupport
         return $batch->id;
     }
 
+    public function resolveBinId(int $warehouseId, array $row): ?int
+    {
+        $binCode = trim((string) ($row['bin_code'] ?? ''));
+
+        if ($binCode === '') {
+            return null;
+        }
+
+        $bin = BinLocation::query()
+            ->where('warehouse_id', $warehouseId)
+            ->where('bin_code', $binCode)
+            ->where('is_active', true)
+            ->first();
+
+        if ($bin === null) {
+            throw ImportRowException::fromValidationErrors([
+                'bin_code' => ['Bin location not found in this warehouse.'],
+            ]);
+        }
+
+        return $bin->id;
+    }
+
     /**
      * @return list<array<string, mixed>>
      */
@@ -126,6 +150,13 @@ final class InventoryImportSupport
                 'required' => false,
                 'default_rules' => [['rule' => 'nullable'], ['rule' => 'date']],
                 'default_transforms' => ['date_normalize'],
+            ],
+            [
+                'key' => 'bin_code',
+                'label' => 'Bin Code',
+                'required' => false,
+                'default_rules' => [['rule' => 'nullable'], ['rule' => 'string']],
+                'default_transforms' => ['trim', 'uppercase'],
             ],
         ];
     }

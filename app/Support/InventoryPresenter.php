@@ -13,7 +13,7 @@ final class InventoryPresenter
      */
     public static function row(Inventory $inventory): array
     {
-        $inventory->loadMissing(['warehouse.branch', 'variant.product', 'batch']);
+        $inventory->loadMissing(['warehouse.branch', 'variant.product', 'batch', 'binLocation']);
 
         return [
             'id' => $inventory->id,
@@ -34,8 +34,13 @@ final class InventoryPresenter
                 'batch_no' => $inventory->batch->batch_no,
                 'expiry_date' => $inventory->batch->expiry_date?->toDateString(),
             ] : null,
+            'bin' => $inventory->binLocation ? [
+                'id' => $inventory->binLocation->id,
+                'bin_code' => $inventory->binLocation->bin_code,
+            ] : null,
             'quantity_on_hand' => $inventory->quantity_on_hand,
             'quantity_reserved' => $inventory->quantity_reserved,
+            'quantity_in_quarantine' => $inventory->quantity_in_quarantine,
             'quantity_available' => $inventory->availableQuantity(),
         ];
     }

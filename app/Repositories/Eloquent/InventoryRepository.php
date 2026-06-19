@@ -12,16 +12,24 @@ use Illuminate\Validation\ValidationException;
 
 final class InventoryRepository implements InventoryRepositoryInterface
 {
-    public function findForUpdate(int $warehouseId, int $variantId, ?int $batchId = null): ?Inventory
-    {
-        return $this->baseQuery($warehouseId, $variantId, $batchId)
+    public function findForUpdate(
+        int $warehouseId,
+        int $variantId,
+        ?int $batchId = null,
+        ?int $binLocationId = null,
+    ): ?Inventory {
+        return $this->baseQuery($warehouseId, $variantId, $batchId, $binLocationId)
             ->lockForUpdate()
             ->first();
     }
 
-    public function lockOrCreate(int $warehouseId, int $variantId, ?int $batchId = null): Inventory
-    {
-        $existing = $this->findForUpdate($warehouseId, $variantId, $batchId);
+    public function lockOrCreate(
+        int $warehouseId,
+        int $variantId,
+        ?int $batchId = null,
+        ?int $binLocationId = null,
+    ): Inventory {
+        $existing = $this->findForUpdate($warehouseId, $variantId, $batchId, $binLocationId);
 
         if ($existing !== null) {
             return $existing;
@@ -31,8 +39,10 @@ final class InventoryRepository implements InventoryRepositoryInterface
             'warehouse_id' => $warehouseId,
             'product_variant_id' => $variantId,
             'batch_id' => $batchId,
+            'bin_location_id' => $binLocationId,
             'quantity_on_hand' => 0,
             'quantity_reserved' => 0,
+            'quantity_in_quarantine' => 0,
         ]);
     }
 
@@ -89,11 +99,90 @@ final class InventoryRepository implements InventoryRepositoryInterface
         return $query->paginate($perPage)->withQueryString();
     }
 
-    public function availableQuantity(int $warehouseId, int $variantId, ?int $batchId = null): int
+    public function paginateByBin(array $filters, int $perPage = 20): LengthAwarePaginator
     {
-        $inventory = $this->baseQuery($warehouseId, $variantId, $batchId)->first();
+        $query = Inventory::query()
+            ->with([
+                'warehouse.branch',
+                'variant.product',
+                'batch',
+                'binLocation.warehouseZone',
+            ])
+            ->whereNotNull('bin_location_id')
+            ->when(
+                $filters['warehouse_id'] ?? null,
+                fn ($q, $warehouseId) => $q->where('warehouse_id', $warehouseId),
+            )
+            ->when(
+                $filters['zone_id'] ?? null,
+                fn ($q, $zoneId) => $q->whereHas(
+                    'binLocation',
+                    fn ($b) => $b->where('warehouse_zone_id', $zoneId),
+                ),
+            )
+            ->when(
+                $filters['branch_id'] ?? null,
+                fn ($q, $branchId) => $q->whereHas(
+                    'warehouse',
+                    fn ($w) => $w->where('branch_id', $branchId),
+                ),
+            )
+            ->when(
+                $filters['search'] ?? null,
+                function ($q, string $search) {
+                    $term = '%'.addcslashes($search, '%_\\').'%';
+                    $q->where(function ($inner) use ($term) {
+                        $inner->whereHas('variant', function ($variant) use ($term) {
+                            $variant->where('sku', 'like', $term)
+                                ->orWhere('name', 'like', $term)
+                                ->orWhereHas('product', fn ($p) => $p->where('name', 'like', $term));
+                        })->orWhereHas('binLocation', fn ($b) => $b->where('bin_code', 'like', $term));
+                    });
+                },
+            );
 
-        return $inventory?->availableQuantity() ?? 0;
+        $sort = $filters['sort'] ?? 'bin_code';
+        $direction = ($filters['direction'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
+
+        if ($sort === 'on_hand') {
+            $query->orderBy('quantity_on_hand', $direction);
+        } else {
+            $query->join('bin_locations', 'inventories.bin_location_id', '=', 'bin_locations.id')
+                ->orderBy('bin_locations.bin_code', $direction)
+                ->select('inventories.*');
+        }
+
+        return $query->paginate($perPage)->withQueryString();
+    }
+
+    public function availableQuantity(
+        int $warehouseId,
+        int $variantId,
+        ?int $batchId = null,
+        ?int $binLocationId = null,
+    ): int {
+        if ($binLocationId !== null) {
+            $inventory = $this->baseQuery($warehouseId, $variantId, $batchId, $binLocationId)->first();
+
+            return $inventory?->availableQuantity() ?? 0;
+        }
+
+        return $this->totalAvailableQuantity($warehouseId, $variantId, $batchId);
+    }
+
+    public function totalAvailableQuantity(int $warehouseId, int $variantId, ?int $batchId = null): int
+    {
+        $query = Inventory::query()
+            ->where('warehouse_id', $warehouseId)
+            ->where('product_variant_id', $variantId);
+
+        if ($batchId === null) {
+            $query->whereNull('batch_id');
+        } else {
+            $query->where('batch_id', $batchId);
+        }
+
+        return (int) $query->get()->sum(fn (Inventory $row) => $row->availableQuantity());
     }
 
     public function allocateDeductionLines(
@@ -158,7 +247,7 @@ final class InventoryRepository implements InventoryRepositoryInterface
         return $lines;
     }
 
-    private function baseQuery(int $warehouseId, int $variantId, ?int $batchId)
+    private function baseQuery(int $warehouseId, int $variantId, ?int $batchId, ?int $binLocationId = null)
     {
         return Inventory::query()
             ->where('warehouse_id', $warehouseId)
@@ -167,6 +256,11 @@ final class InventoryRepository implements InventoryRepositoryInterface
                 $batchId === null,
                 fn ($q) => $q->whereNull('batch_id'),
                 fn ($q) => $q->where('batch_id', $batchId),
+            )
+            ->when(
+                $binLocationId === null,
+                fn ($q) => $q->whereNull('bin_location_id'),
+                fn ($q) => $q->where('bin_location_id', $binLocationId),
             );
     }
 }

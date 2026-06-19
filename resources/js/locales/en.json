@@ -15,6 +15,9 @@
         "inventorySection": "Inventory",
         "inventory": "Stock levels",
         "stockTransfers": "Transfers",
+        "binStock": "Bin stock",
+        "quarantine": "Quarantine",
+        "cycleCounts": "Cycle counts",
         "overview": "Overview",
         "organization": "Organization",
         "admin": "Admin",
@@ -345,6 +348,7 @@
             "defaultYes": "Default",
             "defaultNo": "—",
             "inactiveNotice": "This warehouse is inactive and cannot be edited.",
+            "manageBins": "Manage bins",
             "selectBranch": "Select branch",
             "columns": {
                 "name": "Warehouse",
@@ -389,7 +393,10 @@
                 "batch": "Batch",
                 "onHand": "On hand",
                 "reserved": "Reserved",
-                "available": "Available"
+                "available": "Available",
+                "systemQty": "System qty",
+                "countedQty": "Counted qty",
+                "variance": "Variance"
             },
             "fields": {
                 "warehouse": "Warehouse",
@@ -402,6 +409,75 @@
             },
             "serialNumbersHint": "Enter {{count}} unique serial number(s), one per unit.",
             "serialPlaceholder": "Serial #{{n}}"
+        },
+        "bins": {
+            "title": "Bins — {{warehouse}}",
+            "backToWarehouse": "Back to warehouse",
+            "zones": "Zones",
+            "binLocations": "Bin locations",
+            "addZone": "Add zone",
+            "addBin": "Add bin",
+            "saveZone": "Save zone",
+            "saveBin": "Save bin",
+            "noZones": "No zones defined yet.",
+            "noBins": "No bin locations defined yet.",
+            "noZone": "No zone",
+            "binReportTitle": "Stock by bin",
+            "fields": {
+                "name": "Name",
+                "code": "Code",
+                "zone": "Zone",
+                "aisle": "Aisle",
+                "shelf": "Shelf",
+                "binCode": "Bin code",
+                "location": "Location"
+            }
+        },
+        "quarantine": {
+            "title": "Quarantine stock",
+            "description": "Goods pending QC — excluded from sellable availability.",
+            "qty": "In quarantine",
+            "release": "Release",
+            "scrap": "Scrap",
+            "empty": "No quarantined stock.",
+            "confirmRelease": "Release all quarantined quantity to sellable stock?",
+            "confirmScrap": "Scrap all quarantined quantity? This cannot be undone."
+        },
+        "countSessions": {
+            "title": "Cycle counts",
+            "createTitle": "New count session",
+            "newSession": "New session",
+            "createSession": "Create session",
+            "backToList": "Back to counts",
+            "start": "Start count",
+            "submitCounts": "Submit counts",
+            "approve": "Approve variances",
+            "post": "Post adjustments",
+            "blindMode": "Blind count",
+            "columns": {
+                "reference": "Reference",
+                "warehouse": "Warehouse",
+                "scope": "Scope",
+                "status": "Status"
+            },
+            "scope": {
+                "full": "Full warehouse",
+                "zone": "Zone",
+                "category": "Category"
+            },
+            "status": {
+                "draft": "Draft",
+                "in_progress": "In progress",
+                "under_review": "Under review",
+                "approved": "Approved",
+                "posted": "Posted"
+            },
+            "fields": {
+                "scope": "Count scope",
+                "scopeId": "Scope ID",
+                "blindCount": "Blind count (hide system qty from counters)",
+                "freezeMode": "Freeze movements in scope until posted"
+            }
         },
         "stockTransfers": {
             "title": "Stock transfers",

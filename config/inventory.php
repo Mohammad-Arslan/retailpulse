@@ -16,4 +16,14 @@ return [
 
     'reservation_ttl_minutes' => (int) env('INVENTORY_RESERVATION_TTL', 30),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cycle count variance thresholds (defaults)
+    |--------------------------------------------------------------------------
+    */
+
+    'count_variance_threshold_pct' => (float) env('INVENTORY_COUNT_VARIANCE_PCT', 5),
+
+    'count_variance_threshold_value' => (float) env('INVENTORY_COUNT_VARIANCE_VALUE', 1000),
+
 ];

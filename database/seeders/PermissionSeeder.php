@@ -72,6 +72,10 @@ final class PermissionSeeder extends Seeder
             ['name' => 'inventory.transfer', 'description' => 'Create and process stock transfers'],
             ['name' => 'inventory.import-opening-stock', 'description' => 'Import opening stock balances from spreadsheets'],
             ['name' => 'inventory.bulk-adjustment-import', 'description' => 'Bulk import stock adjustments from spreadsheets'],
+            ['name' => 'inventory.manage-bins', 'description' => 'Manage warehouse zones and bin locations'],
+            ['name' => 'inventory.release-quarantine', 'description' => 'Release or scrap quarantined stock'],
+            ['name' => 'inventory.cycle-count', 'description' => 'Create and manage cycle count sessions'],
+            ['name' => 'inventory.cycle-count.approve', 'description' => 'Approve cycle count variances'],
         ],
         'settings' => [
             ['name' => 'settings.view', 'description' => 'View global settings'],

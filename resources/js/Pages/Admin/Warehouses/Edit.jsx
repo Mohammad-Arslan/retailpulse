@@ -29,9 +29,19 @@ export default function Edit({ warehouse }) {
         <AdminLayout>
             <Head title={t('pages.warehouses.editTitle', { name: warehouse.name })} />
             <PageHeader title={t('pages.warehouses.editTitle', { name: warehouse.name })}>
-                <Link href={route('admin.warehouses.index')} className="rp-btn-outline">
-                    {t('confirm.cancel')}
-                </Link>
+                <div className="flex gap-2">
+                    {can('inventory.manage-bins') && warehouse.is_active && (
+                        <Link
+                            href={route('admin.warehouses.bins.index', warehouse.id)}
+                            className="rp-btn-outline"
+                        >
+                            {t('pages.warehouses.manageBins')}
+                        </Link>
+                    )}
+                    <Link href={route('admin.warehouses.index')} className="rp-btn-outline">
+                        {t('confirm.cancel')}
+                    </Link>
+                </div>
             </PageHeader>
             <form onSubmit={submit} className="w-full space-y-5">
                 <FormCard className="max-w-none w-full">

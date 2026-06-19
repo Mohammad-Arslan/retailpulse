@@ -42,6 +42,12 @@ final class WarehousePolicy
             && $this->canAccessBranch($user, $warehouse->branch_id);
     }
 
+    public function manageBins(User $user, Warehouse $warehouse): bool
+    {
+        return $user->can('inventory.manage-bins')
+            && $this->canAccessBranch($user, $warehouse->branch_id);
+    }
+
     private function canAccessBranch(User $user, int $branchId): bool
     {
         $accessibleIds = $this->branchContext->accessibleBranchIds($user);
