@@ -8,7 +8,7 @@
 ---
 
 ## Objective
-Define the API contract and architecture for four React Native mobile applications — Customer, Waiter, Inventory Scanner, and Manager — each authenticated via Sanctum mobile tokens with app-specific scopes, and integrated with Firebase FCM for push notifications.
+Define the API contract and architecture for five React Native mobile applications — Customer, Waiter, Inventory Scanner, Manager, and Employee — each authenticated via Sanctum mobile tokens with app-specific scopes, and integrated with Firebase FCM for push notifications.
 
 ---
 
@@ -34,6 +34,7 @@ New token abilities (extend existing Sanctum abilities list):
 | `mobile:waiter` | Waiter app: table orders, KOT status |
 | `mobile:scanner` | Scanner app: GRN receive, stock count |
 | `mobile:manager` | Manager app: KPIs, approvals, shift summary |
+| `mobile:employee` | Employee app: payslips, attendance, leave |
 
 Token issuance endpoint: `POST /api/v1/mobile/auth/login`
 - Request: `{ email, password, device_name, app_type }`.
@@ -90,15 +91,17 @@ POST /api/v1/restaurant/orders/{id}/bill
 
 ## 5. Inventory Scanner App
 
-**Screens:** Home (quick actions), Scan to Receive GRN, Stock Count, Transfer Confirm, Barcode Lookup.
+**Screens:** Home (quick actions), Scan to Receive GRN, Stock Count, Bin Transfer, Transfer Confirm, Barcode Lookup.
 
 **Key API Endpoints (mobile:scanner scope):**
 ```
 GET  /api/v1/mobile/scanner/grn/{id}             (GRN to receive)
 POST /api/v1/mobile/scanner/grn/{id}/receive-line (receive individual line)
-POST /api/v1/mobile/scanner/stock-count          (submit count batch)
+POST /api/v1/mobile/scanner/stock-count          (submit count batch — links to Phase 5 count_sessions)
+POST /api/v1/mobile/scanner/bin-transfer         (move stock between bins)
 PATCH /api/v1/stock-transfers/{id}/receive-item  (confirm transfer item)
 GET  /api/v1/mobile/scanner/product/{barcode}    (product lookup)
+GET  /api/v1/mobile/scanner/warehouses           (active warehouses for user's branch — Phase 3 warehouse CRUD)
 ```
 
 **Offline Support:**
@@ -114,7 +117,7 @@ GET  /api/v1/mobile/scanner/product/{barcode}    (product lookup)
 
 ## 6. Manager Dashboard App
 
-**Screens:** Live KPIs, Low Stock Alerts, Pending Approvals (PO, refund, discount, payroll), Active Shifts, Sales Trend Chart.
+**Screens:** Live KPIs, Low Stock Alerts, Pending Approvals (PO, refund, discount, payroll, leave), Active Shifts, Sales Trend Chart.
 
 **Key API Endpoints (mobile:manager scope):**
 ```
@@ -152,3 +155,45 @@ GET  /api/v1/mobile/manager/shifts               (active shifts with cash summar
 - `FcmNotificationChannel` — Laravel notification channel.
 - `FcmDeviceToken` model + `FcmDeviceTokenService`.
 - `OfflineSyncController` — receives queued offline scanner actions and processes them with conflict detection.
+
+---
+
+## 9. Employee App (§3.28)
+
+**Screens:** Payslips, Attendance History, Leave Balance, Leave Request, Shift Schedule.
+
+**Key API Endpoints (`mobile:employee` scope):**
+```
+GET  /api/v1/mobile/employee/payslips
+GET  /api/v1/mobile/employee/payslips/{id}/pdf
+GET  /api/v1/mobile/employee/attendance
+GET  /api/v1/mobile/employee/leave/balance
+GET  /api/v1/mobile/employee/leave/requests
+POST /api/v1/mobile/employee/leave/requests
+GET  /api/v1/mobile/employee/shifts
+```
+
+**Push Notifications:**
+- "Your payslip for March 2026 is available."
+- "Your leave request has been approved."
+
+Depends on Phase 12 (HR/payroll/leave data).
+
+---
+
+## SRS v4.0 Enhancements (§3.28)
+
+### Cycle Count Mobile Entry
+
+- Scanner app syncs count lines to active `count_sessions` (Phase 5) in real time.
+- Blind count mode hides system qty on mobile when session configured.
+
+### Bin Transfer Mobile
+
+- Scan source bin → product → qty → destination bin; posts bin transfer via Phase 5 API.
+
+### Acceptance Criteria (v4.0)
+
+1. Employee app downloads payslip PDF for authenticated user only.
+2. Scanner count entry updates `count_session_lines` on server within 2s.
+3. Bin transfer from mobile reflects correct per-bin quantities.

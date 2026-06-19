@@ -201,6 +201,14 @@ Admin UI:
 - **Settings → Global:** System-scope settings (Super Admin only).
 - **Settings → Branch Overrides:** Branch managers override specific keys for their branch (allowed keys configurable).
 
+### SRS v4.0 Config Categories
+
+Extend seeded config groups with: `wht`, `multi_currency`, `cycle_count` (per §3.25).
+
+### Enterprise Plan Module List (§3.24)
+
+Enterprise plan includes: Multi-Currency, Leave, RMA, Cycle Count, Bin Locations, WHT, AR Aging — sync `plans.features` JSON in seeder.
+
 ---
 
 ## 9. Services & Classes

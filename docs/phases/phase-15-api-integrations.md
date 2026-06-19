@@ -32,7 +32,7 @@
 
 ---
 
-## Phase Enhancements (SRS v3.0)
+## Phase Enhancements (SRS v4.0 — baseline)
 
 ### Fiscal Provider Abstraction Endpoints
 - `GET /api/v1/fiscal/providers` — list available fiscal providers and their status (enabled/disabled per branch).
@@ -53,3 +53,23 @@
 - `POST /api/v1/devices/{id}/test-print` — dispatch a test print job to the specified printer.
 - `DELETE /api/v1/devices/{id}` — deregister a device.
 - Used by the Hardware Settings UI (Phase 21) and callable by third-party integrators.
+
+---
+
+## SRS v4.0 Enhancements (§4.5)
+
+### Per-Token API Quotas
+
+- Admin → API Management: configurable requests/minute + burst limit per Sanctum token.
+- Quota dashboard shows current usage per token; 429 response when exceeded.
+- `api_token_quotas` table or JSON on `personal_access_tokens`.
+
+### Additional Webhook Events
+
+- `po.approved`, `po.created`, `grn.received`, `supplier_invoice.pending_match`, `leave_request.submitted`, `stock.below_reorder`.
+- Webhook payload includes `event`, `entity_type`, `entity_id`, `timestamp`, `branch_id`.
+
+### Acceptance Criteria (v4.0)
+
+1. Token exceeding quota receives 429 with retry-after header.
+2. Registered webhook receives `po.approved` POST on PO approval.

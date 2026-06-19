@@ -1,9 +1,9 @@
 # RetailPulse — Implementation Status Report
 
-**Generated:** 2026-06-05
-**SRS Version:** 3.0
+**Generated:** 2026-06-19
+**SRS Version:** 4.0
 **Active Branch:** `phase-8`
-**Total Phases:** 29
+**Total Phases:** 30
 
 ---
 
@@ -13,7 +13,7 @@
 | :--- | :--- |
 | Phases complete | **7 of 29** |
 | Phases in progress | **1 (Phase 8 — ~85%)** |
-| Phases not started | **21 (Phases 9–29)** |
+| Phases not started | **22 (Phases 9–16, 17–30)** |
 | Overall progress (phase-weighted) | **~27%** |
 | Core retail progress (Phases 1–16 only) | **~50%** |
 | Database tables/migrations | **34 migrations** |
@@ -23,7 +23,7 @@
 | Admin UI pages | **40+** |
 | API endpoints | **60+** |
 
-> **Core retail** refers to Phases 1–16 (the original SRS v2.0 roadmap). Phases 17–29 are enterprise extensions added in SRS v3.0.
+> **Core retail** refers to Phases 1–16. Phases 17–30 are enterprise extensions per SRS v4.0 (includes v3.0 modules plus gap-analysis additions). **Phase 17 (Shift & Register) ships after Phase 7 and before Phase 8** per §3.20.
 
 ---
 
@@ -69,7 +69,8 @@
 | Feature | Done |
 | :--- | :---: |
 | Branch CRUD with per-branch settings (currency, timezone, hours, receipt footer) | ✅ |
-| Warehouse CRUD linked to branch | ✅ |
+| Default warehouse created with branch (name/code on branch form) | ✅ |
+| Dedicated warehouse CRUD (`warehouses.*` permissions, multi-warehouse per branch) | 📋 Planned (Phase 3 follow-up) |
 | User–branch assignment (BelongsToMany pivot, is_primary flag) | ✅ |
 | `SetBranchContext` middleware — resolves active branch per request | ✅ |
 | `BranchContext` support class for request lifecycle | ✅ |
@@ -205,11 +206,11 @@
 
 ---
 
-### 📋 Phases 17–29 — Not Started (SRS v3.0 Additions)
+### 📋 Phases 17–30 — Not Started (SRS v4.0 Additions)
 
 | Phase | Module | Key Deliverables |
 | :--- | :--- | :--- |
-| **17** | Shift & Register Management | Register CRUD, shift open/close, X/Z reports, blind close, variance approval |
+| **17** | Shift & Register Management | Register CRUD, shift open/close (before checkout), X/Z reports, blind close, variance approval |
 | **18** | Pricing & Promotions | Price lists, BOGO/bundle/cart/category promotions, coupon system |
 | **19** | Restaurant Core | Floors, tables, KOT lifecycle, dine-in/takeaway/delivery/drive-thru |
 | **20** | Restaurant Advanced | Waiter panel, KDS, split billing, modifiers, reservations, delivery stubs |
@@ -218,10 +219,11 @@
 | **23** | Module Config Engine | Module registry, feature flags, CheckModuleEnabled middleware, dynamic sidebar |
 | **24** | Gift Cards & Store Credits | Physical/digital gift cards, POS redemption, store credits on returns |
 | **25** | E-Commerce Integration | Shopify/WooCommerce product sync, inventory push, order pull, customer merge |
-| **26** | Mobile Applications | React Native apps — Customer, Waiter, Scanner, Manager (FCM push) |
-| **27** | BI & Analytics | Data mart ETL, Power BI/Tableau connector, AI demand forecast stub |
+| **26** | Mobile Applications | React Native apps — Customer, Waiter, Scanner, Manager, Employee (FCM push) |
+| **27** | BI & Analytics | Data mart ETL (incl. AR aging), Power BI/Tableau connector, AI demand forecast stub |
 | **28** | SaaS Multi-Tenancy | Tenant isolation, plans/subscriptions, onboarding wizard, Stripe billing stub |
-| **29** | Workflow Engine | Configurable approval workflows, pre-built definitions (refund/PO/payroll/discount) |
+| **29** | Workflow Engine (§3.30) | Configurable approval workflows, SLA escalation, visual builder |
+| **30** | Document Vault (§3.31) | Polymorphic attachments, signed URLs, retention policies, S3 storage |
 
 ---
 
@@ -267,7 +269,7 @@
 | §3.1 Authentication & Identity | 1 | **100%** | Login, sessions, PIN, 2FA in Phase 16 |
 | §3.2 Authorization & RBAC | 1 | **95%** | Full RBAC; 2FA mandatory for admins deferred to Phase 16 |
 | §3.3 Dashboard & Real-Time BI | 6 | **70%** | KPI widgets partial; sales KPIs live after Phase 8 |
-| §3.4 Multi-Branch Management | 3 | **100%** | |
+| §3.4 Multi-Branch Management | 3 | **~90%** | Warehouse admin CRUD deferred |
 | §3.5 Product Information (PIM) | 4 | **100%** | |
 | §3.6 Inventory & Warehouse | 5 | **100%** | |
 | §3.7 Point of Sale | 7 | **100%** | |
@@ -292,8 +294,9 @@
 | §3.26 Gift Cards & Store Credits | 24 | **0%** | |
 | §3.27 E-Commerce Integration | 25 | **0%** | |
 | §3.28 Mobile Applications | 26 | **0%** | |
-| §3.29 BI & Data Warehouse | 27 | **0%** | |
-| §3.30 AI & Predictive Analytics | 27+ | **0%** | Future scope |
+| §3.29 BI & Data Warehouse | 27 | **0%** | Demand forecast stub only; full AI deferred |
+| §3.30 Workflow Engine | 29 | **0%** | |
+| §3.31 Document Vault | 30 | **0%** | |
 
 ---
 

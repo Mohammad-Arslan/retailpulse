@@ -35,7 +35,7 @@
 
 ---
 
-## Phase Enhancements (SRS v3.0)
+## Phase Enhancements (SRS v4.0 — baseline)
 
 ### Fraud & Operational Controls (§4.4)
 
@@ -62,3 +62,45 @@
     - Discount rate exceeding the configured threshold without manager approval.
     - Multiple payment reversals within a short window.
 - Triggered events dispatch a `SuspiciousActivityDetected` notification to the branch manager and log to `audit_logs` with `event = suspicious_activity`.
+
+---
+
+## SRS v4.0 Enhancements (§3.15–3.17)
+
+### Notification Escalation Rules
+
+- If notification not acknowledged within N minutes (configurable), escalate to next role in hierarchy.
+- Escalation logged; visible in notification preferences UI.
+
+### Return Reason Codes
+
+- **`return_reason_codes`** — admin-configurable (Defective, Wrong Item, Changed Mind, Size/Fit, etc.).
+- Mandatory selection at POS before return completion.
+- **Return Reason Report** — volume/value by reason, product, cashier, date range; defect-rate flags.
+
+### Restocking & Condition Grading
+
+- Disposition outcomes after return: **Resalable** (`return_customer` movement to bin), **Damaged** (quarantine + Inventory Write-Down GL), **Scrapped** (Scrapped Goods Expense; no stock movement).
+- **Bundle Return Policy** — pro-rata refund for single bundle component; full bundle return option.
+
+### Withholding Tax (WHT)
+
+- **`wht_rates`** — `supplier_category`, `applicable_section` (153, 165), `rate_percent`, `effective_from`.
+- Auto-compute WHT on supplier payment; net payment + WHT Payable liability.
+- GL on payment: Debit AP (full), Credit Bank (net), Credit WHT Payable.
+- WHT remittance workflow: Debit WHT Payable, Credit Bank.
+- Section 165 export for FBR filing; permission `tax.export-wht`.
+
+### Tax Return Export
+
+- Sales tax return data: taxable/exempt sales, output/input tax, net payable — FBR XML/CSV export.
+- Input/output tax reconciliation report.
+- ZATCA/UAE VAT stubs via `FiscalProviderInterface`.
+
+### Acceptance Criteria (v4.0)
+
+1. Return without reason code blocked at POS.
+2. Damaged return posts Inventory Write-Down journal; resalable return restores stock at original cost.
+3. Supplier payment with WHT posts three-legged journal correctly.
+4. Sales tax return export matches sum of fiscal invoices for period.
+5. Unacknowledged notification escalates to configured role after timeout.

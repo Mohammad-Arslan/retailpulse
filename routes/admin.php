@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\StockTransferController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\CheckoutPageController;
 use App\Http\Controllers\PosController;
 use Illuminate\Support\Facades\Route;
@@ -38,7 +39,14 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::put('/branch-context', [BranchContextController::class, 'update'])
             ->name('branch-context.update');
 
+        Route::get('branches/suggest-code', [BranchController::class, 'suggestCode'])
+            ->name('branches.suggest-code');
         Route::resource('branches', BranchController::class)->except(['show']);
+        Route::get('warehouses/suggest-code', [WarehouseController::class, 'suggestCode'])
+            ->name('warehouses.suggest-code');
+        Route::resource('warehouses', WarehouseController::class)->except(['show', 'destroy']);
+        Route::patch('warehouses/{warehouse}/deactivate', [WarehouseController::class, 'deactivate'])
+            ->name('warehouses.deactivate');
         Route::resource('categories', CategoryController::class)->except(['show']);
         Route::resource('brands', BrandController::class)->except(['show']);
         Route::resource('units', UnitController::class)->except(['show']);

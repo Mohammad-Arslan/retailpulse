@@ -23,17 +23,19 @@ return [
             'permission' => 'settings.general.update',
             'fields' => [
                 'default_currency' => [
-                    'type' => 'string',
+                    'type' => 'select',
                     'label' => 'Default currency',
-                    'description' => 'ISO 4217 code used when a branch has no override.',
+                    'description' => 'ISO 4217 code pre-selected when creating new branches.',
                     'default' => 'USD',
+                    'options' => config('branches.currencies', []),
                     'rules' => ['required', 'string', 'size:3'],
                 ],
                 'default_timezone' => [
-                    'type' => 'string',
+                    'type' => 'select',
                     'label' => 'Default timezone',
-                    'description' => 'PHP timezone identifier for new branches.',
+                    'description' => 'PHP timezone identifier pre-selected for new branches.',
                     'default' => 'UTC',
+                    'options' => config('branches.timezones', []),
                     'rules' => ['required', 'string', 'max:64'],
                 ],
                 'date_format' => [
@@ -255,9 +257,9 @@ return [
                     'description' => 'Controls when a receipt is printed after sale completion.',
                     'default' => 'manual',
                     'options' => [
-                        'auto'   => 'Auto — print immediately on completion',
+                        'auto' => 'Auto — print immediately on completion',
                         'manual' => 'Manual — show Print button',
-                        'off'    => 'Off — no printing',
+                        'off' => 'Off — no printing',
                     ],
                     'rules' => ['required', 'in:auto,manual,off'],
                 ],

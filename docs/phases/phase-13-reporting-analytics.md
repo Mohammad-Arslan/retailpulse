@@ -26,7 +26,7 @@ Operational and financial **reports** with custom report builder and export.
 
 ---
 
-## Phase Enhancements (SRS v3.0)
+## Phase Enhancements (SRS v4.0 — baseline)
 
 ### BI-Ready Export Schema (§3.29)
 - All report exports include a machine-readable manifest file (`report_manifest.json`) alongside the CSV/XLSX, describing column names, data types, and grain (row = one what?).
@@ -45,3 +45,32 @@ Operational and financial **reports** with custom report builder and export.
 
 ### Link to Phase 27 (BI Layer)
 - This phase creates the mart schema and ETL infrastructure; Phase 27 adds the Power BI connector, Tableau template files, and the AI demand forecast stub.
+
+---
+
+## SRS v4.0 Enhancements (§3.14)
+
+### AP Aging Report
+
+- Supplier outstanding payables by age bucket (Current, 1–30, 31–60, 61–90, 90+ days).
+- Payment run suggestions for overdue AP lines.
+
+### Inventory Turnover Report
+
+- Units sold / average on-hand per period; by product, category, or branch.
+
+### Supplier Performance Report
+
+- Average lead time vs contracted (`supplier_price_list_items.lead_time_days`).
+- Fill rate (qty received vs ordered); return rate per supplier.
+- Cross-link to Phase 10 supplier scoring stub.
+
+### AR Aging Cross-Link
+
+- AR aging report UI links to Phase 9 `ar_aging_snapshots` data; filterable consistently.
+
+### Acceptance Criteria (v4.0)
+
+1. AP aging report matches supplier ledger outstanding balances.
+2. Inventory turnover calculates correctly for a known product/period.
+3. Supplier performance report shows fill rate from PO vs GRN quantities.

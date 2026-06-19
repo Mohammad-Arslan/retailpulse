@@ -49,6 +49,12 @@ final class PermissionSeeder extends Seeder
             ['name' => 'branches.update', 'description' => 'Update branches'],
             ['name' => 'branches.delete', 'description' => 'Delete branches'],
         ],
+        'warehouses' => [
+            ['name' => 'warehouses.view', 'description' => 'View warehouses'],
+            ['name' => 'warehouses.create', 'description' => 'Create warehouses'],
+            ['name' => 'warehouses.update', 'description' => 'Update warehouses'],
+            ['name' => 'warehouses.deactivate', 'description' => 'Deactivate warehouses'],
+        ],
         'products' => [
             ['name' => 'products.view', 'description' => 'View products and catalog'],
             ['name' => 'products.create', 'description' => 'Create products'],

@@ -38,7 +38,7 @@
 
 ---
 
-## Phase Enhancements (SRS v3.0)
+## Phase Enhancements (SRS v4.0 — baseline)
 
 ### Customer Group Pricing Integration
 - Customers can be assigned to a named `customer_group` (e.g., Wholesale, VIP, Staff).
@@ -62,3 +62,24 @@
 - Wallet expiry policy: configuration key `customers.wallet_expiry_days`; zero means no expiry.
 - `customer_wallet_transactions` table stores every debit/credit with reason code and reference.
 - Wallet balance and expiry shown prominently in the POS customer search result card.
+
+---
+
+## SRS v4.0 Enhancements (§3.9)
+
+### Accounts Receivable Aging
+
+- **`ar_aging_snapshots`** — nightly ETL: `date`, `customer_id`, `branch_id`, `current`, `bucket_30`, `bucket_60`, `bucket_90`, `bucket_over_90`, `total_outstanding`.
+- **AR Aging Report** — outstanding balances by age bucket; filters: branch, customer group, salesperson.
+- **Customer Statement** — PDF showing invoices, payments, credit notes, running balance; email from customer profile.
+- **Overdue Reminder Workflow** — configurable reminders at day 7/30/60 via SMS, email, WhatsApp; logged per customer.
+- **Bad Debt Write-Off** — posts Debit Bad Debt Expense, Credit AR; requires reason code + manager approval; permission `customers.write-off-debt`.
+- **Credit Limit Enforcement** — POS blocks credit sale when outstanding AR + new sale > `credit_limit`; manager PIN override.
+
+### Acceptance Criteria (v4.0)
+
+1. AR aging report shows correct buckets for a customer with mixed-age invoices.
+2. Customer statement PDF matches ledger balance.
+3. Overdue reminder job dispatches at configured day thresholds.
+4. Write-off creates balanced journal entry and zeroes customer outstanding balance for written amount.
+5. Credit sale blocked at POS when limit exceeded; override with manager PIN succeeds.

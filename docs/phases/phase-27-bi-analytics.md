@@ -1,9 +1,9 @@
 # Phase 27 — Business Intelligence & Analytics
 
-**SRS Reference:** §3.29, §3.30
+**SRS Reference:** §3.29
 **Status:** Planned
-**Depends on:** Phase 13 (Reporting — report builder and export infrastructure), Phase 23 (Module Config Engine — bi module gate)
-**Feeds into:** Phase 28 (SaaS — BI access gated per plan), Phase 30+ (Full AI module — future scope)
+**Depends on:** Phase 13 (Reporting — report builder and export infrastructure), Phase 9 (AR aging snapshots), Phase 23 (Module Config Engine — bi module gate)
+**Feeds into:** Phase 28 (SaaS — BI access gated per plan)
 
 ---
 
@@ -46,6 +46,23 @@ Elevate the system's analytics from operational reports to a BI-ready platform: 
 
 Both tables have a composite unique index on `(date, branch_id, product_variant_id)` for upsert idempotency.
 
+### data_mart_ar_aging (nightly grain) — SRS v4.0
+
+| Column | Type | Notes |
+| :--- | :--- | :--- |
+| id | bigint PK | |
+| date | date | Snapshot date |
+| branch_id | bigint FK | |
+| customer_id | bigint FK | |
+| current | decimal(14,2) | Not yet due |
+| bucket_30 | decimal(14,2) | 1–30 days |
+| bucket_60 | decimal(14,2) | 31–60 days |
+| bucket_90 | decimal(14,2) | 61–90 days |
+| bucket_over_90 | decimal(14,2) | 90+ days |
+| total_outstanding | decimal(14,2) | |
+
+Populated from live AR balances (Phase 9); unique index on `(date, branch_id, customer_id)`.
+
 ### demand_forecasts (AI stub output)
 | Column | Type | Notes |
 | :--- | :--- | :--- |
@@ -69,6 +86,7 @@ For each branch:
     For each (date = yesterday):
         Aggregate sale_items + sales → data_mart_sales (UPSERT)
         Aggregate stock_movements → data_mart_inventory (UPSERT)
+        Aggregate ar_aging_snapshots → data_mart_ar_aging (UPSERT)
 
 On failure:
     dispatch DataMartEtlFailedNotification to system administrators
@@ -82,7 +100,7 @@ The job is idempotent: running it twice for the same date upserts, never duplica
 ## 3. Power BI / Tableau Connector
 
 **Read-only DB user:**
-- A `bi_reader` MySQL user with `SELECT` privilege only on `data_mart_sales`, `data_mart_inventory`, `demand_forecasts`, and the dimension tables (`branches`, `product_variants`, `products`, `categories`, `users`).
+- A `bi_reader` MySQL user with `SELECT` privilege only on `data_mart_sales`, `data_mart_inventory`, `data_mart_ar_aging`, `demand_forecasts`, and the dimension tables (`branches`, `product_variants`, `products`, `categories`, `users`, `customers`).
 - Password auto-rotated every 90 days; current credentials stored encrypted in `system_settings`.
 
 **Connection String Generator:**
@@ -142,3 +160,22 @@ New widgets added to the Dashboard (Phase 6 base):
 - `BiConnectorService` — credential rotation, connection string generation.
 - `DemandForecastService` — read forecasts, surface reorder suggestions.
 - `DataMartEtlFailedNotification` — alert on ETL failure.
+
+---
+
+## SRS v4.0 Enhancements (§3.29)
+
+### AR Aging Data Mart
+
+- Nightly ETL populates `data_mart_ar_aging` from Phase 9 `ar_aging_snapshots` or live AR calculation.
+- Powers AR trend charts on dashboard and external BI templates.
+
+### AI & Predictive Analytics — Future Scope
+
+Full AI modules (demand forecasting beyond stub, RFM, fraud detection, NL report builder) are **deferred** per SRS §3.29 future scope. This phase delivers only the **demand forecast stub** via configurable external ML API.
+
+### Acceptance Criteria (v4.0)
+
+1. `data_mart_ar_aging` row counts match customer count with outstanding balance for snapshot date.
+2. BI reader user cannot `INSERT`/`UPDATE`/`DELETE` on mart tables.
+3. Forecast stub no-ops cleanly when API URL unset.

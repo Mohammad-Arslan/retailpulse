@@ -43,3 +43,20 @@ Central **product master data** with rich product types, automated identifiers, 
 3. Product edits appear in audit log with old/new JSON.
 4. Operator imports 100+ products from template; invalid rows reported without blocking valid rows.
 5. Operator exports catalog to Excel; re-import with `upsert` updates prices without duplicate SKUs.
+
+---
+
+## SRS v4.0 Enhancements (§3.5)
+
+### Preferred Supplier per Variant
+
+- `product_variants` gains `preferred_supplier_id` (nullable FK → `suppliers`) and optional `alternate_supplier_ids` (JSON array of supplier IDs).
+- PIM variant edit UI: supplier picker with primary + alternates.
+- Auto-reorder engine (Phase 5) uses `preferred_supplier_id` when creating draft POs from `LowStockAlert` events.
+- Supplier must exist before assignment; import template gains optional `preferred_supplier_code` column resolved on upsert.
+
+### Acceptance Criteria (v4.0)
+
+1. Variant with preferred supplier shows supplier name on product detail page.
+2. Auto-reorder draft PO (Phase 5) defaults to preferred supplier when set.
+3. Import with invalid `preferred_supplier_code` surfaces row-level error without blocking other rows.

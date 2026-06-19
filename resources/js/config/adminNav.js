@@ -1,5 +1,6 @@
 import {
     Building2,
+    Boxes,
     FolderTree,
     KeyRound,
     LayoutDashboard,
@@ -51,6 +52,15 @@ export const ADMIN_NAV_SECTIONS = [
                 permission: 'branches.view',
                 icon: Building2,
                 keywords: ['stores', 'locations', 'outlets'],
+            },
+            {
+                label: 'Warehouses',
+                labelKey: 'warehouses',
+                href: 'admin.warehouses.index',
+                routeName: 'admin.warehouses.*',
+                permission: 'warehouses.view',
+                icon: Boxes,
+                keywords: ['storage', 'depot', 'location'],
             },
         ],
     },

@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\Role;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Observers\AuditObserver;
 use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Repositories\Contracts\BrandRepositoryInterface;
@@ -81,6 +82,7 @@ class AppServiceProvider extends ServiceProvider
         Role::observe(AuditObserver::class);
         Permission::observe(AuditObserver::class);
         Branch::observe(AuditObserver::class);
+        Warehouse::observe(AuditObserver::class);
         Category::observe(AuditObserver::class);
         Brand::observe(AuditObserver::class);
         Unit::observe(AuditObserver::class);

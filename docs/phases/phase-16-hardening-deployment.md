@@ -54,7 +54,7 @@ Production **non-functional requirements**: 2FA, session management, offline POS
 
 ---
 
-## Phase Enhancements (SRS v3.0)
+## Phase Enhancements (SRS v4.0 — baseline)
 
 ### Enterprise Security Controls (§4.4)
 
@@ -87,3 +87,44 @@ Production **non-functional requirements**: 2FA, session management, offline POS
 - Applied to all route groups belonging to optional modules: `Route::middleware(['auth', 'module:restaurant'])->group(...)`.
 - Returns HTTP 404 (not 403) when a module is disabled — prevents information leakage about disabled features.
 - Pairs with the dynamic sidebar (Phase 23) which already hides the navigation links; the middleware provides server-side enforcement.
+
+---
+
+## SRS v4.0 Enhancements (§4.9–4.10, §7)
+
+### Disaster Recovery & Business Continuity (§4.9)
+
+- **RTO:** Full restoration within 4 hours; POS-only mode within 1 hour.
+- **RPO:** Maximum 1 hour data loss; incremental backups every 60 minutes to geographically separate S3-compatible storage.
+- Nightly full snapshots + MySQL binlog shipping.
+- Monthly restore drills documented in `docs/deployment.md`; verify 4-hour RTO.
+- MySQL Group Replication or RDS Multi-AZ failover documented.
+- POS offline cap: 8 hours during complete server unavailability (§4.2).
+
+### Testing Strategy (§4.10)
+
+- **Unit tests:** 90%+ line coverage on Services, Repositories, DTOs (Pest); CI coverage gate blocks merge below threshold.
+- **Integration tests:** E2E on checkout, COGS posting, GL journals, payroll, WHT deduction — assert resulting journal entries and stock movements.
+- **Accounting invariant tests:** Balanced double-entry on sale, return, purchase receive, payment, payroll, intercompany transfer, landed cost allocation.
+- **UAT:** Product owner sign-off per phase acceptance criteria before production deploy.
+- **Load testing:** 100 TPS for 30 minutes on staging; p95 POS search < 200ms with 1M variants / 100K customers — gate before go-live.
+- **Regression suite:** All bug fixes include regression test; CI blocks on failure.
+
+### GDPR Stub (§4.4)
+
+- **`customer_consents`** table — marketing, profiling, data-sharing consent with timestamps and source.
+- Right-to-erasure process (anonymize PII, retain transactions); customer data export JSON/CSV.
+- Full GDPR implementation deferred; schema prepared from initial build.
+
+### Expanded DevOps (§7)
+
+- CI pipeline: lint → unit → integration → 90% coverage → build → staging → load test gate → production.
+- Monitoring alerts: p95 > 500ms, queue depth > 1000, failed jobs > 10, replication lag > 30s.
+- Secrets in AWS Secrets Manager or HashiCorp Vault — never in version control for production.
+
+### Acceptance Criteria (v4.0)
+
+1. Monthly restore drill completes within documented RTO on staging.
+2. CI fails when service coverage drops below 90%.
+3. Accounting invariant test suite passes on full test DB seed.
+4. Load test report shows 100 TPS sustained with p95 search < 200ms.

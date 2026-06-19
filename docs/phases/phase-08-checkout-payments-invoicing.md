@@ -2,8 +2,8 @@
 
 **SRS Reference:** §3.8, §3.18 (historical sales archive)
 **Status:** Planned
-**Depends on:** Phase 7 (POS Interface), Phase 4 (Products), Phase 5 (Inventory), Phase 1 (Roles & Permissions)
-**Feeds into:** Phase 9 (Customer Accounts & Credit), Phase 14 (Returns & Refunds), Phase 16 (Offline Sync)
+**Depends on:** Phase 7 (POS Interface), Phase 17 (Shift & Register), Phase 4 (Products), Phase 5 (Inventory), Phase 1 (Roles & Permissions)
+**Feeds into:** Phase 9 (Customer Accounts & Credit), Phase 11 (COGS posting), Phase 14 (Returns & Refunds), Phase 16 (Offline Sync)
 
 ---
 
@@ -708,3 +708,22 @@ See §12.3.
 14. The sale state machine rejects any transition not listed in §2; attempts to transition `completed → pending_payment` return `422`.
 
 15. Tax amount on a 2× $1,200 item at 16% exclusive tax computes to `sale_items.tax_amount = 345.60`; `tax_total = 345.60`; `grand_total = 2505.60`.
+
+---
+
+## SRS v4.0 Enhancements (§3.8)
+
+### Extended Payment Methods
+
+- Unified payment screen supports **Gift Card**, **Store Credit**, and **Loyalty Wallet** (cross-ref Phase 24 / Phase 9) in addition to cash, card, wallets, bank transfer.
+- Partial gift card / store credit redemption with remainder on balance.
+
+### COGS Trigger on Sale Complete
+
+- On `sales.status → completed`, dispatch `SaleCompleted` event consumed by `CostService` (Phase 11) for real-time COGS + Inventory credit posting.
+- Checkout does not implement cost logic — delegates to Phase 11 `inventory_cost_layers`.
+
+### Acceptance Criteria (v4.0)
+
+1. Sale with gift card + cash split tender creates two `sale_payments` rows with correct balances.
+2. Completed sale triggers COGS journal entry in same DB transaction (when Phase 11 active).

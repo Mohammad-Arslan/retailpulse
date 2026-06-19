@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Enums\PickingStrategy;
 use App\Models\Branch;
+use App\Support\BranchOperationalOptions;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -29,16 +30,9 @@ final class UpdateBranchRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'code' => [
-                'required',
-                'string',
-                'max:32',
-                'alpha_dash',
-                Rule::unique('branches', 'code')->ignore($branch->id),
-            ],
             'address' => ['nullable', 'string', 'max:1000'],
-            'currency' => ['required', 'string', 'size:3'],
-            'timezone' => ['required', 'string', 'timezone:all'],
+            'currency' => ['required', 'string', 'size:3', Rule::in(BranchOperationalOptions::allowedCurrencyCodes())],
+            'timezone' => ['required', 'string', Rule::in(BranchOperationalOptions::allowedTimezoneIdentifiers())],
             'picking_strategy' => ['required', Rule::enum(PickingStrategy::class)],
             'operating_hours' => ['nullable', 'array'],
             'operating_hours.*' => ['array'],

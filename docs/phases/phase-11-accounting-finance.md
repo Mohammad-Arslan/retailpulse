@@ -37,7 +37,7 @@
 
 ---
 
-## Phase Enhancements (SRS v3.0)
+## Phase Enhancements (SRS v4.0 — baseline)
 
 ### Cost Centres (§3.11)
 - `cost_centres` table: `id`, `name`, `code`, `parent_id` (nullable, for hierarchy), `branch_id` (nullable for cross-branch centres), `status`.
@@ -68,3 +68,45 @@
 - `fixed_assets`: `id`, `name`, `category`, `acquisition_cost`, `acquisition_date`, `useful_life_months`, `salvage_value`, `depreciation_method` (`straight_line`), `coa_account_id`.
 - Monthly scheduled job posts depreciation journal: debit `Depreciation Expense`, credit `Accumulated Depreciation`.
 - Asset register report: net book value per asset as of any date.
+
+---
+
+## SRS v4.0 Enhancements (§3.11)
+
+### COGS Posting Specification
+
+- **`inventory_cost_layers`** — FIFO stack: `product_variant_id`, `warehouse_id`, `batch_no`, `received_at`, `qty_remaining`, `unit_cost`, `valuation_method`.
+- **`CostService`** — resolves cost at sale completion (real-time, not batch).
+- Valuation: FIFO or WAC per category/global (§3.25); LIFO report-only.
+- Sale GL: Debit COGS, Credit Inventory (separate from revenue entry).
+- Return restock restores layer at original cost; scrap posts to Scrapped Goods Expense.
+- Landed cost from Phase 10 included in layer `unit_cost`.
+
+### Inter-Company & Inter-Branch Accounting
+
+- On transfer confirm: source Debit Intercompany Receivable / Credit Inventory; destination Debit Inventory / Credit Intercompany Payable — at FIFO/WAC cost.
+- **`intercompany_transactions`** — links transfer to journal entries; periodic settlement job nets balances.
+
+### Multi-Currency Support
+
+- **`currencies` / `exchange_rates`** — functional currency per tenant; transaction currency on sales/POs/invoices.
+- Store original + functional amounts; period-end FX revaluation; realized FX on settlement.
+- Multi-currency trial balance report.
+
+### Credit Note & Debit Note Documents
+
+- **`credit_notes`** — customer overcharges/returns/goodwill; numbered separately from invoices; reduces AR.
+- Supplier **`debit_notes`** (from Phase 10 RMA) integrated into AP ledger.
+- Printable/emailable; reference originating invoice; audit-logged.
+
+### Journal Immutability
+
+- Posted journals cannot be edited; corrections via reversal entries only (§4.3).
+
+### Acceptance Criteria (v4.0)
+
+1. Completed sale posts COGS + Inventory credit at resolved FIFO cost in same transaction as revenue.
+2. Inter-branch transfer confirm creates matching intercompany entries at same cost value.
+3. Foreign-currency supplier invoice stores both original and functional amounts.
+4. Credit note reduces customer AR and appears on customer statement (Phase 9).
+5. Attempt to edit posted journal entry is rejected; reversal entry balances books.

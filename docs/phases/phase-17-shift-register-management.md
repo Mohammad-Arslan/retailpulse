@@ -2,8 +2,8 @@
 
 **SRS Reference:** §3.20
 **Status:** Planned
-**Depends on:** Phase 8 (Checkout — payment completion triggers drawer open)
-**Feeds into:** Phase 19 (Restaurant Core — KOT tied to shift), Phase 21 (Hardware — drawer command)
+**Depends on:** Phase 7 (POS — shift must open before checkout/sales per §3.20)
+**Feeds into:** Phase 8 (Checkout — payment completion triggers drawer open), Phase 19 (Restaurant Core), Phase 21 (Hardware — drawer command)
 
 ---
 
