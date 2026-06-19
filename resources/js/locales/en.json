@@ -536,6 +536,9 @@
             "allTypes": "All types",
             "allCategories": "All categories",
             "autoIdentifiers": "SKU and barcode are generated automatically unless you provide overrides on save.",
+            "variableDefaultPricingHint": "Default prices for new variant combinations. Set each variant's price in the matrix below.",
+            "variantPricingHint": "Set a sell price (and optional cost) for each variant combination. POS uses the variant price at checkout.",
+            "variantPricingEmpty": "Add attribute names and options above to generate variant combinations.",
             "serializedHint": "Serial numbers are captured when stock is received (Phase 5).",
             "regenerateVariants": "Regenerate all variants from attributes (replaces existing variants)",
             "addAttribute": "Add attribute",
@@ -576,8 +579,10 @@
                 "bundle": "Bundle components",
                 "pricing": "Pricing",
                 "variants": "Variants",
+                "variantPricing": "Variant pricing",
                 "identifiers": "Identifiers",
-                "branchPricing": "Branch pricing"
+                "branchPricing": "Branch pricing",
+                "suppliers": "Suppliers"
             },
             "fields": {
                 "type": "Product type",
@@ -594,8 +599,11 @@
                 "attributeOptions": "Options",
                 "variant": "Variant",
                 "reorderPoint": "Reorder point",
-                "serialNumbers": "Serial numbers"
+                "serialNumbers": "Serial numbers",
+                "preferredSupplier": "Preferred supplier",
+                "alternateSuppliers": "Alternate suppliers"
             },
+            "supplierHint": "Used by auto-reorder when stock falls below the reorder point.",
             "reorderPointPlaceholder": "Low-stock threshold (optional)",
             "placeholders": {
                 "attributeName": "e.g. Size",

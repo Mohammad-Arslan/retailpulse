@@ -76,6 +76,7 @@ final class ProductRepository implements ProductRepositoryInterface
                 'category:id,name',
                 'brand:id,name',
                 'unit:id,name,abbreviation',
+                'variants.preferredSupplier:id,name,code',
                 'variants.bundleItems.childVariant.product:id,name,type',
                 'variants.branchPrices.branch:id,name',
                 'images',

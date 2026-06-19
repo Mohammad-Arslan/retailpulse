@@ -25,6 +25,7 @@ export default function Create({
     brands,
     units,
     branches,
+    suppliers,
     canShowCost,
 }) {
     const { t } = useTranslation();
@@ -42,6 +43,8 @@ export default function Create({
         default_cost_price: '0',
         default_sell_price: '0',
         default_reorder_point: '',
+        default_preferred_supplier_id: '',
+        default_alternate_supplier_ids: [],
         variant_attributes: [{ name: 'Size', options: ['S', 'M', 'L'] }],
         variants: [],
         bundle_items: [],
@@ -108,6 +111,7 @@ export default function Create({
                     brands={brands}
                     units={units}
                     branches={branches}
+                    suppliers={suppliers}
                     canShowCost={canShowCost}
                     pendingImages={pendingImages}
                     onPendingImagesChange={setPendingImages}

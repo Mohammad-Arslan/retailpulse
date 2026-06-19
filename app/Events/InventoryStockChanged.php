@@ -58,7 +58,7 @@ final class InventoryStockChanged implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
-        $this->inventory->loadMissing('warehouse', 'variant.product');
+        $this->inventory->loadMissing('warehouse', 'variant.product', 'variant.preferredSupplier');
 
         $variant = $this->inventory->variant;
         $product = $variant?->product;
@@ -85,6 +85,9 @@ final class InventoryStockChanged implements ShouldBroadcastNow
             'reason' => $this->reason->value,
             'reorder_point' => $reorderPoint,
             'is_low_stock' => $isLowStock,
+            'preferred_supplier_id' => $isLowStock ? $variant?->preferred_supplier_id : null,
+            'preferred_supplier_code' => $isLowStock ? $variant?->preferredSupplier?->code : null,
+            'preferred_supplier_name' => $isLowStock ? $variant?->preferredSupplier?->name : null,
             'at' => now()->toIso8601String(),
         ];
     }

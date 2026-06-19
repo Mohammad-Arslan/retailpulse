@@ -103,7 +103,12 @@ final class ProductService
             } elseif ($product->type === ProductType::Variable) {
                 $this->syncVariableVariants($product, $data->variants);
             } else {
-                $this->syncVariants($product, $data->variants);
+                $this->syncVariants(
+                    $product,
+                    $data->variants,
+                    $data->defaultPreferredSupplierId,
+                    $data->defaultAlternateSupplierIds,
+                );
             }
 
             if ($product->type === ProductType::Combo) {
@@ -153,6 +158,11 @@ final class ProductService
                 'cost_price' => $data->defaultCostPrice,
                 'sell_price' => $data->defaultSellPrice,
                 'reorder_point' => $this->resolveReorderPoint($data->variants[0] ?? [], $data->defaultReorderPoint),
+                ...$this->resolveSupplierFields(
+                    $data->variants[0] ?? [],
+                    $data->defaultPreferredSupplierId,
+                    $data->defaultAlternateSupplierIds,
+                ),
                 'attributes' => null,
             ]],
             default => [[
@@ -162,6 +172,11 @@ final class ProductService
                 'cost_price' => $data->variants[0]['cost_price'] ?? $data->defaultCostPrice,
                 'sell_price' => $data->variants[0]['sell_price'] ?? $data->defaultSellPrice,
                 'reorder_point' => $this->resolveReorderPoint($data->variants[0] ?? [], $data->defaultReorderPoint),
+                ...$this->resolveSupplierFields(
+                    $data->variants[0] ?? [],
+                    $data->defaultPreferredSupplierId,
+                    $data->defaultAlternateSupplierIds,
+                ),
                 'attributes' => $data->variants[0]['attributes'] ?? null,
             ]],
         };
@@ -187,18 +202,53 @@ final class ProductService
         }
 
         return collect($combinations)->map(function (array $attributes, int $index) use ($variantOverrides, $defaultCost, $defaultSell) {
-            $override = $variantOverrides[$index] ?? [];
+            $override = $this->findVariantOverride($variantOverrides, $attributes, $index);
 
             return [
                 'name' => $override['name'] ?? VariantMatrix::label($attributes),
                 'sku' => $override['sku'] ?? $this->identifiers->nextSku(),
                 'barcode' => $this->resolveBarcode($override['barcode'] ?? null),
-                'cost_price' => $override['cost_price'] ?? $defaultCost,
-                'sell_price' => $override['sell_price'] ?? $defaultSell,
+                'cost_price' => isset($override['cost_price']) ? (float) $override['cost_price'] : $defaultCost,
+                'sell_price' => isset($override['sell_price']) ? (float) $override['sell_price'] : $defaultSell,
                 'reorder_point' => $this->resolveReorderPoint($override, null),
+                ...$this->resolveSupplierFields($override),
                 'attributes' => $attributes,
             ];
         })->all();
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $variantOverrides
+     * @param  array<string, string>  $attributes
+     * @return array<string, mixed>
+     */
+    private function findVariantOverride(array $variantOverrides, array $attributes, int $index): array
+    {
+        foreach ($variantOverrides as $override) {
+            if (! is_array($override)) {
+                continue;
+            }
+
+            $overrideAttributes = $override['attributes'] ?? null;
+
+            if (is_array($overrideAttributes) && $this->attributesMatch($overrideAttributes, $attributes)) {
+                return $override;
+            }
+        }
+
+        return $variantOverrides[$index] ?? [];
+    }
+
+    /**
+     * @param  array<string, string>  $left
+     * @param  array<string, string>  $right
+     */
+    private function attributesMatch(array $left, array $right): bool
+    {
+        ksort($left);
+        ksort($right);
+
+        return $left === $right;
     }
 
     /**
@@ -238,15 +288,21 @@ final class ProductService
                 'cost_price' => $row['cost_price'] ?? 0,
                 'sell_price' => $row['sell_price'] ?? 0,
                 'reorder_point' => $this->resolveReorderPoint($row, null),
+                ...$this->resolveSupplierFields($row),
             ]);
         }
     }
 
     /**
      * @param  list<array<string, mixed>>  $variants
+     * @param  list<int>  $defaultAlternateSupplierIds
      */
-    private function syncVariants(Product $product, array $variants): void
-    {
+    private function syncVariants(
+        Product $product,
+        array $variants,
+        ?int $defaultPreferredSupplierId = null,
+        array $defaultAlternateSupplierIds = [],
+    ): void {
         if ($product->type === ProductType::Combo) {
             return;
         }
@@ -255,6 +311,10 @@ final class ProductService
         $keptIds = [];
 
         foreach ($variants as $index => $row) {
+            $supplierDefaults = $index === 0
+                ? [$defaultPreferredSupplierId, $defaultAlternateSupplierIds]
+                : [null, []];
+
             $payload = [
                 'name' => $row['name'] ?? $product->name,
                 'sku' => $row['sku'] ?? $this->identifiers->nextSku(),
@@ -262,6 +322,7 @@ final class ProductService
                 'cost_price' => $row['cost_price'] ?? 0,
                 'sell_price' => $row['sell_price'] ?? 0,
                 'reorder_point' => $this->resolveReorderPoint($row, null),
+                ...$this->resolveSupplierFields($row, ...$supplierDefaults),
                 'attributes' => $row['attributes'] ?? null,
                 'sort_order' => $index,
                 'is_default' => $index === 0,
@@ -338,6 +399,47 @@ final class ProductService
         }
 
         return $default;
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @param  list<int>  $defaultAlternateSupplierIds
+     * @return array{preferred_supplier_id: ?int, alternate_supplier_ids: ?list<int>}
+     */
+    private function resolveSupplierFields(
+        array $row,
+        ?int $defaultPreferredSupplierId = null,
+        array $defaultAlternateSupplierIds = [],
+    ): array {
+        $preferredId = null;
+
+        if (array_key_exists('preferred_supplier_id', $row)) {
+            $value = $row['preferred_supplier_id'];
+            $preferredId = $value !== null && $value !== '' ? (int) $value : null;
+        } elseif ($defaultPreferredSupplierId !== null) {
+            $preferredId = $defaultPreferredSupplierId;
+        }
+
+        $alternateIds = [];
+
+        if (! empty($row['alternate_supplier_ids']) && is_array($row['alternate_supplier_ids'])) {
+            $alternateIds = array_map(
+                static fn (mixed $id): int => (int) $id,
+                $row['alternate_supplier_ids'],
+            );
+        } elseif ($defaultAlternateSupplierIds !== []) {
+            $alternateIds = $defaultAlternateSupplierIds;
+        }
+
+        $alternateIds = array_values(array_unique(array_filter(
+            $alternateIds,
+            static fn (int $id): bool => $id > 0 && $id !== $preferredId,
+        )));
+
+        return [
+            'preferred_supplier_id' => $preferredId,
+            'alternate_supplier_ids' => $alternateIds === [] ? null : $alternateIds,
+        ];
     }
 
     private function syncBranchPrices(ProductVariant $variant, array $prices): void

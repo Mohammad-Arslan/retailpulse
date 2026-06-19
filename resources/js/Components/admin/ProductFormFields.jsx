@@ -1,10 +1,13 @@
 ﻿import ComboBundleBuilder from '@/Components/admin/ComboBundleBuilder';
 import ProductImageUploader from '@/Components/admin/ProductImageUploader';
 import VariantAttributeBuilder from '@/Components/admin/VariantAttributeBuilder';
+import VariantPricingMatrix from '@/Components/admin/VariantPricingMatrix';
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
+import MultiSelect from '@/Components/ui/multi-select';
 import Select, { mapToSelectOptions } from '@/Components/ui/select';
-import { useMemo } from 'react';
+import { attributeKey, buildVariantRows } from '@/lib/variantMatrix';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const TYPE_LABELS = {
@@ -25,6 +28,7 @@ export default function ProductFormFields({
     brands,
     units,
     branches,
+    suppliers = [],
     canShowCost,
     isEdit = false,
     productId = null,
@@ -58,16 +62,49 @@ export default function ProductFormFields({
             })),
         [units],
     );
+    const supplierOptions = useMemo(
+        () =>
+            suppliers.map((supplier) => ({
+                value: String(supplier.id),
+                label: supplier.code ? `${supplier.name} (${supplier.code})` : supplier.name,
+            })),
+        [suppliers],
+    );
     const isVariable = data.type === 'variable';
     const isCombo = data.type === 'combo';
     const isSimple = !isVariable && !isCombo;
     const showDefaultPricing = isSimple || isCombo || (isVariable && !isEdit);
     const showVariantEditor =
         isVariable && isEdit && !data.regenerate_variants && data.variants?.length > 0;
+    const showVariantPricingMatrix =
+        isVariable && (!isEdit || data.regenerate_variants) && !showVariantEditor;
     const showBranchPricing = branches.length > 0 && (isSimple || isCombo);
 
+    useEffect(() => {
+        if (!showVariantPricingMatrix) {
+            return;
+        }
+
+        const nextVariants = buildVariantRows(data.variant_attributes, data.variants, {
+            cost_price: data.default_cost_price,
+            sell_price: data.default_sell_price,
+            reorder_point: data.default_reorder_point,
+        });
+
+        const currentKeys = (data.variants ?? [])
+            .map((variant) => attributeKey(variant.attributes ?? {}))
+            .join('|');
+        const nextKeys = nextVariants.map((variant) => attributeKey(variant.attributes)).join('|');
+
+        if (currentKeys !== nextKeys) {
+            setData('variants', nextVariants);
+        }
+    }, [data.variant_attributes, showVariantPricingMatrix, setData]);
+
+    const branchPrices = data.branch_prices ?? [];
+
     const updateBranchPrice = (branchId, sellPrice) => {
-        const existing = data.branch_prices.filter((p) => p.branch_id !== branchId);
+        const existing = branchPrices.filter((p) => p.branch_id !== branchId);
         if (sellPrice !== '' && sellPrice !== null) {
             existing.push({ branch_id: branchId, sell_price: sellPrice });
         }
@@ -75,7 +112,49 @@ export default function ProductFormFields({
     };
 
     const branchPriceValue = (branchId) =>
-        data.branch_prices.find((p) => p.branch_id === branchId)?.sell_price ?? '';
+        branchPrices.find((p) => p.branch_id === branchId)?.sell_price ?? '';
+
+    const alternateSupplierOptions = (preferredSupplierId) =>
+        supplierOptions.filter((option) => option.value !== String(preferredSupplierId ?? ''));
+
+    const updateVariantRow = (index, patch) => {
+        const variants = [...(data.variants ?? [])];
+        variants[index] = { ...variants[index], ...patch };
+        setData('variants', variants);
+    };
+
+    const supplierFields = (preferredId, alternateIds, onPreferredChange, onAlternatesChange) => (
+        <>
+            <AdminFormField
+                label={t('pages.products.fields.preferredSupplier')}
+                id="preferred_supplier_id"
+                error={errors.default_preferred_supplier_id ?? errors['variants.0.preferred_supplier_id']}
+            >
+                <Select
+                    id="preferred_supplier_id"
+                    options={supplierOptions}
+                    value={preferredId ?? ''}
+                    placeholder={t('pages.products.none')}
+                    isClearable
+                    onChange={(value) => onPreferredChange(value || null)}
+                />
+            </AdminFormField>
+            <AdminFormField
+                label={t('pages.products.fields.alternateSuppliers')}
+                id="alternate_supplier_ids"
+                error={errors.default_alternate_supplier_ids}
+                className="md:col-span-2"
+            >
+                <MultiSelect
+                    id="alternate_supplier_ids"
+                    options={alternateSupplierOptions(preferredId)}
+                    value={alternateIds ?? []}
+                    placeholder={t('pages.products.none')}
+                    onChange={(values) => onAlternatesChange(values.map((value) => Number(value)))}
+                />
+            </AdminFormField>
+        </>
+    );
 
     const generalCard = (
         <FormCard className="max-w-none w-full">
@@ -219,7 +298,7 @@ export default function ProductFormFields({
         <FormCard className="max-w-none w-full">
             <h3 className="rp-form-label mb-4">{t('pages.products.sections.bundle')}</h3>
             <ComboBundleBuilder
-                items={data.bundle_items}
+                items={data.bundle_items ?? []}
                 onChange={(bundle_items) => setData('bundle_items', bundle_items)}
                 excludeProductId={productId}
                 error={errors.bundle_items}
@@ -230,7 +309,11 @@ export default function ProductFormFields({
     const pricingCard = showDefaultPricing ? (
         <FormCard className="max-w-none w-full">
             <h3 className="rp-form-label mb-4">{t('pages.products.sections.pricing')}</h3>
-            <p className="mb-3 text-xs text-rp-text-muted">{t('pages.products.autoIdentifiers')}</p>
+            <p className="mb-3 text-xs text-rp-text-muted">
+                {isVariable
+                    ? t('pages.products.variableDefaultPricingHint')
+                    : t('pages.products.autoIdentifiers')}
+            </p>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {canShowCost && (
                     <AdminFormField
@@ -285,6 +368,47 @@ export default function ProductFormFields({
         </FormCard>
     ) : null;
 
+    const variantPricingCard = showVariantPricingMatrix ? (
+        <FormCard className="max-w-none w-full">
+            <h3 className="rp-form-label mb-2">{t('pages.products.sections.variantPricing')}</h3>
+            <p className="mb-4 text-xs text-rp-text-muted">
+                {t('pages.products.variantPricingHint')}
+            </p>
+            <VariantPricingMatrix
+                variants={data.variants ?? []}
+                onChange={(variants) => setData('variants', variants)}
+                canShowCost={canShowCost}
+                supplierOptions={supplierOptions}
+                errors={errors}
+            />
+        </FormCard>
+    ) : null;
+
+    const suppliersCard =
+        suppliers.length > 0 && !isVariable ? (
+            <FormCard className="max-w-none w-full">
+                <h3 className="rp-form-label mb-4">{t('pages.products.sections.suppliers')}</h3>
+                <p className="mb-3 text-xs text-rp-text-muted">{t('pages.products.supplierHint')}</p>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {supplierFields(
+                        data.default_preferred_supplier_id,
+                        data.default_alternate_supplier_ids,
+                        (preferredSupplierId) => {
+                            const alternateIds = (data.default_alternate_supplier_ids ?? []).filter(
+                                (id) => String(id) !== String(preferredSupplierId ?? ''),
+                            );
+                            setData({
+                                default_preferred_supplier_id: preferredSupplierId,
+                                default_alternate_supplier_ids: alternateIds,
+                            });
+                        },
+                        (alternateSupplierIds) =>
+                            setData('default_alternate_supplier_ids', alternateSupplierIds),
+                    )}
+                </div>
+            </FormCard>
+        ) : null;
+
     const variantsCard = showVariantEditor ? (
         <FormCard className="max-w-none w-full">
             <h3 className="rp-form-label mb-4">{t('pages.products.sections.variants')}</h3>
@@ -298,11 +422,21 @@ export default function ProductFormFields({
                                 <th className="pb-2 pr-4">{t('pages.products.fields.costPrice')}</th>
                             )}
                             <th className="pb-2 pr-4">{t('pages.products.fields.sellPrice')}</th>
-                            <th className="pb-2">{t('pages.products.fields.reorderPoint')}</th>
+                            <th className="pb-2 pr-4">{t('pages.products.fields.reorderPoint')}</th>
+                            {suppliers.length > 0 && (
+                                <>
+                                    <th className="pb-2 pr-4">
+                                        {t('pages.products.fields.preferredSupplier')}
+                                    </th>
+                                    <th className="pb-2">
+                                        {t('pages.products.fields.alternateSuppliers')}
+                                    </th>
+                                </>
+                            )}
                         </tr>
                     </thead>
                     <tbody>
-                        {data.variants.map((variant, index) => (
+                        {(data.variants ?? []).map((variant, index) => (
                             <tr key={variant.id ?? index} className="border-b border-rp-border/50">
                                 <td className="py-2 pr-4 font-medium">{variant.name}</td>
                                 <td className="py-2 pr-4 font-mono text-xs">{variant.sku}</td>
@@ -314,14 +448,11 @@ export default function ProductFormFields({
                                             step="0.01"
                                             value={variant.cost_price}
                                             className="rp-form-input w-24"
-                                            onChange={(e) => {
-                                                const variants = [...data.variants];
-                                                variants[index] = {
-                                                    ...variant,
+                                            onChange={(e) =>
+                                                updateVariantRow(index, {
                                                     cost_price: e.target.value,
-                                                };
-                                                setData('variants', variants);
-                                            }}
+                                                })
+                                            }
                                         />
                                     </td>
                                 )}
@@ -332,17 +463,12 @@ export default function ProductFormFields({
                                         step="0.01"
                                         value={variant.sell_price}
                                         className="rp-form-input w-24"
-                                        onChange={(e) => {
-                                            const variants = [...data.variants];
-                                            variants[index] = {
-                                                ...variant,
-                                                sell_price: e.target.value,
-                                            };
-                                            setData('variants', variants);
-                                        }}
+                                        onChange={(e) =>
+                                            updateVariantRow(index, { sell_price: e.target.value })
+                                        }
                                     />
                                 </td>
-                                <td className="py-2">
+                                <td className="py-2 pr-4">
                                     <input
                                         type="number"
                                         min="0"
@@ -350,16 +476,57 @@ export default function ProductFormFields({
                                         placeholder="—"
                                         value={variant.reorder_point ?? ''}
                                         className="rp-form-input w-20"
-                                        onChange={(e) => {
-                                            const variants = [...data.variants];
-                                            variants[index] = {
-                                                ...variant,
+                                        onChange={(e) =>
+                                            updateVariantRow(index, {
                                                 reorder_point: e.target.value,
-                                            };
-                                            setData('variants', variants);
-                                        }}
+                                            })
+                                        }
                                     />
                                 </td>
+                                {suppliers.length > 0 && (
+                                    <>
+                                        <td className="py-2 pr-4">
+                                            <Select
+                                                options={supplierOptions}
+                                                value={variant.preferred_supplier_id ?? ''}
+                                                placeholder={t('pages.products.none')}
+                                                isClearable
+                                                onChange={(value) => {
+                                                    const preferredSupplierId = value || null;
+                                                    const alternateSupplierIds = (
+                                                        variant.alternate_supplier_ids ?? []
+                                                    ).filter(
+                                                        (id) =>
+                                                            String(id) !==
+                                                            String(preferredSupplierId ?? ''),
+                                                    );
+                                                    updateVariantRow(index, {
+                                                        preferred_supplier_id: preferredSupplierId,
+                                                        alternate_supplier_ids: alternateSupplierIds,
+                                                    });
+                                                }}
+                                            />
+                                        </td>
+                                        <td className="py-2">
+                                            <MultiSelect
+                                                options={alternateSupplierOptions(
+                                                    variant.preferred_supplier_id,
+                                                )}
+                                                value={(variant.alternate_supplier_ids ?? []).map(
+                                                    String,
+                                                )}
+                                                placeholder={t('pages.products.none')}
+                                                onChange={(values) =>
+                                                    updateVariantRow(index, {
+                                                        alternate_supplier_ids: values.map((value) =>
+                                                            Number(value),
+                                                        ),
+                                                    })
+                                                }
+                                            />
+                                        </td>
+                                    </>
+                                )}
                             </tr>
                         ))}
                     </tbody>
@@ -373,7 +540,7 @@ export default function ProductFormFields({
             <FormCard className="max-w-none w-full">
                 <h3 className="rp-form-label mb-2">{t('pages.products.sections.identifiers')}</h3>
                 <ul className="space-y-1 font-mono text-xs text-rp-text-secondary">
-                    {data.variants.map((v) => (
+                    {(data.variants ?? []).map((v) => (
                         <li key={v.id}>
                             {v.name}: {v.sku}
                             {v.barcode ? ` · ${v.barcode}` : ''}
@@ -434,15 +601,17 @@ export default function ProductFormFields({
                     {attributesCard}
                     {bundleCard}
                 </div>
-                {(pricingCard || branchPricingCard || identifiersCard) && (
+                {(pricingCard || suppliersCard || branchPricingCard || identifiersCard) && (
                     <div className="space-y-5">
                         {pricingCard}
+                        {suppliersCard}
                         {branchPricingCard}
                         {identifiersCard}
                     </div>
                 )}
             </div>
             {variantsCard}
+            {variantPricingCard}
         </div>
     );
 }

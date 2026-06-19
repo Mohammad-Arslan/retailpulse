@@ -21,6 +21,13 @@ export function mergeDefaultPricingIntoVariants(formData) {
             formData.default_reorder_point !== undefined && formData.default_reorder_point !== null
                 ? formData.default_reorder_point
                 : variants[0].reorder_point,
+        preferred_supplier_id:
+            formData.default_preferred_supplier_id !== undefined &&
+            formData.default_preferred_supplier_id !== ''
+                ? formData.default_preferred_supplier_id
+                : variants[0].preferred_supplier_id ?? null,
+        alternate_supplier_ids:
+            formData.default_alternate_supplier_ids ?? variants[0].alternate_supplier_ids ?? [],
     };
 
     return { ...formData, variants };
