@@ -3,7 +3,7 @@ import PageHeader from '@/Components/common/PageHeader';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { CalendarClock, Plus } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -63,12 +63,23 @@ function Index({ sessions, filters, warehouses }) {
         <>
             <Head title={t('pages.countSessions.title')} />
             <PageHeader title={t('pages.countSessions.title')}>
-                {can('inventory.cycle-count') && (
-                    <Link href={route('admin.count-sessions.create')} className="rp-btn-primary">
-                        <Plus className="mr-1 h-4 w-4" />
-                        {t('pages.countSessions.newSession')}
-                    </Link>
-                )}
+                <div className="flex flex-wrap gap-2">
+                    {can('inventory.cycle-count') && (
+                        <Link
+                            href={route('admin.count-schedule-rules.index')}
+                            className="rp-btn-outline"
+                        >
+                            <CalendarClock className="mr-1 h-4 w-4" />
+                            {t('pages.countScheduleRules.title')}
+                        </Link>
+                    )}
+                    {can('inventory.cycle-count') && (
+                        <Link href={route('admin.count-sessions.create')} className="rp-btn-primary">
+                            <Plus className="mr-1 h-4 w-4" />
+                            {t('pages.countSessions.newSession')}
+                        </Link>
+                    )}
+                </div>
             </PageHeader>
             <DataTable columns={columns} data={sessions.data} pagination={sessions} />
         </>

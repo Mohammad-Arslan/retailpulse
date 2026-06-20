@@ -134,6 +134,7 @@ final class ProductRepository implements ProductRepositoryInterface
                 'product_name' => $variant->product?->name ?? '',
                 'sell_price' => (string) $variant->sell_price,
                 'track_serials' => (bool) ($variant->product?->track_serials ?? false),
+                'track_batches' => (bool) ($variant->product?->track_batches ?? false),
             ]);
     }
 }

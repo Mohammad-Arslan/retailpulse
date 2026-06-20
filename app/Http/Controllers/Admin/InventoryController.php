@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdjustStockRequest;
 use App\Http\Requests\Admin\QuarantineActionRequest;
 use App\Http\Requests\Admin\ReceiveStockRequest;
+use App\Models\BinLocation;
 use App\Models\Inventory;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
@@ -89,8 +90,25 @@ final class InventoryController extends Controller
     {
         $this->authorize('receive', Inventory::class);
 
+        $warehouses = $this->warehouseOptions($request);
+        $warehouseIds = array_column($warehouses, 'id');
+
+        $binsByWarehouse = BinLocation::query()
+            ->whereIn('warehouse_id', $warehouseIds)
+            ->where('is_active', true)
+            ->orderBy('bin_code')
+            ->get(['id', 'warehouse_id', 'bin_code', 'aisle', 'shelf'])
+            ->groupBy('warehouse_id')
+            ->map(fn ($bins) => $bins->map(fn (BinLocation $bin) => [
+                'id' => $bin->id,
+                'bin_code' => $bin->bin_code,
+                'label' => trim($bin->bin_code.($bin->aisle ? " · {$bin->aisle}" : '')),
+            ])->values()->all())
+            ->all();
+
         return Inertia::render('Admin/Inventory/Receive', [
-            'warehouses' => $this->warehouseOptions($request),
+            'warehouses' => $warehouses,
+            'binsByWarehouse' => $binsByWarehouse,
         ]);
     }
 
@@ -98,11 +116,16 @@ final class InventoryController extends Controller
     {
         $this->authorize('receive', Inventory::class);
 
-        $this->inventoryService->receive(ReceiveStockData::fromRequest($request));
+        $data = ReceiveStockData::fromRequest($request);
+        $this->inventoryService->receive($data);
+
+        $message = $data->toQuarantine
+            ? __('Stock received to quarantine successfully.')
+            : __('Stock received successfully.');
 
         return redirect()
             ->route('admin.inventory.index')
-            ->with('success', __('Stock received successfully.'));
+            ->with('success', $message);
     }
 
     public function binReport(Request $request): Response

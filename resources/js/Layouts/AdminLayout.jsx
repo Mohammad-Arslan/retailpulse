@@ -5,6 +5,7 @@ import SidebarSearch from '@/Components/admin/SidebarSearch';
 import BrandIcon from '@/Components/brand/BrandIcon';
 import Breadcrumbs from '@/Components/common/Breadcrumbs';
 import { ADMIN_NAV_SECTIONS } from '@/config/adminNav';
+import { isAdminNavItemActive } from '@/lib/adminNav';
 import { useCommandPalette } from '@/Hooks/useCommandPalette';
 import { useSidebarCollapsed } from '@/Hooks/useSidebarCollapsed';
 import { useTheme } from '@/Hooks/useTheme';
@@ -44,7 +45,7 @@ function SidebarNav({ collapsed, onNavigate }) {
                         )}
                         {items.map((item) => {
                             const Icon = item.icon;
-                            const active = route().current(item.routeName);
+                            const active = isAdminNavItemActive(item, items);
 
                             return (
                                 <Link

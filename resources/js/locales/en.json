@@ -18,6 +18,7 @@
         "binStock": "Bin stock",
         "quarantine": "Quarantine",
         "cycleCounts": "Cycle counts",
+        "countSchedules": "Count schedules",
         "overview": "Overview",
         "organization": "Organization",
         "admin": "Admin",
@@ -384,8 +385,10 @@
             "adjustDescription": "Correct counts or record damaged goods (use negative quantity to reduce).",
             "adjustSubmit": "Apply adjustment",
             "receiveTitle": "Receive stock",
-            "receiveDescription": "Increase on-hand quantity (purchase receive).",
+            "receiveDescription": "Increase on-hand quantity (purchase receive). Optionally assign a bin or receive to quarantine for QC.",
             "receiveSubmit": "Receive stock",
+            "receiveQuarantineSubmit": "Receive to quarantine",
+            "quarantineReceiveHint": "Stock is held in quarantine and excluded from sellable availability until released.",
             "quantitySignedHint": "Positive adds stock; negative removes (e.g. damaged write-off).",
             "columns": {
                 "product": "Product",
@@ -405,7 +408,12 @@
                 "quantitySigned": "Quantity (+ / −)",
                 "reason": "Reason",
                 "notes": "Notes",
-                "serialNumbers": "Serial numbers"
+                "serialNumbers": "Serial numbers",
+                "binLocation": "Bin location",
+                "noBin": "No bin (warehouse level)",
+                "batchNo": "Batch number",
+                "expiryDate": "Expiry date",
+                "toQuarantine": "Receive to quarantine (pending QC)"
             },
             "serialNumbersHint": "Enter {{count}} unique serial number(s), one per unit.",
             "serialPlaceholder": "Serial #{{n}}"
@@ -477,6 +485,34 @@
                 "scopeId": "Scope ID",
                 "blindCount": "Blind count (hide system qty from counters)",
                 "freezeMode": "Freeze movements in scope until posted"
+            }
+        },
+        "countScheduleRules": {
+            "title": "Count schedules",
+            "description": "Recurring rules that auto-create draft count sessions (processed nightly).",
+            "backToCounts": "Back to cycle counts",
+            "create": "New schedule",
+            "createTitle": "Create count schedule",
+            "editTitle": "Edit count schedule",
+            "save": "Save schedule",
+            "deactivate": "Deactivate",
+            "confirmDeactivate": "Deactivate this count schedule?",
+            "active": "Active",
+            "inactive": "Inactive",
+            "dayOfMonth": "Day {{day}}",
+            "columns": {
+                "frequency": "Frequency",
+                "lastRun": "Last run"
+            },
+            "frequency": {
+                "daily": "Daily",
+                "weekly": "Weekly",
+                "monthly": "Monthly"
+            },
+            "fields": {
+                "frequency": "Frequency",
+                "dayOfWeek": "Day of week",
+                "dayOfMonth": "Day of month"
             }
         },
         "stockTransfers": {

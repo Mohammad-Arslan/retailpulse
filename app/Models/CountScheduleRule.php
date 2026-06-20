@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\CountScheduleFrequency;
 use App\Enums\CountScopeType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +28,7 @@ class CountScheduleRule extends Model
     {
         return [
             'scope_type' => CountScopeType::class,
+            'frequency' => CountScheduleFrequency::class,
             'blind_count' => 'boolean',
             'is_active' => 'boolean',
             'last_run_at' => 'datetime',

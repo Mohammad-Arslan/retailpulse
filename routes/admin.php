@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CatalogBulkController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CountScheduleRuleController;
 use App\Http\Controllers\Admin\CountSessionController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InventoryController;
@@ -95,6 +96,9 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             ->name('count-sessions.approve');
         Route::post('count-sessions/{count_session}/post', [CountSessionController::class, 'post'])
             ->name('count-sessions.post');
+
+        Route::resource('count-schedule-rules', CountScheduleRuleController::class)
+            ->except(['show']);
 
         Route::resource('stock-transfers', StockTransferController::class)
             ->only(['index', 'create', 'store', 'show']);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Enums\CountScheduleFrequency;
 use App\Enums\CountSessionStatus;
 use App\Models\CountScheduleRule;
 use App\Models\CountSession;
@@ -47,12 +48,11 @@ final class CreateScheduledCountSessionsJob implements ShouldQueue
         $now = now();
 
         return match ($rule->frequency) {
-            'daily' => $rule->last_run_at === null || $rule->last_run_at->lt($now->copy()->startOfDay()),
-            'weekly' => $rule->day_of_week === $now->dayOfWeek
+            CountScheduleFrequency::Daily => $rule->last_run_at === null || $rule->last_run_at->lt($now->copy()->startOfDay()),
+            CountScheduleFrequency::Weekly => $rule->day_of_week === $now->dayOfWeek
                 && ($rule->last_run_at === null || $rule->last_run_at->lt($now->copy()->startOfWeek())),
-            'monthly' => $rule->day_of_month === $now->day
+            CountScheduleFrequency::Monthly => $rule->day_of_month === $now->day
                 && ($rule->last_run_at === null || $rule->last_run_at->lt($now->copy()->startOfMonth())),
-            default => false,
         };
     }
 }

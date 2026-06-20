@@ -18,6 +18,7 @@ use App\Events\LowStockAlert;
 use App\Models\BinLocation;
 use App\Models\CountSession;
 use App\Models\Inventory;
+use App\Models\ProductBatch;
 use App\Models\ProductSerial;
 use App\Models\ProductVariant;
 use App\Models\StockReservation;
@@ -41,15 +42,109 @@ final class InventoryService
             $this->registerSerials($data->variantId, $data->serialNumbers);
         }
 
+        $batchId = $data->batchId ?? $this->resolveReceiveBatchId($data);
+
+        if ($data->toQuarantine) {
+            return $this->receiveToQuarantine($data, $batchId);
+        }
+
         return $this->applyDelta(
             warehouseId: $data->warehouseId,
             variantId: $data->variantId,
-            batchId: $data->batchId,
+            batchId: $batchId,
             qtyDelta: abs($data->quantity),
             reason: StockMovementReason::PurchaseReceive,
             userId: $data->userId,
             notes: $data->notes,
+            binLocationId: $data->binLocationId,
         );
+    }
+
+    private function receiveToQuarantine(ReceiveStockData $data, ?int $batchId): Inventory
+    {
+        $this->assertTracksInventory($data->variantId);
+        $this->assertBatchProvidedForTrackedVariant($data->variantId, $batchId);
+        $this->assertNotFrozen($data->warehouseId, $data->binLocationId);
+
+        if ($data->quantity <= 0) {
+            throw ValidationException::withMessages([
+                'quantity' => __('Receive quantity must be positive.'),
+            ]);
+        }
+
+        return DB::transaction(function () use ($data, $batchId) {
+            $inventory = $this->inventories->lockOrCreate(
+                $data->warehouseId,
+                $data->variantId,
+                $batchId,
+                $data->binLocationId,
+            );
+
+            $previousOnHand = $inventory->quantity_on_hand;
+            $previousReserved = $inventory->quantity_reserved;
+
+            $inventory->increment('quantity_in_quarantine', $data->quantity);
+            $inventory = $inventory->fresh() ?? $inventory;
+
+            $this->movements->create([
+                'warehouse_id' => $data->warehouseId,
+                'product_variant_id' => $data->variantId,
+                'batch_id' => $batchId,
+                'reason' => StockMovementReason::PurchaseReceive,
+                'qty_delta' => 0,
+                'quantity_on_hand_after' => $inventory->quantity_on_hand,
+                'user_id' => $data->userId,
+                'notes' => $data->notes ?? __('Received to quarantine (pending QC)'),
+            ]);
+
+            $this->dispatchStockChanged(
+                $inventory,
+                $previousOnHand,
+                $previousReserved,
+                StockMovementReason::PurchaseReceive,
+            );
+
+            return $inventory;
+        });
+    }
+
+    private function resolveReceiveBatchId(ReceiveStockData $data): ?int
+    {
+        $variant = ProductVariant::query()->with('product')->find($data->variantId);
+
+        if ($variant?->product === null || ! $variant->product->track_batches) {
+            return null;
+        }
+
+        $batchNo = trim((string) ($data->batchNo ?? ''));
+
+        if ($batchNo === '') {
+            throw ValidationException::withMessages([
+                'batch_no' => __('Batch number is required for batch-tracked products.'),
+            ]);
+        }
+
+        $batch = ProductBatch::query()->firstOrCreate(
+            [
+                'product_variant_id' => $variant->id,
+                'batch_no' => $batchNo,
+            ],
+            [
+                'expiry_date' => $data->expiryDate !== null && $data->expiryDate !== ''
+                    ? $data->expiryDate
+                    : null,
+            ],
+        );
+
+        if (
+            $data->expiryDate !== null
+            && $data->expiryDate !== ''
+            && $batch->expiry_date?->format('Y-m-d') !== $data->expiryDate
+        ) {
+            $batch->update(['expiry_date' => $data->expiryDate]);
+        }
+
+        return $batch->id;
     }
 
     public function adjust(AdjustStockData $data): Inventory

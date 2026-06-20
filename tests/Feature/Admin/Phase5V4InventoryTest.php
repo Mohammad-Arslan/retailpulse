@@ -7,12 +7,14 @@ namespace Tests\Feature\Admin;
 use App\DTOs\BinLocation\BinTransferData;
 use App\DTOs\CountSession\CreateCountSessionData;
 use App\DTOs\CountSession\SubmitCountLinesData;
+use App\DTOs\Inventory\ReceiveStockData;
 use App\Enums\CountScopeType;
 use App\Enums\ProductType;
 use App\Enums\StockMovementReason;
 use App\Events\LowStockAlert;
 use App\Models\BinLocation;
 use App\Models\Branch;
+use App\Models\CountScheduleRule;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -308,6 +310,94 @@ final class Phase5V4InventoryTest extends TestCase
         $this->assertDatabaseHas('inventories', [
             'bin_location_id' => $bin->id,
             'quantity_on_hand' => 25,
+        ]);
+    }
+
+    public function test_receive_to_quarantine_increments_quarantine_not_on_hand(): void
+    {
+        app(InventoryService::class)->receive(new ReceiveStockData(
+            warehouseId: $this->warehouse->id,
+            variantId: $this->variant->id,
+            batchId: null,
+            quantity: 12,
+            userId: null,
+            notes: null,
+            toQuarantine: true,
+        ));
+
+        $inventory = Inventory::query()->first();
+        $this->assertSame(0, $inventory->quantity_on_hand);
+        $this->assertSame(12, $inventory->quantity_in_quarantine);
+        $this->assertSame(0, $inventory->availableQuantity());
+    }
+
+    public function test_receive_with_bin_sets_per_bin_on_hand(): void
+    {
+        $bin = BinLocation::query()->create([
+            'warehouse_id' => $this->warehouse->id,
+            'bin_code' => 'RCV-01',
+            'is_active' => true,
+        ]);
+
+        app(InventoryService::class)->receive(new ReceiveStockData(
+            warehouseId: $this->warehouse->id,
+            variantId: $this->variant->id,
+            batchId: null,
+            quantity: 7,
+            userId: null,
+            notes: null,
+            binLocationId: $bin->id,
+        ));
+
+        $this->assertDatabaseHas('inventories', [
+            'bin_location_id' => $bin->id,
+            'quantity_on_hand' => 7,
+            'quantity_in_quarantine' => 0,
+        ]);
+    }
+
+    public function test_count_schedule_rule_crud(): void
+    {
+        $admin = User::factory()->create(['is_active' => true]);
+        $admin->assignRole('super-admin');
+
+        $this->actingAs($admin)
+            ->post(route('admin.count-schedule-rules.store'), [
+                'branch_id' => $this->branch->id,
+                'warehouse_id' => $this->warehouse->id,
+                'scope_type' => 'full',
+                'frequency' => 'weekly',
+                'day_of_week' => 1,
+                'blind_count' => true,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('count_schedule_rules', [
+            'warehouse_id' => $this->warehouse->id,
+            'frequency' => 'weekly',
+            'blind_count' => true,
+            'is_active' => true,
+        ]);
+
+        $rule = CountScheduleRule::query()->first();
+
+        $this->actingAs($admin)
+            ->get(route('admin.count-schedule-rules.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Admin/CountScheduleRules/Index'));
+
+        $this->actingAs($admin)
+            ->put(route('admin.count-schedule-rules.update', $rule), [
+                'scope_type' => 'full',
+                'frequency' => 'daily',
+                'blind_count' => false,
+                'is_active' => true,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('count_schedule_rules', [
+            'id' => $rule->id,
+            'frequency' => 'daily',
         ]);
     }
 }
