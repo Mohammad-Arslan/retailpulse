@@ -108,10 +108,10 @@ final class InventoryRepository implements InventoryRepositoryInterface
                 'batch',
                 'binLocation.warehouseZone',
             ])
-            ->whereNotNull('bin_location_id')
+            ->whereNotNull('inventories.bin_location_id')
             ->when(
                 $filters['warehouse_id'] ?? null,
-                fn ($q, $warehouseId) => $q->where('warehouse_id', $warehouseId),
+                fn ($q, $warehouseId) => $q->where('inventories.warehouse_id', $warehouseId),
             )
             ->when(
                 $filters['zone_id'] ?? null,
@@ -145,7 +145,7 @@ final class InventoryRepository implements InventoryRepositoryInterface
         $direction = ($filters['direction'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
 
         if ($sort === 'on_hand') {
-            $query->orderBy('quantity_on_hand', $direction);
+            $query->orderBy('inventories.quantity_on_hand', $direction);
         } else {
             $query->join('bin_locations', 'inventories.bin_location_id', '=', 'bin_locations.id')
                 ->orderBy('bin_locations.bin_code', $direction)
