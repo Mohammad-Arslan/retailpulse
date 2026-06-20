@@ -7,7 +7,9 @@ namespace Tests\Feature\Admin;
 use App\DTOs\BinLocation\BinTransferData;
 use App\DTOs\CountSession\CreateCountSessionData;
 use App\DTOs\CountSession\SubmitCountLinesData;
+use App\DTOs\Inventory\DeductStockData;
 use App\DTOs\Inventory\ReceiveStockData;
+use App\DTOs\Inventory\ReserveStockData;
 use App\Enums\CountScopeType;
 use App\Enums\ProductType;
 use App\Enums\StockMovementReason;
@@ -29,6 +31,7 @@ use App\Services\InventoryService;
 use App\Services\QuarantineService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Validation\ValidationException;
 use Tests\Concerns\SeedsRbac;
 use Tests\TestCase;
 
@@ -399,5 +402,112 @@ final class Phase5V4InventoryTest extends TestCase
             'id' => $rule->id,
             'frequency' => 'daily',
         ]);
+    }
+
+    public function test_frozen_count_blocks_deduct_reserve_and_bin_transfer(): void
+    {
+        $zone = WarehouseZone::query()->create([
+            'warehouse_id' => $this->warehouse->id,
+            'name' => 'Freeze Zone',
+            'code' => 'FZ',
+            'is_active' => true,
+        ]);
+
+        $binA = BinLocation::query()->create([
+            'warehouse_id' => $this->warehouse->id,
+            'warehouse_zone_id' => $zone->id,
+            'bin_code' => 'FZ-01',
+            'is_active' => true,
+        ]);
+
+        $binB = BinLocation::query()->create([
+            'warehouse_id' => $this->warehouse->id,
+            'warehouse_zone_id' => $zone->id,
+            'bin_code' => 'FZ-02',
+            'is_active' => true,
+        ]);
+
+        app(InventoryService::class)->setOpeningBalance(
+            warehouseId: $this->warehouse->id,
+            variantId: $this->variant->id,
+            batchId: null,
+            quantity: 50,
+            binLocationId: $binA->id,
+        );
+
+        $user = User::factory()->create(['is_active' => true]);
+
+        $session = app(CountSessionService::class)->create(new CreateCountSessionData(
+            branchId: $this->branch->id,
+            warehouseId: $this->warehouse->id,
+            scopeType: CountScopeType::Full,
+            scopeId: null,
+            blindCount: false,
+            freezeMode: true,
+            varianceThresholdPct: 5.0,
+            varianceThresholdValue: 1000.0,
+            userId: $user->id,
+        ));
+
+        app(CountSessionService::class)->start($session);
+
+        $inventoryService = app(InventoryService::class);
+
+        $this->expectException(ValidationException::class);
+        try {
+            $inventoryService->deduct(new DeductStockData(
+                warehouseId: $this->warehouse->id,
+                variantId: $this->variant->id,
+                batchId: null,
+                quantity: 1,
+                reason: StockMovementReason::Sale,
+                userId: $user->id,
+            ));
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('warehouse_id', $e->errors());
+            throw $e;
+        }
+    }
+
+    public function test_frozen_count_blocks_reserve(): void
+    {
+        app(InventoryService::class)->setOpeningBalance(
+            warehouseId: $this->warehouse->id,
+            variantId: $this->variant->id,
+            batchId: null,
+            quantity: 50,
+        );
+
+        $user = User::factory()->create(['is_active' => true]);
+
+        $session = app(CountSessionService::class)->create(new CreateCountSessionData(
+            branchId: $this->branch->id,
+            warehouseId: $this->warehouse->id,
+            scopeType: CountScopeType::Full,
+            scopeId: null,
+            blindCount: false,
+            freezeMode: true,
+            varianceThresholdPct: 5.0,
+            varianceThresholdValue: 1000.0,
+            userId: $user->id,
+        ));
+
+        app(CountSessionService::class)->start($session);
+
+        $this->expectException(ValidationException::class);
+        try {
+            app(InventoryService::class)->reserve(new ReserveStockData(
+                warehouseId: $this->warehouse->id,
+                variantId: $this->variant->id,
+                batchId: null,
+                quantity: 1,
+                userId: $user->id,
+                referenceType: 'test',
+                referenceId: 1,
+            ));
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('warehouse_id', $e->errors());
+            throw $e;
+        }
     }
 }

@@ -8,24 +8,22 @@ use App\DTOs\Inventory\AdjustStockData;
 use App\DTOs\Inventory\DeductStockData;
 use App\DTOs\Inventory\ReceiveStockData;
 use App\DTOs\Inventory\ReserveStockData;
-use App\Enums\CountScopeType;
-use App\Enums\CountSessionStatus;
 use App\Enums\PickingStrategy;
 use App\Enums\SerialStatus;
 use App\Enums\StockMovementReason;
 use App\Events\InventoryStockChanged;
 use App\Events\LowStockAlert;
-use App\Models\BinLocation;
-use App\Models\CountSession;
 use App\Models\Inventory;
 use App\Models\ProductBatch;
 use App\Models\ProductSerial;
 use App\Models\ProductVariant;
 use App\Models\StockReservation;
+use App\Models\SystemSetting;
 use App\Models\VariantBranchSetting;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
 use App\Repositories\Contracts\StockMovementRepositoryInterface;
+use App\Support\InventoryFreezeGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -64,7 +62,7 @@ final class InventoryService
     {
         $this->assertTracksInventory($data->variantId);
         $this->assertBatchProvidedForTrackedVariant($data->variantId, $batchId);
-        $this->assertNotFrozen($data->warehouseId, $data->binLocationId);
+        InventoryFreezeGuard::assertNotFrozen($data->warehouseId, $data->binLocationId);
 
         if ($data->quantity <= 0) {
             throw ValidationException::withMessages([
@@ -192,7 +190,7 @@ final class InventoryService
 
         $this->assertTracksInventory($variantId);
         $this->assertBatchProvidedForTrackedVariant($variantId, $batchId);
-        $this->assertNotFrozen($warehouseId, $binLocationId);
+        InventoryFreezeGuard::assertNotFrozen($warehouseId, $binLocationId);
 
         if ($binLocationId !== null) {
             $existing = $this->inventories->findForUpdate($warehouseId, $variantId, $batchId, $binLocationId);
@@ -276,6 +274,8 @@ final class InventoryService
             ]);
         }
 
+        InventoryFreezeGuard::assertNotFrozen($data->warehouseId);
+
         if ($data->batchId !== null) {
             return $this->deductFromInventoryRow($data, $data->batchId, $data->quantity);
         }
@@ -320,6 +320,8 @@ final class InventoryService
             ]);
         }
 
+        InventoryFreezeGuard::assertNotFrozen($data->warehouseId);
+
         return DB::transaction(function () use ($data) {
             $inventory = $this->inventories->lockOrCreate(
                 $data->warehouseId,
@@ -359,7 +361,11 @@ final class InventoryService
                 'quantity' => $data->quantity,
                 'reference_type' => $data->referenceType,
                 'reference_id' => $data->referenceId,
-                'expires_at' => now()->addMinutes((int) config('inventory.reservation_ttl_minutes', 30)),
+                'expires_at' => now()->addMinutes((int) SystemSetting::get(
+                    'inventory',
+                    'reservation_ttl_minutes',
+                    config('inventory.reservation_ttl_minutes', 30),
+                )),
             ]);
 
             $this->dispatchStockChanged(
@@ -528,7 +534,7 @@ final class InventoryService
             ]);
         }
 
-        $this->assertNotFrozen($warehouseId, $binLocationId);
+        InventoryFreezeGuard::assertNotFrozen($warehouseId, $binLocationId);
 
         return DB::transaction(function () use (
             $warehouseId,
@@ -620,45 +626,6 @@ final class InventoryService
         }
     }
 
-    private function assertNotFrozen(int $warehouseId, ?int $binLocationId = null): void
-    {
-        $zoneId = null;
-
-        if ($binLocationId !== null) {
-            $zoneId = BinLocation::query()
-                ->whereKey($binLocationId)
-                ->value('warehouse_zone_id');
-        }
-
-        $query = CountSession::query()
-            ->where('warehouse_id', $warehouseId)
-            ->where('freeze_mode', true)
-            ->whereIn('status', [
-                CountSessionStatus::InProgress,
-                CountSessionStatus::UnderReview,
-                CountSessionStatus::Approved,
-            ]);
-
-        if ($binLocationId !== null || $zoneId !== null) {
-            $query->where(function ($q) use ($zoneId) {
-                $q->where('scope_type', CountScopeType::Full);
-
-                if ($zoneId !== null) {
-                    $q->orWhere(function ($inner) use ($zoneId) {
-                        $inner->where('scope_type', CountScopeType::Zone)
-                            ->where('scope_id', $zoneId);
-                    });
-                }
-            });
-        }
-
-        if ($query->exists()) {
-            throw ValidationException::withMessages([
-                'warehouse_id' => __('Inventory movements are frozen during an active cycle count.'),
-            ]);
-        }
-    }
-
     private function deductFromInventoryRow(DeductStockData $data, ?int $batchId, int $quantity): Inventory
     {
         return DB::transaction(function () use ($data, $batchId, $quantity) {
@@ -666,6 +633,11 @@ final class InventoryService
                 $data->warehouseId,
                 $data->variantId,
                 $batchId,
+            );
+
+            InventoryFreezeGuard::assertNotFrozen(
+                $data->warehouseId,
+                $inventory->bin_location_id,
             );
 
             $previousOnHand = $inventory->quantity_on_hand;

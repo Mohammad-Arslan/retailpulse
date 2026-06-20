@@ -156,6 +156,25 @@ final class DashboardService
             ->toBase()
             ->count('*');
 
+        $criticalLowStockLines = (int) (clone $inventoryQuery)
+            ->join('product_variants', 'inventories.product_variant_id', '=', 'product_variants.id', 'inner', false)
+            ->join('products', 'product_variants.product_id', '=', 'products.id', 'inner', false)
+            ->join('warehouses', 'inventories.warehouse_id', '=', 'warehouses.id', 'inner', false)
+            ->join('variant_branch_settings', function ($join) {
+                $join->on('variant_branch_settings.product_variant_id', '=', 'inventories.product_variant_id')
+                    ->on('variant_branch_settings.branch_id', '=', 'warehouses.branch_id');
+            })
+            ->whereNotNull('variant_branch_settings.safety_stock_qty')
+            ->whereNotIn('products.type', [
+                ProductType::Service->value,
+                ProductType::Digital->value,
+            ])
+            ->whereRaw(
+                'GREATEST(0, inventories.quantity_on_hand - inventories.quantity_reserved - inventories.quantity_in_quarantine) <= variant_branch_settings.safety_stock_qty',
+            )
+            ->toBase()
+            ->count('*');
+
         $transferQuery = StockTransfer::query()
             ->when($branchId !== null || $accessibleBranchIds !== null, function (Builder $query) use ($branchId, $accessibleBranchIds): void {
                 $query->where(function (Builder $q) use ($branchId, $accessibleBranchIds): void {
@@ -203,6 +222,7 @@ final class DashboardService
             'brands' => (int) Brand::query()->toBase()->count('*'),
             'units_on_hand' => (int) (clone $inventoryQuery)->toBase()->sum('quantity_on_hand'),
             'low_stock_lines' => $lowStockLines,
+            'critical_low_stock_lines' => $criticalLowStockLines,
             'stock_movements_today' => (int) (clone $movementQuery)
                 ->whereDate('created_at', '=', today(), 'and')
                 ->toBase()

@@ -197,9 +197,9 @@ All committed inventory mutations fire `InventoryStockChanged`.
 
 ## Phase 7 Handoff
 
-- Wire POS cart to `InventoryService::reserve`, `::release`, and `::deduct`.
+- ~~Wire POS cart to `InventoryService::reserve`, `::release`, and `::deduct`.~~ **Done** — `PosCartService` reserves on add/update, releases on remove/void; checkout `deduct` consumes reserved qty.
 - Optional: set `import_export_jobs.warehouse_id` in import wizard for branch-scoped jobs.
-- Optional: tenant reservation TTL in Admin → Settings (currently `config/inventory.php`).
+- ~~Optional: tenant reservation TTL in Admin → Settings (currently `config/inventory.php`).~~ **Done** — Admin → Settings → Inventory group (`settings.inventory.update`).
 
 ---
 
@@ -264,9 +264,11 @@ Extend canonical list with: `return_customer`, `return_supplier`, `production_co
 
 ### Acceptance Criteria (v4.0)
 
-1. Bin location CRUD and bin-level inventory rows created on GRN receive. **Met** (bin CRUD + opening stock per bin; GRN receive hook deferred to Phase 10)
+1. Bin location CRUD and bin-level inventory rows created on GRN receive. **Met** (bin CRUD + edit/deactivate UI, bin transfer page, opening stock per bin; GRN receive hook deferred to Phase 10)
 2. Bin transfer moves qty between bins without affecting warehouse total incorrectly. **Met**
 3. Quarantine qty excluded from POS available stock. **Met**
-4. Count session with blind mode hides system qty; posted variances create `cycle_count_adjustment` movements. **Met**
-5. Reorder point breach dispatches `LowStockAlert` event. **Met**
+4. Count session with blind mode hides system qty; posted variances create `cycle_count_adjustment` movements. **Met** (scope dropdowns, variance thresholds, scheduled `freeze_mode`)
+5. Reorder point breach dispatches `LowStockAlert` event. **Met** (branch overrides via Admin → Branch stock settings)
 6. Opening stock import with `bin_code` sets per-bin on-hand quantities. **Met**
+7. Freeze mode blocks deduct, reserve, and bin transfer during active counts. **Met** (`InventoryFreezeGuard`)
+8. POS cart reservations prevent concurrent overselling. **Met** (`PosCartService` + `pos_cart_item` reference type)

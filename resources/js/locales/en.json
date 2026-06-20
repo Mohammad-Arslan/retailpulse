@@ -16,6 +16,8 @@
         "inventory": "Stock levels",
         "stockTransfers": "Transfers",
         "binStock": "Bin stock",
+        "binTransfer": "Bin transfer",
+        "branchStockSettings": "Branch stock settings",
         "quarantine": "Quarantine",
         "cycleCounts": "Cycle counts",
         "countSchedules": "Count schedules",
@@ -64,7 +66,8 @@
         "commandPalette": "Search pages, users, actions...",
         "continue": "Continue",
         "yes": "Yes",
-        "no": "No"
+        "no": "No",
+        "save": "Save"
     },
     "bulk": {
         "selectionBar": "Bulk actions",
@@ -397,6 +400,8 @@
                 "onHand": "On hand",
                 "reserved": "Reserved",
                 "available": "Available",
+                "bin": "Bin",
+                "quarantine": "Quarantine",
                 "systemQty": "System qty",
                 "countedQty": "Counted qty",
                 "variance": "Variance"
@@ -431,6 +436,10 @@
             "noBins": "No bin locations defined yet.",
             "noZone": "No zone",
             "binReportTitle": "Stock by bin",
+            "editZone": "Edit zone",
+            "editBin": "Edit bin",
+            "deactivate": "Deactivate",
+            "activate": "Activate",
             "fields": {
                 "name": "Name",
                 "code": "Code",
@@ -438,8 +447,28 @@
                 "aisle": "Aisle",
                 "shelf": "Shelf",
                 "binCode": "Bin code",
-                "location": "Location"
+                "location": "Location",
+                "capacityLimit": "Capacity limit",
+                "active": "Active"
             }
+        },
+        "binTransfer": {
+            "title": "Bin transfer",
+            "description": "Move stock between bin locations within the same warehouse.",
+            "fromBin": "From bin",
+            "toBin": "To bin",
+            "selectBin": "Select bin…",
+            "submit": "Transfer stock"
+        },
+        "branchStockSettings": {
+            "title": "Branch stock settings",
+            "description": "Per-branch reorder points and safety stock overrides.",
+            "searchPlaceholder": "Search SKU or product…",
+            "selectBranchHint": "Select a branch from the header switcher to manage branch-specific stock settings.",
+            "defaultReorder": "Default reorder",
+            "branchReorder": "Branch reorder",
+            "safetyStock": "Safety stock",
+            "empty": "No matching products."
         },
         "quarantine": {
             "title": "Quarantine stock",
@@ -484,8 +513,11 @@
                 "scope": "Count scope",
                 "scopeId": "Scope ID",
                 "blindCount": "Blind count (hide system qty from counters)",
-                "freezeMode": "Freeze movements in scope until posted"
-            }
+                "freezeMode": "Freeze movements in scope until posted",
+                "varianceThresholdPct": "Variance threshold (%)",
+                "varianceThresholdValue": "Variance threshold (value)"
+            },
+            "selectScope": "Select…"
         },
         "countScheduleRules": {
             "title": "Count schedules",

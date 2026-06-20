@@ -16,6 +16,7 @@ use App\Models\WarehouseZone;
 use App\Repositories\Contracts\BinLocationRepositoryInterface;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
 use App\Repositories\Contracts\StockMovementRepositoryInterface;
+use App\Support\InventoryFreezeGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -119,6 +120,8 @@ final class BinLocationService
                 'warehouse_id' => __('Bins must belong to the same warehouse.'),
             ]);
         }
+
+        InventoryFreezeGuard::assertNotFrozen($data->warehouseId, $fromBin->id);
 
         DB::transaction(function () use ($data, $fromBin, $toBin): void {
             $source = $this->inventories->lockOrCreate(

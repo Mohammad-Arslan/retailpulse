@@ -138,7 +138,7 @@ final class WarehouseBinController extends Controller
         ));
 
         return redirect()
-            ->back()
+            ->route('admin.inventory.bin-transfer.form')
             ->with('success', __('Bin transfer completed successfully.'));
     }
 }

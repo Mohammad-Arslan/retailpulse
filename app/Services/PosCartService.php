@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\DTOs\Inventory\ReserveStockData;
 use App\DTOs\Pos\AddCartItemData;
 use App\DTOs\Pos\UpdateCartItemData;
 use App\Enums\PosCartStatus;
 use App\Models\PosCart;
 use App\Models\PosCartItem;
 use App\Models\ProductVariant;
+use App\Models\StockReservation;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
 use App\Repositories\Contracts\PosCartRepositoryInterface;
@@ -22,9 +24,12 @@ final class PosCartService
 
     private const DISCOUNT_APPROVAL_THRESHOLD = 30.0;
 
+    private const RESERVATION_REFERENCE_TYPE = 'pos_cart_item';
+
     public function __construct(
         private readonly PosCartRepositoryInterface $carts,
         private readonly InventoryRepositoryInterface $inventories,
+        private readonly InventoryService $inventory,
     ) {}
 
     public function createCart(int $cashierId, int $branchId): PosCart
@@ -83,10 +88,11 @@ final class PosCartService
 
         if ($existingItem !== null) {
             $newQuantity = $existingItem->quantity + $data->quantity;
+            $availableForLine = $this->availableForLine($cart, $existingItem, $data->productVariantId);
 
-            if ($newQuantity > $available) {
+            if ($newQuantity > $availableForLine) {
                 throw ValidationException::withMessages([
-                    'quantity' => __('Only :n units available.', ['n' => $available]),
+                    'quantity' => __('Only :n units available.', ['n' => $availableForLine]),
                 ]);
             }
 
@@ -109,7 +115,7 @@ final class PosCartService
         );
 
         return DB::transaction(function () use ($cart, $data, $variant, $unitPrice, $lineTotal) {
-            return $cart->items()->create([
+            $item = $cart->items()->create([
                 'product_id' => $variant->product_id,
                 'product_variant_id' => $variant->id,
                 'sku' => $variant->sku,
@@ -121,6 +127,10 @@ final class PosCartService
                 'line_total' => $lineTotal,
                 'notes' => $data->notes,
             ]);
+
+            $this->reserveForItem($cart, $item, $data->quantity, $variant);
+
+            return $item;
         });
     }
 
@@ -129,6 +139,7 @@ final class PosCartService
         $this->assertCartEditable($cart);
 
         $quantity = $data->quantity ?? $item->quantity;
+        $previousQuantity = $item->quantity;
 
         if ($data->discountProvided) {
             $discountType = $data->discountType;
@@ -143,7 +154,7 @@ final class PosCartService
         }
 
         if ($data->quantity !== null && $data->quantity !== $item->quantity) {
-            $available = $this->availableStock($cart->branch_id, $item->product_variant_id);
+            $available = $this->availableForLine($cart, $item, $item->product_variant_id);
 
             if ($data->quantity > $available) {
                 throw ValidationException::withMessages([
@@ -169,21 +180,42 @@ final class PosCartService
             discountValue: $discountValue,
         );
 
-        $item->update([
-            'quantity' => $quantity,
-            'discount_type' => $discountType,
-            'discount_value' => $discountValue,
-            'line_total' => $lineTotal,
-            'notes' => $data->notes ?? $item->notes,
-        ]);
+        return DB::transaction(function () use (
+            $cart,
+            $item,
+            $quantity,
+            $previousQuantity,
+            $discountType,
+            $discountValue,
+            $lineTotal,
+            $data,
+        ) {
+            $item->update([
+                'quantity' => $quantity,
+                'discount_type' => $discountType,
+                'discount_value' => $discountValue,
+                'line_total' => $lineTotal,
+                'notes' => $data->notes ?? $item->notes,
+            ]);
 
-        return $item->fresh() ?? $item;
+            $item = $item->fresh() ?? $item;
+
+            if ($previousQuantity !== $quantity) {
+                $this->syncItemReservation($cart, $item, $previousQuantity, $quantity);
+            }
+
+            return $item;
+        });
     }
 
     public function removeItem(PosCart $cart, PosCartItem $item): void
     {
         $this->assertCartEditable($cart);
-        $item->delete();
+
+        DB::transaction(function () use ($cart, $item): void {
+            $this->releaseForItem($cart, $item, $this->activeReservationQty($item->id));
+            $item->delete();
+        });
     }
 
     public function suspendCart(PosCart $cart): PosCart
@@ -211,7 +243,7 @@ final class PosCartService
         $cart->load('items');
 
         foreach ($cart->items as $item) {
-            $available = $this->availableStock($cart->branch_id, $item->product_variant_id);
+            $available = $this->availableForLine($cart, $item, $item->product_variant_id);
 
             if ($available <= 0 || $item->quantity > $available) {
                 $item->update(['stock_warning' => true]);
@@ -232,10 +264,14 @@ final class PosCartService
             ]);
         }
 
-        return $this->carts->update($cart, [
-            'status' => PosCartStatus::Voided,
-            'voided_at' => now(),
-        ]);
+        return DB::transaction(function () use ($cart) {
+            $this->releaseAllCartReservations($cart);
+
+            return $this->carts->update($cart, [
+                'status' => PosCartStatus::Voided,
+                'voided_at' => now(),
+            ]);
+        });
     }
 
     public function completeCart(PosCart $cart): PosCart
@@ -310,7 +346,7 @@ final class PosCartService
         $warnings = [];
 
         foreach ($cart->items as $item) {
-            $available = $this->availableStock($cart->branch_id, $item->product_variant_id);
+            $available = $this->availableForLine($cart, $item, $item->product_variant_id);
 
             if ($available <= 0) {
                 $warnings[$item->id] = [
@@ -336,6 +372,106 @@ final class PosCartService
             warehouseId: $this->defaultWarehouseForBranch($branchId),
             variantId: $variantId,
         );
+    }
+
+    private function availableForLine(PosCart $cart, ?PosCartItem $item, int $variantId): int
+    {
+        $available = $this->availableStock($cart->branch_id, $variantId);
+
+        if ($item === null) {
+            return $available;
+        }
+
+        return $available + $this->activeReservationQty($item->id);
+    }
+
+    private function activeReservationQty(int $cartItemId): int
+    {
+        return (int) StockReservation::query()
+            ->whereNull('released_at')
+            ->where('reference_type', self::RESERVATION_REFERENCE_TYPE)
+            ->where('reference_id', $cartItemId)
+            ->sum('quantity');
+    }
+
+    private function reserveForItem(PosCart $cart, PosCartItem $item, int $quantity, ?ProductVariant $variant = null): void
+    {
+        if ($quantity <= 0) {
+            return;
+        }
+
+        $variant ??= ProductVariant::query()->with('product')->find($item->product_variant_id);
+
+        if ($variant === null || ! $this->shouldReserve($variant)) {
+            return;
+        }
+
+        $this->inventory->reserve(new ReserveStockData(
+            warehouseId: $this->defaultWarehouseForBranch($cart->branch_id),
+            variantId: $item->product_variant_id,
+            batchId: null,
+            quantity: $quantity,
+            userId: $cart->cashier_id,
+            referenceType: self::RESERVATION_REFERENCE_TYPE,
+            referenceId: $item->id,
+        ));
+    }
+
+    private function releaseForItem(PosCart $cart, PosCartItem $item, int $quantity): void
+    {
+        if ($quantity <= 0) {
+            return;
+        }
+
+        $variant = ProductVariant::query()->with('product')->find($item->product_variant_id);
+
+        if ($variant === null || ! $this->shouldReserve($variant)) {
+            return;
+        }
+
+        $this->inventory->release(new ReserveStockData(
+            warehouseId: $this->defaultWarehouseForBranch($cart->branch_id),
+            variantId: $item->product_variant_id,
+            batchId: null,
+            quantity: $quantity,
+            userId: $cart->cashier_id,
+            referenceType: self::RESERVATION_REFERENCE_TYPE,
+            referenceId: $item->id,
+        ));
+    }
+
+    private function syncItemReservation(
+        PosCart $cart,
+        PosCartItem $item,
+        int $fromQuantity,
+        int $toQuantity,
+    ): void {
+        if ($fromQuantity === $toQuantity) {
+            return;
+        }
+
+        if ($toQuantity > $fromQuantity) {
+            $variant = ProductVariant::query()->with('product')->find($item->product_variant_id);
+            $this->reserveForItem($cart, $item, $toQuantity - $fromQuantity, $variant);
+
+            return;
+        }
+
+        $this->releaseForItem($cart, $item, $fromQuantity - $toQuantity);
+    }
+
+    private function releaseAllCartReservations(PosCart $cart): void
+    {
+        $cart->load('items');
+
+        foreach ($cart->items as $item) {
+            $this->releaseForItem($cart, $item, $this->activeReservationQty($item->id));
+        }
+    }
+
+    private function shouldReserve(ProductVariant $variant): bool
+    {
+        return $variant->product !== null && $variant->product->tracksInventory();
     }
 
     private function defaultWarehouseForBranch(int $branchId): int

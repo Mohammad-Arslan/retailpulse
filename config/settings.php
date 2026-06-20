@@ -475,6 +475,34 @@ return [
             ],
         ],
 
+        'inventory' => [
+            'label' => 'Inventory',
+            'description' => 'Reservation TTL and default cycle count variance thresholds.',
+            'icon' => 'warehouse',
+            'permission' => 'settings.inventory.update',
+            'fields' => [
+                'reservation_ttl_minutes' => [
+                    'type' => 'integer',
+                    'label' => 'Cart reservation TTL (minutes)',
+                    'description' => 'POS cart holds expire after this many minutes if not checked out.',
+                    'default' => (int) config('inventory.reservation_ttl_minutes', 30),
+                    'rules' => ['required', 'integer', 'min:1', 'max:1440'],
+                ],
+                'count_variance_threshold_pct' => [
+                    'type' => 'string',
+                    'label' => 'Default count variance threshold (%)',
+                    'default' => (string) config('inventory.count_variance_threshold_pct', 5),
+                    'rules' => ['required', 'numeric', 'min:0'],
+                ],
+                'count_variance_threshold_value' => [
+                    'type' => 'string',
+                    'label' => 'Default count variance threshold (value)',
+                    'default' => (string) config('inventory.count_variance_threshold_value', 1000),
+                    'rules' => ['required', 'numeric', 'min:0'],
+                ],
+            ],
+        ],
+
     ],
 
 ];

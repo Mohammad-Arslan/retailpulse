@@ -15,6 +15,7 @@ use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Services\BranchContextService;
 use App\Services\CountScheduleRuleService;
 use App\Support\BranchContext;
+use App\Support\CountScopeOptions;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -56,6 +57,7 @@ final class CountScheduleRuleController extends Controller
                 'day_of_week' => $rule->day_of_week,
                 'day_of_month' => $rule->day_of_month,
                 'blind_count' => $rule->blind_count,
+                'freeze_mode' => $rule->freeze_mode,
                 'is_active' => $rule->is_active,
                 'last_run_at' => $rule->last_run_at?->toIso8601String(),
             ]);
@@ -72,6 +74,8 @@ final class CountScheduleRuleController extends Controller
         $accessibleIds = $this->branchContext->accessibleBranchIds($request->user());
         $branchId = app(BranchContext::class)->branchId;
 
+        $scopeOptions = CountScopeOptions::forRequest($request, $this->branchContext);
+
         return Inertia::render('Admin/CountScheduleRules/Create', [
             'branches' => $this->branches->allActive($accessibleIds)
                 ->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'code' => $b->code])
@@ -79,6 +83,7 @@ final class CountScheduleRuleController extends Controller
                 ->all(),
             'warehouses' => $this->warehouseOptions($request),
             'defaultBranchId' => $branchId,
+            ...$scopeOptions,
         ]);
     }
 
@@ -93,11 +98,12 @@ final class CountScheduleRuleController extends Controller
             ->with('success', __('Count schedule created successfully.'));
     }
 
-    public function edit(CountScheduleRule $countScheduleRule): Response
+    public function edit(Request $request, CountScheduleRule $countScheduleRule): Response
     {
         $this->authorize('update', $countScheduleRule);
 
         $countScheduleRule->load(['warehouse', 'branch']);
+        $scopeOptions = CountScopeOptions::forRequest($request, $this->branchContext);
 
         return Inertia::render('Admin/CountScheduleRules/Edit', [
             'rule' => [
@@ -112,9 +118,11 @@ final class CountScheduleRuleController extends Controller
                 'day_of_week' => $countScheduleRule->day_of_week,
                 'day_of_month' => $countScheduleRule->day_of_month,
                 'blind_count' => $countScheduleRule->blind_count,
+                'freeze_mode' => $countScheduleRule->freeze_mode,
                 'is_active' => $countScheduleRule->is_active,
                 'last_run_at' => $countScheduleRule->last_run_at?->toIso8601String(),
             ],
+            ...$scopeOptions,
         ]);
     }
 

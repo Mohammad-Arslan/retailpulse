@@ -86,6 +86,7 @@ final class PermissionSeeder extends Seeder
             ['name' => 'settings.tax.update', 'description' => 'Update tax calculation settings'],
             ['name' => 'settings.checkout.update', 'description' => 'Update checkout, payment, and invoice settings'],
             ['name' => 'settings.fbr.update', 'description' => 'Update FBR IRIS integration settings'],
+            ['name' => 'settings.inventory.update', 'description' => 'Update inventory reservation and count settings'],
         ],
         'pos' => [
             ['name' => 'pos.access', 'description' => 'Enter and operate the POS screen'],

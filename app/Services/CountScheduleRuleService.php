@@ -25,6 +25,7 @@ final class CountScheduleRuleService
             'day_of_week' => $data->dayOfWeek,
             'day_of_month' => $data->dayOfMonth,
             'blind_count' => $data->blindCount,
+            'freeze_mode' => $data->freezeMode,
             'is_active' => true,
         ]);
     }
@@ -40,6 +41,7 @@ final class CountScheduleRuleService
             'day_of_week' => $data->dayOfWeek,
             'day_of_month' => $data->dayOfMonth,
             'blind_count' => $data->blindCount,
+            'freeze_mode' => $data->freezeMode,
             'is_active' => $data->isActive,
         ]);
 

@@ -29,6 +29,7 @@ final class UpdateCountScheduleRuleRequest extends FormRequest
             'day_of_week' => ['nullable', 'integer', 'min:0', 'max:6'],
             'day_of_month' => ['nullable', 'integer', 'min:1', 'max:31'],
             'blind_count' => ['sometimes', 'boolean'],
+            'freeze_mode' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }

@@ -1,8 +1,11 @@
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
+import CountScopeFields from '@/Components/admin/CountScopeFields';
+import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const dayOptions = [
@@ -15,7 +18,7 @@ const dayOptions = [
     { value: '6', label: 'Saturday' },
 ];
 
-function Create({ branches, warehouses, defaultBranchId }) {
+function Create({ branches, warehouses, defaultBranchId, zonesByWarehouse, categories }) {
     const { t } = useTranslation();
     const { data, setData, post, processing, errors } = useForm({
         branch_id: defaultBranchId ?? branches[0]?.id ?? '',
@@ -26,7 +29,35 @@ function Create({ branches, warehouses, defaultBranchId }) {
         day_of_week: '1',
         day_of_month: '1',
         blind_count: false,
+        freeze_mode: false,
     });
+
+    const branchOptions = useMemo(
+        () =>
+            branches.map((branch) => ({
+                value: String(branch.id),
+                label: branch.name,
+            })),
+        [branches],
+    );
+
+    const warehouseOptions = useMemo(
+        () =>
+            warehouses.map((warehouse) => ({
+                value: String(warehouse.id),
+                label: `${warehouse.name} (${warehouse.code})`,
+            })),
+        [warehouses],
+    );
+
+    const frequencyOptions = useMemo(
+        () => [
+            { value: 'daily', label: t('pages.countScheduleRules.frequency.daily') },
+            { value: 'weekly', label: t('pages.countScheduleRules.frequency.weekly') },
+            { value: 'monthly', label: t('pages.countScheduleRules.frequency.monthly') },
+        ],
+        [t],
+    );
 
     const submit = (e) => {
         e.preventDefault();
@@ -44,86 +75,52 @@ function Create({ branches, warehouses, defaultBranchId }) {
             <form onSubmit={submit} className="max-w-2xl space-y-5">
                 <FormCard>
                     <AdminFormField label={t('common.branch')} error={errors.branch_id}>
-                        <select
-                            className="rp-form-input w-full"
-                            value={data.branch_id}
-                            onChange={(e) => setData('branch_id', e.target.value)}
+                        <Select
+                            options={branchOptions}
+                            value={String(data.branch_id)}
+                            onChange={(value) => setData('branch_id', value)}
                             required
-                        >
-                            {branches.map((b) => (
-                                <option key={b.id} value={b.id}>
-                                    {b.name}
-                                </option>
-                            ))}
-                        </select>
+                        />
                     </AdminFormField>
                     <AdminFormField
                         label={t('pages.inventory.columns.warehouse')}
                         error={errors.warehouse_id}
                     >
-                        <select
-                            className="rp-form-input w-full"
-                            value={data.warehouse_id}
-                            onChange={(e) => setData('warehouse_id', e.target.value)}
+                        <Select
+                            options={warehouseOptions}
+                            value={String(data.warehouse_id)}
+                            onChange={(value) => {
+                                setData('warehouse_id', value);
+                                setData('scope_id', '');
+                            }}
                             required
-                        >
-                            {warehouses.map((w) => (
-                                <option key={w.id} value={w.id}>
-                                    {w.name} ({w.code})
-                                </option>
-                            ))}
-                        </select>
+                        />
                     </AdminFormField>
-                    <AdminFormField label={t('pages.countSessions.fields.scope')} error={errors.scope_type}>
-                        <select
-                            className="rp-form-input w-full"
-                            value={data.scope_type}
-                            onChange={(e) => setData('scope_type', e.target.value)}
-                        >
-                            <option value="full">{t('pages.countSessions.scope.full')}</option>
-                            <option value="zone">{t('pages.countSessions.scope.zone')}</option>
-                            <option value="category">{t('pages.countSessions.scope.category')}</option>
-                        </select>
-                    </AdminFormField>
-                    {data.scope_type !== 'full' && (
-                        <AdminFormField
-                            label={t('pages.countSessions.fields.scopeId')}
-                            error={errors.scope_id}
-                        >
-                            <input
-                                type="number"
-                                className="rp-form-input w-full"
-                                value={data.scope_id}
-                                onChange={(e) => setData('scope_id', e.target.value)}
-                                required
-                            />
-                        </AdminFormField>
-                    )}
+                    <CountScopeFields
+                        data={data}
+                        setData={setData}
+                        errors={errors}
+                        zonesByWarehouse={zonesByWarehouse}
+                        categories={categories}
+                        t={t}
+                    />
                     <AdminFormField label={t('pages.countScheduleRules.fields.frequency')} error={errors.frequency}>
-                        <select
-                            className="rp-form-input w-full"
+                        <Select
+                            options={frequencyOptions}
                             value={data.frequency}
-                            onChange={(e) => setData('frequency', e.target.value)}
-                        >
-                            <option value="daily">{t('pages.countScheduleRules.frequency.daily')}</option>
-                            <option value="weekly">{t('pages.countScheduleRules.frequency.weekly')}</option>
-                            <option value="monthly">{t('pages.countScheduleRules.frequency.monthly')}</option>
-                        </select>
+                            onChange={(value) => setData('frequency', value ?? 'weekly')}
+                            isSearchable={false}
+                        />
                     </AdminFormField>
                     {data.frequency === 'weekly' && (
                         <AdminFormField label={t('pages.countScheduleRules.fields.dayOfWeek')} error={errors.day_of_week}>
-                            <select
-                                className="rp-form-input w-full"
+                            <Select
+                                options={dayOptions}
                                 value={data.day_of_week}
-                                onChange={(e) => setData('day_of_week', e.target.value)}
+                                onChange={(value) => setData('day_of_week', value ?? '1')}
+                                isSearchable={false}
                                 required
-                            >
-                                {dayOptions.map((d) => (
-                                    <option key={d.value} value={d.value}>
-                                        {d.label}
-                                    </option>
-                                ))}
-                            </select>
+                            />
                         </AdminFormField>
                     )}
                     {data.frequency === 'monthly' && (
@@ -149,6 +146,14 @@ function Create({ branches, warehouses, defaultBranchId }) {
                             onChange={(e) => setData('blind_count', e.target.checked)}
                         />
                         {t('pages.countSessions.fields.blindCount')}
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                        <input
+                            type="checkbox"
+                            checked={data.freeze_mode}
+                            onChange={(e) => setData('freeze_mode', e.target.checked)}
+                        />
+                        {t('pages.countSessions.fields.freezeMode')}
                     </label>
                 </FormCard>
                 <button type="submit" disabled={processing} className="rp-btn-primary">
