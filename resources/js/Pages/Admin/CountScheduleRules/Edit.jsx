@@ -1,9 +1,12 @@
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
+import CountScopeFields from '@/Components/admin/CountScopeFields';
+import Select from '@/Components/ui/select';
 import { useCan } from '@/Hooks/useCan';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const dayOptions = [
@@ -16,18 +19,29 @@ const dayOptions = [
     { value: '6', label: 'Saturday' },
 ];
 
-export default function Edit({ rule }) {
+export default function Edit({ rule, zonesByWarehouse, categories }) {
     const can = useCan();
     const { t } = useTranslation();
     const { data, setData, put, processing, errors } = useForm({
+        warehouse_id: rule.warehouse_id,
         scope_type: rule.scope_type,
         scope_id: rule.scope_id ?? '',
         frequency: rule.frequency,
         day_of_week: rule.day_of_week !== null ? String(rule.day_of_week) : '1',
         day_of_month: rule.day_of_month !== null ? String(rule.day_of_month) : '1',
         blind_count: rule.blind_count,
+        freeze_mode: rule.freeze_mode,
         is_active: rule.is_active,
     });
+
+    const frequencyOptions = useMemo(
+        () => [
+            { value: 'daily', label: t('pages.countScheduleRules.frequency.daily') },
+            { value: 'weekly', label: t('pages.countScheduleRules.frequency.weekly') },
+            { value: 'monthly', label: t('pages.countScheduleRules.frequency.monthly') },
+        ],
+        [t],
+    );
 
     const submit = (e) => {
         e.preventDefault();
@@ -61,56 +75,31 @@ export default function Edit({ rule }) {
 
             <form onSubmit={submit} className="max-w-2xl space-y-5">
                 <FormCard>
-                    <AdminFormField label={t('pages.countSessions.fields.scope')} error={errors.scope_type}>
-                        <select
-                            className="rp-form-input w-full"
-                            value={data.scope_type}
-                            onChange={(e) => setData('scope_type', e.target.value)}
-                        >
-                            <option value="full">{t('pages.countSessions.scope.full')}</option>
-                            <option value="zone">{t('pages.countSessions.scope.zone')}</option>
-                            <option value="category">{t('pages.countSessions.scope.category')}</option>
-                        </select>
-                    </AdminFormField>
-                    {data.scope_type !== 'full' && (
-                        <AdminFormField
-                            label={t('pages.countSessions.fields.scopeId')}
-                            error={errors.scope_id}
-                        >
-                            <input
-                                type="number"
-                                className="rp-form-input w-full"
-                                value={data.scope_id}
-                                onChange={(e) => setData('scope_id', e.target.value)}
-                                required
-                            />
-                        </AdminFormField>
-                    )}
+                    <CountScopeFields
+                        data={data}
+                        setData={setData}
+                        errors={errors}
+                        zonesByWarehouse={zonesByWarehouse}
+                        categories={categories}
+                        t={t}
+                    />
                     <AdminFormField label={t('pages.countScheduleRules.fields.frequency')} error={errors.frequency}>
-                        <select
-                            className="rp-form-input w-full"
+                        <Select
+                            options={frequencyOptions}
                             value={data.frequency}
-                            onChange={(e) => setData('frequency', e.target.value)}
-                        >
-                            <option value="daily">{t('pages.countScheduleRules.frequency.daily')}</option>
-                            <option value="weekly">{t('pages.countScheduleRules.frequency.weekly')}</option>
-                            <option value="monthly">{t('pages.countScheduleRules.frequency.monthly')}</option>
-                        </select>
+                            onChange={(value) => setData('frequency', value ?? 'weekly')}
+                            isSearchable={false}
+                        />
                     </AdminFormField>
                     {data.frequency === 'weekly' && (
                         <AdminFormField label={t('pages.countScheduleRules.fields.dayOfWeek')} error={errors.day_of_week}>
-                            <select
-                                className="rp-form-input w-full"
+                            <Select
+                                options={dayOptions}
                                 value={data.day_of_week}
-                                onChange={(e) => setData('day_of_week', e.target.value)}
+                                onChange={(value) => setData('day_of_week', value ?? '1')}
+                                isSearchable={false}
                                 required
-                            >
-                                {dayOptions.map((d) => (
-                                    <option key={d.value} value={d.value}>
-                                        {d.label}
-                                    </option>
-                                ))}
-                            </select>
+                            />
                         </AdminFormField>
                     )}
                     {data.frequency === 'monthly' && (
@@ -136,6 +125,14 @@ export default function Edit({ rule }) {
                             onChange={(e) => setData('blind_count', e.target.checked)}
                         />
                         {t('pages.countSessions.fields.blindCount')}
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                        <input
+                            type="checkbox"
+                            checked={data.freeze_mode}
+                            onChange={(e) => setData('freeze_mode', e.target.checked)}
+                        />
+                        {t('pages.countSessions.fields.freezeMode')}
                     </label>
                     <label className="flex items-center gap-2 text-sm">
                         <input

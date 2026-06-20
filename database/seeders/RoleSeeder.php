@@ -67,6 +67,7 @@ final class RoleSeeder extends Seeder
                 'settings.tax.update',
                 'settings.checkout.update',
                 'settings.fbr.update',
+                'settings.inventory.update',
                 'pos.access',
                 'pos.discount',
                 'pos.approve-discount',

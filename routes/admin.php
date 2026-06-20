@@ -60,8 +60,6 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             ->name('warehouses.bins.store');
         Route::put('warehouses/{warehouse}/bins/{bin}', [WarehouseBinController::class, 'updateBin'])
             ->name('warehouses.bins.update');
-        Route::post('inventory/bin-transfer', [WarehouseBinController::class, 'transfer'])
-            ->name('inventory.bin-transfer');
         Route::resource('categories', CategoryController::class)->except(['show']);
         Route::resource('brands', BrandController::class)->except(['show']);
         Route::resource('units', UnitController::class)->except(['show']);
@@ -81,6 +79,12 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::get('inventory/receive', [InventoryController::class, 'receiveForm'])->name('inventory.receive');
         Route::post('inventory/receive', [InventoryController::class, 'receive'])->name('inventory.receive.store');
         Route::get('inventory/bin-report', [InventoryController::class, 'binReport'])->name('inventory.bin-report');
+        Route::get('inventory/bin-transfer', [InventoryController::class, 'binTransferForm'])->name('inventory.bin-transfer.form');
+        Route::post('inventory/bin-transfer', [WarehouseBinController::class, 'transfer'])->name('inventory.bin-transfer');
+        Route::get('inventory/branch-stock-settings', [InventoryController::class, 'branchStockSettings'])
+            ->name('inventory.branch-stock-settings');
+        Route::put('inventory/branch-stock-settings', [InventoryController::class, 'updateBranchStockSettings'])
+            ->name('inventory.branch-stock-settings.update');
         Route::get('inventory/quarantine', [InventoryController::class, 'quarantineIndex'])->name('inventory.quarantine');
         Route::post('inventory/quarantine/release', [InventoryController::class, 'releaseQuarantine'])
             ->name('inventory.quarantine.release');

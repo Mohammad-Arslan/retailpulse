@@ -32,13 +32,24 @@ final readonly class CreateCountSessionData
             scopeId: isset($validated['scope_id']) ? (int) $validated['scope_id'] : null,
             blindCount: (bool) ($validated['blind_count'] ?? false),
             freezeMode: (bool) ($validated['freeze_mode'] ?? false),
-            varianceThresholdPct: isset($validated['variance_threshold_pct'])
-                ? (float) $validated['variance_threshold_pct']
-                : null,
-            varianceThresholdValue: isset($validated['variance_threshold_value'])
-                ? (float) $validated['variance_threshold_value']
-                : null,
+            varianceThresholdPct: self::resolveThreshold(
+                $validated['variance_threshold_pct'] ?? null,
+                (float) config('inventory.count_variance_threshold_pct', 5),
+            ),
+            varianceThresholdValue: self::resolveThreshold(
+                $validated['variance_threshold_value'] ?? null,
+                (float) config('inventory.count_variance_threshold_value', 1000),
+            ),
             userId: (int) $request->user()->id,
         );
+    }
+
+    private static function resolveThreshold(mixed $value, float $default): float
+    {
+        if ($value === null || $value === '') {
+            return $default;
+        }
+
+        return (float) $value;
     }
 }

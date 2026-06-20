@@ -16,6 +16,7 @@ use App\Repositories\Contracts\CountSessionRepositoryInterface;
 use App\Services\BranchContextService;
 use App\Services\CountSessionService;
 use App\Support\BranchContext;
+use App\Support\CountScopeOptions;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -68,6 +69,8 @@ final class CountSessionController extends Controller
         $accessibleIds = $this->branchContext->accessibleBranchIds($request->user());
         $branchId = app(BranchContext::class)->branchId;
 
+        $scopeOptions = CountScopeOptions::forRequest($request, $this->branchContext);
+
         return Inertia::render('Admin/CountSessions/Create', [
             'branches' => $this->branches->allActive($accessibleIds)
                 ->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'code' => $b->code])
@@ -75,6 +78,7 @@ final class CountSessionController extends Controller
                 ->all(),
             'warehouses' => $this->warehouseOptions($request),
             'defaultBranchId' => $branchId,
+            ...$scopeOptions,
         ]);
     }
 

@@ -35,7 +35,7 @@ final class CreateScheduledCountSessionsJob implements ShouldQueue
                     'scope_id' => $rule->scope_id,
                     'status' => CountSessionStatus::Draft,
                     'blind_count' => $rule->blind_count,
-                    'freeze_mode' => false,
+                    'freeze_mode' => $rule->freeze_mode,
                     'created_by' => null,
                 ]);
 

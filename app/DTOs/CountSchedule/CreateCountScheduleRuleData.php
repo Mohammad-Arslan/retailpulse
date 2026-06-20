@@ -19,6 +19,7 @@ final readonly class CreateCountScheduleRuleData
         public ?int $dayOfWeek,
         public ?int $dayOfMonth,
         public bool $blindCount,
+        public bool $freezeMode,
     ) {}
 
     public static function fromRequest(StoreCountScheduleRuleRequest $request): self
@@ -34,6 +35,7 @@ final readonly class CreateCountScheduleRuleData
             dayOfWeek: isset($validated['day_of_week']) ? (int) $validated['day_of_week'] : null,
             dayOfMonth: isset($validated['day_of_month']) ? (int) $validated['day_of_month'] : null,
             blindCount: (bool) ($validated['blind_count'] ?? false),
+            freezeMode: (bool) ($validated['freeze_mode'] ?? false),
         );
     }
 }

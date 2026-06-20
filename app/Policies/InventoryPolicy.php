@@ -32,4 +32,14 @@ final class InventoryPolicy
     {
         return $user->can('inventory.reports');
     }
+
+    public function binTransfer(User $user): bool
+    {
+        return $user->can('inventory.manage-bins');
+    }
+
+    public function branchStockSettings(User $user): bool
+    {
+        return $user->can('inventory.adjust');
+    }
 }

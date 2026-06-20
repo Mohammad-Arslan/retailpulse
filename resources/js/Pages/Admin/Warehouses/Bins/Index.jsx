@@ -1,15 +1,203 @@
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
+import Select from '@/Components/ui/select';
 import { useCan } from '@/Hooks/useCan';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+function buildZoneOptions(zones, noZoneLabel) {
+    return [
+        { value: '', label: noZoneLabel },
+        ...zones.map((zone) => ({
+            value: String(zone.id),
+            label: zone.name,
+        })),
+    ];
+}
+
+function ZoneRow({ warehouse, zone, canEdit, t }) {
+    const [editing, setEditing] = useState(false);
+    const form = useForm({
+        name: zone.name,
+        code: zone.code,
+        is_active: zone.is_active,
+    });
+
+    const save = (e) => {
+        e.preventDefault();
+        form.put(route('admin.warehouses.zones.update', [warehouse.id, zone.id]), {
+            onSuccess: () => setEditing(false),
+        });
+    };
+
+    if (editing) {
+        return (
+            <li className="rounded-lg border border-rp-border px-3 py-3 text-sm">
+                <form onSubmit={save} className="space-y-2">
+                    <input
+                        className="rp-form-input w-full"
+                        value={form.data.name}
+                        onChange={(e) => form.setData('name', e.target.value)}
+                        required
+                    />
+                    <input
+                        className="rp-form-input w-full font-mono uppercase"
+                        value={form.data.code}
+                        onChange={(e) => form.setData('code', e.target.value)}
+                        required
+                    />
+                    <label className="flex items-center gap-2 text-xs">
+                        <input
+                            type="checkbox"
+                            checked={form.data.is_active}
+                            onChange={(e) => form.setData('is_active', e.target.checked)}
+                        />
+                        {t('pages.bins.fields.active')}
+                    </label>
+                    <div className="flex gap-2">
+                        <button type="submit" disabled={form.processing} className="rp-btn-primary text-xs">
+                            {t('common.save')}
+                        </button>
+                        <button type="button" onClick={() => setEditing(false)} className="rp-btn-outline text-xs">
+                            {t('confirm.cancel')}
+                        </button>
+                    </div>
+                </form>
+            </li>
+        );
+    }
+
+    return (
+        <li className="flex items-center justify-between rounded-lg border border-rp-border px-3 py-2 text-sm">
+            <span>
+                {zone.name} <span className="font-mono text-rp-text-muted">({zone.code})</span>
+            </span>
+            <div className="flex items-center gap-2">
+                {!zone.is_active && (
+                    <span className="text-xs text-rp-text-muted">{t('pages.warehouses.inactive')}</span>
+                )}
+                {canEdit && (
+                    <button type="button" onClick={() => setEditing(true)} className="rp-btn-outline text-xs">
+                        {t('pages.bins.editZone')}
+                    </button>
+                )}
+            </div>
+        </li>
+    );
+}
+
+function BinRow({ warehouse, bin, zones, canEdit, t }) {
+    const [editing, setEditing] = useState(false);
+    const form = useForm({
+        warehouse_zone_id: bin.warehouse_zone_id ?? '',
+        aisle: bin.aisle ?? '',
+        shelf: bin.shelf ?? '',
+        bin_code: bin.bin_code,
+        capacity_limit: bin.capacity_limit ?? '',
+        is_active: bin.is_active,
+    });
+
+    const zoneOptions = useMemo(
+        () => buildZoneOptions(zones, t('pages.bins.noZone')),
+        [zones, t],
+    );
+
+    const save = (e) => {
+        e.preventDefault();
+        form.put(route('admin.warehouses.bins.update', [warehouse.id, bin.id]), {
+            onSuccess: () => setEditing(false),
+        });
+    };
+
+    if (editing) {
+        return (
+            <tr className="border-b border-rp-border/50 bg-rp-surface-muted/40">
+                <td colSpan={4} className="px-3 py-3">
+                    <form onSubmit={save} className="grid gap-2 sm:grid-cols-2">
+                        <Select
+                            options={zoneOptions}
+                            value={form.data.warehouse_zone_id ? String(form.data.warehouse_zone_id) : ''}
+                            onChange={(value) => form.setData('warehouse_zone_id', value ?? '')}
+                            placeholder={t('pages.bins.noZone')}
+                        />
+                        <input
+                            className="rp-form-input w-full font-mono uppercase"
+                            value={form.data.bin_code}
+                            onChange={(e) => form.setData('bin_code', e.target.value)}
+                            required
+                        />
+                        <input
+                            className="rp-form-input w-full"
+                            placeholder={t('pages.bins.fields.aisle')}
+                            value={form.data.aisle}
+                            onChange={(e) => form.setData('aisle', e.target.value)}
+                        />
+                        <input
+                            className="rp-form-input w-full"
+                            placeholder={t('pages.bins.fields.shelf')}
+                            value={form.data.shelf}
+                            onChange={(e) => form.setData('shelf', e.target.value)}
+                        />
+                        <input
+                            type="number"
+                            min="0"
+                            className="rp-form-input w-full"
+                            placeholder={t('pages.bins.fields.capacityLimit')}
+                            value={form.data.capacity_limit}
+                            onChange={(e) => form.setData('capacity_limit', e.target.value)}
+                        />
+                        <label className="flex items-center gap-2 text-xs">
+                            <input
+                                type="checkbox"
+                                checked={form.data.is_active}
+                                onChange={(e) => form.setData('is_active', e.target.checked)}
+                            />
+                            {t('pages.bins.fields.active')}
+                        </label>
+                        <div className="flex gap-2 sm:col-span-2">
+                            <button type="submit" disabled={form.processing} className="rp-btn-primary text-xs">
+                                {t('common.save')}
+                            </button>
+                            <button type="button" onClick={() => setEditing(false)} className="rp-btn-outline text-xs">
+                                {t('confirm.cancel')}
+                            </button>
+                        </div>
+                    </form>
+                </td>
+            </tr>
+        );
+    }
+
+    return (
+        <tr className="border-b border-rp-border/50">
+            <td className="py-2 font-mono">
+                {bin.bin_code}
+                {!bin.is_active && (
+                    <span className="ml-2 text-xs text-rp-text-muted">{t('pages.warehouses.inactive')}</span>
+                )}
+            </td>
+            <td className="py-2">{bin.zone_name ?? '—'}</td>
+            <td className="py-2 text-rp-text-muted">
+                {[bin.aisle, bin.shelf].filter(Boolean).join('-') || '—'}
+            </td>
+            <td className="py-2 text-right">
+                {canEdit && (
+                    <button type="button" onClick={() => setEditing(true)} className="rp-btn-outline text-xs">
+                        {t('pages.bins.editBin')}
+                    </button>
+                )}
+            </td>
+        </tr>
+    );
+}
 
 export default function BinsIndex({ warehouse, zones, bins }) {
     const can = useCan();
     const { t } = useTranslation();
+    const canEdit = can('inventory.manage-bins');
     const [showZoneForm, setShowZoneForm] = useState(false);
     const [showBinForm, setShowBinForm] = useState(false);
 
@@ -22,6 +210,11 @@ export default function BinsIndex({ warehouse, zones, bins }) {
         bin_code: '',
         capacity_limit: '',
     });
+
+    const zoneOptions = useMemo(
+        () => buildZoneOptions(zones, t('pages.bins.noZone')),
+        [zones, t],
+    );
 
     const submitZone = (e) => {
         e.preventDefault();
@@ -57,7 +250,7 @@ export default function BinsIndex({ warehouse, zones, bins }) {
 
             <div className="grid gap-6 lg:grid-cols-2">
                 <FormCard title={t('pages.bins.zones')}>
-                    {can('inventory.manage-bins') && (
+                    {canEdit && (
                         <button
                             type="button"
                             onClick={() => setShowZoneForm((v) => !v)}
@@ -91,18 +284,13 @@ export default function BinsIndex({ warehouse, zones, bins }) {
                     )}
                     <ul className="space-y-2">
                         {zones.map((zone) => (
-                            <li
+                            <ZoneRow
                                 key={zone.id}
-                                className="flex items-center justify-between rounded-lg border border-rp-border px-3 py-2 text-sm"
-                            >
-                                <span>
-                                    {zone.name}{' '}
-                                    <span className="font-mono text-rp-text-muted">({zone.code})</span>
-                                </span>
-                                {!zone.is_active && (
-                                    <span className="text-xs text-rp-text-muted">{t('pages.warehouses.inactive')}</span>
-                                )}
-                            </li>
+                                warehouse={warehouse}
+                                zone={zone}
+                                canEdit={canEdit}
+                                t={t}
+                            />
                         ))}
                         {zones.length === 0 && (
                             <p className="text-sm text-rp-text-muted">{t('pages.bins.noZones')}</p>
@@ -111,7 +299,7 @@ export default function BinsIndex({ warehouse, zones, bins }) {
                 </FormCard>
 
                 <FormCard title={t('pages.bins.binLocations')}>
-                    {can('inventory.manage-bins') && (
+                    {canEdit && (
                         <button
                             type="button"
                             onClick={() => setShowBinForm((v) => !v)}
@@ -123,18 +311,12 @@ export default function BinsIndex({ warehouse, zones, bins }) {
                     {showBinForm && (
                         <form onSubmit={submitBin} className="mb-4 space-y-3 border-b border-rp-border pb-4">
                             <AdminFormField label={t('pages.bins.fields.zone')} error={binForm.errors.warehouse_zone_id}>
-                                <select
-                                    className="rp-form-input w-full"
-                                    value={binForm.data.warehouse_zone_id}
-                                    onChange={(e) => binForm.setData('warehouse_zone_id', e.target.value)}
-                                >
-                                    <option value="">{t('pages.bins.noZone')}</option>
-                                    {zones.map((z) => (
-                                        <option key={z.id} value={z.id}>
-                                            {z.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                <Select
+                                    options={zoneOptions}
+                                    value={binForm.data.warehouse_zone_id ? String(binForm.data.warehouse_zone_id) : ''}
+                                    onChange={(value) => binForm.setData('warehouse_zone_id', value ?? '')}
+                                    placeholder={t('pages.bins.noZone')}
+                                />
                             </AdminFormField>
                             <div className="grid grid-cols-3 gap-2">
                                 <AdminFormField label={t('pages.bins.fields.aisle')} error={binForm.errors.aisle}>
@@ -172,17 +354,19 @@ export default function BinsIndex({ warehouse, zones, bins }) {
                                     <th className="py-2">{t('pages.bins.fields.binCode')}</th>
                                     <th className="py-2">{t('pages.bins.fields.zone')}</th>
                                     <th className="py-2">{t('pages.bins.fields.location')}</th>
+                                    <th className="py-2" />
                                 </tr>
                             </thead>
                             <tbody>
                                 {bins.map((bin) => (
-                                    <tr key={bin.id} className="border-b border-rp-border/50">
-                                        <td className="py-2 font-mono">{bin.bin_code}</td>
-                                        <td className="py-2">{bin.zone_name ?? '—'}</td>
-                                        <td className="py-2 text-rp-text-muted">
-                                            {[bin.aisle, bin.shelf].filter(Boolean).join('-') || '—'}
-                                        </td>
-                                    </tr>
+                                    <BinRow
+                                        key={bin.id}
+                                        warehouse={warehouse}
+                                        bin={bin}
+                                        zones={zones}
+                                        canEdit={canEdit}
+                                        t={t}
+                                    />
                                 ))}
                             </tbody>
                         </table>

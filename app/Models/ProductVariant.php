@@ -87,6 +87,11 @@ class ProductVariant extends Model
         return $this->hasMany(BranchProductPrice::class);
     }
 
+    public function branchSettings(): HasMany
+    {
+        return $this->hasMany(VariantBranchSetting::class);
+    }
+
     public function displayName(): string
     {
         if ($this->name) {

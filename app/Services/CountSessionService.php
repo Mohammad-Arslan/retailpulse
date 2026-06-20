@@ -13,6 +13,7 @@ use App\Models\CountSession;
 use App\Models\CountSessionLine;
 use App\Models\Inventory;
 use App\Repositories\Contracts\CountSessionRepositoryInterface;
+use App\Support\InventoryFreezeGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -160,29 +161,7 @@ final class CountSessionService
 
     public function isFrozen(int $warehouseId, ?int $binLocationId = null, ?int $zoneId = null): bool
     {
-        $query = CountSession::query()
-            ->where('warehouse_id', $warehouseId)
-            ->where('freeze_mode', true)
-            ->whereIn('status', [
-                CountSessionStatus::InProgress,
-                CountSessionStatus::UnderReview,
-                CountSessionStatus::Approved,
-            ]);
-
-        if ($binLocationId !== null || $zoneId !== null) {
-            $query->where(function ($q) use ($zoneId) {
-                $q->where('scope_type', CountScopeType::Full);
-
-                if ($zoneId !== null) {
-                    $q->orWhere(function ($inner) use ($zoneId) {
-                        $inner->where('scope_type', CountScopeType::Zone)
-                            ->where('scope_id', $zoneId);
-                    });
-                }
-            });
-        }
-
-        return $query->exists();
+        return InventoryFreezeGuard::isFrozen($warehouseId, $binLocationId, $zoneId);
     }
 
     private function generateLines(CountSession $session): void

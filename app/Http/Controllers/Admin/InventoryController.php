@@ -12,11 +12,13 @@ use App\Http\Requests\Admin\QuarantineActionRequest;
 use App\Http\Requests\Admin\ReceiveStockRequest;
 use App\Models\BinLocation;
 use App\Models\Inventory;
+use App\Models\ProductVariant;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
 use App\Services\BranchContextService;
 use App\Services\InventoryService;
 use App\Services\QuarantineService;
+use App\Services\VariantBranchSettingService;
 use App\Support\BranchContext;
 use App\Support\InventoryPresenter;
 use App\Support\ListPagination;
@@ -154,6 +156,107 @@ final class InventoryController extends Controller
             'filters' => $filters,
             'warehouses' => $this->warehouseOptions($request),
         ]);
+    }
+
+    public function binTransferForm(Request $request): Response
+    {
+        $this->authorize('binTransfer', Inventory::class);
+
+        $warehouses = $this->warehouseOptions($request);
+        $warehouseIds = array_column($warehouses, 'id');
+
+        $binsByWarehouse = BinLocation::query()
+            ->whereIn('warehouse_id', $warehouseIds)
+            ->where('is_active', true)
+            ->orderBy('bin_code')
+            ->get(['id', 'warehouse_id', 'bin_code', 'aisle', 'shelf'])
+            ->groupBy('warehouse_id')
+            ->map(fn ($bins) => $bins->map(fn (BinLocation $bin) => [
+                'id' => $bin->id,
+                'bin_code' => $bin->bin_code,
+                'label' => trim($bin->bin_code.($bin->aisle ? " · {$bin->aisle}" : '')),
+            ])->values()->all())
+            ->all();
+
+        return Inertia::render('Admin/Inventory/BinTransfer', [
+            'warehouses' => $warehouses,
+            'binsByWarehouse' => $binsByWarehouse,
+        ]);
+    }
+
+    public function branchStockSettings(Request $request): Response
+    {
+        $this->authorize('branchStockSettings', Inventory::class);
+
+        $branchId = app(BranchContext::class)->branchId;
+        $accessibleIds = $this->branchContext->accessibleBranchIds($request->user());
+        $search = trim((string) $request->query('search', ''));
+
+        $variants = ProductVariant::query()
+            ->with(['product', 'branchSettings' => fn ($q) => $q->when(
+                $branchId !== null,
+                fn ($inner) => $inner->where('branch_id', $branchId),
+            )])
+            ->whereHas('product', fn ($q) => $q->where('is_active', true))
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($inner) use ($search) {
+                    $inner->where('sku', 'like', "%{$search}%")
+                        ->orWhereHas('product', fn ($p) => $p->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->orderBy('sku')
+            ->limit(100)
+            ->get()
+            ->map(function (ProductVariant $variant) use ($branchId) {
+                $setting = $branchId !== null
+                    ? $variant->branchSettings->firstWhere('branch_id', $branchId)
+                    : null;
+
+                return [
+                    'id' => $variant->id,
+                    'sku' => $variant->sku,
+                    'name' => $variant->displayName(),
+                    'product_name' => $variant->product?->name,
+                    'default_reorder_point' => $variant->reorder_point,
+                    'reorder_point' => $setting?->reorder_point,
+                    'safety_stock_qty' => $setting?->safety_stock_qty,
+                ];
+            })
+            ->values()
+            ->all();
+
+        return Inertia::render('Admin/Inventory/BranchStockSettings', [
+            'variants' => $variants,
+            'filters' => ['search' => $search],
+            'branchId' => $branchId,
+        ]);
+    }
+
+    public function updateBranchStockSettings(Request $request): RedirectResponse
+    {
+        $this->authorize('branchStockSettings', Inventory::class);
+
+        $validated = $request->validate([
+            'branch_id' => ['required', 'integer', 'exists:branches,id'],
+            'product_variant_id' => ['required', 'integer', 'exists:product_variants,id'],
+            'reorder_point' => ['nullable', 'integer', 'min:0'],
+            'safety_stock_qty' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        app(VariantBranchSettingService::class)->upsert(
+            branchId: (int) $validated['branch_id'],
+            variantId: (int) $validated['product_variant_id'],
+            reorderPoint: array_key_exists('reorder_point', $validated) && $validated['reorder_point'] !== ''
+                ? (int) $validated['reorder_point']
+                : null,
+            safetyStockQty: array_key_exists('safety_stock_qty', $validated) && $validated['safety_stock_qty'] !== ''
+                ? (int) $validated['safety_stock_qty']
+                : null,
+        );
+
+        return redirect()
+            ->back()
+            ->with('success', __('Branch stock settings saved.'));
     }
 
     public function quarantineIndex(Request $request): Response

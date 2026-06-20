@@ -87,6 +87,20 @@ function Index({ inventory, filters, warehouses }) {
                 accessorKey: 'quantity_available',
                 header: t('pages.inventory.columns.available'),
             },
+            {
+                id: 'bin',
+                header: t('pages.inventory.columns.bin'),
+                cell: ({ row }) => (
+                    <span className="font-mono text-xs">
+                        {row.original.bin?.bin_code ?? '—'}
+                    </span>
+                ),
+            },
+            {
+                id: 'quarantine',
+                header: t('pages.inventory.columns.quarantine'),
+                cell: ({ row }) => row.original.quantity_in_quarantine ?? 0,
+            },
         ],
         [t],
     );

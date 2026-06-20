@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'day_of_week',
     'day_of_month',
     'blind_count',
+    'freeze_mode',
     'is_active',
     'last_run_at',
 ])]
@@ -30,6 +31,7 @@ class CountScheduleRule extends Model
             'scope_type' => CountScopeType::class,
             'frequency' => CountScheduleFrequency::class,
             'blind_count' => 'boolean',
+            'freeze_mode' => 'boolean',
             'is_active' => 'boolean',
             'last_run_at' => 'datetime',
         ];
