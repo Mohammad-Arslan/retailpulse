@@ -31,3 +31,10 @@ export const saleApi = {
     generatePdf: (id) => post(r('api.v1.sales.invoice.pdf', { id })),
     share: (id, method) => post(r('api.v1.sales.invoice.share', { id }), { method }),
 };
+
+export const customerApi = {
+    search: (q) => get(r('api.v1.customers.search'), { q }),
+    profile: (id) => get(r('api.v1.customers.show', { id })),
+    topUpWallet: (id, payload) =>
+        post(r('api.v1.customers.wallet-top-up', { customer: id }), payload),
+};

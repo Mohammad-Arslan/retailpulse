@@ -103,6 +103,16 @@ final class PermissionSeeder extends Seeder
             ['name' => 'sales.export', 'description' => 'Export sale records'],
             ['name' => 'sales.refund', 'description' => 'Process sale refunds'],
         ],
+        'customers' => [
+            ['name' => 'customers.view', 'description' => 'View customers and POS search'],
+            ['name' => 'customers.create', 'description' => 'Create customers'],
+            ['name' => 'customers.update', 'description' => 'Update customers and wallet top-ups'],
+            ['name' => 'customers.delete', 'description' => 'Delete customers'],
+            ['name' => 'customers.view-credit', 'description' => 'View customer credit limits and AR balances'],
+            ['name' => 'customers.import', 'description' => 'Import customers from spreadsheets'],
+            ['name' => 'customers.export', 'description' => 'Export customers to spreadsheets'],
+            ['name' => 'customers.write-off-debt', 'description' => 'Write off customer bad debt'],
+        ],
     ];
 
     public function run(): void

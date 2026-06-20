@@ -14,14 +14,21 @@ use App\Enums\SaleStatus;
 use App\Enums\StockMovementReason;
 use App\Enums\TaxMode;
 use App\Jobs\SubmitFbrInvoiceJob;
+use App\Models\Customer;
 use App\Models\PosCart;
 use App\Models\PosCartItem;
 use App\Models\Sale;
 use App\Models\SalePayment;
 use App\Models\SystemSetting;
+use App\Models\User;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\PosCartRepositoryInterface;
+use App\Services\Customer\CustomerCreditService;
+use App\Services\Customer\LoyaltyService;
+use App\Services\Customer\StoreCreditService;
+use App\Services\Customer\WalletService;
 use App\Services\InventoryService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -34,6 +41,10 @@ final class CheckoutService
         private readonly SalePaymentProcessor $payments,
         private readonly InvoiceService $invoices,
         private readonly InventoryService $inventory,
+        private readonly WalletService $wallet,
+        private readonly StoreCreditService $storeCredit,
+        private readonly CustomerCreditService $customerCredit,
+        private readonly LoyaltyService $loyalty,
     ) {}
 
     /**
@@ -51,32 +62,7 @@ final class CheckoutService
         $settings = $this->config->resolve($cart->branch_id);
         $taxMode = TaxMode::tryFrom($settings['tax_mode']) ?? TaxMode::Exclusive;
 
-        $items = $cart->items->map(function (PosCartItem $item) use ($taxMode) {
-            $lineTotal = (float) $item->line_total;
-            $tax = $this->tax->computeLineTax(
-                lineTotal: $lineTotal,
-                productId: $item->product_id,
-                variantId: $item->product_variant_id,
-                taxMode: $taxMode,
-            );
-
-            return [
-                'product_id' => $item->product_id,
-                'variant_id' => $item->product_variant_id,
-                'sku' => $item->sku,
-                'name' => $item->name,
-                'unit_price' => number_format((float) $item->unit_price, 2, '.', ''),
-                'quantity' => $item->quantity,
-                'discount_type' => $item->discount_type,
-                'discount_value' => $item->discount_value !== null
-                    ? number_format((float) $item->discount_value, 2, '.', '')
-                    : null,
-                'line_total' => number_format($lineTotal, 2, '.', ''),
-                'tax_rate' => number_format($tax['tax_rate'], 4, '.', ''),
-                'tax_amount' => number_format($tax['tax_amount'], 2, '.', ''),
-                'line_total_inc_tax' => number_format($tax['line_total_inc_tax'], 2, '.', ''),
-            ];
-        })->all();
+        $items = $this->buildTaxedCartItems($cart->items, $taxMode);
 
         $subtotal = collect($items)->sum(fn ($i) => (float) $i['line_total']);
         $taxTotal = collect($items)->sum(fn ($i) => (float) $i['tax_amount']);
@@ -125,40 +111,34 @@ final class CheckoutService
             $taxMode = TaxMode::tryFrom($settings['tax_mode']) ?? TaxMode::Exclusive;
             $warehouseId = $this->defaultWarehouseForBranch($cart->branch_id);
 
+            $taxedItems = $this->buildTaxedCartItems($cart->items, $taxMode, asSaleRows: true);
+
             $saleItems = [];
             $taxTotal = 0.0;
             $subtotal = 0.0;
             $grandTotal = 0.0;
             $grossSubtotal = 0.0;
 
-            foreach ($cart->items as $item) {
-                $lineTotal = (float) $item->line_total;
-                $tax = $this->tax->computeLineTax(
-                    lineTotal: $lineTotal,
-                    productId: $item->product_id,
-                    variantId: $item->product_variant_id,
-                    taxMode: $taxMode,
-                );
-
+            foreach ($taxedItems as $row) {
                 $saleItems[] = [
-                    'product_id' => $item->product_id,
-                    'product_variant_id' => $item->product_variant_id,
-                    'sku' => $item->sku,
-                    'name' => $item->name,
-                    'unit_price' => $item->unit_price,
-                    'quantity' => $item->quantity,
-                    'discount_type' => $item->discount_type,
-                    'discount_value' => $item->discount_value,
-                    'line_total' => $lineTotal,
-                    'tax_rate' => $tax['tax_rate'],
-                    'tax_amount' => $tax['tax_amount'],
-                    'line_total_inc_tax' => $tax['line_total_inc_tax'],
+                    'product_id' => $row['product_id'],
+                    'product_variant_id' => $row['variant_id'],
+                    'sku' => $row['sku'],
+                    'name' => $row['name'],
+                    'unit_price' => $row['unit_price_raw'],
+                    'quantity' => $row['quantity'],
+                    'discount_type' => $row['discount_type'],
+                    'discount_value' => $row['discount_value_raw'],
+                    'line_total' => $row['line_total_raw'],
+                    'tax_rate' => $row['tax_rate_raw'],
+                    'tax_amount' => $row['tax_amount_raw'],
+                    'line_total_inc_tax' => $row['line_total_inc_tax_raw'],
                 ];
 
-                $subtotal += $lineTotal;
-                $taxTotal += $tax['tax_amount'];
-                $grandTotal += $tax['line_total_inc_tax'];
-                $grossSubtotal += (float) $item->unit_price * $item->quantity;
+                $subtotal += $row['line_total_raw'];
+                $taxTotal += $row['tax_amount_raw'];
+                $grandTotal += $row['line_total_inc_tax_raw'];
+                $grossSubtotal += $row['gross_line_total'];
             }
 
             $sale = Sale::query()->create([
@@ -212,16 +192,54 @@ final class CheckoutService
             ]);
         }
 
-        if ($method === PaymentMethod::Credit && $sale->customer_id === null) {
+        if ($method->requiresCustomer() && $sale->customer_id === null) {
             throw ValidationException::withMessages([
-                'customer_id' => __('A customer is required for credit sales.'),
+                'customer_id' => __('A customer is required for this payment method.'),
             ]);
+        }
+
+        if ($method === PaymentMethod::Wallet) {
+            $walletBalance = $this->wallet->getAvailableBalance($sale->customer_id);
+            if ($walletBalance <= 0) {
+                throw ValidationException::withMessages([
+                    'wallet' => __('Customer wallet has no available balance.'),
+                ]);
+            }
+        }
+
+        if ($method === PaymentMethod::StoreCredit) {
+            $storeCreditBalance = $this->storeCredit->getAvailableBalance($sale->customer_id);
+            if ($storeCreditBalance <= 0) {
+                throw ValidationException::withMessages([
+                    'store_credit' => __('Customer has no available store credit.'),
+                ]);
+            }
         }
 
         $settings = $this->config->resolve($sale->branch_id);
         $balanceDue = (float) $sale->balance_due;
 
         $paymentAmount = min($data->amount > 0 ? $data->amount : $balanceDue, $balanceDue);
+
+        if ($method === PaymentMethod::Wallet) {
+            $paymentAmount = min($paymentAmount, $this->wallet->getAvailableBalance($sale->customer_id));
+        }
+
+        if ($method === PaymentMethod::StoreCredit) {
+            $paymentAmount = min($paymentAmount, $this->storeCredit->getAvailableBalance($sale->customer_id));
+        }
+
+        if ($method === PaymentMethod::Credit) {
+            $customer = Customer::query()->findOrFail($sale->customer_id);
+            $cashier = User::query()->findOrFail($cashierId);
+            $this->customerCredit->assertCanChargeCredit(
+                customer: $customer,
+                amount: $paymentAmount,
+                branchId: $sale->branch_id,
+                managerPin: $data->managerPin,
+                cashier: $cashier,
+            );
+        }
 
         if ($method === PaymentMethod::Cash && $data->tenderedAmount !== null) {
             if ($data->tenderedAmount < $paymentAmount) {
@@ -254,6 +272,24 @@ final class CheckoutService
 
         return DB::transaction(function () use ($sale, $data, $cashierId, $method, $settings, $paymentAmount, $balanceDue) {
             $meta = $data->meta;
+
+            if ($method === PaymentMethod::Wallet) {
+                $this->wallet->debitForCheckout(
+                    customerId: $sale->customer_id,
+                    amount: $paymentAmount,
+                    saleId: $sale->id,
+                    userId: $cashierId,
+                );
+            }
+
+            if ($method === PaymentMethod::StoreCredit) {
+                $this->storeCredit->redeemForCheckout(
+                    customerId: $sale->customer_id,
+                    amount: $paymentAmount,
+                    saleId: $sale->id,
+                    userId: $cashierId,
+                );
+            }
 
             if ($method === PaymentMethod::Cash && $data->tenderedAmount !== null) {
                 $meta['tendered_amount'] = $data->tenderedAmount;
@@ -392,13 +428,114 @@ final class CheckoutService
             'completed_at' => now(),
         ]);
 
+        $sale->load('payments');
+
+        $creditTotal = (float) $sale->payments
+            ->where('status', PaymentStatus::Completed)
+            ->filter(fn (SalePayment $payment) => $payment->method === PaymentMethod::Credit)
+            ->sum('amount');
+
         $invoice = $this->invoices->createForSale($sale);
+        $sale->setRelation('invoice', $invoice);
+
+        if ($creditTotal > 0 && $sale->customer_id !== null) {
+            $this->customerCredit->recordCreditSale($sale, $creditTotal, $cashierId);
+        }
+
+        $this->loyalty->earnOnSaleComplete($sale);
 
         if ($fbrEnabled && $failureMode === 'queue') {
             SubmitFbrInvoiceJob::dispatch($invoice->id);
         }
 
         return $sale->fresh(['items', 'payments', 'invoice']);
+    }
+
+    private function defaultWarehouseForBranch(int $branchId): int
+    {
+        $warehouse = Warehouse::query()
+            ->where('branch_id', $branchId)
+            ->where('is_default', true)
+            ->where('is_active', true)
+            ->first();
+
+        if ($warehouse === null) {
+            $warehouse = Warehouse::query()
+                ->where('branch_id', $branchId)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        if ($warehouse === null) {
+            throw ValidationException::withMessages([
+                'branch' => __('No active warehouse found for this branch.'),
+            ]);
+        }
+
+        return $warehouse->id;
+    }
+
+    /**
+     * @param  Collection<int, PosCartItem>  $cartItems
+     * @return list<array<string, mixed>>
+     */
+    private function buildTaxedCartItems($cartItems, TaxMode $taxMode, bool $asSaleRows = false): array
+    {
+        $lines = $cartItems->map(fn (PosCartItem $item): array => [
+            'line_total' => (float) $item->line_total,
+            'product_id' => $item->product_id,
+            'variant_id' => $item->product_variant_id,
+        ])->all();
+
+        $taxResults = $this->tax->isPerItem()
+            ? array_map(
+                fn (array $line): array => $this->tax->computeLineTax(
+                    lineTotal: $line['line_total'],
+                    productId: $line['product_id'],
+                    variantId: $line['variant_id'],
+                    taxMode: $taxMode,
+                ),
+                $lines,
+            )
+            : $this->tax->computeCartTax($lines, $taxMode);
+
+        $items = [];
+
+        foreach ($cartItems->values() as $index => $item) {
+            $tax = $taxResults[$index];
+            $lineTotal = (float) $item->line_total;
+
+            $row = [
+                'product_id' => $item->product_id,
+                'variant_id' => $item->product_variant_id,
+                'sku' => $item->sku,
+                'name' => $item->name,
+                'unit_price' => number_format((float) $item->unit_price, 2, '.', ''),
+                'quantity' => $item->quantity,
+                'discount_type' => $item->discount_type,
+                'discount_value' => $item->discount_value !== null
+                    ? number_format((float) $item->discount_value, 2, '.', '')
+                    : null,
+                'line_total' => number_format($lineTotal, 2, '.', ''),
+                'tax_rate' => number_format($tax['tax_rate'], 4, '.', ''),
+                'tax_amount' => number_format($tax['tax_amount'], 2, '.', ''),
+                'line_total_inc_tax' => number_format($tax['line_total_inc_tax'], 2, '.', ''),
+            ];
+
+            if ($asSaleRows) {
+                $row['unit_price_raw'] = $item->unit_price;
+                $row['discount_value_raw'] = $item->discount_value;
+                $row['line_total_raw'] = $lineTotal;
+                $row['tax_rate_raw'] = $tax['tax_rate'];
+                $row['tax_amount_raw'] = $tax['tax_amount'];
+                $row['line_total_inc_tax_raw'] = $tax['line_total_inc_tax'];
+                $row['gross_line_total'] = (float) $item->unit_price * $item->quantity;
+            }
+
+            $items[] = $row;
+        }
+
+        return $items;
     }
 
     private function deductInventory(Sale $sale, int $userId): void
@@ -425,29 +562,5 @@ final class CheckoutService
                 referenceId: $sale->id,
             ));
         }
-    }
-
-    private function defaultWarehouseForBranch(int $branchId): int
-    {
-        $warehouse = Warehouse::query()
-            ->where('branch_id', $branchId)
-            ->where('is_default', true)
-            ->where('is_active', true)
-            ->first();
-
-        if ($warehouse === null) {
-            $warehouse = Warehouse::query()
-                ->where('branch_id', $branchId)
-                ->where('is_active', true)
-                ->first();
-        }
-
-        if ($warehouse === null) {
-            throw ValidationException::withMessages([
-                'branch' => __('No active warehouse found for this branch.'),
-            ]);
-        }
-
-        return $warehouse->id;
     }
 }

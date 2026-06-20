@@ -4,7 +4,10 @@ use App\Http\Middleware\EnsureAdminAccess;
 use App\Http\Middleware\EnsurePosAccess;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetBranchContext;
+use App\Jobs\BuildArAgingSnapshotsJob;
 use App\Jobs\CreateScheduledCountSessionsJob;
+use App\Jobs\RecalculateLoyaltyTiersJob;
+use App\Jobs\SendOverdueRemindersJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -43,4 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('import-export:prune')->dailyAt('02:00');
         $schedule->command('inventory:release-expired-reservations')->everyMinute();
         $schedule->job(CreateScheduledCountSessionsJob::class)->dailyAt('01:00');
+        $schedule->job(BuildArAgingSnapshotsJob::class)->dailyAt('02:30');
+        $schedule->job(RecalculateLoyaltyTiersJob::class)->dailyAt('03:00');
+        $schedule->job(SendOverdueRemindersJob::class)->dailyAt('08:00');
     })->create();

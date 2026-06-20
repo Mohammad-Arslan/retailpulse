@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Checkout\CheckoutController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\CustomerWalletController;
 use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\Pos\CartController;
 use App\Http\Controllers\Api\V1\Pos\CartItemController;
@@ -76,6 +77,12 @@ Route::prefix('v1')
     ->name('api.v1.')
     ->group(function () {
         Route::get('customers', [CustomerController::class, 'search'])->name('customers.search');
+        Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
+        Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+        Route::get('customers/{customer}/credit-check', [CustomerController::class, 'creditCheck'])
+            ->name('customers.credit-check');
+        Route::post('customers/{customer}/wallet/top-up', [CustomerWalletController::class, 'topUp'])
+            ->name('customers.wallet.top-up');
 
         // Static sale routes must precede the {id} wildcard
         Route::post('sales/import-historical', HistoricalSaleImportController::class)->name('sales.import-historical');

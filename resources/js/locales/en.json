@@ -2,6 +2,11 @@
     "nav": {
         "dashboard": "Dashboard",
         "pos": "Point of Sale",
+        "sales": "Sales",
+        "customersSection": "Customers",
+        "customers": "Customers",
+        "customerGroups": "Customer Groups",
+        "arAging": "AR Aging",
         "users": "Users",
         "roles": "Roles",
         "permissions": "Permissions",
@@ -36,6 +41,8 @@
         "addWarehouse": "Add Warehouse",
         "addCategory": "Add Category",
         "addBrand": "Add Brand",
+        "addCustomer": "Add Customer",
+        "addCustomerGroup": "Add Customer Group",
         "addUnit": "Add Unit",
         "addProduct": "Add Product",
         "receiveStock": "Receive stock",
@@ -245,6 +252,8 @@
         "deactivateWarehouse": "Deactivate {{name}}? It will be hidden from inventory and transfer pickers.",
         "deleteCategory": "Delete {{name}}? Products in this category will be uncategorized.",
         "deleteBrand": "Delete {{name}}? Products for this brand will be unbranded.",
+        "deleteCustomer": "Delete {{name}}? Their loyalty history and wallet records will be removed.",
+        "deleteCustomerGroup": "Delete {{name}}? Customers in this group will be unassigned.",
         "deleteUnit": "Delete {{name}}? Products using this unit must be updated first.",
         "deleteProduct": "Delete {{name}}? All variants and identifiers will be removed.",
         "confirm": "Confirm",
@@ -588,6 +597,158 @@
                 "receiveNow": "Receive now"
             }
         },
+        "sales": {
+            "title": "Sales",
+            "description": "Completed and in-progress sales for the active branch.",
+            "showDescription": "Sale detail, line items, and payment history.",
+            "searchPlaceholder": "Invoice #, customer, or sale ID…",
+            "includeHistorical": "Include historical imports",
+            "back": "Back to sales",
+            "printInvoice": "Print invoice",
+            "lineItems": "Line items",
+            "summary": "Summary",
+            "details": "Details",
+            "payments": "Payments",
+            "subtotal": "Subtotal",
+            "discount": "Discount",
+            "tax": "Tax",
+            "total": "Total",
+            "columns": {
+                "invoice": "Invoice",
+                "status": "Status",
+                "customer": "Customer",
+                "cashier": "Cashier",
+                "branch": "Branch",
+                "total": "Total",
+                "completed": "Completed",
+                "item": "Item",
+                "qty": "Qty"
+            }
+        },
+        "customers": {
+            "title": "Customers",
+            "description": "360° customer profiles, loyalty tiers, wallets, and credit limits.",
+            "showDescription": "Customer profile, balances, and transaction history.",
+            "empty": "No customers found.",
+            "searchPlaceholder": "Search by name, phone, or email…",
+            "allTiers": "All tiers",
+            "allGroups": "All groups",
+            "allStatuses": "All statuses",
+            "active": "Active",
+            "inactive": "Inactive",
+            "noTier": "No tier",
+            "noGroup": "No group",
+            "createTitle": "Create Customer",
+            "createDescription": "Add a customer with contact details and credit settings.",
+            "createSubmit": "Create customer",
+            "editTitle": "Edit {{name}}",
+            "saveChanges": "Save changes",
+            "back": "Back to customers",
+            "viewProfile": "View profile",
+            "contact": "Contact details",
+            "recentSales": "Recent sales",
+            "noSales": "No sales yet.",
+            "walletTransactions": "Wallet transactions",
+            "noWalletTransactions": "No wallet activity.",
+            "arLedger": "AR ledger",
+            "noArLedger": "No AR entries.",
+            "sendStatement": "Send statement",
+            "statementSent": "Statement emailed to customer.",
+            "statementFailed": "Could not send statement.",
+            "columns": {
+                "name": "Customer",
+                "tier": "Tier",
+                "group": "Group",
+                "creditLimit": "Credit limit",
+                "status": "Status",
+                "date": "Date",
+                "type": "Type",
+                "amount": "Amount",
+                "entryType": "Entry",
+                "balance": "Balance"
+            },
+            "fields": {
+                "name": "Name",
+                "phone": "Phone",
+                "email": "Email",
+                "ntn": "NTN",
+                "cnic": "CNIC",
+                "creditLimit": "Credit limit",
+                "loyaltyTier": "Loyalty tier",
+                "customerGroup": "Customer group",
+                "notes": "Notes",
+                "active": "Active customer"
+            },
+            "stats": {
+                "atv": "Average transaction",
+                "salesCount": "Sales count",
+                "loyaltyPoints": "Loyalty points",
+                "creditAvailable": "Credit available",
+                "creditLimitHint": "Limit: {{limit}} {{currency}}"
+            },
+            "wallet": {
+                "title": "Wallet balance",
+                "topUp": "Top up",
+                "expires": "Expires {{date}}"
+            },
+            "storeCredit": {
+                "title": "Store credit"
+            },
+            "arOutstanding": {
+                "title": "AR outstanding"
+            },
+            "topUp": {
+                "title": "Wallet top-up",
+                "description": "Add funds to {{name}}'s wallet.",
+                "amount": "Amount",
+                "method": "Payment method",
+                "invalidAmount": "Enter a valid amount.",
+                "success": "Wallet topped up successfully.",
+                "failed": "Could not top up wallet."
+            }
+        },
+        "customerGroups": {
+            "title": "Customer Groups",
+            "description": "Named groups for pricing and segmentation (Wholesale, VIP, Staff, etc.).",
+            "empty": "No customer groups found.",
+            "searchPlaceholder": "Search groups…",
+            "allStatuses": "All statuses",
+            "active": "Active",
+            "inactive": "Inactive",
+            "createTitle": "Create Customer Group",
+            "createDescription": "Add a customer group for pricing and segmentation.",
+            "createSubmit": "Create group",
+            "editTitle": "Edit {{name}}",
+            "saveChanges": "Save changes",
+            "columns": {
+                "name": "Group",
+                "customers": "Customers",
+                "status": "Status"
+            },
+            "fields": {
+                "name": "Name",
+                "description": "Description",
+                "active": "Active group"
+            }
+        },
+        "arAging": {
+            "title": "AR Aging Report",
+            "description": "Outstanding receivables by age bucket as of {{date}}.",
+            "latestSnapshot": "latest snapshot",
+            "empty": "No aging data for the selected filters.",
+            "searchPlaceholder": "Search customer…",
+            "allGroups": "All groups",
+            "columns": {
+                "customer": "Customer",
+                "group": "Group",
+                "current": "Current",
+                "bucket30": "1–30 days",
+                "bucket60": "31–60 days",
+                "bucket90": "61–90 days",
+                "bucketOver90": "90+ days",
+                "total": "Total outstanding"
+            }
+        },
         "categories": {
             "title": "Categories",
             "description": "Organize products into a hierarchical category tree.",
@@ -788,10 +949,84 @@
         "warehouses": "Warehouses",
         "categories": "Categories",
         "brands": "Brands",
+        "customers": "Customers",
+        "customerGroups": "Customer Groups",
+        "arAging": "AR Aging",
         "units": "Units",
         "products": "Products",
         "inventory": "Stock levels",
         "stockTransfers": "Transfers",
         "settings": "Settings"
+    },
+    "checkout": {
+        "title": "Checkout",
+        "cartLabel": "Cart {{id}}",
+        "loading": "Loading checkout…",
+        "confirmSale": "Confirm Sale",
+        "confirmDescription": "Review the cart and confirm to begin payment collection.",
+        "confirmButton": "Confirm & Collect Payment",
+        "payment": "Payment",
+        "saleComplete": "Sale Complete",
+        "paymentComplete": "Payment complete",
+        "backToPos": "Back to POS",
+        "void": "Void",
+        "newSale": "New Sale",
+        "printReceipt": "Print Receipt",
+        "reprintReceipt": "Reprint Receipt",
+        "completePayment": "Complete Payment",
+        "partialPayment": "Apply Partial Payment",
+        "appliedPayments": "Applied Payments",
+        "customerOptional": "Customer (optional)",
+        "customerSearchPlaceholder": "Search by name or phone…",
+        "clearCustomer": "Clear",
+        "subtotal": "Subtotal",
+        "discount": "Discount",
+        "tax": "Tax",
+        "total": "Total",
+        "balanceDue": "Balance Due",
+        "change": "Change",
+        "tenderedAmount": "Tendered Amount",
+        "paymentAmount": "Payment Amount",
+        "bankName": "Bank name",
+        "bankReference": "Reference number",
+        "bankReferenceRequired": "Bank transfer reference is required.",
+        "creditRequiresCustomer": "Credit sales require a customer on the sale.",
+        "customerRequiredCredit": "A customer is required for credit sales.",
+        "paymentMethods": {
+            "cash": "Cash",
+            "card": "Card",
+            "mobile_wallet": "Mobile Wallet",
+            "bank_transfer": "Bank Transfer",
+            "credit": "Credit",
+            "wallet": "Wallet",
+            "store_credit": "Store Credit"
+        },
+        "customerCard": {
+            "tier": "Tier",
+            "wallet": "Wallet",
+            "storeCredit": "Store credit",
+            "arOutstanding": "AR outstanding",
+            "creditAvailable": "Credit available"
+        },
+        "creditLimit": {
+            "warning": "This sale exceeds the customer's credit limit.",
+            "exceeded": "Outstanding AR plus this sale ({{projected}}) exceeds limit ({{limit}}).",
+            "overrideRequired": "Manager PIN required to proceed.",
+            "overrideButton": "Override with manager PIN"
+        },
+        "managerPin": {
+            "title": "Manager PIN Required",
+            "description": "Enter a manager PIN to override the credit limit.",
+            "incorrect": "Incorrect PIN.",
+            "failed": "Verification failed."
+        },
+        "errors": {
+            "loadFailed": "Could not load checkout.",
+            "confirmFailed": "Could not confirm sale.",
+            "paymentFailed": "Payment failed.",
+            "returnFailed": "Could not return to POS.",
+            "voidFailed": "Could not void sale.",
+            "saleConfirmed": "Sale already confirmed. Complete payment or void the sale."
+        }
     }
 }

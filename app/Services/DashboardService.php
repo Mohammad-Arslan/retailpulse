@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\ProductType;
+use App\Enums\SaleStatus;
 use App\Enums\StockTransferStatus;
 use App\Models\AuditLog;
 use App\Models\Branch;
@@ -15,6 +16,7 @@ use App\Models\Permission;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Role;
+use App\Models\Sale;
 use App\Models\StockMovement;
 use App\Models\StockTransfer;
 use App\Models\User;
@@ -70,8 +72,7 @@ final class DashboardService
     }
 
     /**
-     * Phase 8 stubs — zero until sales module exists.
-     *
+     * @param  list<int>|null  $accessibleBranchIds
      * @return array{
      *     todays_sales: float,
      *     gross_profit: float,
@@ -80,39 +81,118 @@ final class DashboardService
      *     pending_approvals: int,
      * }
      */
-    public function salesKpis(): array
+    public function salesKpis(?int $branchId = null, ?array $accessibleBranchIds = null): array
     {
+        $completed = $this->scopeSales(
+            Sale::query()->where('status', SaleStatus::Completed)->where('is_historical', false),
+            $branchId,
+            $accessibleBranchIds,
+        );
+
+        $todayQuery = (clone $completed)->whereDate('completed_at', today());
+        $todaysSales = (float) (clone $todayQuery)->toBase()->sum('grand_total');
+        $todayCount = (int) (clone $todayQuery)->toBase()->count('*');
+
+        $grossProfit = (float) (clone $todayQuery)
+            ->get(['subtotal', 'total_discount'])
+            ->sum(fn (Sale $sale): float => (float) $sale->subtotal - (float) $sale->total_discount);
+
+        $layawayPending = (int) $this->scopeSales(
+            Sale::query()->where('status', SaleStatus::PartiallyPaid)->where('is_historical', false),
+            $branchId,
+            $accessibleBranchIds,
+        )->toBase()->count('*');
+
         return [
-            'todays_sales' => 0.0,
-            'gross_profit' => 0.0,
-            'average_transaction_value' => 0.0,
+            'todays_sales' => round($todaysSales, 2),
+            'gross_profit' => round($grossProfit, 2),
+            'average_transaction_value' => $todayCount > 0
+                ? round($todaysSales / $todayCount, 2)
+                : 0.0,
             'low_stock_alerts' => 0,
-            'pending_approvals' => 0,
+            'pending_approvals' => $layawayPending,
         ];
     }
 
     /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return array{
      *     wow_revenue: list<array{label: string, amount: float}>,
      *     mom_revenue: list<array{label: string, amount: float}>,
      * }
      */
-    public function revenueCharts(): array
+    public function revenueCharts(?int $branchId = null, ?array $accessibleBranchIds = null): array
     {
-        $wow = collect(range(6, 0))->map(fn (int $offset): array => [
-            'label' => now()->subWeeks($offset)->format('M j'),
-            'amount' => 0.0,
-        ])->all();
+        $wowStart = now()->subDays(6)->startOfDay();
 
-        $mom = collect(range(5, 0))->map(fn (int $offset): array => [
-            'label' => now()->subMonths($offset)->format('M Y'),
-            'amount' => 0.0,
-        ])->all();
+        $wowSales = $this->scopeSales(
+            Sale::query()
+                ->where('status', SaleStatus::Completed)
+                ->where('is_historical', false)
+                ->where('completed_at', '>=', $wowStart),
+            $branchId,
+            $accessibleBranchIds,
+        )->get(['completed_at', 'grand_total']);
+
+        $wow = collect(range(0, 6))->map(function (int $offset) use ($wowStart, $wowSales): array {
+            $date = $wowStart->copy()->addDays($offset);
+
+            $amount = $wowSales
+                ->filter(fn (Sale $sale): bool => $sale->completed_at?->isSameDay($date) ?? false)
+                ->sum(fn (Sale $sale): float => (float) $sale->grand_total);
+
+            return [
+                'label' => $date->format('M j'),
+                'amount' => round($amount, 2),
+            ];
+        })->all();
+
+        $momStart = now()->subMonths(5)->startOfMonth();
+
+        $momSales = $this->scopeSales(
+            Sale::query()
+                ->where('status', SaleStatus::Completed)
+                ->where('is_historical', false)
+                ->where('completed_at', '>=', $momStart),
+            $branchId,
+            $accessibleBranchIds,
+        )->get(['completed_at', 'grand_total']);
+
+        $mom = collect(range(0, 5))->map(function (int $offset) use ($momStart, $momSales): array {
+            $date = $momStart->copy()->addMonths($offset);
+
+            $amount = $momSales
+                ->filter(fn (Sale $sale): bool => $sale->completed_at?->format('Y-m') === $date->format('Y-m'))
+                ->sum(fn (Sale $sale): float => (float) $sale->grand_total);
+
+            return [
+                'label' => $date->format('M Y'),
+                'amount' => round($amount, 2),
+            ];
+        })->all();
 
         return [
             'wow_revenue' => $wow,
             'mom_revenue' => $mom,
         ];
+    }
+
+    /**
+     * @param  Builder<Sale>  $query
+     * @param  list<int>|null  $accessibleBranchIds
+     * @return Builder<Sale>
+     */
+    private function scopeSales(Builder $query, ?int $branchId, ?array $accessibleBranchIds): Builder
+    {
+        if ($branchId !== null) {
+            return $query->where('branch_id', $branchId);
+        }
+
+        if ($accessibleBranchIds !== null) {
+            return $query->whereIn('branch_id', $accessibleBranchIds);
+        }
+
+        return $query;
     }
 
     /**

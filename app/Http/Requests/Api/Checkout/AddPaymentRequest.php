@@ -20,9 +20,12 @@ final class AddPaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'method' => ['required', 'string', Rule::in(['cash', 'card', 'mobile_wallet', 'bank_transfer', 'credit'])],
+            'method' => ['required', 'string', Rule::in([
+                'cash', 'card', 'mobile_wallet', 'bank_transfer', 'credit', 'wallet', 'store_credit',
+            ])],
             'amount' => ['nullable', 'numeric', 'min:0.01'],
             'tendered_amount' => ['nullable', 'numeric', 'min:0.01'],
+            'manager_pin' => ['nullable', 'string', 'max:16'],
             'meta' => ['nullable', 'array'],
         ];
     }

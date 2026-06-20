@@ -44,8 +44,32 @@ final class CheckoutConfigService
      */
     private function enabledPaymentMethods(int $branchId): array
     {
-        /** @var list<string> $configured */
-        $configured = SystemSetting::get('payment_methods', 'enabled', ['cash']);
+        $methodKeys = [
+            'cash' => 'payment_method_cash',
+            'card' => 'payment_method_card',
+            'mobile_wallet' => 'payment_method_mobile_wallet',
+            'bank_transfer' => 'payment_method_bank_transfer',
+            'credit' => 'payment_method_credit',
+            'wallet' => 'payment_method_wallet',
+            'store_credit' => 'payment_method_store_credit',
+        ];
+
+        $defaults = ['cash', 'card', 'mobile_wallet', 'bank_transfer'];
+        $configured = [];
+
+        foreach ($methodKeys as $method => $settingKey) {
+            $default = in_array($method, $defaults, true);
+            if ((bool) SystemSetting::get('checkout', $settingKey, $default)) {
+                $configured[] = $method;
+            }
+        }
+
+        if ($configured === []) {
+            /** @var list<string> $legacy */
+            $legacy = SystemSetting::get('payment_methods', 'enabled', ['cash']);
+            $configured = $legacy;
+        }
+
         $methods = [];
 
         foreach ($configured as $method) {

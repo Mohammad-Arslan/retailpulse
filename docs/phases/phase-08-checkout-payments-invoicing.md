@@ -1,7 +1,7 @@
 # Phase 8 — Checkout, Payments & Invoicing
 
 **SRS Reference:** §3.8, §3.18 (historical sales archive)
-**Status:** Planned
+**Status:** ~95% Complete
 **Depends on:** Phase 7 (POS Interface), Phase 17 (Shift & Register), Phase 4 (Products), Phase 5 (Inventory), Phase 1 (Roles & Permissions)
 **Feeds into:** Phase 9 (Customer Accounts & Credit), Phase 11 (COGS posting), Phase 14 (Returns & Refunds), Phase 16 (Offline Sync)
 

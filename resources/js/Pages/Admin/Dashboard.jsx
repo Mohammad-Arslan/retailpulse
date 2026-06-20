@@ -27,6 +27,11 @@ import {
 const fmtInt = (n) =>
     typeof n === 'number' ? new Intl.NumberFormat(undefined).format(n) : '—';
 
+const fmtMoney = (n) =>
+    typeof n === 'number'
+        ? new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
+        : '—';
+
 function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canViewProfit, widgets }) {
     const { auth } = usePage().props;
     const showSales = canViewProfit && widgets?.includes('sales');
@@ -248,13 +253,14 @@ function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canVie
             {showSales && salesKpis ? (
                 <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {[
-                        { label: "Today's sales", value: salesKpis.todays_sales, icon: Package },
-                        { label: 'Gross profit', value: salesKpis.gross_profit, icon: Tag },
-                        { label: 'ATV', value: salesKpis.average_transaction_value, icon: LayoutDashboard },
-                        { label: 'Pending approvals', value: salesKpis.pending_approvals, icon: AlertTriangle },
+                        { label: "Today's sales", value: salesKpis.todays_sales, icon: Package, format: fmtMoney },
+                        { label: 'Gross profit', value: salesKpis.gross_profit, icon: Tag, format: fmtMoney },
+                        { label: 'ATV', value: salesKpis.average_transaction_value, icon: LayoutDashboard, format: fmtMoney },
+                        { label: 'Layaway balances', value: salesKpis.pending_approvals, icon: AlertTriangle, format: fmtInt },
                     ].map((kpi) => {
                         const Icon = kpi.icon;
                         const tone = toneMap.teal;
+                        const format = kpi.format ?? fmtInt;
                         return (
                             <div key={kpi.label} className={`rp-kpi-card ${tone.card}`}>
                                 <div className="mb-3.5">
@@ -262,9 +268,8 @@ function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canVie
                                         <Icon className="h-[18px] w-[18px]" />
                                     </div>
                                 </div>
-                                <span className="rp-kpi-value">{fmtInt(kpi.value)}</span>
+                                <span className="rp-kpi-value">{format(kpi.value)}</span>
                                 <div className="rp-kpi-label">{kpi.label}</div>
-                                <div className="rp-kpi-sub">Stub until Phase 8 sales</div>
                             </div>
                         );
                     })}

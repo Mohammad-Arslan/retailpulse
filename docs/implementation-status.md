@@ -12,7 +12,7 @@
 | Metric | Value |
 | :--- | :--- |
 | Phases complete | **7 of 29** |
-| Phases in progress | **1 (Phase 8 — ~85%)** |
+| Phases in progress | **1 (Phase 8 — ~95%)** |
 | Phases not started | **22 (Phases 9–16, 17–30)** |
 | Overall progress (phase-weighted) | **~27%** |
 | Core retail progress (Phases 1–16 only) | **~50%** |
@@ -129,7 +129,7 @@
 | Permission-gated widget visibility | ✅ |
 | Activity feed events broadcast on login / inventory change / import | ✅ |
 | Import/export progress streaming via WebSocket | ✅ |
-| Sales KPI widgets (stub — populated in Phase 8) | ⚠️ Partial |
+| Sales KPI widgets (stub — populated in Phase 8) | ✅ |
 
 ---
 
@@ -153,7 +153,7 @@
 ---
 
 ### 🔄 Phase 8 — Checkout, Payments & Invoicing
-**Status: ~85% Complete** | SRS §3.8, §3.18
+**Status: ~95% Complete** | SRS §3.8, §3.18
 
 #### Implemented ✅
 | Feature | Done |
@@ -179,13 +179,20 @@
 | All permissions seeded (`pos.access`, `pos.void-cart`, `sales.*`) | ✅ |
 | Checkout settings seeded (tax, FBR, payment, layaway, invoice) | ✅ |
 | Checkout React page (payment UI, split tender, change display) | ✅ |
+| Customer picker on checkout screen | ✅ |
+| Bank transfer reference fields on checkout | ✅ |
+| Cart-level tax (`tax.per_item = false`) | ✅ |
+| Dashboard sales KPIs wired to live data | ✅ |
+| Admin sales archive (list + detail) | ✅ |
+| Invoice email sharing (Mailable + PDF attach) | ✅ |
+| Invoice WhatsApp sharing (API stub + optional URL) | ✅ |
+| Payment method + share method settings in Admin | ✅ |
+| Sale audit logging | ✅ |
 
 #### Missing / Incomplete ⚠️
 | Gap | Notes |
 | :--- | :--- |
 | Live payment gateway drivers | Stripe / JazzCash / EasyPaisa stub only; actual HTTP integration not built |
-| Invoice email sending | Route accepts `share?method=email` but no mailer dispatch implemented |
-| Invoice WhatsApp sharing | Route accepts `share?method=whatsapp` but no API call made |
 | Layaway overdue flag/alerts | Deferred — overdue tracking flagged for Phase 9 |
 | Edge case tests | Card failure, FBR block/queue, concurrent invoice seq, PDF perf benchmark missing |
 
@@ -273,8 +280,8 @@
 | §3.5 Product Information (PIM) | 4 | **100%** | |
 | §3.6 Inventory & Warehouse | 5 | **100%** | |
 | §3.7 Point of Sale | 7 | **100%** | |
-| §3.8 Checkout, Payments & Invoicing | 8 | **85%** | Live gateways + email/WhatsApp share missing |
-| §3.9 Customer & Loyalty | 9 | **0%** | Customer model exists; loyalty/wallet not built |
+| §3.8 Checkout, Payments & Invoicing | 8 | **95%** | Live payment gateway HTTP drivers only |
+| §3.9 Customer & Loyalty | 9 | **Complete** | CRM, loyalty, wallet, AR aging, credit limits |
 | §3.10 Suppliers & Procurement | 10 | **0%** | |
 | §3.11 Accounting & Finance | 11 | **0%** | |
 | §3.12 Expense Management | 12 | **0%** | |
