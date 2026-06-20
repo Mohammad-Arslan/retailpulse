@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Customer;
 
+use App\Enums\PaymentMethod;
 use App\Enums\SaleStatus;
 use App\Models\Customer;
 use App\Models\Sale;
@@ -125,6 +126,12 @@ final class CustomerProfileService
 
         $top = $methods->first();
 
-        return $top !== null ? (string) $top->method : null;
+        if ($top === null) {
+            return null;
+        }
+
+        $method = $top->method;
+
+        return $method instanceof PaymentMethod ? $method->value : (string) $method;
     }
 }

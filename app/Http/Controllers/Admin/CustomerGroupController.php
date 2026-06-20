@@ -96,7 +96,7 @@ final class CustomerGroupController extends Controller
         $this->authorize('update', Customer::make());
 
         return Inertia::render('Admin/CustomerGroups/Edit', [
-            'group' => [
+            'customerGroup' => [
                 'id' => $customerGroup->id,
                 'name' => $customerGroup->name,
                 'slug' => $customerGroup->slug,
