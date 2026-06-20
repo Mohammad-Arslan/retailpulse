@@ -1,19 +1,19 @@
 /* RetailPulse design tokens — matches UI mockup suite */
 
 :root {
-    --rp-page-bg: #faf8f5;
+    --rp-page-bg: #ffffff;
     --rp-surface: #ffffff;
-    --rp-surface-subtle: #f3efe8;
-    --rp-surface-inset: #faf8f5;
-    --rp-border: #e8e0d0;
-    --rp-border-subtle: #f3efe8;
+    --rp-surface-subtle: #f9fafb;
+    --rp-surface-inset: #f9fafb;
+    --rp-border: #e5e7eb;
+    --rp-border-subtle: #f3f4f6;
     --rp-text: #1a1714;
-    --rp-text-secondary: #7a726a;
-    --rp-text-muted: #b8b0a8;
-    --rp-chart-grid: #f3efe8;
-    --rp-chart-tick: #b8b0a8;
+    --rp-text-secondary: #6b7280;
+    --rp-text-muted: #9ca3af;
+    --rp-chart-grid: #f3f4f6;
+    --rp-chart-tick: #9ca3af;
     --rp-tooltip-bg: #ffffff;
-    --rp-tooltip-border: #e8e0d0;
+    --rp-tooltip-border: #e5e7eb;
     --rp-tooltip-text: #1a1714;
 }
 
@@ -42,11 +42,11 @@
     --font-sans: 'Sora', ui-sans-serif, system-ui, sans-serif;
     --font-serif: 'Instrument Serif', ui-serif, Georgia, serif;
 
-    --color-sand-50: #faf8f5;
-    --color-sand-100: #f3efe8;
-    --color-sand-200: #e8e0d0;
-    --color-sand-300: #d4c9b0;
-    --color-sand-400: #b8a888;
+    --color-sand-50: #f9fafb;
+    --color-sand-100: #f3f4f6;
+    --color-sand-200: #e5e7eb;
+    --color-sand-300: #d1d5db;
+    --color-sand-400: #9ca3af;
 
     /* Cool charcoal-slate scale — replaces warm ink */
     --color-ink-900: #0f1117;
