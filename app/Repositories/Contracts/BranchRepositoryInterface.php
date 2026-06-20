@@ -29,4 +29,6 @@ interface BranchRepositoryInterface
     public function update(Branch $branch, array $attributes): Branch;
 
     public function delete(Branch $branch): void;
+
+    public function codeExists(string $code, ?int $exceptId = null): bool;
 }

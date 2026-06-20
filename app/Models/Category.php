@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'description',
     'sort_order',
     'is_active',
+    'tax_rate',
 ])]
 class Category extends Model
 {

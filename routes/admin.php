@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CatalogBulkController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CountScheduleRuleController;
+use App\Http\Controllers\Admin\CountSessionController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -17,6 +19,9 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\StockTransferController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WarehouseBinController;
+use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\CheckoutPageController;
 use App\Http\Controllers\PosController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +30,7 @@ Route::middleware(['auth', 'branch.context', 'pos.access'])
     ->name('admin.')
     ->group(function () {
         Route::get('pos', [PosController::class, 'index'])->name('pos.index');
+        Route::get('checkout/{cartId}', [CheckoutPageController::class, 'show'])->name('checkout.show');
     });
 
 Route::middleware(['auth', 'admin', 'branch.context'])
@@ -36,7 +42,26 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::put('/branch-context', [BranchContextController::class, 'update'])
             ->name('branch-context.update');
 
+        Route::get('branches/suggest-code', [BranchController::class, 'suggestCode'])
+            ->name('branches.suggest-code');
         Route::resource('branches', BranchController::class)->except(['show']);
+        Route::get('warehouses/suggest-code', [WarehouseController::class, 'suggestCode'])
+            ->name('warehouses.suggest-code');
+        Route::resource('warehouses', WarehouseController::class)->except(['show', 'destroy']);
+        Route::patch('warehouses/{warehouse}/deactivate', [WarehouseController::class, 'deactivate'])
+            ->name('warehouses.deactivate');
+        Route::get('warehouses/{warehouse}/bins', [WarehouseBinController::class, 'index'])
+            ->name('warehouses.bins.index');
+        Route::post('warehouses/{warehouse}/zones', [WarehouseBinController::class, 'storeZone'])
+            ->name('warehouses.zones.store');
+        Route::put('warehouses/{warehouse}/zones/{zone}', [WarehouseBinController::class, 'updateZone'])
+            ->name('warehouses.zones.update');
+        Route::post('warehouses/{warehouse}/bins', [WarehouseBinController::class, 'storeBin'])
+            ->name('warehouses.bins.store');
+        Route::put('warehouses/{warehouse}/bins/{bin}', [WarehouseBinController::class, 'updateBin'])
+            ->name('warehouses.bins.update');
+        Route::post('inventory/bin-transfer', [WarehouseBinController::class, 'transfer'])
+            ->name('inventory.bin-transfer');
         Route::resource('categories', CategoryController::class)->except(['show']);
         Route::resource('brands', BrandController::class)->except(['show']);
         Route::resource('units', UnitController::class)->except(['show']);
@@ -55,6 +80,25 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::post('inventory/adjust', [InventoryController::class, 'adjust'])->name('inventory.adjust.store');
         Route::get('inventory/receive', [InventoryController::class, 'receiveForm'])->name('inventory.receive');
         Route::post('inventory/receive', [InventoryController::class, 'receive'])->name('inventory.receive.store');
+        Route::get('inventory/bin-report', [InventoryController::class, 'binReport'])->name('inventory.bin-report');
+        Route::get('inventory/quarantine', [InventoryController::class, 'quarantineIndex'])->name('inventory.quarantine');
+        Route::post('inventory/quarantine/release', [InventoryController::class, 'releaseQuarantine'])
+            ->name('inventory.quarantine.release');
+        Route::post('inventory/quarantine/scrap', [InventoryController::class, 'scrapQuarantine'])
+            ->name('inventory.quarantine.scrap');
+
+        Route::resource('count-sessions', CountSessionController::class)->only(['index', 'create', 'store', 'show']);
+        Route::post('count-sessions/{count_session}/start', [CountSessionController::class, 'start'])
+            ->name('count-sessions.start');
+        Route::post('count-sessions/{count_session}/submit-counts', [CountSessionController::class, 'submitCounts'])
+            ->name('count-sessions.submit-counts');
+        Route::post('count-sessions/{count_session}/approve', [CountSessionController::class, 'approve'])
+            ->name('count-sessions.approve');
+        Route::post('count-sessions/{count_session}/post', [CountSessionController::class, 'post'])
+            ->name('count-sessions.post');
+
+        Route::resource('count-schedule-rules', CountScheduleRuleController::class)
+            ->except(['show']);
 
         Route::resource('stock-transfers', StockTransferController::class)
             ->only(['index', 'create', 'store', 'show']);

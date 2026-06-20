@@ -19,6 +19,10 @@ final readonly class ReceiveStockData
         public ?int $userId,
         public ?string $notes,
         public array $serialNumbers = [],
+        public ?int $binLocationId = null,
+        public bool $toQuarantine = false,
+        public ?string $batchNo = null,
+        public ?string $expiryDate = null,
     ) {}
 
     public static function fromRequest(ReceiveStockRequest $request): self
@@ -42,6 +46,12 @@ final readonly class ReceiveStockData
             userId: $request->user()?->id,
             notes: $request->validated('notes'),
             serialNumbers: $serials,
+            binLocationId: $request->validated('bin_location_id') !== null
+                ? (int) $request->validated('bin_location_id')
+                : null,
+            toQuarantine: (bool) $request->validated('to_quarantine', false),
+            batchNo: $request->validated('batch_no'),
+            expiryDate: $request->validated('expiry_date'),
         );
     }
 }

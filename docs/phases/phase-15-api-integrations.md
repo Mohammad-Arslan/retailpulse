@@ -29,3 +29,47 @@
 1. Third-party token with `sales:read` can list sales but not create users.
 2. Registered webhook receives signed POST on sale complete.
 3. Stripe test payment succeeds in sandbox from POS.
+
+---
+
+## Phase Enhancements (SRS v4.0 — baseline)
+
+### Fiscal Provider Abstraction Endpoints
+- `GET /api/v1/fiscal/providers` — list available fiscal providers and their status (enabled/disabled per branch).
+- `GET /api/v1/fiscal/invoices/{id}` — retrieve fiscal invoice record including submission status, request payload, and response payload.
+- `POST /api/v1/fiscal/invoices/{id}/retry` — manually trigger a retry for a queued fiscal submission.
+- These endpoints use the `FiscalProviderInterface` abstraction; swapping providers requires only a config change, not API contract changes.
+
+### E-Commerce Webhook Stubs
+- `POST /api/v1/webhooks/shopify/products` — receives Shopify product create/update webhooks; validates HMAC signature; queues a `ShopifyProductSyncJob`.
+- `POST /api/v1/webhooks/shopify/orders` — receives new order webhooks; queues a `ShopifyOrderPullJob` that creates a POS cart.
+- `POST /api/v1/webhooks/woocommerce/orders` — same pattern for WooCommerce (JWT-based auth instead of HMAC).
+- All webhook receivers respond `200 OK` immediately and process asynchronously to meet platform timeout requirements.
+
+### Hardware Device Registration API
+- `GET /api/v1/devices` — list registered hardware devices for the authenticated branch.
+- `POST /api/v1/devices` — register a new printer or peripheral device with config JSON.
+- `PUT /api/v1/devices/{id}` — update device config (e.g., change IP address).
+- `POST /api/v1/devices/{id}/test-print` — dispatch a test print job to the specified printer.
+- `DELETE /api/v1/devices/{id}` — deregister a device.
+- Used by the Hardware Settings UI (Phase 21) and callable by third-party integrators.
+
+---
+
+## SRS v4.0 Enhancements (§4.5)
+
+### Per-Token API Quotas
+
+- Admin → API Management: configurable requests/minute + burst limit per Sanctum token.
+- Quota dashboard shows current usage per token; 429 response when exceeded.
+- `api_token_quotas` table or JSON on `personal_access_tokens`.
+
+### Additional Webhook Events
+
+- `po.approved`, `po.created`, `grn.received`, `supplier_invoice.pending_match`, `leave_request.submitted`, `stock.below_reorder`.
+- Webhook payload includes `event`, `entity_type`, `entity_id`, `timestamp`, `branch_id`.
+
+### Acceptance Criteria (v4.0)
+
+1. Token exceeding quota receives 429 with retry-after header.
+2. Registered webhook receives `po.approved` POST on PO approval.

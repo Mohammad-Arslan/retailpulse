@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreProductRequest;
 use App\Http\Requests\Admin\UpdateProductRequest;
 use App\Models\Product;
+use App\Models\Supplier;
 use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Repositories\Contracts\BrandRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
@@ -170,6 +171,10 @@ final class ProductController extends Controller
             'branches' => $this->branches->allActive(
                 $this->branchContext->accessibleBranchIds($request->user()),
             ),
+            'suppliers' => Supplier::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'code']),
             'canShowCost' => $request->user()?->can('products.show-cost') ?? false,
         ];
     }

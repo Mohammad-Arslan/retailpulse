@@ -132,7 +132,53 @@ The domain centers on:
 - **Product → ProductVariant → ProductBatch / ProductSerial** (variant + batch/serial tracking)
 - **StockTransfer → StockTransferItem** (inter-branch transfer workflow with status enum)
 - **BranchProductPrice** (per-branch pricing overrides)
+- **Sale → SaleItem / SalePayment / SaleInvoice** (checkout transaction lifecycle)
 - **AuditLog** (append-only, written by observers)
+
+### Phase 8 — Checkout, Payments & Invoicing
+
+All checkout behaviour is configuration-driven via `system_settings`. Nothing is hardcoded.
+
+**Settings groups** (Admin → Settings):
+- `tax` — enable/disable tax, mode (exclusive/inclusive), default rate, rounding
+- `checkout` — cash change, split tender, layaway, invoice numbering, inventory deduction timing
+- `fbr` — enable/disable FBR IRIS reporting, POS ID, credentials, failure mode (queue/block)
+
+**Checkout flow:**
+```
+POS (F10) → POST /api/v1/pos/carts/{id}/checkout
+         → Inertia redirect to /admin/checkout/{cartId}
+         → GET /api/v1/checkout/{cartId}   (bootstrap: cart + config snapshot)
+         → POST /api/v1/checkout/{cartId}/confirm  (creates Sale, marks cart completed)
+         → POST /api/v1/sales/{id}/payments  (repeatable; reduces balance_due)
+         → Sale → completed; SaleInvoice created; FBR queued if enabled
+```
+
+**Tax pipeline:** `TaxCalculationService` resolves rate per line item (variant → product → category → default). When `tax.enabled = false` the tax column is suppressed everywhere — POS totals, checkout screen, invoice PDF.
+
+**FBR toggle:** When `fbr.enabled = false` (default), no FBR fields appear and no IRIS calls are made. When enabled, `failure_mode = queue` lets sales complete even if IRIS is unreachable; `block` holds the sale until IRIS confirms.
+
+**New services in `app/Services/Checkout/`:**
+- `CheckoutService` — orchestrates the full lifecycle
+- `TaxCalculationService` — per-line tax with priority resolution
+- `SalePaymentProcessor` — gateway dispatch (stub/live/disabled per `payment_gateway_configs`)
+- `InvoiceService` / `InvoicePdfService` — DomPDF rendering to `resources/views/invoices/`
+- `InvoiceNumberService` — race-safe sequence via `FOR UPDATE` row lock
+- `FbrReportingService` — HTTP POST to FBR IRIS endpoint
+- `CheckoutConfigService` — resolves `system_settings` snapshot at bootstrap time
+- `HistoricalSaleImportService` — bulk historical sale import (no inventory, no FBR)
+
+**Key API routes (all `web` + `auth` session-based, not Sanctum):**
+```
+GET  /api/v1/checkout/{cartId}              pos.access
+POST /api/v1/checkout/{cartId}/confirm      pos.access
+POST /api/v1/sales/{id}/payments            pos.access
+POST /api/v1/sales/{id}/void               pos.void-cart
+GET  /api/v1/customers?q=                  auth
+GET  /api/v1/sales/export                  sales.export
+POST /api/v1/sales/import-historical       sales.import-historical
+GET  /invoice/{publicToken}               public
+```
 
 ### Environment
 

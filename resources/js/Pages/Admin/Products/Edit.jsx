@@ -28,6 +28,7 @@ export default function Edit({
     brands,
     units,
     branches,
+    suppliers,
     canShowCost,
 }) {
     const can = useCan();
@@ -49,6 +50,8 @@ export default function Edit({
         default_cost_price: product.variants[0]?.cost_price ?? '0',
         default_sell_price: product.variants[0]?.sell_price ?? '0',
         default_reorder_point: product.variants[0]?.reorder_point ?? '',
+        default_preferred_supplier_id: product.variants[0]?.preferred_supplier_id ?? '',
+        default_alternate_supplier_ids: product.variants[0]?.alternate_supplier_ids ?? [],
         variant_attributes:
             product.type === 'variable'
                 ? product.variant_attributes?.length
@@ -131,6 +134,7 @@ export default function Edit({
                     brands={brands}
                     units={units}
                     branches={branches}
+                    suppliers={suppliers}
                     canShowCost={canShowCost}
                     isEdit
                     productId={product.id}

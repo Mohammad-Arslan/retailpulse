@@ -287,7 +287,10 @@ final class PosCartService
         $grandTotal = collect($items)->sum(fn ($i) => $i['line_total']);
         $totalDiscount = $subtotal - $grandTotal;
 
-        // Phase 8 will set status to completing when navigating to the payment screen.
+        $this->carts->update($cart, [
+            'status' => PosCartStatus::Completing,
+        ]);
+
         return [
             'cart_id' => $cart->id,
             'cashier_id' => $cart->cashier_id,

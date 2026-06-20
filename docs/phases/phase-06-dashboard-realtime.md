@@ -28,4 +28,23 @@ Operational **dashboard** with KPI widgets, comparative charts, and **Laravel Re
 
 1. Low-stock alert appears in feed within 2s of inventory dropping below reorder level.
 2. Dashboard respects branch context and permission-gated widgets.
+
+---
+
+## SRS v4.0 Enhancements (§3.3, §4.1)
+
+### Additional KPI Widgets
+
+- **Overdue Receivables** — sum of AR past due (Phase 9); links to AR aging report.
+- **Pending PO Receipts** — open PO lines awaiting GRN (Phase 10).
+
+### Additional Reverb Channels
+
+- `workflow.approval_required.{userId}` — pending workflow step assigned to user.
+- `ar.overdue_alert.{branchId}` — overdue receivable threshold breached.
+
+### Acceptance Criteria (v4.0)
+
+1. Overdue receivables widget shows correct total when customer has past-due balance.
+2. Workflow approval notification appears in activity feed within 2s of step assignment.
 3. Reverb channels authenticated via Sanctum/session.

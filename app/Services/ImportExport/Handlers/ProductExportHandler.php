@@ -22,7 +22,7 @@ final class ProductExportHandler implements ExportHandler
     {
         $query = ProductVariant::query()
             ->whereHas('product', fn ($q) => TenantImportScope::constrain($q, $context->tenantId))
-            ->with(['product.category', 'product.brand', 'product.unit'])
+            ->with(['product.category', 'product.brand', 'product.unit', 'preferredSupplier'])
             ->orderBy('product_id')
             ->orderBy('sort_order');
 
@@ -52,6 +52,7 @@ final class ProductExportHandler implements ExportHandler
             'type' => $product->type->value,
             'variant_label' => $record->name ?? '',
             'is_active' => $product->is_active ? 1 : 0,
+            'preferred_supplier_code' => $record->preferredSupplier?->code ?? '',
         ];
 
         if ($this->canShowCost($context)) {

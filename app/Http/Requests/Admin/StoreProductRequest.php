@@ -16,6 +16,11 @@ final class StoreProductRequest extends FormRequest
             'category_id' => $this->input('category_id') ?: null,
             'brand_id' => $this->input('brand_id') ?: null,
             'unit_id' => $this->input('unit_id') ?: null,
+            'default_preferred_supplier_id' => $this->input('default_preferred_supplier_id') ?: null,
+            'default_alternate_supplier_ids' => array_values(array_filter(
+                array_map('intval', (array) $this->input('default_alternate_supplier_ids', [])),
+                static fn (int $id): bool => $id > 0,
+            )),
         ]);
     }
 
@@ -41,6 +46,9 @@ final class StoreProductRequest extends FormRequest
             'default_cost_price' => ['nullable', 'numeric', 'min:0'],
             'default_sell_price' => ['nullable', 'numeric', 'min:0'],
             'default_reorder_point' => ['nullable', 'integer', 'min:0'],
+            'default_preferred_supplier_id' => ['nullable', 'integer', Rule::exists('suppliers', 'id')],
+            'default_alternate_supplier_ids' => ['nullable', 'array'],
+            'default_alternate_supplier_ids.*' => ['integer', Rule::exists('suppliers', 'id')],
             'variant_attributes' => ['nullable', 'array'],
             'variant_attributes.*.name' => ['required_with:variant_attributes', 'string', 'max:64'],
             'variant_attributes.*.options' => ['required_with:variant_attributes', 'array', 'min:1'],

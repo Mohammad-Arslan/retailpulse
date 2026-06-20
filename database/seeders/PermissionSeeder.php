@@ -49,6 +49,12 @@ final class PermissionSeeder extends Seeder
             ['name' => 'branches.update', 'description' => 'Update branches'],
             ['name' => 'branches.delete', 'description' => 'Delete branches'],
         ],
+        'warehouses' => [
+            ['name' => 'warehouses.view', 'description' => 'View warehouses'],
+            ['name' => 'warehouses.create', 'description' => 'Create warehouses'],
+            ['name' => 'warehouses.update', 'description' => 'Update warehouses'],
+            ['name' => 'warehouses.deactivate', 'description' => 'Deactivate warehouses'],
+        ],
         'products' => [
             ['name' => 'products.view', 'description' => 'View products and catalog'],
             ['name' => 'products.create', 'description' => 'Create products'],
@@ -66,6 +72,10 @@ final class PermissionSeeder extends Seeder
             ['name' => 'inventory.transfer', 'description' => 'Create and process stock transfers'],
             ['name' => 'inventory.import-opening-stock', 'description' => 'Import opening stock balances from spreadsheets'],
             ['name' => 'inventory.bulk-adjustment-import', 'description' => 'Bulk import stock adjustments from spreadsheets'],
+            ['name' => 'inventory.manage-bins', 'description' => 'Manage warehouse zones and bin locations'],
+            ['name' => 'inventory.release-quarantine', 'description' => 'Release or scrap quarantined stock'],
+            ['name' => 'inventory.cycle-count', 'description' => 'Create and manage cycle count sessions'],
+            ['name' => 'inventory.cycle-count.approve', 'description' => 'Approve cycle count variances'],
         ],
         'settings' => [
             ['name' => 'settings.view', 'description' => 'View global settings'],
@@ -73,6 +83,9 @@ final class PermissionSeeder extends Seeder
             ['name' => 'settings.company.update', 'description' => 'Update company profile settings'],
             ['name' => 'settings.notifications.update', 'description' => 'Update notification settings'],
             ['name' => 'settings.import-export.update', 'description' => 'Update import/export storage settings'],
+            ['name' => 'settings.tax.update', 'description' => 'Update tax calculation settings'],
+            ['name' => 'settings.checkout.update', 'description' => 'Update checkout, payment, and invoice settings'],
+            ['name' => 'settings.fbr.update', 'description' => 'Update FBR IRIS integration settings'],
         ],
         'pos' => [
             ['name' => 'pos.access', 'description' => 'Enter and operate the POS screen'],
@@ -82,6 +95,12 @@ final class PermissionSeeder extends Seeder
             ['name' => 'pos.void-cart', 'description' => 'Void any cart'],
             ['name' => 'pos.override-stock', 'description' => 'Override out-of-stock warning with manager PIN'],
             ['name' => 'pos.admin', 'description' => 'Reset PIN lockouts and manage POS sessions'],
+        ],
+        'sales' => [
+            ['name' => 'sales.view', 'description' => 'View sale records and invoices'],
+            ['name' => 'sales.import-historical', 'description' => 'Import historical sales data'],
+            ['name' => 'sales.export', 'description' => 'Export sale records'],
+            ['name' => 'sales.refund', 'description' => 'Process sale refunds'],
         ],
     ];
 

@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             BranchSeeder::class,
             UnitSeeder::class,
+            SupplierSeeder::class,
             IdentifierSequenceSeeder::class,
             SuperAdminSeeder::class,
         ]);

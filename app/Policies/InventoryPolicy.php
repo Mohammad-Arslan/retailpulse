@@ -22,4 +22,14 @@ final class InventoryPolicy
     {
         return $user->can('inventory.receive');
     }
+
+    public function releaseQuarantine(User $user): bool
+    {
+        return $user->can('inventory.release-quarantine');
+    }
+
+    public function binReport(User $user): bool
+    {
+        return $user->can('inventory.reports');
+    }
 }

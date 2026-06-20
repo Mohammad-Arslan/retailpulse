@@ -11,10 +11,14 @@ use App\Http\Requests\Admin\StoreBranchRequest;
 use App\Http\Requests\Admin\UpdateBranchRequest;
 use App\Models\Branch;
 use App\Repositories\Contracts\BranchRepositoryInterface;
+use App\Repositories\Contracts\WarehouseRepositoryInterface;
 use App\Services\BranchContextService;
 use App\Services\BranchService;
+use App\Support\BranchCodeGenerator;
+use App\Support\BranchOperationalOptions;
 use App\Support\ListPagination;
 use App\Support\OperatingHours;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -26,6 +30,8 @@ final class BranchController extends Controller
         private readonly BranchRepositoryInterface $branches,
         private readonly BranchService $branchService,
         private readonly BranchContextService $branchContext,
+        private readonly WarehouseRepositoryInterface $warehouseRepository,
+        private readonly BranchCodeGenerator $codeGenerator,
     ) {}
 
     public function index(Request $request): Response
@@ -49,13 +55,30 @@ final class BranchController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $this->authorize('create', Branch::class);
 
+        $accessibleIds = $this->branchContext->accessibleBranchIds($request->user());
+
         return Inertia::render('Admin/Branches/Create', [
             'defaultOperatingHours' => OperatingHours::defaults(),
-            'timezones' => $this->commonTimezones(),
+            'operationalOptions' => BranchOperationalOptions::formPayload(),
+            'warehousePicker' => $this->warehouseRepository->allActiveForPicker($accessibleIds),
+        ]);
+    }
+
+    public function suggestCode(Request $request): JsonResponse
+    {
+        $this->authorize('create', Branch::class);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        return response()->json([
+            'code' => $this->codeGenerator->generate($validated['name']),
+            'preview' => false,
         ]);
     }
 
@@ -94,10 +117,18 @@ final class BranchController extends Controller
                     'name' => $w->name,
                     'code' => $w->code,
                     'is_default' => $w->is_default,
+                    'is_active' => $w->is_active,
                 ]),
                 'default_warehouse_id' => $branch->warehouses->firstWhere('is_default', true)?->id,
             ],
-            'timezones' => $this->commonTimezones(),
+            'warehouseOptions' => collect($this->warehouseRepository->activeOptionsForBranch($branch->id))
+                ->map(fn (array $warehouse) => [
+                    'value' => (string) $warehouse['id'],
+                    'label' => sprintf('%s (%s)', $warehouse['name'], $warehouse['code']),
+                ])
+                ->values()
+                ->all(),
+            'operationalOptions' => BranchOperationalOptions::formPayload(),
         ]);
     }
 
@@ -121,26 +152,5 @@ final class BranchController extends Controller
         return redirect()
             ->route('admin.branches.index')
             ->with('success', __('Branch deleted successfully.'));
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function commonTimezones(): array
-    {
-        return [
-            'UTC',
-            'America/New_York',
-            'America/Chicago',
-            'America/Denver',
-            'America/Los_Angeles',
-            'Europe/London',
-            'Europe/Paris',
-            'Asia/Dubai',
-            'Asia/Karachi',
-            'Asia/Kolkata',
-            'Asia/Singapore',
-            'Australia/Sydney',
-        ];
     }
 }

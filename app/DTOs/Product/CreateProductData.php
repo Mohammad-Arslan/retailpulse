@@ -33,6 +33,9 @@ final readonly class CreateProductData
         public float $defaultCostPrice,
         public float $defaultSellPrice,
         public ?int $defaultReorderPoint,
+        public ?int $defaultPreferredSupplierId,
+        /** @var list<int> */
+        public array $defaultAlternateSupplierIds,
         public array $images,
     ) {}
 
@@ -54,6 +57,8 @@ final readonly class CreateProductData
             defaultCostPrice: (float) $request->validated('default_cost_price', 0),
             defaultSellPrice: (float) $request->validated('default_sell_price', 0),
             defaultReorderPoint: self::nullableInt($request->validated('default_reorder_point')),
+            defaultPreferredSupplierId: self::nullableInt($request->validated('default_preferred_supplier_id')),
+            defaultAlternateSupplierIds: self::normalizeSupplierIds($request->validated('default_alternate_supplier_ids', [])),
             images: self::normalizeUploadedFiles($request->file('images')),
         );
     }
@@ -88,6 +93,18 @@ final readonly class CreateProductData
         }
 
         return (int) $value;
+    }
+
+    /**
+     * @param  list<mixed>  $ids
+     * @return list<int>
+     */
+    private static function normalizeSupplierIds(array $ids): array
+    {
+        return array_values(array_unique(array_filter(
+            array_map(static fn (mixed $id): int => (int) $id, $ids),
+            static fn (int $id): bool => $id > 0,
+        )));
     }
 
     /**

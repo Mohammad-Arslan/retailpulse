@@ -27,6 +27,9 @@ final readonly class UpdateProductData
         public array $bundleItems,
         public array $branchPrices,
         public bool $regenerateVariants,
+        public ?int $defaultPreferredSupplierId,
+        /** @var list<int> */
+        public array $defaultAlternateSupplierIds,
     ) {}
 
     public static function fromRequest(UpdateProductRequest $request): self
@@ -44,6 +47,8 @@ final readonly class UpdateProductData
             bundleItems: self::normalizeBundleItems($request->validated('bundle_items', [])),
             branchPrices: self::normalizeBranchPrices($request->validated('branch_prices', [])),
             regenerateVariants: $request->boolean('regenerate_variants'),
+            defaultPreferredSupplierId: self::nullableInt($request->validated('default_preferred_supplier_id')),
+            defaultAlternateSupplierIds: self::normalizeSupplierIds($request->validated('default_alternate_supplier_ids', [])),
         );
     }
 
@@ -84,6 +89,18 @@ final readonly class UpdateProductData
             ],
             $items,
         );
+    }
+
+    /**
+     * @param  list<mixed>  $ids
+     * @return list<int>
+     */
+    private static function normalizeSupplierIds(array $ids): array
+    {
+        return array_values(array_unique(array_filter(
+            array_map(static fn (mixed $id): int => (int) $id, $ids),
+            static fn (int $id): bool => $id > 0,
+        )));
     }
 
     /**

@@ -5,9 +5,9 @@ export const CHART_COLORS = {
     amber: '#c8762a',
     violet: '#6a4ac8',
     rose: '#c84a4a',
-    ink300: '#b8b0a8',
-    ink500: '#7a726a',
-    sand100: '#f3efe8',
+    ink300: '#9ca3af',
+    ink500: '#6b7280',
+    sand100: '#f3f4f6',
 };
 
 export const CHART_PALETTE = [

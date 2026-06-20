@@ -6,7 +6,6 @@ namespace App\Support;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Support\ImagePresenter;
 
 final class ProductPresenter
 {
@@ -19,6 +18,7 @@ final class ProductPresenter
             'category:id,name',
             'brand:id,name',
             'unit:id,name,abbreviation',
+            'variants.preferredSupplier:id,name,code',
             'variants.bundleItems.childVariant.product:id,name',
             'variants.branchPrices.branch:id,name',
             'images',
@@ -48,6 +48,10 @@ final class ProductPresenter
                 'cost_price' => (string) $v->cost_price,
                 'sell_price' => (string) $v->sell_price,
                 'reorder_point' => $v->reorder_point,
+                'preferred_supplier' => $v->preferredSupplier?->only('id', 'name', 'code'),
+                'alternate_suppliers' => $v->alternateSuppliers()->map(
+                    fn ($supplier) => $supplier->only('id', 'name', 'code'),
+                )->values()->all(),
                 'attributes' => $v->attributes ?? [],
                 'is_default' => $v->is_default,
             ])->values()->all(),
@@ -88,6 +92,7 @@ final class ProductPresenter
             'category:id,name',
             'brand:id,name',
             'unit:id,name,abbreviation',
+            'variants.preferredSupplier:id,name,code',
             'variants.bundleItems.childVariant.product:id,name',
             'variants.branchPrices.branch:id,name',
             'images',
@@ -114,6 +119,8 @@ final class ProductPresenter
                 'cost_price' => (string) $v->cost_price,
                 'sell_price' => (string) $v->sell_price,
                 'reorder_point' => $v->reorder_point !== null ? (string) $v->reorder_point : '',
+                'preferred_supplier_id' => $v->preferred_supplier_id,
+                'alternate_supplier_ids' => $v->alternate_supplier_ids ?? [],
                 'attributes' => $v->attributes ?? [],
                 'is_default' => $v->is_default,
             ])->values()->all(),

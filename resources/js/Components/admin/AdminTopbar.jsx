@@ -22,6 +22,7 @@ export default function AdminTopbar({
     onOpenSearch,
     onToggleTheme,
     onOpenMobileMenu,
+    posMode = false,
 }) {
     const { t } = useTranslation();
 
@@ -32,47 +33,54 @@ export default function AdminTopbar({
                 'bg-rp-surface/95 backdrop-blur',
             )}
         >
+            {/* In posMode this is the only sidebar toggle; always visible */}
             <button
                 type="button"
                 onClick={onOpenMobileMenu}
-                className={cn(iconBtn, 'lg:hidden')}
+                className={cn(iconBtn, posMode ? 'flex' : 'lg:hidden')}
                 aria-label={t('common.openMenu')}
             >
                 <Menu className="h-4 w-4 text-rp-text-secondary" />
             </button>
 
-            <button
-                type="button"
-                onClick={onToggleCollapse}
-                className={cn(iconBtn, 'hidden lg:flex')}
-                aria-label={
-                    collapsed ? t('common.expandSidebar') : t('common.collapseSidebar')
-                }
-            >
-                {collapsed ? (
-                    <PanelLeftOpen className="h-4 w-4 text-rp-text-secondary" />
-                ) : (
-                    <PanelLeftClose className="h-4 w-4 text-rp-text-secondary" />
-                )}
-            </button>
+            {/* Standard collapse toggle — hidden in posMode (sidebar is overlay, not persistent) */}
+            {!posMode && (
+                <button
+                    type="button"
+                    onClick={onToggleCollapse}
+                    className={cn(iconBtn, 'hidden lg:flex')}
+                    aria-label={
+                        collapsed ? t('common.expandSidebar') : t('common.collapseSidebar')
+                    }
+                >
+                    {collapsed ? (
+                        <PanelLeftOpen className="h-4 w-4 text-rp-text-secondary" />
+                    ) : (
+                        <PanelLeftClose className="h-4 w-4 text-rp-text-secondary" />
+                    )}
+                </button>
+            )}
 
-            <button
-                type="button"
-                onClick={onOpenSearch}
-                aria-label={t('common.commandPalette')}
-                className={cn(
-                    'flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-rp-border bg-rp-surface-inset px-3 py-2 text-left transition',
-                    'hover:border-teal-400 hover:bg-rp-surface sm:max-w-md lg:max-w-xl',
-                )}
-            >
-                <Search className="h-4 w-4 shrink-0 text-rp-text-muted" />
-                <span className="flex-1 truncate text-sm text-rp-text-muted">
-                    {t('common.commandPalette')}
-                </span>
-                <kbd className="hidden rounded border border-rp-border bg-rp-surface px-1.5 py-0.5 text-[10px] text-rp-text-muted sm:inline">
-                    ⌘K
-                </kbd>
-            </button>
+            {/* Global search — hidden on POS; PosHeader already has a dedicated search bar */}
+            {!posMode && (
+                <button
+                    type="button"
+                    onClick={onOpenSearch}
+                    aria-label={t('common.commandPalette')}
+                    className={cn(
+                        'flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-rp-border bg-rp-surface-inset px-3 py-2 text-left transition',
+                        'hover:border-teal-400 hover:bg-rp-surface sm:max-w-md lg:max-w-xl',
+                    )}
+                >
+                    <Search className="h-4 w-4 shrink-0 text-rp-text-muted" />
+                    <span className="flex-1 truncate text-sm text-rp-text-muted">
+                        {t('common.commandPalette')}
+                    </span>
+                    <kbd className="hidden rounded border border-rp-border bg-rp-surface px-1.5 py-0.5 text-[10px] text-rp-text-muted sm:inline">
+                        ⌘K
+                    </kbd>
+                </button>
+            )}
 
             <div className="ml-auto flex items-center gap-2">
                 <BranchSwitcher />

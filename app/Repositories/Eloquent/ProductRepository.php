@@ -76,6 +76,7 @@ final class ProductRepository implements ProductRepositoryInterface
                 'category:id,name',
                 'brand:id,name',
                 'unit:id,name,abbreviation',
+                'variants.preferredSupplier:id,name,code',
                 'variants.bundleItems.childVariant.product:id,name,type',
                 'variants.branchPrices.branch:id,name',
                 'images',
@@ -133,6 +134,7 @@ final class ProductRepository implements ProductRepositoryInterface
                 'product_name' => $variant->product?->name ?? '',
                 'sell_price' => (string) $variant->sell_price,
                 'track_serials' => (bool) ($variant->product?->track_serials ?? false),
+                'track_batches' => (bool) ($variant->product?->track_batches ?? false),
             ]);
     }
 }

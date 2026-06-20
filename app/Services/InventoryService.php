@@ -8,14 +8,21 @@ use App\DTOs\Inventory\AdjustStockData;
 use App\DTOs\Inventory\DeductStockData;
 use App\DTOs\Inventory\ReceiveStockData;
 use App\DTOs\Inventory\ReserveStockData;
+use App\Enums\CountScopeType;
+use App\Enums\CountSessionStatus;
 use App\Enums\PickingStrategy;
 use App\Enums\SerialStatus;
 use App\Enums\StockMovementReason;
 use App\Events\InventoryStockChanged;
+use App\Events\LowStockAlert;
+use App\Models\BinLocation;
+use App\Models\CountSession;
 use App\Models\Inventory;
+use App\Models\ProductBatch;
 use App\Models\ProductSerial;
 use App\Models\ProductVariant;
 use App\Models\StockReservation;
+use App\Models\VariantBranchSetting;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
 use App\Repositories\Contracts\StockMovementRepositoryInterface;
@@ -35,15 +42,109 @@ final class InventoryService
             $this->registerSerials($data->variantId, $data->serialNumbers);
         }
 
+        $batchId = $data->batchId ?? $this->resolveReceiveBatchId($data);
+
+        if ($data->toQuarantine) {
+            return $this->receiveToQuarantine($data, $batchId);
+        }
+
         return $this->applyDelta(
             warehouseId: $data->warehouseId,
             variantId: $data->variantId,
-            batchId: $data->batchId,
+            batchId: $batchId,
             qtyDelta: abs($data->quantity),
             reason: StockMovementReason::PurchaseReceive,
             userId: $data->userId,
             notes: $data->notes,
+            binLocationId: $data->binLocationId,
         );
+    }
+
+    private function receiveToQuarantine(ReceiveStockData $data, ?int $batchId): Inventory
+    {
+        $this->assertTracksInventory($data->variantId);
+        $this->assertBatchProvidedForTrackedVariant($data->variantId, $batchId);
+        $this->assertNotFrozen($data->warehouseId, $data->binLocationId);
+
+        if ($data->quantity <= 0) {
+            throw ValidationException::withMessages([
+                'quantity' => __('Receive quantity must be positive.'),
+            ]);
+        }
+
+        return DB::transaction(function () use ($data, $batchId) {
+            $inventory = $this->inventories->lockOrCreate(
+                $data->warehouseId,
+                $data->variantId,
+                $batchId,
+                $data->binLocationId,
+            );
+
+            $previousOnHand = $inventory->quantity_on_hand;
+            $previousReserved = $inventory->quantity_reserved;
+
+            $inventory->increment('quantity_in_quarantine', $data->quantity);
+            $inventory = $inventory->fresh() ?? $inventory;
+
+            $this->movements->create([
+                'warehouse_id' => $data->warehouseId,
+                'product_variant_id' => $data->variantId,
+                'batch_id' => $batchId,
+                'reason' => StockMovementReason::PurchaseReceive,
+                'qty_delta' => 0,
+                'quantity_on_hand_after' => $inventory->quantity_on_hand,
+                'user_id' => $data->userId,
+                'notes' => $data->notes ?? __('Received to quarantine (pending QC)'),
+            ]);
+
+            $this->dispatchStockChanged(
+                $inventory,
+                $previousOnHand,
+                $previousReserved,
+                StockMovementReason::PurchaseReceive,
+            );
+
+            return $inventory;
+        });
+    }
+
+    private function resolveReceiveBatchId(ReceiveStockData $data): ?int
+    {
+        $variant = ProductVariant::query()->with('product')->find($data->variantId);
+
+        if ($variant?->product === null || ! $variant->product->track_batches) {
+            return null;
+        }
+
+        $batchNo = trim((string) ($data->batchNo ?? ''));
+
+        if ($batchNo === '') {
+            throw ValidationException::withMessages([
+                'batch_no' => __('Batch number is required for batch-tracked products.'),
+            ]);
+        }
+
+        $batch = ProductBatch::query()->firstOrCreate(
+            [
+                'product_variant_id' => $variant->id,
+                'batch_no' => $batchNo,
+            ],
+            [
+                'expiry_date' => $data->expiryDate !== null && $data->expiryDate !== ''
+                    ? $data->expiryDate
+                    : null,
+            ],
+        );
+
+        if (
+            $data->expiryDate !== null
+            && $data->expiryDate !== ''
+            && $batch->expiry_date?->format('Y-m-d') !== $data->expiryDate
+        ) {
+            $batch->update(['expiry_date' => $data->expiryDate]);
+        }
+
+        return $batch->id;
     }
 
     public function adjust(AdjustStockData $data): Inventory
@@ -81,6 +182,7 @@ final class InventoryService
         int $quantity,
         ?int $userId = null,
         ?string $notes = null,
+        ?int $binLocationId = null,
     ): Inventory {
         if ($quantity < 0) {
             throw ValidationException::withMessages([
@@ -90,8 +192,17 @@ final class InventoryService
 
         $this->assertTracksInventory($variantId);
         $this->assertBatchProvidedForTrackedVariant($variantId, $batchId);
+        $this->assertNotFrozen($warehouseId, $binLocationId);
 
-        if ($this->movements->hasOpeningBalance($warehouseId, $variantId, $batchId)) {
+        if ($binLocationId !== null) {
+            $existing = $this->inventories->findForUpdate($warehouseId, $variantId, $batchId, $binLocationId);
+
+            if ($existing !== null && $existing->quantity_on_hand > 0) {
+                throw ValidationException::withMessages([
+                    'sku' => __('Opening balance already exists for this warehouse, variant, batch, and bin.'),
+                ]);
+            }
+        } elseif ($this->movements->hasOpeningBalance($warehouseId, $variantId, $batchId)) {
             throw ValidationException::withMessages([
                 'sku' => __('Opening balance already exists for this warehouse, variant, and batch.'),
             ]);
@@ -104,8 +215,9 @@ final class InventoryService
             $quantity,
             $userId,
             $notes,
+            $binLocationId,
         ) {
-            $inventory = $this->inventories->lockOrCreate($warehouseId, $variantId, $batchId);
+            $inventory = $this->inventories->lockOrCreate($warehouseId, $variantId, $batchId, $binLocationId);
             $previousOnHand = $inventory->quantity_on_hand;
             $previousReserved = $inventory->quantity_reserved;
 
@@ -142,6 +254,8 @@ final class InventoryService
                 $previousReserved,
                 StockMovementReason::OpeningBalance,
             );
+
+            $this->checkLowStockAlert($inventory);
 
             return $inventory;
         });
@@ -374,7 +488,7 @@ final class InventoryService
                 continue;
             }
 
-            $available = $this->availableQuantity($warehouseId, $variantId, $batchId);
+            $available = $this->inventories->totalAvailableQuantity($warehouseId, $variantId, $batchId);
             $sufficient = $available >= $requested;
 
             $results[] = [
@@ -400,6 +514,7 @@ final class InventoryService
         ?string $referenceType = null,
         ?int $referenceId = null,
         ?string $notes = null,
+        ?int $binLocationId = null,
     ): Inventory {
         $this->assertTracksInventory($variantId);
 
@@ -413,6 +528,8 @@ final class InventoryService
             ]);
         }
 
+        $this->assertNotFrozen($warehouseId, $binLocationId);
+
         return DB::transaction(function () use (
             $warehouseId,
             $variantId,
@@ -423,8 +540,9 @@ final class InventoryService
             $referenceType,
             $referenceId,
             $notes,
+            $binLocationId,
         ) {
-            $inventory = $this->inventories->lockOrCreate($warehouseId, $variantId, $batchId);
+            $inventory = $this->inventories->lockOrCreate($warehouseId, $variantId, $batchId, $binLocationId);
             $previousOnHand = $inventory->quantity_on_hand;
             $previousReserved = $inventory->quantity_reserved;
             $newOnHand = $previousOnHand + $qtyDelta;
@@ -460,8 +578,85 @@ final class InventoryService
 
             $this->dispatchStockChanged($inventory, $previousOnHand, $previousReserved, $reason);
 
+            $this->checkLowStockAlert($inventory);
+
             return $inventory;
         });
+    }
+
+    public function checkLowStockAlert(Inventory $inventory): void
+    {
+        $inventory->loadMissing(['warehouse', 'variant']);
+
+        $branchId = $inventory->warehouse?->branch_id;
+
+        if ($branchId === null) {
+            return;
+        }
+
+        $setting = VariantBranchSetting::query()
+            ->where('branch_id', $branchId)
+            ->where('product_variant_id', $inventory->product_variant_id)
+            ->first();
+
+        $reorderPoint = $setting?->reorder_point ?? $inventory->variant?->reorder_point;
+
+        if ($reorderPoint === null) {
+            return;
+        }
+
+        $totalOnHand = (int) Inventory::query()
+            ->where('warehouse_id', $inventory->warehouse_id)
+            ->where('product_variant_id', $inventory->product_variant_id)
+            ->sum('quantity_on_hand');
+
+        if ($totalOnHand <= $reorderPoint && $inventory->variant !== null) {
+            event(new LowStockAlert(
+                inventory: $inventory,
+                variant: $inventory->variant,
+                reorderPoint: $reorderPoint,
+                quantityOnHand: $totalOnHand,
+            ));
+        }
+    }
+
+    private function assertNotFrozen(int $warehouseId, ?int $binLocationId = null): void
+    {
+        $zoneId = null;
+
+        if ($binLocationId !== null) {
+            $zoneId = BinLocation::query()
+                ->whereKey($binLocationId)
+                ->value('warehouse_zone_id');
+        }
+
+        $query = CountSession::query()
+            ->where('warehouse_id', $warehouseId)
+            ->where('freeze_mode', true)
+            ->whereIn('status', [
+                CountSessionStatus::InProgress,
+                CountSessionStatus::UnderReview,
+                CountSessionStatus::Approved,
+            ]);
+
+        if ($binLocationId !== null || $zoneId !== null) {
+            $query->where(function ($q) use ($zoneId) {
+                $q->where('scope_type', CountScopeType::Full);
+
+                if ($zoneId !== null) {
+                    $q->orWhere(function ($inner) use ($zoneId) {
+                        $inner->where('scope_type', CountScopeType::Zone)
+                            ->where('scope_id', $zoneId);
+                    });
+                }
+            });
+        }
+
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'warehouse_id' => __('Inventory movements are frozen during an active cycle count.'),
+            ]);
+        }
     }
 
     private function deductFromInventoryRow(DeductStockData $data, ?int $batchId, int $quantity): Inventory

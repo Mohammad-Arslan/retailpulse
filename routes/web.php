@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\InvoicePrintController;
+use App\Http\Controllers\PublicInvoiceController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -29,5 +31,11 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::redirect('/pos', '/admin/pos');
+
+Route::get('/invoice/{publicToken}', [PublicInvoiceController::class, 'show'])
+    ->name('invoice.public');
+
+Route::get('/invoice/{publicToken}/print', [InvoicePrintController::class, 'show'])
+    ->name('invoice.print');
 
 require __DIR__.'/auth.php';

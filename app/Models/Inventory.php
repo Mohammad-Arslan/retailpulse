@@ -12,8 +12,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'warehouse_id',
     'product_variant_id',
     'batch_id',
+    'bin_location_id',
     'quantity_on_hand',
     'quantity_reserved',
+    'quantity_in_quarantine',
 ])]
 class Inventory extends Model
 {
@@ -22,6 +24,7 @@ class Inventory extends Model
         return [
             'quantity_on_hand' => 'integer',
             'quantity_reserved' => 'integer',
+            'quantity_in_quarantine' => 'integer',
         ];
     }
 
@@ -40,8 +43,18 @@ class Inventory extends Model
         return $this->belongsTo(ProductBatch::class, 'batch_id');
     }
 
+    public function binLocation(): BelongsTo
+    {
+        return $this->belongsTo(BinLocation::class);
+    }
+
     public function availableQuantity(): int
     {
-        return max(0, $this->quantity_on_hand - $this->quantity_reserved);
+        return max(0, $this->quantity_on_hand - $this->quantity_reserved - $this->quantity_in_quarantine);
+    }
+
+    public function sellableQuantity(): int
+    {
+        return $this->availableQuantity();
     }
 }

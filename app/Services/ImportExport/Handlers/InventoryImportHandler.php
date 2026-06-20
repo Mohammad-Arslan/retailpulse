@@ -46,6 +46,7 @@ final class InventoryImportHandler implements ImportHandler
         }
 
         $batchId = $this->support->resolveBatchId($variant, $row);
+        $binId = $this->support->resolveBinId($warehouse->id, $row);
 
         try {
             $this->inventory->setOpeningBalance(
@@ -55,6 +56,7 @@ final class InventoryImportHandler implements ImportHandler
                 quantity: $qty,
                 userId: $context->userId,
                 notes: 'Opening balance import',
+                binLocationId: $binId,
             );
         } catch (ValidationException $e) {
             throw ImportRowException::fromValidationErrors($e->errors());

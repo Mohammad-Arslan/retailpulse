@@ -8,9 +8,10 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-function Receive({ warehouses }) {
+function Receive({ warehouses, binsByWarehouse }) {
     const { t } = useTranslation();
     const [variant, setVariant] = useState(null);
+
     const warehouseOptions = useMemo(
         () =>
             warehouses.map((warehouse) => ({
@@ -23,13 +24,29 @@ function Receive({ warehouses }) {
     const { data, setData, post, processing, errors } = useForm({
         warehouse_id: warehouses[0]?.id ?? '',
         product_variant_id: '',
-        batch_id: '',
+        batch_no: '',
+        expiry_date: '',
         quantity: '',
         serial_numbers: [],
+        bin_location_id: '',
+        to_quarantine: false,
         notes: '',
     });
 
     const trackSerials = variant?.track_serials ?? false;
+    const trackBatches = variant?.track_batches ?? false;
+
+    const binOptions = useMemo(() => {
+        const bins = binsByWarehouse?.[data.warehouse_id] ?? binsByWarehouse?.[String(data.warehouse_id)] ?? [];
+
+        return [
+            { value: '', label: t('pages.inventory.fields.noBin') },
+            ...bins.map((bin) => ({
+                value: String(bin.id),
+                label: bin.label ?? bin.bin_code,
+            })),
+        ];
+    }, [binsByWarehouse, data.warehouse_id, t]);
 
     const serialCount = useMemo(
         () => data.serial_numbers.filter((s) => String(s).trim() !== '').length,
@@ -41,6 +58,10 @@ function Receive({ warehouses }) {
             setData('product_variant_id', variant.id);
         }
     }, [variant, setData]);
+
+    useEffect(() => {
+        setData('bin_location_id', '');
+    }, [data.warehouse_id, setData]);
 
     useEffect(() => {
         if (!trackSerials) {
@@ -104,7 +125,7 @@ function Receive({ warehouses }) {
                         <Select
                             id="warehouse_id"
                             options={warehouseOptions}
-                            value={data.warehouse_id}
+                            value={String(data.warehouse_id)}
                             onChange={(value) => setData('warehouse_id', value)}
                             required
                         />
@@ -118,6 +139,50 @@ function Receive({ warehouses }) {
                             value={variant}
                             onChange={setVariant}
                             error={errors.product_variant_id}
+                        />
+                    </AdminFormField>
+
+                    {trackBatches && (
+                        <>
+                            <AdminFormField
+                                label={t('pages.inventory.fields.batchNo')}
+                                id="batch_no"
+                                error={errors.batch_no}
+                            >
+                                <input
+                                    id="batch_no"
+                                    value={data.batch_no}
+                                    className="rp-form-input w-full"
+                                    onChange={(e) => setData('batch_no', e.target.value)}
+                                    required
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.inventory.fields.expiryDate')}
+                                id="expiry_date"
+                                error={errors.expiry_date}
+                            >
+                                <input
+                                    id="expiry_date"
+                                    type="date"
+                                    value={data.expiry_date}
+                                    className="rp-form-input w-full"
+                                    onChange={(e) => setData('expiry_date', e.target.value)}
+                                />
+                            </AdminFormField>
+                        </>
+                    )}
+
+                    <AdminFormField
+                        label={t('pages.inventory.fields.binLocation')}
+                        id="bin_location_id"
+                        error={errors.bin_location_id}
+                    >
+                        <Select
+                            id="bin_location_id"
+                            options={binOptions}
+                            value={String(data.bin_location_id ?? '')}
+                            onChange={(value) => setData('bin_location_id', value)}
                         />
                     </AdminFormField>
 
@@ -163,6 +228,23 @@ function Receive({ warehouses }) {
                         </AdminFormField>
                     )}
 
+                    <label className="flex items-start gap-2 text-sm text-rp-text-secondary">
+                        <input
+                            type="checkbox"
+                            className="mt-0.5"
+                            checked={data.to_quarantine}
+                            onChange={(e) => setData('to_quarantine', e.target.checked)}
+                        />
+                        <span>
+                            <span className="font-medium text-rp-text">
+                                {t('pages.inventory.fields.toQuarantine')}
+                            </span>
+                            <span className="mt-0.5 block text-xs text-rp-text-muted">
+                                {t('pages.inventory.quarantineReceiveHint')}
+                            </span>
+                        </span>
+                    </label>
+
                     <AdminFormField label={t('pages.inventory.fields.notes')} id="notes">
                         <textarea
                             id="notes"
@@ -175,7 +257,9 @@ function Receive({ warehouses }) {
                 </FormCard>
 
                 <button type="submit" disabled={processing || !variant} className="rp-btn-primary">
-                    {t('pages.inventory.receiveSubmit')}
+                    {data.to_quarantine
+                        ? t('pages.inventory.receiveQuarantineSubmit')
+                        : t('pages.inventory.receiveSubmit')}
                 </button>
             </form>
         </>

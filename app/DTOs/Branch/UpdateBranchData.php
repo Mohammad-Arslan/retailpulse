@@ -6,6 +6,7 @@ namespace App\DTOs\Branch;
 
 use App\Enums\PickingStrategy;
 use App\Http\Requests\Admin\UpdateBranchRequest;
+use App\Support\BranchOperationalOptions;
 use App\Support\OperatingHours;
 
 final readonly class UpdateBranchData
@@ -15,7 +16,6 @@ final readonly class UpdateBranchData
      */
     public function __construct(
         public string $name,
-        public string $code,
         public ?string $address,
         public string $currency,
         public string $timezone,
@@ -31,10 +31,9 @@ final readonly class UpdateBranchData
     {
         return new self(
             name: $request->validated('name'),
-            code: $request->validated('code'),
             address: $request->validated('address'),
-            currency: strtoupper($request->validated('currency')),
-            timezone: $request->validated('timezone'),
+            currency: BranchOperationalOptions::normalizeCurrency($request->validated('currency')),
+            timezone: BranchOperationalOptions::normalizeTimezone($request->validated('timezone')),
             pickingStrategy: PickingStrategy::from($request->validated('picking_strategy')),
             operatingHours: OperatingHours::normalize($request->validated('operating_hours')),
             receiptFooter: $request->validated('receipt_footer'),

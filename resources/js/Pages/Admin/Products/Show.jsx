@@ -255,6 +255,9 @@ function Show({ product, canShowCost }) {
                                     <th className="px-4 py-3 text-right">
                                         {t('pages.products.fields.reorderPoint')}
                                     </th>
+                                    <th className="px-4 py-3">
+                                        {t('pages.products.fields.preferredSupplier')}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -289,6 +292,22 @@ function Show({ product, canShowCost }) {
                                         </td>
                                         <td className="px-4 py-3 text-right font-mono">
                                             {variant.reorder_point ?? '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-rp-text-secondary">
+                                            {variant.preferred_supplier?.name ?? '—'}
+                                            {variant.preferred_supplier?.code ? (
+                                                <span className="ml-1 font-mono text-xs text-rp-text-muted">
+                                                    ({variant.preferred_supplier.code})
+                                                </span>
+                                            ) : null}
+                                            {variant.alternate_suppliers?.length > 0 && (
+                                                <div className="mt-1 text-xs text-rp-text-muted">
+                                                    {t('pages.products.fields.alternateSuppliers')}:{' '}
+                                                    {variant.alternate_suppliers
+                                                        .map((supplier) => supplier.name)
+                                                        .join(', ')}
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

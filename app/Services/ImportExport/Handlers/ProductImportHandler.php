@@ -9,13 +9,14 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Supplier;
 use App\Models\Unit;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
-use App\Support\UniqueSlug;
 use App\Support\TaggedCache;
 use App\Support\TenantImportScope;
+use App\Support\UniqueSlug;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -140,6 +141,16 @@ final class ProductImportHandler implements ImportHandler
                 'default_rules' => [['rule' => 'nullable'], ['rule' => 'boolean']],
                 'default_transforms' => ['cast_bool'],
             ],
+            [
+                'key' => 'preferred_supplier_code',
+                'label' => 'Preferred Supplier Code',
+                'required' => false,
+                'default_rules' => [
+                    ['rule' => 'nullable'],
+                    ['rule' => 'string', 'max' => 64],
+                ],
+                'default_transforms' => ['trim', 'uppercase', 'nullify_empty'],
+            ],
         ];
     }
 
@@ -173,6 +184,12 @@ final class ProductImportHandler implements ImportHandler
 
         if ($brandReference !== '' && $this->findBrand($brandReference, $context->tenantId) === null) {
             $errors['brand_code'] = ['Brand not found.'];
+        }
+
+        $supplierCode = trim((string) ($row['preferred_supplier_code'] ?? ''));
+
+        if ($supplierCode !== '' && $this->findSupplier($supplierCode, $context->tenantId) === null) {
+            $errors['preferred_supplier_code'] = ['Supplier not found.'];
         }
 
         return $errors;
@@ -261,6 +278,7 @@ final class ProductImportHandler implements ImportHandler
                 'barcode' => $row['barcode'] ?? null,
                 'cost_price' => $row['cost_price'] ?? 0,
                 'sell_price' => $row['sell_price'] ?? 0,
+                ...$this->resolveSupplierFields($row, $context->tenantId),
             ];
 
             if ($variant === null) {
@@ -354,9 +372,51 @@ final class ProductImportHandler implements ImportHandler
         return $this->findTenantScopedRecord(Brand::query(), $reference, $tenantId);
     }
 
+    private function findSupplier(string $code, ?int $tenantId): ?Supplier
+    {
+        $code = trim($code);
+
+        if ($code === '') {
+            return null;
+        }
+
+        return TenantImportScope::constrain(Supplier::query(), $tenantId)
+            ->whereRaw('UPPER(code) = ?', [mb_strtoupper($code)])
+            ->first();
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @return array{preferred_supplier_id: ?int, alternate_supplier_ids: null}
+     */
+    private function resolveSupplierFields(array $row, ?int $tenantId): array
+    {
+        $code = trim((string) ($row['preferred_supplier_code'] ?? ''));
+
+        if ($code === '') {
+            return [
+                'preferred_supplier_id' => null,
+                'alternate_supplier_ids' => null,
+            ];
+        }
+
+        $supplier = $this->findSupplier($code, $tenantId);
+
+        if ($supplier === null) {
+            return [
+                'preferred_supplier_id' => null,
+                'alternate_supplier_ids' => null,
+            ];
+        }
+
+        return [
+            'preferred_supplier_id' => $supplier->id,
+            'alternate_supplier_ids' => null,
+        ];
+    }
+
     /**
      * @param  Builder<Category|Brand>  $query
-     * @return Category|Brand|null
      */
     private function findTenantScopedRecord(Builder $query, string $reference, ?int $tenantId): Category|Brand|null
     {

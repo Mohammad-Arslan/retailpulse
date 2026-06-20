@@ -83,4 +83,12 @@ final class BranchRepository implements BranchRepositoryInterface
     {
         $branch->delete();
     }
+
+    public function codeExists(string $code, ?int $exceptId = null): bool
+    {
+        return Branch::query()
+            ->where('code', strtoupper($code))
+            ->when($exceptId !== null, fn ($q) => $q->whereKeyNot($exceptId))
+            ->exists();
+    }
 }

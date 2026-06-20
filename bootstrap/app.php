@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureAdminAccess;
 use App\Http\Middleware\EnsurePosAccess;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetBranchContext;
+use App\Jobs\CreateScheduledCountSessionsJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -41,4 +42,5 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('import-export:prune')->dailyAt('02:00');
         $schedule->command('inventory:release-expired-reservations')->everyMinute();
+        $schedule->job(CreateScheduledCountSessionsJob::class)->dailyAt('01:00');
     })->create();

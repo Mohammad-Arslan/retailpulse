@@ -2,7 +2,7 @@
 
 **SRS Reference:** §3.6, §3.18 (opening stock & import framework)  
 **Status:** Complete  
-**Depends on:** Phase 4
+**Depends on:** Phase 4, Phase 3 (warehouses — at least one per branch; multi-warehouse via warehouse CRUD follow-up)
 
 ---
 
@@ -191,7 +191,7 @@ All committed inventory mutations fire `InventoryStockChanged`.
 | 1 | Concurrency strategy | **Pessimistic** (`SELECT FOR UPDATE` on `inventories`) |
 | 2 | Opening stock re-import | **Reject duplicate** per warehouse + variant + batch |
 | 3 | Partial transfer status | **Distinct** `partially_received` status |
-| 4 | Warehouse deactivation | **Soft-delete** via `warehouses.is_active`; inventory retained; inactive warehouses excluded from pickers |
+| 4 | Warehouse deactivation | **Soft-delete** via `warehouses.is_active`; inventory retained; inactive warehouses excluded from pickers; use `warehouses.deactivate` permission (Phase 3 follow-up) |
 
 ---
 
@@ -214,3 +214,59 @@ All committed inventory mutations fire `InventoryStockChanged`.
 | TTL command | `app/Console/Commands/ReleaseExpiredInventoryReservationsCommand.php` |
 | Stock UI | `resources/js/Pages/Admin/Inventory/` |
 | Transfer UI | `resources/js/Pages/Admin/StockTransfers/` |
+
+---
+
+## SRS v4.0 Enhancements (§3.6, §3.18)
+
+**Prerequisite:** Phase 3 **warehouse CRUD follow-up** should be implemented before or alongside bin locations and cycle count so operators can maintain multiple warehouses per branch without editing branch records.
+
+### Bin & Location Management
+
+- **`warehouse_zones`** — `warehouse_id`, `name`, `code`, `is_active`.
+- **`bin_locations`** — `warehouse_id`, `zone`, `aisle`, `shelf`, `bin_code`, `is_active`, `capacity_limit` (nullable).
+- **`inventories`** extended with `bin_location_id` (nullable FK); stock tracked at bin level where configured.
+- **Bin Transfer** — lightweight same-warehouse move between bins; creates paired `stock_movements` (out/in) without full inter-branch transfer workflow.
+- **Bin Report** — admin report: current stock per bin, filterable by warehouse/zone.
+- POS and GRN screens show bin suggestions (FEFO/FIFO); warehouse staff confirm or override.
+
+### Quarantine Stock
+
+- **`inventories.quantity_in_quarantine`** — received goods pending QC excluded from available-to-sell.
+- Status transitions: `quarantine` → `released` (moves to `quantity_on_hand`) or `quarantine` → `scrapped` (write-off movement).
+- Permission: `inventory.release-quarantine`.
+
+### Reorder & Safety Stock
+
+- Per variant per branch: `reorder_point`, `safety_stock_qty` on `branch_product_prices` or dedicated `variant_branch_settings` table.
+- `supplier_product_prices.lead_time_days` feeds auto-reorder calculation.
+- **`LowStockAlert` event** dispatched when `quantity_on_hand <= reorder_point`; optional draft PO creation (Phase 10 hook).
+
+### Expanded `stock_movements.reason` Enum
+
+Extend canonical list with: `return_customer`, `return_supplier`, `production_consume`, `production_output`, `cycle_count_adjustment`. Other phases must use these values, not parallel enums.
+
+### Physical Stock Count & Cycle Count
+
+- **`count_sessions`** — `branch_id`, `warehouse_id`, `scope_type` (full/zone/category), `scope_id`, `status` (draft/in_progress/under_review/approved/posted), `created_by`, `approved_by`, `posted_at`.
+- **`count_session_lines`** — `session_id`, `product_variant_id`, `bin_location_id`, `batch_no`, `system_qty`, `counted_qty`, `variance_qty`, `variance_value`, `adjustment_reason`.
+- **Workflow:** Create session → assign scope → generate count sheets → count entry → variance review → manager approval → post adjustments.
+- **Freeze mode** — movements in scoped bins/zones queued until count posted.
+- **Blind count** — hide system qty from counters until submission.
+- **Variance threshold** — configurable value/%; above threshold requires Branch Manager approval.
+- **Scheduled counts** — recurring count rules (e.g., high-value weekly); `CreateScheduledCountSessionsJob`.
+- Mobile count entry deferred to Phase 26 Scanner app; admin web UI in this phase.
+
+### Opening Stock per Bin (§3.18)
+
+- Import template adds `bin_code` column; resolves to `bin_location_id`.
+- Sets `quantity_on_hand` per bin via `opening_balance` movement.
+
+### Acceptance Criteria (v4.0)
+
+1. Bin location CRUD and bin-level inventory rows created on GRN receive. **Met** (bin CRUD + opening stock per bin; GRN receive hook deferred to Phase 10)
+2. Bin transfer moves qty between bins without affecting warehouse total incorrectly. **Met**
+3. Quarantine qty excluded from POS available stock. **Met**
+4. Count session with blind mode hides system qty; posted variances create `cycle_count_adjustment` movements. **Met**
+5. Reorder point breach dispatches `LowStockAlert` event. **Met**
+6. Opening stock import with `bin_code` sets per-bin on-hand quantities. **Met**

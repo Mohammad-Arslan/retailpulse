@@ -40,6 +40,10 @@ final class UpdateProductRequest extends FormRequest
                 if (array_key_exists('reorder_point', $variant) && $variant['reorder_point'] === '') {
                     $variants[$index]['reorder_point'] = null;
                 }
+
+                if (array_key_exists('preferred_supplier_id', $variant) && $variant['preferred_supplier_id'] === '') {
+                    $variants[$index]['preferred_supplier_id'] = null;
+                }
             }
 
             $this->merge(['variants' => $variants]);
@@ -49,6 +53,11 @@ final class UpdateProductRequest extends FormRequest
             'category_id' => $this->input('category_id') ?: null,
             'brand_id' => $this->input('brand_id') ?: null,
             'unit_id' => $this->input('unit_id') ?: null,
+            'default_preferred_supplier_id' => $this->input('default_preferred_supplier_id') ?: null,
+            'default_alternate_supplier_ids' => array_values(array_filter(
+                array_map('intval', (array) $this->input('default_alternate_supplier_ids', [])),
+                static fn (int $id): bool => $id > 0,
+            )),
         ]);
     }
 
@@ -83,6 +92,12 @@ final class UpdateProductRequest extends FormRequest
             'variants.*.cost_price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.sell_price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.reorder_point' => ['nullable', 'integer', 'min:0'],
+            'variants.*.preferred_supplier_id' => ['nullable', 'integer', Rule::exists('suppliers', 'id')],
+            'variants.*.alternate_supplier_ids' => ['nullable', 'array'],
+            'variants.*.alternate_supplier_ids.*' => ['integer', Rule::exists('suppliers', 'id')],
+            'default_preferred_supplier_id' => ['nullable', 'integer', Rule::exists('suppliers', 'id')],
+            'default_alternate_supplier_ids' => ['nullable', 'array'],
+            'default_alternate_supplier_ids.*' => ['integer', Rule::exists('suppliers', 'id')],
             'variants.*.attributes' => ['nullable', 'array'],
             'bundle_items' => ['nullable', 'array'],
             'bundle_items.*.child_variant_id' => ['required', 'integer', Rule::exists('product_variants', 'id')],

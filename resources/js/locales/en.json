@@ -6,6 +6,7 @@
         "roles": "Roles",
         "permissions": "Permissions",
         "branches": "Branches",
+        "warehouses": "Warehouses",
         "catalog": "Catalog",
         "categories": "Categories",
         "brands": "Brands",
@@ -14,6 +15,10 @@
         "inventorySection": "Inventory",
         "inventory": "Stock levels",
         "stockTransfers": "Transfers",
+        "binStock": "Bin stock",
+        "quarantine": "Quarantine",
+        "cycleCounts": "Cycle counts",
+        "countSchedules": "Count schedules",
         "overview": "Overview",
         "organization": "Organization",
         "admin": "Admin",
@@ -26,6 +31,7 @@
         "addRole": "Add Role",
         "addPermission": "Add Permission",
         "addBranch": "Add Branch",
+        "addWarehouse": "Add Warehouse",
         "addCategory": "Add Category",
         "addBrand": "Add Brand",
         "addUnit": "Add Unit",
@@ -233,6 +239,7 @@
         "deleteRole": "Delete {{name}}? Users assigned this role may lose access.",
         "deletePermission": "Delete {{name}}? This will remove the permission from all roles that use it.",
         "deleteBranch": "Delete {{name}}? Warehouses and assignments for this branch will be removed.",
+        "deactivateWarehouse": "Deactivate {{name}}? It will be hidden from inventory and transfer pickers.",
         "deleteCategory": "Delete {{name}}? Products in this category will be uncategorized.",
         "deleteBrand": "Delete {{name}}? Products for this brand will be unbranded.",
         "deleteUnit": "Delete {{name}}? Products using this unit must be updated first.",
@@ -299,10 +306,67 @@
                 "cutoverDate": "Go-live cutover date"
             },
             "cutoverHint": "Live POS sale deductions are blocked until this date. Imports and manual adjustments are unaffected.",
+            "operationalDefaultsHint": "Pre-selected from Admin → Settings → General. Choose from the configured currency and timezone lists.",
+            "codeGenerating": "Checking availability…",
+            "codeUniqueHint": "Unique branch code assigned automatically when saved.",
+            "codeImmutableHint": "Branch codes are auto-generated at creation and cannot be changed.",
             "pickingStrategies": {
                 "fifo": "FIFO — first in, first out",
                 "fefo": "FEFO — first expiry, first out"
+            },
+            "warehouseSection": {
+                "createHint": "Select an existing warehouse from Organisation → Warehouses to use as the template for this branch's default location.",
+                "editHint": "Choose the default warehouse for this branch from warehouses managed in Organisation → Warehouses.",
+                "createInfo": "No warehouses exist yet. A default Main Warehouse will be created automatically for this branch.",
+                "createPickerInfo": "Pick a warehouse from your catalogue. A new warehouse record will be created for this branch using the same name and a unique auto-generated code.",
+                "defaultOnCreate": "The selected warehouse will become this branch's default.",
+                "defaultBadge": "Default",
+                "branchWarehouses": "Warehouses for this branch",
+                "manageAll": "View all warehouses",
+                "selectTemplate": "Select warehouse from catalogue…",
+                "selectDefault": "Select default warehouse",
+                "noPickerWarehouses": "No warehouses in the catalogue yet. A default Main Warehouse will be created automatically.",
+                "noWarehouses": "No active warehouses for this branch yet.",
+                "templateDetails": "Selected warehouse",
+                "templateCodeHint": "Source code: {{code}} — a new unique code will be assigned for this branch."
             }
+        },
+        "warehouses": {
+            "title": "Warehouses",
+            "description": "Manage storage locations per branch for inventory, transfers, and receiving.",
+            "empty": "No warehouses found.",
+            "searchPlaceholder": "Search by name or code...",
+            "allBranches": "All branches",
+            "allStatuses": "All statuses",
+            "createTitle": "Create Warehouse",
+            "createSubmit": "Create warehouse",
+            "editTitle": "Edit {{name}}",
+            "saveChanges": "Save changes",
+            "deactivate": "Deactivate",
+            "deactivateTitle": "Deactivate warehouse",
+            "active": "Active",
+            "inactive": "Inactive",
+            "defaultYes": "Default",
+            "defaultNo": "—",
+            "inactiveNotice": "This warehouse is inactive and cannot be edited.",
+            "manageBins": "Manage bins",
+            "selectBranch": "Select branch",
+            "columns": {
+                "name": "Warehouse",
+                "branch": "Branch",
+                "default": "Default",
+                "status": "Status"
+            },
+            "fields": {
+                "branch": "Branch",
+                "name": "Name",
+                "code": "Warehouse code",
+                "default": "Set as default warehouse for this branch"
+            },
+            "codeGenerating": "Checking availability…",
+            "codePreviewHint": "Preview — a unique code is assigned automatically when saved.",
+            "codeUniqueHint": "Next available unique code for this branch.",
+            "codeImmutableHint": "Warehouse codes are auto-generated at creation and cannot be changed."
         },
         "inventory": {
             "title": "Stock levels",
@@ -321,8 +385,10 @@
             "adjustDescription": "Correct counts or record damaged goods (use negative quantity to reduce).",
             "adjustSubmit": "Apply adjustment",
             "receiveTitle": "Receive stock",
-            "receiveDescription": "Increase on-hand quantity (purchase receive).",
+            "receiveDescription": "Increase on-hand quantity (purchase receive). Optionally assign a bin or receive to quarantine for QC.",
             "receiveSubmit": "Receive stock",
+            "receiveQuarantineSubmit": "Receive to quarantine",
+            "quarantineReceiveHint": "Stock is held in quarantine and excluded from sellable availability until released.",
             "quantitySignedHint": "Positive adds stock; negative removes (e.g. damaged write-off).",
             "columns": {
                 "product": "Product",
@@ -330,7 +396,10 @@
                 "batch": "Batch",
                 "onHand": "On hand",
                 "reserved": "Reserved",
-                "available": "Available"
+                "available": "Available",
+                "systemQty": "System qty",
+                "countedQty": "Counted qty",
+                "variance": "Variance"
             },
             "fields": {
                 "warehouse": "Warehouse",
@@ -339,10 +408,112 @@
                 "quantitySigned": "Quantity (+ / −)",
                 "reason": "Reason",
                 "notes": "Notes",
-                "serialNumbers": "Serial numbers"
+                "serialNumbers": "Serial numbers",
+                "binLocation": "Bin location",
+                "noBin": "No bin (warehouse level)",
+                "batchNo": "Batch number",
+                "expiryDate": "Expiry date",
+                "toQuarantine": "Receive to quarantine (pending QC)"
             },
             "serialNumbersHint": "Enter {{count}} unique serial number(s), one per unit.",
             "serialPlaceholder": "Serial #{{n}}"
+        },
+        "bins": {
+            "title": "Bins — {{warehouse}}",
+            "backToWarehouse": "Back to warehouse",
+            "zones": "Zones",
+            "binLocations": "Bin locations",
+            "addZone": "Add zone",
+            "addBin": "Add bin",
+            "saveZone": "Save zone",
+            "saveBin": "Save bin",
+            "noZones": "No zones defined yet.",
+            "noBins": "No bin locations defined yet.",
+            "noZone": "No zone",
+            "binReportTitle": "Stock by bin",
+            "fields": {
+                "name": "Name",
+                "code": "Code",
+                "zone": "Zone",
+                "aisle": "Aisle",
+                "shelf": "Shelf",
+                "binCode": "Bin code",
+                "location": "Location"
+            }
+        },
+        "quarantine": {
+            "title": "Quarantine stock",
+            "description": "Goods pending QC — excluded from sellable availability.",
+            "qty": "In quarantine",
+            "release": "Release",
+            "scrap": "Scrap",
+            "empty": "No quarantined stock.",
+            "confirmRelease": "Release all quarantined quantity to sellable stock?",
+            "confirmScrap": "Scrap all quarantined quantity? This cannot be undone."
+        },
+        "countSessions": {
+            "title": "Cycle counts",
+            "createTitle": "New count session",
+            "newSession": "New session",
+            "createSession": "Create session",
+            "backToList": "Back to counts",
+            "start": "Start count",
+            "submitCounts": "Submit counts",
+            "approve": "Approve variances",
+            "post": "Post adjustments",
+            "blindMode": "Blind count",
+            "columns": {
+                "reference": "Reference",
+                "warehouse": "Warehouse",
+                "scope": "Scope",
+                "status": "Status"
+            },
+            "scope": {
+                "full": "Full warehouse",
+                "zone": "Zone",
+                "category": "Category"
+            },
+            "status": {
+                "draft": "Draft",
+                "in_progress": "In progress",
+                "under_review": "Under review",
+                "approved": "Approved",
+                "posted": "Posted"
+            },
+            "fields": {
+                "scope": "Count scope",
+                "scopeId": "Scope ID",
+                "blindCount": "Blind count (hide system qty from counters)",
+                "freezeMode": "Freeze movements in scope until posted"
+            }
+        },
+        "countScheduleRules": {
+            "title": "Count schedules",
+            "description": "Recurring rules that auto-create draft count sessions (processed nightly).",
+            "backToCounts": "Back to cycle counts",
+            "create": "New schedule",
+            "createTitle": "Create count schedule",
+            "editTitle": "Edit count schedule",
+            "save": "Save schedule",
+            "deactivate": "Deactivate",
+            "confirmDeactivate": "Deactivate this count schedule?",
+            "active": "Active",
+            "inactive": "Inactive",
+            "dayOfMonth": "Day {{day}}",
+            "columns": {
+                "frequency": "Frequency",
+                "lastRun": "Last run"
+            },
+            "frequency": {
+                "daily": "Daily",
+                "weekly": "Weekly",
+                "monthly": "Monthly"
+            },
+            "fields": {
+                "frequency": "Frequency",
+                "dayOfWeek": "Day of week",
+                "dayOfMonth": "Day of month"
+            }
         },
         "stockTransfers": {
             "title": "Stock transfers",
@@ -477,6 +648,9 @@
             "allTypes": "All types",
             "allCategories": "All categories",
             "autoIdentifiers": "SKU and barcode are generated automatically unless you provide overrides on save.",
+            "variableDefaultPricingHint": "Default prices for new variant combinations. Set each variant's price in the matrix below.",
+            "variantPricingHint": "Set a sell price (and optional cost) for each variant combination. POS uses the variant price at checkout.",
+            "variantPricingEmpty": "Add attribute names and options above to generate variant combinations.",
             "serializedHint": "Serial numbers are captured when stock is received (Phase 5).",
             "regenerateVariants": "Regenerate all variants from attributes (replaces existing variants)",
             "addAttribute": "Add attribute",
@@ -517,8 +691,10 @@
                 "bundle": "Bundle components",
                 "pricing": "Pricing",
                 "variants": "Variants",
+                "variantPricing": "Variant pricing",
                 "identifiers": "Identifiers",
-                "branchPricing": "Branch pricing"
+                "branchPricing": "Branch pricing",
+                "suppliers": "Suppliers"
             },
             "fields": {
                 "type": "Product type",
@@ -535,8 +711,11 @@
                 "attributeOptions": "Options",
                 "variant": "Variant",
                 "reorderPoint": "Reorder point",
-                "serialNumbers": "Serial numbers"
+                "serialNumbers": "Serial numbers",
+                "preferredSupplier": "Preferred supplier",
+                "alternateSuppliers": "Alternate suppliers"
             },
+            "supplierHint": "Used by auto-reorder when stock falls below the reorder point.",
             "reorderPointPlaceholder": "Low-stock threshold (optional)",
             "placeholders": {
                 "attributeName": "e.g. Size",
@@ -574,6 +753,7 @@
         "view": "View",
         "clone": "Clone",
         "branches": "Branches",
+        "warehouses": "Warehouses",
         "categories": "Categories",
         "brands": "Brands",
         "units": "Units",

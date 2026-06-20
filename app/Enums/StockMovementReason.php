@@ -16,6 +16,15 @@ enum StockMovementReason: string
     case Reserved = 'reserved';
     case ReservationReleased = 'reservation_released';
     case PurchaseReceive = 'purchase_receive';
+    case ReturnCustomer = 'return_customer';
+    case ReturnSupplier = 'return_supplier';
+    case ProductionConsume = 'production_consume';
+    case ProductionOutput = 'production_output';
+    case CycleCountAdjustment = 'cycle_count_adjustment';
+    case BinTransferOut = 'bin_transfer_out';
+    case BinTransferIn = 'bin_transfer_in';
+    case QuarantineRelease = 'quarantine_release';
+    case QuarantineScrap = 'quarantine_scrap';
 
     /**
      * @return list<string>
@@ -39,7 +48,12 @@ enum StockMovementReason: string
     public function increasesStock(): bool
     {
         return match ($this) {
-            self::Sale, self::TransferOut, self::Damaged => false,
+            self::Sale,
+            self::TransferOut,
+            self::Damaged,
+            self::BinTransferOut,
+            self::ProductionConsume,
+            self::QuarantineScrap => false,
             default => true,
         };
     }

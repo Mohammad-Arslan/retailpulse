@@ -17,7 +17,10 @@ use Illuminate\Support\Collection;
     'barcode',
     'cost_price',
     'sell_price',
+    'tax_rate',
     'reorder_point',
+    'preferred_supplier_id',
+    'alternate_supplier_ids',
     'attributes',
     'is_default',
     'sort_order',
@@ -31,6 +34,7 @@ class ProductVariant extends Model
             'cost_price' => 'decimal:4',
             'sell_price' => 'decimal:4',
             'reorder_point' => 'integer',
+            'alternate_supplier_ids' => 'array',
             'is_default' => 'boolean',
             'sort_order' => 'integer',
         ];
@@ -39,6 +43,28 @@ class ProductVariant extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function preferredSupplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'preferred_supplier_id');
+    }
+
+    /**
+     * @return Collection<int, Supplier>
+     */
+    public function alternateSuppliers(): Collection
+    {
+        $ids = $this->alternate_supplier_ids ?? [];
+
+        if ($ids === []) {
+            return collect();
+        }
+
+        return Supplier::query()
+            ->whereIn('id', $ids)
+            ->orderBy('name')
+            ->get();
     }
 
     public function batches(): HasMany
