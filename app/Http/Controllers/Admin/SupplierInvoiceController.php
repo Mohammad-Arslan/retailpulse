@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreSupplierInvoiceRequest;
 use App\Models\GoodsReceivingNote;
-use App\Models\PurchaseOrder;
 use App\Models\SupplierInvoice;
 use App\Services\Procurement\SupplierInvoicePdfService;
 use App\Services\Procurement\SupplierInvoiceService;
@@ -25,7 +24,7 @@ final class SupplierInvoiceController extends Controller
 
     public function store(StoreSupplierInvoiceRequest $request, GoodsReceivingNote $goodsReceivingNote): RedirectResponse
     {
-        $this->authorize('create', PurchaseOrder::class);
+        $this->authorize('create', SupplierInvoice::class);
 
         $invoice = $this->invoices->createFromGrn(
             $goodsReceivingNote,
@@ -41,7 +40,7 @@ final class SupplierInvoiceController extends Controller
 
     public function approve(Request $request, SupplierInvoice $supplierInvoice): RedirectResponse
     {
-        $this->authorize('create', PurchaseOrder::class);
+        $this->authorize('approve', $supplierInvoice);
 
         $this->invoices->approve($supplierInvoice, (int) $request->user()->id);
 
@@ -50,7 +49,7 @@ final class SupplierInvoiceController extends Controller
 
     public function pdf(SupplierInvoice $supplierInvoice): BinaryFileResponse
     {
-        $this->authorize('viewAny', PurchaseOrder::class);
+        $this->authorize('viewAny', SupplierInvoice::class);
 
         $path = $this->pdf->generate($supplierInvoice);
 

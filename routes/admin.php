@@ -129,9 +129,6 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             ->name('suppliers.statement.pdf');
         Route::post('suppliers/{supplier}/send-statement', [SupplierController::class, 'sendStatement'])
             ->name('suppliers.send-statement');
-
-        Route::post('suppliers/{supplier}/send-statement', [SupplierController::class, 'sendStatement'])
-            ->name('suppliers.send-statement');
         Route::post('suppliers/{supplier}/attachments', [SupplierAttachmentController::class, 'store'])
             ->name('suppliers.attachments.store');
         Route::delete('suppliers/{supplier}/attachments/{attachment}', [SupplierAttachmentController::class, 'destroy'])

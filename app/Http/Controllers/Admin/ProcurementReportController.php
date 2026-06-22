@@ -97,6 +97,7 @@ final class ProcurementReportController extends Controller
                 'reference_no' => $r->reference_no,
                 'supplier' => $r->supplier?->name,
                 'status' => $r->status->value,
+                'grn_id' => $r->grn_id,
             ]),
         ]);
     }

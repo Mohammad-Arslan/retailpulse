@@ -9,7 +9,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreLandedCostRequest;
 use App\Models\GoodsReceivingNote;
 use App\Models\LandedCostEntry;
-use App\Models\PurchaseOrder;
 use App\Services\Procurement\LandedCostService;
 use App\Services\Procurement\ProcurementConfigService;
 use Illuminate\Http\RedirectResponse;
@@ -24,7 +23,7 @@ final class LandedCostController extends Controller
 
     public function store(StoreLandedCostRequest $request, GoodsReceivingNote $goodsReceivingNote): RedirectResponse
     {
-        $this->authorize('create', PurchaseOrder::class);
+        $this->authorize('create', LandedCostEntry::class);
 
         $method = LandedCostAllocationMethod::from($request->validated('allocation_method'));
 
@@ -45,7 +44,7 @@ final class LandedCostController extends Controller
 
     public function destroy(Request $request, GoodsReceivingNote $goodsReceivingNote, LandedCostEntry $landedCostEntry): RedirectResponse
     {
-        $this->authorize('create', PurchaseOrder::class);
+        $this->authorize('delete', $landedCostEntry);
 
         if ($landedCostEntry->grn_id !== $goodsReceivingNote->id) {
             abort(404);

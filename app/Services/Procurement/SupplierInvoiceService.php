@@ -7,7 +7,6 @@ namespace App\Services\Procurement;
 use App\Enums\PoMatchStatus;
 use App\Enums\ProcurementDocumentType;
 use App\Enums\SupplierInvoiceStatus;
-use App\Enums\SupplierLedgerEntryType;
 use App\Events\Procurement\SupplierInvoiceCreated;
 use App\Events\Procurement\SupplierInvoiceMatched;
 use App\Models\GoodsReceivingNote;
@@ -81,22 +80,8 @@ final class SupplierInvoiceService
 
             if ($matchResult->match_status === PoMatchStatus::FullyMatched) {
                 $invoice->update(['status' => SupplierInvoiceStatus::Matched]);
+                $this->ledger->recordInvoiceIfMissing($invoice->fresh() ?? $invoice, $userId);
             }
-
-            $this->ledger->recordEntry(
-                supplierId: $invoice->supplier_id,
-                branchId: $invoice->branch_id,
-                type: SupplierLedgerEntryType::Invoice,
-                amount: (float) $invoice->total,
-                currencyCode: $invoice->currency_code,
-                exchangeRate: (float) $invoice->exchange_rate,
-                functionalAmount: (float) $invoice->functional_total,
-                referenceType: SupplierInvoice::class,
-                referenceId: $invoice->id,
-                referenceNo: $invoice->reference_no,
-                notes: __('Supplier invoice :ref', ['ref' => $invoice->reference_no]),
-                userId: $userId,
-            );
 
             return $invoice->fresh(['items', 'matchResult']) ?? $invoice;
         });

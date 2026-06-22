@@ -711,6 +711,26 @@ return [
                     ],
                     'rules' => ['required', 'array', 'min:1'],
                 ],
+                'payment_method_cash' => [
+                    'type' => 'boolean',
+                    'label' => 'Accept cash (supplier payments)',
+                    'default' => true,
+                ],
+                'payment_method_bank_transfer' => [
+                    'type' => 'boolean',
+                    'label' => 'Accept bank transfer (supplier payments)',
+                    'default' => true,
+                ],
+                'payment_method_cheque' => [
+                    'type' => 'boolean',
+                    'label' => 'Accept cheque (supplier payments)',
+                    'default' => true,
+                ],
+                'payment_method_card' => [
+                    'type' => 'boolean',
+                    'label' => 'Accept card (supplier payments)',
+                    'default' => false,
+                ],
                 'performance_on_time_weight' => [
                     'type' => 'integer',
                     'label' => 'Performance on-time weight (%)',

@@ -289,7 +289,23 @@
     "pages": {
         "dashboard": {
             "title": "Dashboard",
-            "description": "Overview of your RetailPulse workspace."
+            "description": "Overview of your RetailPulse workspace.",
+            "procurement": {
+                "title": "Procurement",
+                "viewReports": "View reports",
+                "alertsTitle": "Procurement alerts",
+                "openPos": "Open POs",
+                "pendingApprovals": "Pending approvals",
+                "pendingReceipts": "Pending receipts",
+                "pendingInvoices": "Pending invoices",
+                "outstandingPayables": "Outstanding payables",
+                "monthlyPurchases": "Monthly purchases",
+                "openReturns": "Open returns",
+                "topSuppliers": "Top suppliers by balance",
+                "supplierColumn": "Supplier",
+                "balanceColumn": "Balance",
+                "onTimeColumn": "On-time %"
+            }
         },
         "users": {
             "title": "Team Members",
@@ -1034,6 +1050,15 @@
                 "deactivateDesc": "Mark supplier inactive"
             },
             "ledgerTitle": "Ledger / Statement",
+            "ledgerEmpty": "No ledger entries yet.",
+            "ledgerColumns": {
+                "date": "Date",
+                "type": "Type",
+                "reference": "Reference",
+                "debit": "Debit",
+                "credit": "Credit",
+                "balance": "Balance"
+            },
             "recordPayment": "Record Payment",
             "paymentAmount": "Amount",
             "paymentMethod": "Method",
@@ -1071,7 +1096,37 @@
             "createTitle": "New Purchase Order",
             "createDescription": "Create a draft purchase order. Submit it for approval when ready.",
             "noSuppliers": "No Suppliers Available",
-            "approvalHint": "POs above {{amount}} {{currency}} require manager approval.",
+            "approvalHint": "POs above {{threshold}} require manager approval.",
+            "createSubmit": "Create Draft PO",
+            "addLine": "Add Line",
+            "estimatedTotal": "Estimated Total",
+            "lineTotalLabel": "Line Total",
+            "fields": {
+                "branch": "Branch",
+                "supplier": "Supplier",
+                "currency": "Currency",
+                "expectedDelivery": "Expected Delivery",
+                "options": "Options",
+                "dropShip": "Drop Ship (No Inventory Increase)",
+                "linkedSale": "Linked Sale",
+                "managerPin": "Manager PIN (Required — PO Exceeds Approval Threshold)",
+                "rejectionReason": "Rejection Reason",
+                "warehouse": "Warehouse",
+                "notes": "Notes",
+                "overrideReason": "Override Reason",
+                "quantity": "Quantity"
+            },
+            "hints": {
+                "overrideReason": "Required if price differs from supplier list"
+            },
+            "validation": {
+                "selectSupplier": "Select a supplier.",
+                "selectBranch": "Select a branch for this purchase order.",
+                "addLine": "Add at least one product line.",
+                "invalidQty": "Enter a valid quantity on line {{line}}.",
+                "invalidPrice": "Enter a unit price on line {{line}}.",
+                "overrideRequired": "Price override reason required on line {{line}}."
+            },
             "statuses": {
                 "draft": "Draft",
                 "submitted": "Submitted",
@@ -1100,18 +1155,6 @@
                 "grns": "Goods Receiving Notes",
                 "invoices": "Supplier Invoices & Matching"
             },
-            "fields": {
-                "branch": "Branch",
-                "supplier": "Supplier",
-                "currency": "Currency",
-                "expectedDelivery": "Expected Delivery",
-                "options": "Options",
-                "dropShip": "Drop Ship (No Inventory Increase)",
-                "linkedSale": "Linked Sale",
-                "managerPin": "Manager PIN (Required — PO Exceeds Approval Threshold)",
-                "rejectionReason": "Rejection Reason",
-                "warehouse": "Warehouse"
-            },
             "placeholders": {
                 "unitPrice": "0.00",
                 "priceOverride": "Optional",
@@ -1126,7 +1169,36 @@
             "dropShipHint": "Goods ship directly to the customer; inventory is not increased on receive.",
             "pinHint": "Enter the 6-digit POS PIN from your user profile (Admin → Users → Edit).",
             "pinRequired": "Enter your 6-digit manager PIN to approve this purchase order.",
-            "noPinConfigured": "No POS PIN is set on your account. Set one under Admin → Users → Edit your profile before approving."
+            "noPinConfigured": "No POS PIN is set on your account. Set one under Admin → Users → Edit your profile before approving.",
+            "badges": {
+                "historical": "Historical"
+            },
+            "columns": {
+                "reference": "Reference",
+                "supplier": "Supplier",
+                "status": "Status",
+                "total": "Total",
+                "expected": "Expected",
+                "created": "Created"
+            },
+            "viewReports": "Reports",
+            "backToList": "Back to list",
+            "totalLabel": "Total",
+            "lineColumns": {
+                "sku": "SKU",
+                "product": "Product",
+                "qtyOrdered": "Qty Ordered",
+                "qtyReceived": "Qty Received",
+                "unitPrice": "Unit Price",
+                "lineTotal": "Line Total",
+                "qty": "Qty",
+                "batch": "Batch",
+                "expiry": "Expiry"
+            },
+            "cancelConfirm": "Cancel {{reference}}?",
+            "confirmReject": "Confirm reject",
+            "receiveGrnTitle": "Receive goods (GRN)",
+            "postReceipt": "Post receipt"
         },
         "goodsReceiving": {
             "title": "Goods Receiving Notes",
@@ -1145,6 +1217,19 @@
             "purchaseReturn": "Purchase Return (RMA)",
             "returnReason": "Reason",
             "createReturn": "Create Return",
+            "returnQty": "Return Qty",
+            "hints": {
+                "returnQty": "Enter return quantities up to the available amount on this GRN."
+            },
+            "qtyReturnable": "Available to Return",
+            "qtyOrdered": "PO Qty Ordered",
+            "qtyRemainingOnPo": "Remaining on PO",
+            "partialReceiptNotice": "This GRN is a partial receipt. You can receive the remaining quantity on the purchase order.",
+            "receiveRemaining": "Receive remaining on PO",
+            "noReturnableQty": "No quantity available to return on this GRN.",
+            "returnLineTotal": "Return total",
+            "totalLabel": "Total",
+            "matchLabel": "Match",
             "supplierInvoices": "Supplier Invoices",
             "purchaseReturns": "Purchase Returns",
             "dispatchFrom": "Dispatch From",
@@ -1161,7 +1246,10 @@
                 "po": "PO",
                 "warehouse": "Warehouse",
                 "received": "Received",
-                "status": "Status"
+                "status": "Status",
+                "qtyReceived": "Qty Received",
+                "batch": "Batch",
+                "expiry": "Expiry"
             },
             "allocationMethods": {
                 "quantity": "Quantity",
@@ -1185,7 +1273,9 @@
                 "description": "Description",
                 "descriptionPlaceholder": "Optional notes for this charge…",
                 "add": "Add Landed Cost",
-                "deleteConfirm": "Remove this landed cost entry?"
+                "deleteConfirm": "Remove this landed cost entry?",
+                "manualAllocations": "Manual allocations per line",
+                "allocatedAmount": "Allocated amount"
             },
             "grnStatuses": {
                 "draft": "Draft",
@@ -1227,6 +1317,9 @@
                 "validTo": "Valid To",
                 "items": "Lines",
                 "status": "Status"
+            },
+            "badges": {
+                "expiringSoon": "Expiring soon"
             }
         },
         "procurement": {
@@ -1249,6 +1342,13 @@
                 "supplier_acknowledged": "Supplier Acknowledged",
                 "debit_note_issued": "Debit Note Issued",
                 "closed": "Closed"
+            },
+            "supplierLedgerEntryTypes": {
+                "invoice": "Invoice",
+                "payment": "Payment",
+                "debit_note": "Debit Note",
+                "adjustment": "Adjustment",
+                "advance": "Advance"
             }
         },
         "procurementReports": {
@@ -1326,11 +1426,23 @@
         "arAging": "AR Aging",
         "units": "Units",
         "products": "Products",
-        "inventory": "Stock levels",
+        "inventory": "Stock Levels",
         "stockTransfers": "Transfers",
         "suppliers": "Suppliers",
         "purchaseOrders": "Purchase Orders",
-        "goodsReceiving": "Goods Receiving Notes",
+        "goodsReceiving": "Goods Receiving",
+        "supplierPriceLists": "Supplier Price Lists",
+        "procurementReports": "Procurement Reports",
+        "binStock": "Bin Stock",
+        "binTransfer": "Bin Transfer",
+        "branchStockSettings": "Branch Stock Settings",
+        "quarantine": "Quarantine",
+        "cycleCounts": "Cycle Counts",
+        "countSchedules": "Count Schedules",
+        "sales": "Sales",
+        "bins": "Bins",
+        "adjust": "Adjust Stock",
+        "receive": "Receive Stock",
         "settings": "Settings"
     },
     "checkout": {

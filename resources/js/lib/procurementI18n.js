@@ -99,3 +99,14 @@ export function chargeTypeLabel(t, type) {
 
     return label === key ? titleCaseEnum(type) : label;
 }
+
+export function supplierLedgerEntryTypeLabel(t, type) {
+    if (!type) {
+        return '';
+    }
+
+    const key = `pages.procurement.supplierLedgerEntryTypes.${type}`;
+    const label = t(key);
+
+    return label === key ? titleCaseEnum(type) : label;
+}

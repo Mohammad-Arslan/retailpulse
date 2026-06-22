@@ -13,8 +13,9 @@ import {
     matchStatusLabel,
     returnStatusLabel,
 } from '@/lib/procurementI18n';
-import { Head, Link, router } from '@inertiajs/react';
-import { FileText, Trash2 } from 'lucide-react';
+import { formatCurrency } from '@/lib/formatCurrency';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { AlertTriangle, FileText, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -33,7 +34,10 @@ const invoiceCanPay = (inv) => {
 
 function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostConfig = {} }) {
     const can = useCan();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const { errors: serverErrors } = usePage().props;
+    const currencyCode = grn.supplier?.currency_code ?? 'USD';
+    const formatMoney = (amount) => formatCurrency(amount, currencyCode, i18n.language);
     const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().slice(0, 10));
     const [returnReason, setReturnReason] = useState('');
     const [dispatchWarehouseId, setDispatchWarehouseId] = useState(
@@ -43,6 +47,36 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
     const [lcAmount, setLcAmount] = useState('');
     const [lcAllocation, setLcAllocation] = useState(landedCostConfig.allocation_methods?.[0] ?? 'quantity');
     const [lcDescription, setLcDescription] = useState('');
+    const [manualAllocations, setManualAllocations] = useState(() =>
+        (grn.items ?? []).map((item) => ({ grn_item_id: item.id, amount: '' })),
+    );
+    const [returnLines, setReturnLines] = useState(() =>
+        (grn.items ?? []).map((item) => ({
+            grn_item_id: item.id,
+            product_variant_id: item.product_variant_id,
+            sku: item.variant?.sku ?? '',
+            unitPrice: Number(item.purchase_order_item?.unit_price ?? 0),
+            qtyOrdered: Number(item.qty_ordered ?? 0),
+            qtyReceivedOnPo: Number(item.qty_received_on_po ?? 0),
+            qtyRemainingOnPo: Math.max(
+                0,
+                Number(item.qty_ordered ?? 0) - Number(item.qty_received_on_po ?? 0),
+            ),
+            maxQty: Number(item.qty_returnable ?? item.qty_received ?? 0),
+            qty_returned: '',
+        })),
+    );
+
+    const hasReturnableQty = returnLines.some((line) => line.maxQty > 0);
+
+    const returnTotal = useMemo(
+        () =>
+            returnLines.reduce((sum, line) => {
+                const qty = Number(line.qty_returned) || 0;
+                return sum + qty * line.unitPrice;
+            }, 0),
+        [returnLines],
+    );
 
     const warehouseOptions = useMemo(
         () => warehouses.map((w) => ({ value: String(w.id), label: `${w.name} (${w.code})` })),
@@ -77,11 +111,23 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
 
     const createReturn = (e) => {
         e.preventDefault();
-        const lines =
-            grn.items?.map((item) => ({
-                grn_item_id: item.id,
-                qty_returned: Number(item.qty_received),
-            })) ?? [];
+        const lines = returnLines
+            .filter((line) => Number(line.qty_returned) > 0)
+            .map((line) => {
+                const qty = Number(line.qty_returned);
+                const unitCost = line.unitPrice;
+                return {
+                    grn_item_id: line.grn_item_id,
+                    product_variant_id: line.product_variant_id,
+                    qty_returned: qty,
+                    unit_cost: unitCost,
+                    line_total: qty * unitCost,
+                };
+            });
+
+        if (lines.length === 0) {
+            return;
+        }
 
         router.post(route('admin.goods-receiving-notes.returns.store', grn.id), {
             reason: returnReason,
@@ -129,14 +175,25 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
 
     const addLandedCost = (e) => {
         e.preventDefault();
-        router.post(route('admin.goods-receiving-notes.landed-costs.store', grn.id), {
+        const payload = {
             charge_type: lcChargeType,
             amount: Number(lcAmount),
             currency_code: grn.supplier?.currency_code ?? 'USD',
             exchange_rate: 1,
             allocation_method: lcAllocation,
             description: lcDescription || null,
-        });
+        };
+
+        if (lcAllocation === 'manual') {
+            payload.manual_allocations = manualAllocations
+                .filter((row) => Number(row.amount) > 0)
+                .map((row) => ({
+                    grn_item_id: row.grn_item_id,
+                    amount: Number(row.amount),
+                }));
+        }
+
+        router.post(route('admin.goods-receiving-notes.landed-costs.store', grn.id), payload);
     };
 
     const removeLandedCost = (entryId) => {
@@ -175,6 +232,21 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
                 }
             />
 
+            {grn.purchase_order?.can_receive_more && (
+                <div className="mb-6 flex flex-wrap items-start justify-between gap-3 rounded-lg border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+                    <div className="flex items-start gap-2.5">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <p>{t('pages.goodsReceiving.partialReceiptNotice')}</p>
+                    </div>
+                    <Link
+                        href={route('admin.purchase-orders.show', grn.purchase_order.id)}
+                        className="shrink-0 font-medium text-teal-700 hover:underline dark:text-teal-300"
+                    >
+                        {t('pages.goodsReceiving.receiveRemaining')}
+                    </Link>
+                </div>
+            )}
+
             <div className="mb-6 rounded-lg border bg-card p-6 text-sm">
                 <p>{t('pages.goodsReceiving.warehouse')}: {grn.warehouse?.name}</p>
                 <p>{t('pages.goodsReceiving.status')}: {grnStatusLabel(t, grn.status)}</p>
@@ -210,26 +282,45 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
                 <table className="mt-4 w-full text-left">
                     <thead>
                         <tr className="border-b text-muted-foreground">
-                            <th className="py-2">SKU</th>
-                            <th>Qty received</th>
-                            <th>Batch</th>
-                            <th>Expiry</th>
+                            <th className="py-2">{t('pages.purchaseOrders.lineColumns.sku')}</th>
+                            <th>{t('pages.goodsReceiving.qtyOrdered')}</th>
+                            <th>{t('pages.goodsReceiving.columns.qtyReceived')}</th>
+                            <th>{t('pages.goodsReceiving.qtyRemainingOnPo')}</th>
+                            <th>{t('pages.goodsReceiving.columns.batch')}</th>
+                            <th>{t('pages.goodsReceiving.columns.expiry')}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {grn.items?.map((item) => (
-                            <tr key={item.id} className="border-b">
-                                <td className="py-2">{item.variant?.sku}</td>
-                                <td>{item.qty_received}</td>
-                                <td>{item.batch_no || '—'}</td>
-                                <td>{item.expiry_date || '—'}</td>
-                            </tr>
-                        ))}
+                        {grn.items?.map((item) => {
+                            const remaining = Math.max(
+                                0,
+                                Number(item.qty_ordered ?? 0) - Number(item.qty_received_on_po ?? 0),
+                            );
+
+                            return (
+                                <tr key={item.id} className="border-b">
+                                    <td className="py-2">{item.variant?.sku}</td>
+                                    <td>{item.qty_ordered ?? '—'}</td>
+                                    <td>{item.qty_received}</td>
+                                    <td>
+                                        {remaining > 0 ? (
+                                            <span className="font-medium text-amber-700 dark:text-amber-300">
+                                                {remaining}
+                                            </span>
+                                        ) : (
+                                            '0'
+                                        )}
+                                    </td>
+                                    <td>{item.batch_no || '—'}</td>
+                                    <td>{item.expiry_date || '—'}</td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
 
-            {can('procurement.receive-grn') && (
+            {(can('procurement.create') || can('procurement.receive-grn')) && (
                 <FormCard className="mb-6 max-w-none">
                     <h3 className="rp-form-label mb-4">{t('pages.goodsReceiving.landedCost.title')}</h3>
                     {(grn.landed_cost_entries?.length ?? 0) > 0 && (
@@ -320,8 +411,47 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
                                 />
                             </AdminFormField>
                         </div>
-                        <div className="mt-4">
-                            <Button type="submit">{t('pages.goodsReceiving.landedCost.add')}</Button>
+                        {lcAllocation === 'manual' && (
+                            <div className="mt-4 rounded-lg border border-rp-border p-4">
+                                <p className="mb-3 text-sm font-medium text-rp-text">
+                                    {t('pages.goodsReceiving.landedCost.manualAllocations')}
+                                </p>
+                                <table className="w-full text-left text-sm">
+                                    <thead>
+                                        <tr className="border-b text-muted-foreground">
+                                            <th className="py-2">{t('pages.purchaseOrders.lineColumns.sku')}</th>
+                                            <th>{t('pages.goodsReceiving.landedCost.allocatedAmount')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {manualAllocations.map((row, index) => {
+                                            const item = grn.items?.find((i) => i.id === row.grn_item_id);
+                                            return (
+                                                <tr key={row.grn_item_id} className="border-b">
+                                                    <td className="py-2">{item?.variant?.sku ?? '—'}</td>
+                                                    <td>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="any"
+                                                            className="rp-form-input w-32"
+                                                            value={row.amount}
+                                                            onChange={(e) => {
+                                                                const next = [...manualAllocations];
+                                                                next[index] = { ...row, amount: e.target.value };
+                                                                setManualAllocations(next);
+                                                            }}
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                        <div className="mt-4 flex justify-end border-t border-rp-border pt-4">
+                            <Button type="submit" variant="brand">{t('pages.goodsReceiving.landedCost.add')}</Button>
                         </div>
                     </form>
                 </FormCard>
@@ -337,10 +467,10 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
                                     <span className="font-medium">{inv.reference_no}</span>
                                     <span>{invoiceStatusLabel(t, inv.status)}</span>
                                 </div>
-                                <div>Total: {inv.total}</div>
+                                <div>{t('pages.goodsReceiving.totalLabel')}: {inv.total}</div>
                                 {inv.match_result && (
                                     <div className="mt-2 text-amber-700 dark:text-amber-400">
-                                        Match: {matchStatusLabel(t, inv.match_result.match_status)}
+                                        {t('pages.goodsReceiving.matchLabel')}: {matchStatusLabel(t, inv.match_result.match_status)}
                                         {inv.match_result.exception_reason &&
                                             ` — ${inv.match_result.exception_reason}`}
                                         {MATCH_EXCEPTION_STATUSES.includes(inv.match_result.match_status) &&
@@ -352,7 +482,7 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
                                                     className="ml-2"
                                                     onClick={() => resolveMatch(inv.match_result.id)}
                                                 >
-                                                    Resolve exception
+                                                    {t('pages.purchaseOrders.actions.resolveException')}
                                                 </Button>
                                             )}
                                     </div>
@@ -376,12 +506,12 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
                                             variant="outline"
                                             onClick={() => approveInvoice(inv.id)}
                                         >
-                                            Approve invoice
+                                            {t('pages.purchaseOrders.actions.approveInvoice')}
                                         </Button>
                                     )}
                                     {invoiceCanPay(inv) && can('procurement.process-payments') && (
                                         <Button type="button" size="sm" onClick={() => payInvoice(inv)}>
-                                            Pay invoice
+                                            {t('pages.purchaseOrders.actions.payInvoice')}
                                         </Button>
                                     )}
                                 </div>
@@ -419,16 +549,16 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
                                     </div>
                                 )}
                                 {can('procurement.manage-returns') && (
-                                    <div className="mt-2 flex flex-wrap items-end gap-2">
+                                    <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-rp-border pt-3">
                                         {ret.status === 'draft' && (
-                                            <Button type="button" size="sm" onClick={() => approveReturn(ret.id)}>
+                                            <Button type="button" size="sm" variant="brand" onClick={() => approveReturn(ret.id)}>
                                                 {t('pages.goodsReceiving.approveReturn')}
                                             </Button>
                                         )}
                                         {ret.status === 'approved' && (
                                             <>
-                                                <div className="min-w-[200px]">
-                                                    <label className="text-xs text-muted-foreground">
+                                                <div className="mr-auto min-w-[200px]">
+                                                    <label className="text-xs text-rp-text-muted">
                                                         {t('pages.goodsReceiving.dispatchFrom')}
                                                     </label>
                                                     <Select
@@ -437,7 +567,7 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
                                                         onChange={(value) => setDispatchWarehouseId(value ?? '')}
                                                     />
                                                 </div>
-                                                <Button type="button" size="sm" onClick={() => dispatchReturn(ret.id)}>
+                                                <Button type="button" size="sm" variant="brand" onClick={() => dispatchReturn(ret.id)}>
                                                     {t('pages.goodsReceiving.dispatchGoods')}
                                                 </Button>
                                             </>
@@ -446,7 +576,7 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
                                             <Button
                                                 type="button"
                                                 size="sm"
-                                                variant="outline"
+                                                variant="secondary"
                                                 onClick={() => acknowledgeReturn(ret.id)}
                                             >
                                                 {t('pages.goodsReceiving.acknowledgeReturn')}
@@ -456,14 +586,14 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
                                             <Button
                                                 type="button"
                                                 size="sm"
-                                                variant="outline"
+                                                variant="brand"
                                                 onClick={() => issueDebitNote(ret.id)}
                                             >
                                                 {t('pages.goodsReceiving.issueDebitNote')}
                                             </Button>
                                         )}
                                         {ret.status === 'debit_note_issued' && (
-                                            <Button type="button" size="sm" onClick={() => closeReturn(ret.id)}>
+                                            <Button type="button" size="sm" variant="brand" onClick={() => closeReturn(ret.id)}>
                                                 {t('pages.goodsReceiving.closeReturn')}
                                             </Button>
                                         )}
@@ -475,36 +605,117 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [], landedCostC
                 </div>
             )}
 
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="space-y-6">
                 {can('procurement.create') && (
-                    <form onSubmit={createInvoice} className="rounded-lg border bg-card p-6">
+                    <div className="rounded-lg border bg-card p-6">
                         <h3 className="mb-3 font-medium">{t('pages.goodsReceiving.createInvoice')}</h3>
-                        <label className="text-sm">{t('pages.goodsReceiving.invoiceDate')}</label>
-                        <input
-                            type="date"
-                            className="rp-form-input mb-3 w-full"
-                            value={invoiceDate}
-                            onChange={(e) => setInvoiceDate(e.target.value)}
-                        />
-                        <Button type="submit">{t('pages.goodsReceiving.createInvoiceSubmit')}</Button>
-                    </form>
+                        <form onSubmit={createInvoice}>
+                            <AdminFormField label={t('pages.goodsReceiving.invoiceDate')} id="invoice_date">
+                                <input
+                                    id="invoice_date"
+                                    type="date"
+                                    className="rp-form-input w-full max-w-xs"
+                                    value={invoiceDate}
+                                    onChange={(e) => setInvoiceDate(e.target.value)}
+                                />
+                            </AdminFormField>
+                            <div className="mt-4 flex justify-end border-t border-rp-border pt-4">
+                                <Button type="submit" variant="brand">{t('pages.goodsReceiving.createInvoiceSubmit')}</Button>
+                            </div>
+                        </form>
+                    </div>
                 )}
 
                 {can('procurement.manage-returns') && (
-                    <form onSubmit={createReturn} className="rounded-lg border bg-card p-6">
-                        <h3 className="mb-3 font-medium">{t('pages.goodsReceiving.purchaseReturn')}</h3>
-                        <label className="text-sm">{t('pages.goodsReceiving.returnReason')}</label>
-                        <textarea
-                            className="rp-form-input mb-3 w-full"
-                            rows={2}
-                            value={returnReason}
-                            onChange={(e) => setReturnReason(e.target.value)}
-                            required
-                        />
-                        <Button type="submit" variant="outline">
-                            {t('pages.goodsReceiving.createReturn')}
-                        </Button>
-                    </form>
+                    <div className="rounded-lg border bg-card p-6">
+                        <h3 className="mb-1 font-medium">{t('pages.goodsReceiving.purchaseReturn')}</h3>
+                        <p className="mb-4 text-sm text-rp-text-muted">
+                            {hasReturnableQty
+                                ? t('pages.goodsReceiving.hints.returnQty')
+                                : t('pages.goodsReceiving.noReturnableQty')}
+                        </p>
+
+                        {(serverErrors?.reason || serverErrors?.lines || serverErrors?.['lines.0.qty_returned']) && (
+                            <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+                                {serverErrors.reason || serverErrors.lines || serverErrors['lines.0.qty_returned']}
+                            </div>
+                        )}
+
+                        <form onSubmit={createReturn} className="space-y-4">
+                            <AdminFormField label={t('pages.goodsReceiving.returnReason')} id="return_reason">
+                                <textarea
+                                    id="return_reason"
+                                    className="rp-form-input w-full"
+                                    rows={2}
+                                    value={returnReason}
+                                    onChange={(e) => setReturnReason(e.target.value)}
+                                    required
+                                    disabled={!hasReturnableQty}
+                                />
+                            </AdminFormField>
+
+                            <div className="overflow-hidden rounded-lg border">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="border-b bg-muted/40 text-muted-foreground">
+                                        <tr>
+                                            <th className="px-3 py-2">{t('pages.purchaseOrders.lineColumns.sku')}</th>
+                                            <th className="px-3 py-2">{t('pages.goodsReceiving.qtyReturnable')}</th>
+                                            <th className="px-3 py-2">{t('pages.purchaseOrders.lineColumns.unitPrice')}</th>
+                                            <th className="px-3 py-2">{t('pages.goodsReceiving.returnQty')}</th>
+                                            <th className="px-3 py-2 text-right">{t('pages.goodsReceiving.returnLineTotal')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {returnLines.map((line, index) => {
+                                            const qty = Number(line.qty_returned) || 0;
+                                            const lineTotal = qty * line.unitPrice;
+
+                                            return (
+                                                <tr key={line.grn_item_id} className="border-b">
+                                                    <td className="px-3 py-2 font-medium">{line.sku || '—'}</td>
+                                                    <td className="px-3 py-2">{line.maxQty}</td>
+                                                    <td className="px-3 py-2">{formatMoney(line.unitPrice)}</td>
+                                                    <td className="px-3 py-2">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max={line.maxQty}
+                                                            step="any"
+                                                            className="rp-form-input w-24"
+                                                            value={line.qty_returned}
+                                                            disabled={line.maxQty <= 0}
+                                                            onChange={(e) => {
+                                                                const next = [...returnLines];
+                                                                next[index] = { ...line, qty_returned: e.target.value };
+                                                                setReturnLines(next);
+                                                            }}
+                                                        />
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right font-medium">
+                                                        {qty > 0 ? formatMoney(lineTotal) : '—'}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-rp-border pt-4">
+                                <p className="text-sm text-rp-text-muted">
+                                    {t('pages.goodsReceiving.returnLineTotal')}:{' '}
+                                    <span className="font-semibold text-rp-text">{formatMoney(returnTotal)}</span>
+                                </p>
+                                <Button
+                                    type="submit"
+                                    variant="brand"
+                                    disabled={!hasReturnableQty}
+                                >
+                                    {t('pages.goodsReceiving.createReturn')}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
                 )}
             </div>
         </>

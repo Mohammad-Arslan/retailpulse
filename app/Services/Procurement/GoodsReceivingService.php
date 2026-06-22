@@ -14,6 +14,7 @@ use App\Events\Procurement\GoodsReceived;
 use App\Models\GoodsReceivingNote;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
+use App\Models\Warehouse;
 use App\Repositories\Contracts\PurchaseOrderRepositoryInterface;
 use App\Services\InventoryService;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,19 @@ final class GoodsReceivingService
         $order->load('items');
 
         $config = $this->config->resolve($order->branch_id);
+
+        if (! (bool) $order->drop_ship) {
+            $warehouse = Warehouse::query()->find($data->warehouseId);
+            if ($warehouse === null) {
+                throw ValidationException::withMessages(['warehouse_id' => __('Warehouse not found.')]);
+            }
+            if ((int) $warehouse->branch_id !== (int) $order->branch_id) {
+                throw ValidationException::withMessages(['warehouse_id' => __('Warehouse must belong to the purchase order branch.')]);
+            }
+            if (! $warehouse->is_active) {
+                throw ValidationException::withMessages(['warehouse_id' => __('Warehouse is not active.')]);
+            }
+        }
 
         return DB::transaction(function () use ($order, $data, $config) {
             $isVirtual = (bool) $order->drop_ship;

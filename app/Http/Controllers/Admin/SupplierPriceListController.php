@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\StoreSupplierPriceListRequest;
 use App\Http\Requests\Admin\UpdateSupplierPriceListRequest;
 use App\Models\Supplier;
 use App\Models\SupplierPriceList;
+use App\Models\SystemSetting;
 use App\Services\Procurement\SupplierPriceListService;
 use App\Support\BranchOperationalOptions;
 use App\Support\ListPagination;
@@ -43,20 +44,34 @@ final class SupplierPriceListController extends Controller
 
         $lists = $query->paginate(ListPagination::resolve($filters['per_page'] ?? 15))->withQueryString();
 
+        $expiryAlertDays = (int) SystemSetting::get('procurement', 'price_list_expiry_alert_days', 30);
+        $expiryThreshold = now()->addDays($expiryAlertDays)->toDateString();
+        $today = now()->toDateString();
+
         return Inertia::render('Admin/SupplierPriceLists/Index', [
-            'priceLists' => $lists->through(fn (SupplierPriceList $list) => [
-                'id' => $list->id,
-                'name' => $list->name,
-                'supplier' => $list->supplier?->name,
-                'supplier_id' => $list->supplier_id,
-                'valid_from' => $list->valid_from?->toDateString(),
-                'valid_to' => $list->valid_to?->toDateString(),
-                'currency_code' => $list->currency_code,
-                'is_active' => $list->is_active,
-                'items_count' => $list->items()->count(),
-            ]),
+            'priceLists' => $lists->through(function (SupplierPriceList $list) use ($expiryThreshold, $today) {
+                $validTo = $list->valid_to?->toDateString();
+                $expiringSoon = $list->is_active
+                    && $validTo !== null
+                    && $validTo >= $today
+                    && $validTo <= $expiryThreshold;
+
+                return [
+                    'id' => $list->id,
+                    'name' => $list->name,
+                    'supplier' => $list->supplier?->name,
+                    'supplier_id' => $list->supplier_id,
+                    'valid_from' => $list->valid_from?->toDateString(),
+                    'valid_to' => $validTo,
+                    'currency_code' => $list->currency_code,
+                    'is_active' => $list->is_active,
+                    'items_count' => $list->items()->count(),
+                    'expiring_soon' => $expiringSoon,
+                ];
+            }),
             'filters' => $filters,
             'suppliers' => Supplier::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'expiryAlertDays' => $expiryAlertDays,
         ]);
     }
 

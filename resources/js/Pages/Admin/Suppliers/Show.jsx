@@ -5,7 +5,7 @@ import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
 import { ClipboardList, Download, FileText, Mail, Paperclip, Pencil, Plus, Tag, Trash2, Truck } from 'lucide-react';
-import { paymentMethodLabel } from '@/lib/procurementI18n';
+import { paymentMethodLabel, supplierLedgerEntryTypeLabel } from '@/lib/procurementI18n';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -399,23 +399,23 @@ function Show({ supplier, ledgerEntries = [], branchId, paymentMethods = [], att
             <div className="rounded-lg border bg-card p-6">
                 <h3 className="mb-3 font-medium">{t('pages.suppliers.ledgerTitle')}</h3>
                 {ledgerEntries.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No ledger entries yet.</p>
+                    <p className="text-sm text-muted-foreground">{t('pages.suppliers.ledgerEmpty')}</p>
                 ) : (
                     <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b text-muted-foreground">
-                                <th className="py-2">Date</th>
-                                <th>Type</th>
-                                <th>Reference</th>
-                                <th>Amount</th>
-                                <th>Balance</th>
+                                <th className="py-2">{t('pages.suppliers.ledgerColumns.date')}</th>
+                                <th>{t('pages.suppliers.ledgerColumns.type')}</th>
+                                <th>{t('pages.suppliers.ledgerColumns.reference')}</th>
+                                <th>{t('pages.suppliers.ledgerColumns.debit')}</th>
+                                <th>{t('pages.suppliers.ledgerColumns.balance')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {ledgerEntries.map((e) => (
                                 <tr key={e.id} className="border-b">
                                     <td className="py-2">{e.created_at?.slice(0, 10)}</td>
-                                    <td>{e.entry_type}</td>
+                                    <td>{supplierLedgerEntryTypeLabel(t, e.entry_type)}</td>
                                     <td>{e.reference_no}</td>
                                     <td>{e.amount}</td>
                                     <td>{e.balance_after}</td>

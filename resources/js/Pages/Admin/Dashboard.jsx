@@ -7,6 +7,7 @@ import UserStatusChart from '@/Components/charts/UserStatusChart';
 import UsersByRoleChart from '@/Components/charts/UsersByRoleChart';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 import {
     AlertTriangle,
     ArrowLeftRight,
@@ -34,8 +35,9 @@ const fmtMoney = (n) =>
         ? new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
         : '—';
 
-function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canViewProfit, widgets, procurementKpis }) {
+function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canViewProfit, widgets, procurementKpis, procurementAlerts = [] }) {
     const { auth } = usePage().props;
+    const { t } = useTranslation();
     const showSales = canViewProfit && widgets?.includes('sales');
     const showRevenue = canViewProfit && widgets?.includes('revenue');
     const showRbac = widgets?.includes('rbac') !== false;
@@ -257,36 +259,96 @@ function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canVie
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="rp-section-title mb-0 inline-flex items-center gap-2">
                             <ClipboardList className="h-4 w-4 text-rp-text-muted" />
-                            Procurement
+                            {t('pages.dashboard.procurement.title')}
                         </h2>
                         <Link href={route('admin.procurement.reports')} className="text-sm text-teal-600 hover:underline">
-                            View reports
+                            {t('pages.dashboard.procurement.viewReports')}
                         </Link>
                     </div>
+                    {procurementAlerts.length > 0 && (
+                        <div className="mb-4 rounded-lg border border-amber-300/60 bg-amber-50 p-4 dark:border-amber-500/40 dark:bg-amber-500/10">
+                            <h3 className="mb-2 text-sm font-medium text-amber-900 dark:text-amber-200">
+                                {t('pages.dashboard.procurement.alertsTitle')}
+                            </h3>
+                            <ul className="space-y-2 text-sm">
+                                {procurementAlerts.map((alert) => {
+                                    const href =
+                                        alert.link_route && alert.link_params
+                                            ? route(alert.link_route, alert.link_params)
+                                            : null;
+                                    const content = (
+                                        <>
+                                            <span className="font-medium">{alert.title}</span>
+                                            <span className="text-rp-text-secondary"> — {alert.message}</span>
+                                        </>
+                                    );
+
+                                    return (
+                                        <li key={alert.id}>
+                                            {href ? (
+                                                <Link href={href} className="text-amber-900 hover:underline dark:text-amber-100">
+                                                    {content}
+                                                </Link>
+                                            ) : (
+                                                content
+                                            )}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    )}
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         {[
-                            { label: 'Open POs', value: procurementKpis.open_pos, icon: ClipboardList },
-                            { label: 'Pending approvals', value: procurementKpis.pending_approvals, icon: AlertTriangle },
-                            { label: 'Pending receipts', value: procurementKpis.pending_receipts, icon: Package },
-                            { label: 'Pending invoices', value: procurementKpis.pending_invoices, icon: FileText },
                             {
-                                label: 'Outstanding payables',
+                                label: t('pages.dashboard.procurement.openPos'),
+                                value: procurementKpis.open_pos,
+                                icon: ClipboardList,
+                                href: route('admin.procurement.reports', { tab: 'open-pos' }),
+                            },
+                            {
+                                label: t('pages.dashboard.procurement.pendingApprovals'),
+                                value: procurementKpis.pending_approvals,
+                                icon: AlertTriangle,
+                                href: route('admin.procurement.reports', { tab: 'pending-approvals' }),
+                            },
+                            {
+                                label: t('pages.dashboard.procurement.pendingReceipts'),
+                                value: procurementKpis.pending_receipts,
+                                icon: Package,
+                                href: route('admin.procurement.reports', { tab: 'grns' }),
+                            },
+                            {
+                                label: t('pages.dashboard.procurement.pendingInvoices'),
+                                value: procurementKpis.pending_invoices,
+                                icon: FileText,
+                                href: route('admin.procurement.reports', { tab: 'invoices' }),
+                            },
+                            {
+                                label: t('pages.dashboard.procurement.outstandingPayables'),
                                 value: procurementKpis.outstanding_payables,
                                 icon: Truck,
                                 format: fmtMoney,
+                                href: route('admin.procurement.reports', { tab: 'balances' }),
                             },
                             {
-                                label: 'Monthly purchases',
+                                label: t('pages.dashboard.procurement.monthlyPurchases'),
                                 value: procurementKpis.monthly_purchases,
                                 icon: Tag,
                                 format: fmtMoney,
+                                href: route('admin.procurement.reports', { tab: 'open-pos' }),
                             },
-                            { label: 'Open returns', value: procurementKpis.open_returns, icon: ArrowLeftRight },
+                            {
+                                label: t('pages.dashboard.procurement.openReturns'),
+                                value: procurementKpis.open_returns,
+                                icon: ArrowLeftRight,
+                                href: route('admin.procurement.reports', { tab: 'returns' }),
+                            },
                         ].map((kpi) => {
                             const Icon = kpi.icon;
                             const format = kpi.format ?? fmtInt;
-                            return (
-                                <div key={kpi.label} className="rp-kpi-card before:bg-teal-500">
+                            const card = (
+                                <>
                                     <div className="mb-3.5">
                                         <div className="rp-kpi-icon-teal">
                                             <Icon className="h-[18px] w-[18px]" />
@@ -294,19 +356,35 @@ function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canVie
                                     </div>
                                     <span className="rp-kpi-value">{format(kpi.value)}</span>
                                     <div className="rp-kpi-label">{kpi.label}</div>
+                                </>
+                            );
+
+                            return kpi.href ? (
+                                <Link
+                                    key={kpi.label}
+                                    href={kpi.href}
+                                    className="rp-kpi-card before:bg-teal-500 transition hover:border-teal-300"
+                                >
+                                    {card}
+                                </Link>
+                            ) : (
+                                <div key={kpi.label} className="rp-kpi-card before:bg-teal-500">
+                                    {card}
                                 </div>
                             );
                         })}
                     </div>
                     {procurementKpis.top_suppliers?.length > 0 && (
                         <div className="mt-4 rounded-lg border bg-card p-4">
-                            <h3 className="mb-3 text-sm font-medium text-rp-text-secondary">Top suppliers by balance</h3>
+                            <h3 className="mb-3 text-sm font-medium text-rp-text-secondary">
+                                {t('pages.dashboard.procurement.topSuppliers')}
+                            </h3>
                             <table className="w-full text-left text-sm">
                                 <thead>
                                     <tr className="border-b text-muted-foreground">
-                                        <th className="py-2">Supplier</th>
-                                        <th>Balance</th>
-                                        <th>On-time %</th>
+                                        <th className="py-2">{t('pages.dashboard.procurement.supplierColumn')}</th>
+                                        <th>{t('pages.dashboard.procurement.balanceColumn')}</th>
+                                        <th>{t('pages.dashboard.procurement.onTimeColumn')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>

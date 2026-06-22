@@ -25,7 +25,7 @@ final class PurchaseReturnController extends Controller
 
     public function store(StorePurchaseReturnRequest $request, GoodsReceivingNote $goodsReceivingNote): RedirectResponse
     {
-        abort_unless($request->user()?->can('procurement.manage-returns'), 403);
+        $this->authorize('create', PurchaseReturn::class);
 
         $return = $this->returns->create(
             $goodsReceivingNote,
@@ -40,7 +40,7 @@ final class PurchaseReturnController extends Controller
 
     public function approve(Request $request, PurchaseReturn $purchaseReturn): RedirectResponse
     {
-        abort_unless($request->user()?->can('procurement.manage-returns'), 403);
+        $this->authorize('approve', $purchaseReturn);
 
         $this->returns->approve($purchaseReturn, (int) $request->user()->id);
 
@@ -49,7 +49,7 @@ final class PurchaseReturnController extends Controller
 
     public function dispatch(Request $request, PurchaseReturn $purchaseReturn): RedirectResponse
     {
-        abort_unless($request->user()?->can('procurement.manage-returns'), 403);
+        $this->authorize('dispatch', $purchaseReturn);
 
         $this->returns->dispatchGoods(
             $purchaseReturn,
@@ -62,7 +62,7 @@ final class PurchaseReturnController extends Controller
 
     public function acknowledge(Request $request, PurchaseReturn $purchaseReturn): RedirectResponse
     {
-        abort_unless($request->user()?->can('procurement.manage-returns'), 403);
+        $this->authorize('acknowledge', $purchaseReturn);
 
         $this->returns->acknowledge($purchaseReturn, (int) $request->user()->id);
 
@@ -71,7 +71,7 @@ final class PurchaseReturnController extends Controller
 
     public function issueDebitNote(Request $request, PurchaseReturn $purchaseReturn): RedirectResponse
     {
-        abort_unless($request->user()?->can('procurement.manage-returns'), 403);
+        $this->authorize('issueDebitNote', $purchaseReturn);
 
         $debitNote = $this->returns->issueDebitNote($purchaseReturn, (int) $request->user()->id);
 
@@ -80,7 +80,7 @@ final class PurchaseReturnController extends Controller
 
     public function close(Request $request, PurchaseReturn $purchaseReturn): RedirectResponse
     {
-        abort_unless($request->user()?->can('procurement.manage-returns'), 403);
+        $this->authorize('close', $purchaseReturn);
 
         $this->returns->close($purchaseReturn, (int) $request->user()->id);
 
@@ -89,7 +89,7 @@ final class PurchaseReturnController extends Controller
 
     public function debitNotePdf(DebitNote $debitNote): BinaryFileResponse
     {
-        abort_unless(request()->user()?->can('procurement.view'), 403);
+        $this->authorize('viewAny', PurchaseReturn::class);
 
         $path = $this->debitNotePdf->generate($debitNote);
 

@@ -8,6 +8,7 @@ import {
     grnStatusLabel,
     invoiceStatusLabel,
     matchStatusLabel,
+    poStatusLabel,
 } from '@/lib/procurementI18n';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { CheckCircle, FileText, Mail, Package, Send, XCircle } from 'lucide-react';
@@ -145,7 +146,7 @@ function Show({ order, config, warehouses, approval = {} }) {
                 }
             >
                 <Link href={route('admin.purchase-orders.index')} className="rp-btn-outline">
-                    Back to list
+                    {t('pages.purchaseOrders.backToList')}
                 </Link>
             </PageHeader>
 
@@ -153,10 +154,15 @@ function Show({ order, config, warehouses, approval = {} }) {
                 <span
                     className={`inline-flex rounded-full px-3 py-1 text-sm font-medium capitalize ${statusClass[order.status] ?? ''}`}
                 >
-                    {order.status}
+                    {poStatusLabel(t, order.status)}
                 </span>
+                {order.is_historical && (
+                    <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700 dark:bg-slate-500/20 dark:text-slate-300">
+                        {t('pages.purchaseOrders.badges.historical')}
+                    </span>
+                )}
                 <span className="text-sm text-rp-text-muted">
-                    Total: <strong className="text-rp-text">{order.total}</strong> {order.currency_code}
+                    {t('pages.purchaseOrders.totalLabel')}: <strong className="text-rp-text">{order.total}</strong> {order.currency_code}
                 </span>
                 {order.drop_ship && (
                     <span className="text-sm font-medium text-amber-600">
@@ -266,7 +272,7 @@ function Show({ order, config, warehouses, approval = {} }) {
 
             {showReject && (
                 <div className="mb-4 rounded-lg border bg-card p-4">
-                    <label className="text-sm font-medium">Rejection reason</label>
+                    <label className="text-sm font-medium">{t('pages.purchaseOrders.fields.rejectionReason')}</label>
                     <textarea
                         className="rp-form-input mt-1 w-full"
                         rows={2}
@@ -274,20 +280,20 @@ function Show({ order, config, warehouses, approval = {} }) {
                         onChange={(e) => setRejectionReason(e.target.value)}
                     />
                     <Button type="button" className="mt-2" variant="destructive" onClick={rejectPo}>
-                        Confirm reject
+                        {t('pages.purchaseOrders.confirmReject')}
                     </Button>
                 </div>
             )}
 
             <div className="mb-6 rounded-lg border bg-card p-6">
-                <h3 className="mb-3 font-medium">Line items</h3>
+                <h3 className="mb-3 font-medium">{t('pages.purchaseOrders.sections.lineItems')}</h3>
                 <table className="w-full text-left text-sm">
                     <thead>
                         <tr className="border-b text-muted-foreground">
-                            <th className="py-2">SKU</th>
-                            <th>Ordered</th>
-                            <th>Received</th>
-                            <th>Unit price</th>
+                            <th className="py-2">{t('pages.purchaseOrders.lineColumns.sku')}</th>
+                            <th>{t('pages.purchaseOrders.lineColumns.qtyOrdered')}</th>
+                            <th>{t('pages.purchaseOrders.lineColumns.qtyReceived')}</th>
+                            <th>{t('pages.purchaseOrders.lineColumns.unitPrice')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -305,9 +311,9 @@ function Show({ order, config, warehouses, approval = {} }) {
 
             {showReceive && order.status === 'approved' && (
                 <form onSubmit={receiveGoods} className="mb-6 rounded-lg border border-teal-200 bg-card p-6">
-                    <h3 className="mb-3 font-medium">Receive goods (GRN)</h3>
+                    <h3 className="mb-3 font-medium">{t('pages.purchaseOrders.receiveGrnTitle')}</h3>
                     <div className="mb-4 max-w-xs">
-                        <label className="text-sm">Warehouse</label>
+                        <label className="text-sm">{t('pages.purchaseOrders.fields.warehouse')}</label>
                         <Select options={warehouseOptions} value={warehouseId} onChange={setWarehouseId} />
                     </div>
                     <div className="space-y-2">
@@ -319,7 +325,7 @@ function Show({ order, config, warehouses, approval = {} }) {
                                     min="0"
                                     step="any"
                                     className="rp-form-input"
-                                    placeholder="Qty"
+                                    placeholder={t('pages.purchaseOrders.lineColumns.qty')}
                                     value={receiveLines[idx]?.qty_received ?? ''}
                                     onChange={(e) => {
                                         const next = [...receiveLines];
@@ -328,7 +334,7 @@ function Show({ order, config, warehouses, approval = {} }) {
                                     }}
                                 />
                                 <input
-                                    placeholder="Batch no"
+                                    placeholder={t('pages.purchaseOrders.lineColumns.batch')}
                                     className="rp-form-input"
                                     value={receiveLines[idx]?.batch_no ?? ''}
                                     onChange={(e) => {
@@ -351,14 +357,14 @@ function Show({ order, config, warehouses, approval = {} }) {
                         ))}
                     </div>
                     <Button type="submit" className="mt-4">
-                        Post receipt
+                        {t('pages.purchaseOrders.postReceipt')}
                     </Button>
                 </form>
             )}
 
             {order.grns?.length > 0 && (
                 <div className="mb-6 rounded-lg border bg-card p-6">
-                    <h3 className="mb-3 font-medium">Goods receiving notes</h3>
+                    <h3 className="mb-3 font-medium">{t('pages.purchaseOrders.sections.grns')}</h3>
                     <ul className="space-y-2 text-sm">
                         {order.grns.map((grn) => (
                             <li key={grn.id}>
@@ -378,7 +384,7 @@ function Show({ order, config, warehouses, approval = {} }) {
 
             {order.supplier_invoices?.length > 0 && (
                 <div className="mb-6 rounded-lg border bg-card p-6">
-                    <h3 className="mb-3 font-medium">Supplier invoices &amp; matching</h3>
+                    <h3 className="mb-3 font-medium">{t('pages.purchaseOrders.sections.invoices')}</h3>
                     <ul className="space-y-3 text-sm">
                         {order.supplier_invoices.map((inv) => (
                             <li key={inv.id} className="rounded border p-3">
@@ -386,10 +392,10 @@ function Show({ order, config, warehouses, approval = {} }) {
                                     <span className="font-medium">{inv.reference_no}</span>
                                     <span>{invoiceStatusLabel(t, inv.status)}</span>
                                 </div>
-                                <div>Total: {inv.total} {order.currency_code}</div>
+                                <div>{t('pages.purchaseOrders.totalLabel')}: {inv.total} {order.currency_code}</div>
                                 {inv.match_result && (
                                     <div className="mt-2 text-amber-700 dark:text-amber-400">
-                                        Match: {matchStatusLabel(t, inv.match_result.match_status)}
+                                        {t('pages.goodsReceiving.matchLabel')}: {matchStatusLabel(t, inv.match_result.match_status)}
                                         {inv.match_result.exception_reason &&
                                             ` — ${inv.match_result.exception_reason}`}
                                         {MATCH_EXCEPTION_STATUSES.includes(inv.match_result.match_status) &&
@@ -401,7 +407,7 @@ function Show({ order, config, warehouses, approval = {} }) {
                                                     className="ml-2"
                                                     onClick={() => resolveMatch(inv.match_result.id)}
                                                 >
-                                                    Resolve exception
+                                                    {t('pages.purchaseOrders.actions.resolveException')}
                                                 </Button>
                                             )}
                                     </div>
@@ -425,12 +431,12 @@ function Show({ order, config, warehouses, approval = {} }) {
                                             variant="outline"
                                             onClick={() => approveInvoice(inv.id)}
                                         >
-                                            Approve invoice
+                                            {t('pages.purchaseOrders.actions.approveInvoice')}
                                         </Button>
                                     )}
                                     {invoiceCanPay(inv) && can('procurement.process-payments') && (
                                         <Button type="button" size="sm" onClick={() => payInvoice(inv)}>
-                                            Pay invoice
+                                            {t('pages.purchaseOrders.actions.payInvoice')}
                                         </Button>
                                     )}
                                 </div>

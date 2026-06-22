@@ -4,9 +4,10 @@ import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
+import { formatCurrency } from '@/lib/formatCurrency';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
-import { Plus, Trash2 } from 'lucide-react';
+import { Info, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -40,7 +41,7 @@ function Create({
     defaultCurrency = 'USD',
 }) {
     const { branch: branchContext, errors: serverErrors } = usePage().props;
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     const initialSupplierId =
         preselectedSupplierId != null
@@ -85,6 +86,13 @@ function Create({
         exchange_rate: 1,
         lines: [],
     });
+
+    const formatMoney = (amount) => formatCurrency(amount, data.currency_code, i18n.language);
+
+    const approvalThreshold = useMemo(
+        () => formatCurrency(config.po_approval_threshold, data.currency_code, i18n.language),
+        [config.po_approval_threshold, data.currency_code, i18n.language],
+    );
 
     useEffect(() => {
         if (!data.drop_ship || saleQuery.length < 2) {
@@ -170,30 +178,30 @@ function Create({
         setFormError('');
 
         if (!data.supplier_id) {
-            setFormError('Select a supplier.');
+            setFormError(t('pages.purchaseOrders.validation.selectSupplier'));
             return;
         }
 
         if (!data.branch_id) {
-            setFormError('Select a branch for this purchase order.');
+            setFormError(t('pages.purchaseOrders.validation.selectBranch'));
             return;
         }
 
         const payloadLines = buildPayloadLines();
 
         if (payloadLines.length === 0) {
-            setFormError('Add at least one product line.');
+            setFormError(t('pages.purchaseOrders.validation.addLine'));
             return;
         }
 
         for (const [index, line] of lines.entries()) {
             if (!line.variant) continue;
             if (!line.qty_ordered || Number(line.qty_ordered) <= 0) {
-                setFormError(`Enter a valid quantity on line ${index + 1}.`);
+                setFormError(t('pages.purchaseOrders.validation.invalidQty', { line: index + 1 }));
                 return;
             }
             if (line.unit_price === '' || Number(line.unit_price) < 0) {
-                setFormError(`Enter a unit price on line ${index + 1}.`);
+                setFormError(t('pages.purchaseOrders.validation.invalidPrice', { line: index + 1 }));
                 return;
             }
             if (
@@ -201,7 +209,7 @@ function Create({
                 Math.abs(Number(line.list_price) - Number(line.unit_price)) > 0.0001 &&
                 !line.price_override_reason?.trim()
             ) {
-                setFormError(`Price override reason required on line ${index + 1}.`);
+                setFormError(t('pages.purchaseOrders.validation.overrideRequired', { line: index + 1 }));
                 return;
             }
         }
@@ -238,18 +246,18 @@ function Create({
                 description={t('pages.purchaseOrders.createDescription')}
             >
                 <Link href={route('admin.purchase-orders.index')} className="rp-btn-outline">
-                    Cancel
+                    {t('confirm.cancel')}
                 </Link>
             </PageHeader>
 
             {(formError || displayErrors.lines) && (
-                <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+                <div className="mb-4 max-w-4xl rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
                     {formError || displayErrors.lines}
                 </div>
             )}
 
-            <form onSubmit={submit} className="max-w-3xl space-y-5">
-                <FormCard>
+            <form onSubmit={submit} className="max-w-4xl space-y-5">
+                <FormCard className="max-w-none">
                     <div className="grid gap-4 sm:grid-cols-2">
                         {branchId ? (
                         <AdminFormField label={t('pages.purchaseOrders.fields.branch')}>
@@ -292,7 +300,7 @@ function Create({
                             />
                         </AdminFormField>
                         <AdminFormField
-                            label="Expected delivery"
+                            label={t('pages.purchaseOrders.fields.expectedDelivery')}
                             error={displayErrors.expected_delivery_date}
                         >
                             <input
@@ -376,20 +384,18 @@ function Create({
                             <p className="text-xs text-rp-text-muted">{t('pages.purchaseOrders.dropShipHint')}</p>
                         </div>
                     )}
-                    <p className="text-xs text-rp-text-muted">
-                        {t('pages.purchaseOrders.approvalHint', {
-                            amount: Number(config.po_approval_threshold).toLocaleString(),
-                            currency: data.currency_code,
-                        })}
-                    </p>
+                    <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-teal-200/70 bg-teal-50/80 px-4 py-3 text-sm text-teal-900 dark:border-teal-500/30 dark:bg-teal-500/10 dark:text-teal-100">
+                        <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-600 dark:text-teal-300" />
+                        <p>{t('pages.purchaseOrders.approvalHint', { threshold: approvalThreshold })}</p>
+                    </div>
                 </FormCard>
 
-                <FormCard>
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                        <h3 className="rp-form-label mb-0">Line items</h3>
+                <FormCard className="max-w-none">
+                    <div className="mb-4 flex items-center justify-between gap-3 border-b border-rp-border pb-4">
+                        <h3 className="rp-form-label mb-0">{t('pages.purchaseOrders.sections.lineItems')}</h3>
                         <button type="button" onClick={addLine} className="rp-btn-outline text-xs">
                             <Plus className="h-3.5 w-3.5" />
-                            Add line
+                            {t('pages.purchaseOrders.addLine')}
                         </button>
                     </div>
 
@@ -397,9 +403,24 @@ function Create({
                         {lines.map((line, index) => (
                             <div
                                 key={index}
-                                className="space-y-3 rounded-lg border border-rp-border bg-rp-surface-inset/40 p-4"
+                                className="space-y-4 rounded-xl border border-rp-border bg-rp-surface-inset/50 p-4 shadow-sm"
                             >
-                                <AdminFormField label="Product">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs font-medium uppercase tracking-wide text-rp-text-muted">
+                                        {t('pages.purchaseOrders.sections.lineItems')} {index + 1}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeLine(index)}
+                                        className="rp-btn-outline border-rose-200 px-2 py-1 text-rose-500 hover:bg-rose-50 dark:border-rose-500/30 dark:hover:bg-rose-500/10"
+                                        aria-label={t('common.delete')}
+                                        disabled={lines.length <= 1}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+
+                                <AdminFormField label={t('pages.purchaseOrders.lineColumns.product')}>
                                     <VariantSearchPicker
                                         searchRoute="api.v1.procurement.product-variants.search"
                                         value={line.variant}
@@ -408,35 +429,41 @@ function Create({
                                 </AdminFormField>
 
                                 <div className="grid gap-3 sm:grid-cols-3">
-                                    <AdminFormField label="Quantity">
+                                    <AdminFormField label={t('pages.purchaseOrders.fields.quantity')}>
                                         <input
                                             type="number"
                                             min="0.0001"
                                             step="any"
                                             className="rp-form-input w-full"
                                             value={line.qty_ordered}
+                                            placeholder={t('pages.purchaseOrders.placeholders.qty')}
                                             onChange={(e) =>
                                                 updateLine(index, { qty_ordered: e.target.value })
                                             }
                                         />
                                     </AdminFormField>
-                                    <AdminFormField label="Unit price">
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="any"
-                                            required
-                                            className="rp-form-input w-full"
-                                            value={line.unit_price}
-                                            onChange={(e) =>
-                                                updateLine(index, { unit_price: e.target.value })
-                                            }
-                                            placeholder="0.00"
-                                        />
+                                    <AdminFormField label={t('pages.purchaseOrders.lineColumns.unitPrice')}>
+                                        <div className="relative">
+                                            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-xs font-semibold text-rp-text-muted">
+                                                {data.currency_code}
+                                            </span>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="any"
+                                                required
+                                                className="rp-form-input w-full pl-14"
+                                                value={line.unit_price}
+                                                onChange={(e) =>
+                                                    updateLine(index, { unit_price: e.target.value })
+                                                }
+                                                placeholder={t('pages.purchaseOrders.placeholders.unitPrice')}
+                                            />
+                                        </div>
                                     </AdminFormField>
                                     <AdminFormField
-                                        label="Override reason"
-                                        hint="Required if price differs from supplier list"
+                                        label={t('pages.purchaseOrders.fields.overrideReason')}
+                                        hint={t('pages.purchaseOrders.hints.overrideReason')}
                                     >
                                         <input
                                             className="rp-form-input w-full"
@@ -446,66 +473,53 @@ function Create({
                                                     price_override_reason: e.target.value,
                                                 })
                                             }
-                                            placeholder="Optional"
+                                            placeholder={t('pages.purchaseOrders.placeholders.priceOverride')}
                                         />
                                     </AdminFormField>
                                 </div>
 
-                                <div className="flex items-center justify-between text-sm">
+                                <div className="flex justify-end text-sm">
                                     <span className="text-rp-text-muted">
-                                        Line total:{' '}
-                                        <span className="font-medium text-rp-text">
-                                            {lineTotal(line).toLocaleString(undefined, {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2,
-                                            })}{' '}
-                                            {data.currency_code}
+                                        {t('pages.purchaseOrders.lineTotalLabel')}:{' '}
+                                        <span className="font-semibold text-rp-text">
+                                            {formatMoney(lineTotal(line))}
                                         </span>
                                     </span>
-                                    <button
-                                        type="button"
-                                        onClick={() => removeLine(index)}
-                                        className="rp-btn-outline border-rose-200 text-rose-500"
-                                        aria-label="Remove line"
-                                        disabled={lines.length <= 1}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="mt-4 flex justify-end border-t border-rp-border pt-4">
-                        <div className="text-right text-sm">
-                            <span className="text-rp-text-muted">Estimated total</span>
-                            <div className="text-lg font-semibold text-rp-text">
-                                {estimatedTotal.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                })}{' '}
-                                {data.currency_code}
+                    <div className="mt-5 flex justify-end">
+                        <div className="min-w-[220px] rounded-xl border border-teal-200/70 bg-teal-50/50 px-5 py-4 text-right dark:border-teal-500/30 dark:bg-teal-500/10">
+                            <span className="text-xs font-medium uppercase tracking-wide text-rp-text-muted">
+                                {t('pages.purchaseOrders.estimatedTotal')}
+                            </span>
+                            <div className="mt-1 text-2xl font-bold text-teal-700 dark:text-teal-300">
+                                {formatMoney(estimatedTotal)}
                             </div>
                         </div>
                     </div>
                 </FormCard>
 
-                <AdminFormField label="Notes" error={displayErrors.notes}>
+                <FormCard className="max-w-none">
+                <AdminFormField label={t('pages.purchaseOrders.fields.notes')} error={displayErrors.notes}>
                     <textarea
                         rows={3}
                         className="rp-form-input w-full"
                         value={data.notes}
                         onChange={(e) => setData('notes', e.target.value)}
-                        placeholder="Internal notes for this purchase order…"
+                        placeholder={t('pages.purchaseOrders.placeholders.notes')}
                     />
                 </AdminFormField>
+                </FormCard>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 pt-1">
                     <button type="submit" className="rp-btn-primary" disabled={submitting}>
-                        {submitting ? 'Saving…' : 'Create draft PO'}
+                        {submitting ? t('common.saving') : t('pages.purchaseOrders.createSubmit')}
                     </button>
                     <Link href={route('admin.purchase-orders.index')} className="rp-btn-outline">
-                        Cancel
+                        {t('confirm.cancel')}
                     </Link>
                 </div>
             </form>

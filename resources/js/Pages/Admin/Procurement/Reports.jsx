@@ -320,7 +320,17 @@ function Reports({
                     <ReportTable
                         headers={[col('reference'), col('supplier'), col('status')]}
                         rows={returns.map((r) => [
-                            r.reference_no,
+                            r.grn_id ? (
+                                <Link
+                                    key={`ret-${r.id}`}
+                                    href={route('admin.goods-receiving-notes.show', r.grn_id)}
+                                    className="text-teal-600 hover:underline"
+                                >
+                                    {r.reference_no}
+                                </Link>
+                            ) : (
+                                r.reference_no
+                            ),
                             r.supplier,
                             returnStatusLabel(t, r.status),
                         ])}

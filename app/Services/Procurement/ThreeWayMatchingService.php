@@ -14,6 +14,7 @@ final class ThreeWayMatchingService
 {
     public function __construct(
         private readonly ProcurementConfigService $config,
+        private readonly SupplierLedgerService $ledger,
     ) {}
 
     public function match(SupplierInvoice $invoice, int $userId): PoMatchResult
@@ -115,6 +116,10 @@ final class ThreeWayMatchingService
         ]);
 
         $result->supplierInvoice?->update(['status' => SupplierInvoiceStatus::Matched]);
+
+        if ($result->supplierInvoice !== null) {
+            $this->ledger->recordInvoiceIfMissing($result->supplierInvoice, $userId);
+        }
 
         return $result->fresh() ?? $result;
     }

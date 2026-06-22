@@ -6,6 +6,7 @@ namespace App\Services\Procurement;
 
 use App\Enums\SupplierLedgerEntryType;
 use App\Models\Supplier;
+use App\Models\SupplierInvoice;
 use App\Models\SupplierLedgerEntry;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -86,6 +87,35 @@ final class SupplierLedgerService
 
             return $entry;
         });
+    }
+
+    public function recordInvoiceIfMissing(SupplierInvoice $invoice, int $userId): ?SupplierLedgerEntry
+    {
+        $exists = SupplierLedgerEntry::query()
+            ->where('supplier_id', $invoice->supplier_id)
+            ->where('branch_id', $invoice->branch_id)
+            ->where('reference_type', SupplierInvoice::class)
+            ->where('reference_id', $invoice->id)
+            ->exists();
+
+        if ($exists) {
+            return null;
+        }
+
+        return $this->recordEntry(
+            supplierId: $invoice->supplier_id,
+            branchId: $invoice->branch_id,
+            type: SupplierLedgerEntryType::Invoice,
+            amount: (float) $invoice->total,
+            currencyCode: $invoice->currency_code,
+            exchangeRate: (float) $invoice->exchange_rate,
+            functionalAmount: (float) $invoice->functional_total,
+            referenceType: SupplierInvoice::class,
+            referenceId: $invoice->id,
+            referenceNo: $invoice->reference_no,
+            notes: __('Supplier invoice :ref', ['ref' => $invoice->reference_no]),
+            userId: $userId,
+        );
     }
 
     /**

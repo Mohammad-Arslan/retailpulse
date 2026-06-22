@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DashboardService;
+use App\Services\Procurement\ProcurementAlertService;
 use App\Services\Procurement\ProcurementDashboardService;
 use App\Support\BranchContext;
 use Illuminate\Http\Request;
@@ -15,8 +16,12 @@ use Inertia\Response;
 
 final class DashboardController extends Controller
 {
-    public function __invoke(Request $request, DashboardService $dashboard, ProcurementDashboardService $procurement): Response
-    {
+    public function __invoke(
+        Request $request,
+        DashboardService $dashboard,
+        ProcurementDashboardService $procurement,
+        ProcurementAlertService $procurementAlerts,
+    ): Response {
         $user = $request->user();
 
         abort_unless(
@@ -44,6 +49,17 @@ final class DashboardController extends Controller
             'procurementKpis' => $user->can('procurement.view')
                 ? $procurement->kpis($branchId)
                 : null,
+            'procurementAlerts' => $user->can('procurement.view')
+                ? $procurementAlerts->recentUnreadForUser($user)->map(fn ($alert) => [
+                    'id' => $alert->id,
+                    'type' => $alert->type,
+                    'title' => $alert->title,
+                    'message' => $alert->message,
+                    'link_route' => $alert->link_route,
+                    'link_params' => $alert->link_params ?? [],
+                    'created_at' => $alert->created_at?->toIso8601String(),
+                ])
+                : [],
         ]);
     }
 

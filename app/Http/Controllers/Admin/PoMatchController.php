@@ -18,7 +18,7 @@ final class PoMatchController extends Controller
 
     public function resolve(Request $request, PoMatchResult $poMatchResult): RedirectResponse
     {
-        abort_unless($request->user()?->can('procurement.resolve-match-exception'), 403);
+        $this->authorize('resolve', $poMatchResult);
 
         $this->matching->resolveException($poMatchResult, (int) $request->user()->id);
 

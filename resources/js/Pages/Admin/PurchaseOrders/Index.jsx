@@ -41,19 +41,26 @@ function Index({ orders, filters, statuses = [], suppliers = [] }) {
             {
                 id: 'reference',
                 accessorKey: 'reference_no',
-                header: 'Reference',
+                header: t('pages.purchaseOrders.columns.reference'),
                 cell: ({ row }) => (
-                    <Link
-                        href={route('admin.purchase-orders.show', row.original.id)}
-                        className="text-sm font-semibold text-teal-600 hover:underline"
-                    >
-                        {row.original.reference_no}
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                            href={route('admin.purchase-orders.show', row.original.id)}
+                            className="text-sm font-semibold text-teal-600 hover:underline"
+                        >
+                            {row.original.reference_no}
+                        </Link>
+                        {row.original.is_historical && (
+                            <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-500/20 dark:text-slate-300">
+                                {t('pages.purchaseOrders.badges.historical')}
+                            </span>
+                        )}
+                    </div>
                 ),
             },
             {
                 id: 'supplier',
-                header: 'Supplier',
+                header: t('pages.purchaseOrders.columns.supplier'),
                 cell: ({ row }) =>
                     row.original.supplier ? (
                         <Link
@@ -68,7 +75,7 @@ function Index({ orders, filters, statuses = [], suppliers = [] }) {
             },
             {
                 id: 'status',
-                header: 'Status',
+                header: t('pages.purchaseOrders.columns.status'),
                 cell: ({ row }) => (
                     <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusClass[row.original.status] ?? ''}`}
@@ -77,15 +84,15 @@ function Index({ orders, filters, statuses = [], suppliers = [] }) {
                     </span>
                 ),
             },
-            { id: 'total', accessorKey: 'total', header: 'Total' },
+            { id: 'total', accessorKey: 'total', header: t('pages.purchaseOrders.columns.total') },
             {
                 id: 'expected',
-                header: 'Expected',
+                header: t('pages.purchaseOrders.columns.expected'),
                 cell: ({ row }) => row.original.expected_delivery_date ?? '—',
             },
             {
                 id: 'created',
-                header: 'Created',
+                header: t('pages.purchaseOrders.columns.created'),
                 cell: ({ row }) =>
                     row.original.created_at
                         ? new Date(row.original.created_at).toLocaleDateString()
@@ -149,7 +156,7 @@ function Index({ orders, filters, statuses = [], suppliers = [] }) {
                 type: 'delete',
                 variant: 'destructive',
                 onClick: () => {
-                    if (confirm(`Cancel ${order.reference_no}?`)) {
+                    if (confirm(t('pages.purchaseOrders.cancelConfirm', { reference: order.reference_no }))) {
                         router.post(route('admin.purchase-orders.cancel', order.id));
                     }
                 },
@@ -168,7 +175,7 @@ function Index({ orders, filters, statuses = [], suppliers = [] }) {
                     {can('procurement.view') && (
                         <Link href={route('admin.procurement.reports')} className="rp-btn-outline">
                             <ClipboardList className="h-4 w-4" />
-                            Reports
+                            {t('pages.purchaseOrders.viewReports')}
                         </Link>
                     )}
                     {can('procurement.create') && (

@@ -7,10 +7,13 @@
 
 | Area | Status | Notes |
 |------|--------|-------|
-| **Core cycle** (PO → GRN → invoice → payment → ledger) | ✅ Complete | Services, admin routes, feature test |
+| **Core cycle** (PO → GRN → invoice → payment → ledger) | ✅ Complete | Ledger posts on `fully_matched` only; idempotent post on match resolve |
 | **PO send gating** | ✅ Complete | PDF/email only when `approved` or `closed` (unless `is_historical`) |
 | **3-way matching** | ✅ Complete | `ThreeWayMatchingService`, resolve on GRN/PO/reports |
-| **SRS v4.0 admin UI** | ✅ Complete | Price lists, attachments, landed cost, return lifecycle, drop-ship sale link, performance card |
+| **v4.0 functional UI** | ✅ Complete | Manual landed cost, partial returns, GRN/price-list polish, badges, dashboard drill-down |
+| **Backend polish** | ✅ Complete | Payment method toggles in Settings, thin policies, audit observers, RBAC |
+| **i18n / ur locale** | ✅ Complete | PO/GRN/Dashboard/Supplier ledger wired; `ur.json` procurement parity |
+| **Notification alerts** | 🔶 Stub | `procurement_alerts` table + jobs + dashboard strip; full delivery Phase 14 |
 | **Phase 11 integration** | 🔶 Stubbed | `ProcurementPostingHook` + `NullProcurementPostingHook` for GL and FIFO cost layers |
 | **Workflow approval (Phase 29)** | ⏸ Deferred | `WorkflowPoApprovalStrategy` disabled until workflow engine exists |
 | **Report CSV/Excel exports** | ⏸ Deferred | P2 polish |
@@ -34,6 +37,7 @@ Full **procurement cycle** with approval workflows and supplier ledger.
 - `landed_cost_entries`, `landed_cost_allocations`
 - `purchase_returns`, `purchase_return_items`, `debit_notes`
 - `po_match_results`, `supplier_performance_scores`
+- `procurement_alerts` — in-app alert stubs for escalation and price-list expiry (Phase 14 email/SMS)
 
 ## Features
 
@@ -74,7 +78,7 @@ Full **procurement cycle** with approval workflows and supplier ledger.
 - The existing approval threshold logic (PO amount > configurable limit requires manager PIN) is extended to optionally route through the generic Workflow Engine when Phase 29 is active.
 - When `feature_flags.procurement.workflow_approval` is enabled, PO approval triggers a `WorkflowInstance` instead of a direct PIN prompt.
 - Backwards compatible: when the feature flag is off, the existing PIN-based approval remains.
-- PO escalation after N hours of no approver action (configurable per branch). ✅ `PoApprovalEscalationJob`
+- PO escalation after N hours of no approver action (configurable per branch). ✅ `PoApprovalEscalationJob` (persists `procurement_alerts` + dashboard strip; email Phase 14)
 
 ### Supplier Performance Scoring
 - `suppliers` table: `on_time_delivery_rate`, `quality_rejection_rate`, `last_scored_at`.
@@ -96,7 +100,7 @@ Full **procurement cycle** with approval workflows and supplier ledger.
 
 - CRUD under `admin/supplier-price-lists`.
 - PO line auto-populates unit price from active price list; override requires reason.
-- Expiry alert job (`PriceListExpiryAlertJob`) reads `price_list_expiry_alert_days`.
+- Expiry alert job (`PriceListExpiryAlertJob`) reads `price_list_expiry_alert_days`; persists `procurement_alerts` (full notification delivery Phase 14).
 - Bulk import/export of price lists via `supplier-price-lists` entity (`SupplierPriceListImportHandler` / `SupplierPriceListExportHandler`).
 
 ### Purchase Return & RMA ✅

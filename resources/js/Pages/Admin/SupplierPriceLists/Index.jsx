@@ -1,3 +1,4 @@
+import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
 import ImportExportToolbar from '@/Components/import-export/ImportExportToolbar';
 import { useImportJobsTray } from '@/Components/import-export/ImportJobsTray';
@@ -6,6 +7,7 @@ import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
 import { Plus, Search } from 'lucide-react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Index({ priceLists, filters, suppliers = [] }) {
@@ -23,6 +25,57 @@ function Index({ priceLists, filters, suppliers = [] }) {
         search: filters.search ?? undefined,
         supplier_id: filters.supplier_id ?? undefined,
     };
+
+    const columns = useMemo(
+        () => [
+            {
+                id: 'name',
+                header: t('pages.supplierPriceLists.columns.name'),
+                cell: ({ row }) => (
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                            href={route('admin.supplier-price-lists.edit', row.original.id)}
+                            className="font-medium text-teal-600 hover:underline"
+                        >
+                            {row.original.name}
+                        </Link>
+                        {row.original.expiring_soon && (
+                            <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+                                {t('pages.supplierPriceLists.badges.expiringSoon')}
+                            </span>
+                        )}
+                    </div>
+                ),
+            },
+            {
+                id: 'supplier',
+                accessorKey: 'supplier',
+                header: t('pages.supplierPriceLists.columns.supplier'),
+            },
+            {
+                id: 'valid_from',
+                header: t('pages.supplierPriceLists.columns.validFrom'),
+                cell: ({ row }) => row.original.valid_from ?? '—',
+            },
+            {
+                id: 'valid_to',
+                header: t('pages.supplierPriceLists.columns.validTo'),
+                cell: ({ row }) => row.original.valid_to ?? '—',
+            },
+            {
+                id: 'items_count',
+                accessorKey: 'items_count',
+                header: t('pages.supplierPriceLists.columns.items'),
+            },
+            {
+                id: 'status',
+                header: t('pages.supplierPriceLists.columns.status'),
+                cell: ({ row }) =>
+                    row.original.is_active ? t('common.active') : t('common.inactive'),
+            },
+        ],
+        [t],
+    );
 
     return (
         <>
@@ -68,49 +121,14 @@ function Index({ priceLists, filters, suppliers = [] }) {
                 </button>
             </form>
 
-            <div className="overflow-hidden rounded-lg border bg-card">
-                <table className="w-full text-left text-sm">
-                    <thead className="border-b bg-muted/40 text-muted-foreground">
-                        <tr>
-                            <th className="px-4 py-3">{t('pages.supplierPriceLists.columns.name')}</th>
-                            <th className="px-4 py-3">{t('pages.supplierPriceLists.columns.supplier')}</th>
-                            <th className="px-4 py-3">{t('pages.supplierPriceLists.columns.validFrom')}</th>
-                            <th className="px-4 py-3">{t('pages.supplierPriceLists.columns.validTo')}</th>
-                            <th className="px-4 py-3">{t('pages.supplierPriceLists.columns.items')}</th>
-                            <th className="px-4 py-3">{t('pages.supplierPriceLists.columns.status')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {priceLists.data?.length ? (
-                            priceLists.data.map((list) => (
-                                <tr key={list.id} className="border-b">
-                                    <td className="px-4 py-3">
-                                        <Link
-                                            href={route('admin.supplier-price-lists.edit', list.id)}
-                                            className="font-medium text-teal-600 hover:underline"
-                                        >
-                                            {list.name}
-                                        </Link>
-                                    </td>
-                                    <td className="px-4 py-3">{list.supplier}</td>
-                                    <td className="px-4 py-3">{list.valid_from ?? '—'}</td>
-                                    <td className="px-4 py-3">{list.valid_to ?? '—'}</td>
-                                    <td className="px-4 py-3">{list.items_count}</td>
-                                    <td className="px-4 py-3">
-                                        {list.is_active ? t('common.active') : t('common.inactive')}
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                                    {t('pages.supplierPriceLists.empty')}
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            <DataTable
+                columns={columns}
+                data={priceLists.data ?? []}
+                pagination={priceLists}
+                filters={filters}
+                indexRoute="admin.supplier-price-lists.index"
+                emptyMessage={t('pages.supplierPriceLists.empty')}
+            />
         </>
     );
 }

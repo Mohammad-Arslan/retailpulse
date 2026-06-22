@@ -38,7 +38,20 @@ final class PurchaseReturnService
         int $userId,
         ?string $notes = null,
     ): PurchaseReturn {
-        return DB::transaction(function () use ($grn, $reason, $lines, $userId, $notes) {
+        $grn->load(['items.purchaseOrderItem', 'purchaseReturns.items']);
+
+        $returnedByGrnItem = [];
+        foreach ($grn->purchaseReturns as $return) {
+            if ($return->status === PurchaseReturnStatus::Closed) {
+                continue;
+            }
+            foreach ($return->items as $returnItem) {
+                $returnedByGrnItem[$returnItem->grn_item_id] = ($returnedByGrnItem[$returnItem->grn_item_id] ?? 0)
+                    + (float) $returnItem->qty_returned;
+            }
+        }
+
+        return DB::transaction(function () use ($grn, $reason, $lines, $userId, $notes, $returnedByGrnItem) {
             $return = PurchaseReturn::query()->create([
                 'branch_id' => $grn->branch_id,
                 'supplier_id' => $grn->supplier_id,
@@ -53,7 +66,42 @@ final class PurchaseReturnService
             ]);
 
             foreach ($lines as $line) {
-                $return->items()->create($line);
+                $grnItem = $grn->items->firstWhere('id', $line['grn_item_id'] ?? null);
+                if ($grnItem === null) {
+                    throw ValidationException::withMessages([
+                        'lines' => __('Invalid GRN line.'),
+                    ]);
+                }
+
+                $qtyReturned = (float) ($line['qty_returned'] ?? 0);
+                $alreadyReturned = (float) ($returnedByGrnItem[$grnItem->id] ?? 0);
+                $available = (float) $grnItem->qty_received - $alreadyReturned;
+
+                if ($qtyReturned <= 0) {
+                    continue;
+                }
+
+                if ($qtyReturned > $available + 0.0001) {
+                    throw ValidationException::withMessages([
+                        'lines' => __('Return quantity exceeds available quantity for this GRN line.'),
+                    ]);
+                }
+
+                $unitCost = (float) ($line['unit_cost'] ?? $grnItem->purchaseOrderItem?->unit_price ?? 0);
+
+                $return->items()->create([
+                    'grn_item_id' => $grnItem->id,
+                    'product_variant_id' => (int) ($line['product_variant_id'] ?? $grnItem->product_variant_id),
+                    'qty_returned' => $qtyReturned,
+                    'unit_cost' => $unitCost,
+                    'line_total' => round($qtyReturned * $unitCost, 2),
+                ]);
+            }
+
+            if ($return->items()->count() === 0) {
+                throw ValidationException::withMessages([
+                    'lines' => __('Add at least one return line with quantity.'),
+                ]);
             }
 
             return $return->fresh(['items']) ?? $return;
@@ -116,19 +164,32 @@ final class PurchaseReturnService
             throw ValidationException::withMessages(['status' => __('Debit note cannot be issued in current status.')]);
         }
 
-        $return->load('items');
-        $amount = $return->items->sum('line_total');
+        $return->load(['items', 'purchaseOrder', 'supplier']);
 
-        return DB::transaction(function () use ($return, $amount, $userId) {
+        $amount = round((float) $return->items->sum('line_total'), 2);
+
+        if ($amount <= 0) {
+            throw ValidationException::withMessages([
+                'amount' => __('Debit note amount must be greater than zero.'),
+            ]);
+        }
+
+        $currencyCode = $return->purchaseOrder?->currency_code
+            ?? $return->supplier?->currency_code
+            ?? 'USD';
+        $exchangeRate = (float) ($return->purchaseOrder?->exchange_rate ?? 1);
+        $functionalAmount = round($amount * $exchangeRate, 2);
+
+        return DB::transaction(function () use ($return, $amount, $userId, $currencyCode, $exchangeRate, $functionalAmount) {
             $debitNote = DebitNote::query()->create([
                 'branch_id' => $return->branch_id,
                 'supplier_id' => $return->supplier_id,
                 'purchase_return_id' => $return->id,
                 'reference_no' => $this->documentNumbers->next($return->branch_id, ProcurementDocumentType::DebitNote),
                 'amount' => $amount,
-                'currency_code' => 'USD',
-                'exchange_rate' => 1,
-                'functional_amount' => $amount,
+                'currency_code' => $currencyCode,
+                'exchange_rate' => $exchangeRate,
+                'functional_amount' => $functionalAmount,
                 'status' => 'issued',
                 'issued_at' => now(),
                 'created_by' => $userId,

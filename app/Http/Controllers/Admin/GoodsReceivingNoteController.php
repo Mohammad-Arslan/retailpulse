@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\GrnStatus;
+use App\Enums\PurchaseReturnStatus;
 use App\Http\Controllers\Controller;
 use App\Models\GoodsReceivingNote;
 use App\Models\PurchaseOrder;
+use App\Models\Supplier;
 use App\Models\Warehouse;
 use App\Services\Procurement\ProcurementConfigService;
 use App\Support\BranchContext;
@@ -22,7 +25,7 @@ final class GoodsReceivingNoteController extends Controller
         $this->authorize('viewAny', PurchaseOrder::class);
 
         $branchId = app(BranchContext::class)->branchId;
-        $filters = ListPagination::filters($request, ['search']);
+        $filters = ListPagination::filters($request, ['search', 'status', 'supplier_id']);
 
         $paginator = GoodsReceivingNote::query()
             ->with(['supplier', 'purchaseOrder', 'warehouse'])
@@ -31,6 +34,8 @@ final class GoodsReceivingNoteController extends Controller
                 $term = '%'.addcslashes($search, '%_\\').'%';
                 $q->where('reference_no', 'like', $term);
             })
+            ->when($filters['status'] ?? null, fn ($q, string $status) => $q->where('status', $status))
+            ->when($filters['supplier_id'] ?? null, fn ($q, $supplierId) => $q->where('supplier_id', $supplierId))
             ->orderByDesc('received_at')
             ->paginate(ListPagination::resolve($filters['per_page'] ?? 15))
             ->withQueryString();
@@ -40,12 +45,17 @@ final class GoodsReceivingNoteController extends Controller
                 'id' => $g->id,
                 'reference_no' => $g->reference_no,
                 'status' => $g->status->value,
-                'supplier' => $g->supplier?->name,
-                'purchase_order' => $g->purchaseOrder?->reference_no,
+                'supplier' => $g->supplier ? ['id' => $g->supplier->id, 'name' => $g->supplier->name] : null,
+                'purchase_order' => $g->purchaseOrder ? ['id' => $g->purchaseOrder->id, 'reference_no' => $g->purchaseOrder->reference_no] : null,
                 'warehouse' => $g->warehouse?->name,
                 'received_at' => $g->received_at?->toIso8601String(),
             ]),
             'filters' => $filters,
+            'statuses' => GrnStatus::values(),
+            'suppliers' => Supplier::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 
@@ -56,13 +66,30 @@ final class GoodsReceivingNoteController extends Controller
         $grn = $goodsReceivingNote->load([
             'supplier',
             'purchaseOrder.sale',
+            'purchaseOrder.items',
             'warehouse',
             'items.variant',
             'items.purchaseOrderItem',
             'supplierInvoices.matchResult',
+            'purchaseReturns.items',
             'purchaseReturns.debitNote',
             'landedCostEntries.allocations',
         ]);
+
+        $returnedByGrnItem = [];
+        foreach ($grn->purchaseReturns as $return) {
+            if ($return->status === PurchaseReturnStatus::Closed) {
+                continue;
+            }
+            foreach ($return->items as $returnItem) {
+                $returnedByGrnItem[$returnItem->grn_item_id] = ($returnedByGrnItem[$returnItem->grn_item_id] ?? 0)
+                    + (float) $returnItem->qty_returned;
+            }
+        }
+
+        $poFullyReceived = $grn->purchaseOrder?->items->every(
+            fn ($poItem) => (float) $poItem->qty_received >= (float) $poItem->qty_ordered,
+        ) ?? true;
 
         $branchId = $grn->branch_id;
         $config = app(ProcurementConfigService::class)->resolve($branchId);
@@ -79,6 +106,8 @@ final class GoodsReceivingNoteController extends Controller
                     'id' => $grn->purchaseOrder->id,
                     'reference_no' => $grn->purchaseOrder->reference_no,
                     'drop_ship' => $grn->purchaseOrder->drop_ship,
+                    'status' => $grn->purchaseOrder->status->value,
+                    'can_receive_more' => ! $poFullyReceived && $grn->purchaseOrder->status->canReceive(),
                     'sale' => $grn->purchaseOrder->sale ? [
                         'id' => $grn->purchaseOrder->sale->id,
                         'invoice_no' => $grn->purchaseOrder->sale->invoice_no,
@@ -86,18 +115,27 @@ final class GoodsReceivingNoteController extends Controller
                 ] : null,
                 'is_virtual' => (bool) $grn->is_virtual,
                 'warehouse' => $grn->warehouse ? ['name' => $grn->warehouse->name] : null,
-                'items' => $grn->items->map(fn ($item) => [
-                    'id' => $item->id,
-                    'product_variant_id' => $item->product_variant_id,
-                    'purchase_order_item_id' => $item->purchase_order_item_id,
-                    'qty_received' => (float) $item->qty_received,
-                    'batch_no' => $item->batch_no,
-                    'expiry_date' => $item->expiry_date?->toDateString(),
-                    'variant' => $item->variant ? ['sku' => $item->variant->sku] : null,
-                    'purchase_order_item' => $item->purchaseOrderItem ? [
-                        'unit_price' => (float) $item->purchaseOrderItem->unit_price,
-                    ] : null,
-                ]),
+                'items' => $grn->items->map(function ($item) use ($returnedByGrnItem) {
+                    $qtyReceived = (float) $item->qty_received;
+                    $qtyOrdered = (float) ($item->purchaseOrderItem?->qty_ordered ?? 0);
+                    $qtyReturned = (float) ($returnedByGrnItem[$item->id] ?? 0);
+
+                    return [
+                        'id' => $item->id,
+                        'product_variant_id' => $item->product_variant_id,
+                        'purchase_order_item_id' => $item->purchase_order_item_id,
+                        'qty_received' => $qtyReceived,
+                        'qty_ordered' => $qtyOrdered,
+                        'qty_received_on_po' => (float) ($item->purchaseOrderItem?->qty_received ?? 0),
+                        'qty_returnable' => max(0, $qtyReceived - $qtyReturned),
+                        'batch_no' => $item->batch_no,
+                        'expiry_date' => $item->expiry_date?->toDateString(),
+                        'variant' => $item->variant ? ['sku' => $item->variant->sku] : null,
+                        'purchase_order_item' => $item->purchaseOrderItem ? [
+                            'unit_price' => (float) $item->purchaseOrderItem->unit_price,
+                        ] : null,
+                    ];
+                }),
                 'supplier_invoices' => $grn->supplierInvoices->map(fn ($inv) => [
                     'id' => $inv->id,
                     'reference_no' => $inv->reference_no,

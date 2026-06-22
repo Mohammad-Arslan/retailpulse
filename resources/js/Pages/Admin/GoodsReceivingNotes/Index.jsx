@@ -1,5 +1,6 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { grnStatusLabel } from '@/lib/procurementI18n';
 import { Head, Link, router } from '@inertiajs/react';
@@ -13,8 +14,24 @@ const statusClass = {
     cancelled: 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300',
 };
 
-function Index({ grns, filters }) {
+function Index({ grns, filters, statuses = [], suppliers = [] }) {
     const { t } = useTranslation();
+
+    const statusFilterOptions = useMemo(
+        () => [
+            { value: '', label: t('common.allStatuses') },
+            ...statuses.map((status) => ({ value: status, label: grnStatusLabel(t, status) })),
+        ],
+        [statuses, t],
+    );
+
+    const supplierFilterOptions = useMemo(
+        () => [
+            { value: '', label: t('common.allSuppliers') },
+            ...suppliers.map((s) => ({ value: String(s.id), label: s.name })),
+        ],
+        [suppliers, t],
+    );
 
     const search = (e) => {
         e.preventDefault();
@@ -39,13 +56,33 @@ function Index({ grns, filters }) {
             },
             {
                 id: 'supplier',
-                accessorKey: 'supplier',
                 header: t('pages.goodsReceiving.columns.supplier'),
+                cell: ({ row }) =>
+                    row.original.supplier ? (
+                        <Link
+                            href={route('admin.suppliers.show', row.original.supplier.id)}
+                            className="text-sm hover:text-teal-600 hover:underline"
+                        >
+                            {row.original.supplier.name}
+                        </Link>
+                    ) : (
+                        '—'
+                    ),
             },
             {
                 id: 'purchase_order',
-                accessorKey: 'purchase_order',
                 header: t('pages.goodsReceiving.columns.po'),
+                cell: ({ row }) =>
+                    row.original.purchase_order ? (
+                        <Link
+                            href={route('admin.purchase-orders.show', row.original.purchase_order.id)}
+                            className="text-sm hover:text-teal-600 hover:underline"
+                        >
+                            {row.original.purchase_order.reference_no}
+                        </Link>
+                    ) : (
+                        '—'
+                    ),
             },
             {
                 id: 'warehouse',
@@ -87,6 +124,18 @@ function Index({ grns, filters }) {
                         className="rp-search-input"
                     />
                 </div>
+                <Select
+                    name="status"
+                    defaultValue={filters.status ?? ''}
+                    className="w-auto min-w-[10rem]"
+                    options={statusFilterOptions}
+                />
+                <Select
+                    name="supplier_id"
+                    defaultValue={filters.supplier_id ?? ''}
+                    className="w-auto min-w-[12rem]"
+                    options={supplierFilterOptions}
+                />
                 <button type="submit" className="rp-btn-outline">
                     {t('common.search')}
                 </button>

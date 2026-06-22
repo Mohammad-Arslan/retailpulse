@@ -23,10 +23,10 @@ final class StorePurchaseReturnRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.grn_item_id' => ['required', 'integer'],
-            'lines.*.product_variant_id' => ['required', 'integer'],
+            'lines.*.product_variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
             'lines.*.qty_returned' => ['required', 'numeric', 'min:0.0001'],
-            'lines.*.unit_cost' => ['required', 'numeric', 'min:0'],
-            'lines.*.line_total' => ['required', 'numeric'],
+            'lines.*.unit_cost' => ['nullable', 'numeric', 'min:0'],
+            'lines.*.line_total' => ['nullable', 'numeric'],
         ];
     }
 }
