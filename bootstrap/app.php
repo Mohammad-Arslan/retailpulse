@@ -6,6 +6,8 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetBranchContext;
 use App\Jobs\BuildArAgingSnapshotsJob;
 use App\Jobs\CreateScheduledCountSessionsJob;
+use App\Jobs\Procurement\PoApprovalEscalationJob;
+use App\Jobs\Procurement\SupplierPerformanceScoringJob;
 use App\Jobs\RecalculateLoyaltyTiersJob;
 use App\Jobs\SendOverdueRemindersJob;
 use Illuminate\Console\Scheduling\Schedule;
@@ -49,4 +51,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->job(BuildArAgingSnapshotsJob::class)->dailyAt('02:30');
         $schedule->job(RecalculateLoyaltyTiersJob::class)->dailyAt('03:00');
         $schedule->job(SendOverdueRemindersJob::class)->dailyAt('08:00');
+        $schedule->job(SupplierPerformanceScoringJob::class)->monthlyOn(1, '04:00');
+        $schedule->job(PoApprovalEscalationJob::class)->hourly();
     })->create();

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DashboardService;
+use App\Services\Procurement\ProcurementDashboardService;
 use App\Support\BranchContext;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,7 +15,7 @@ use Inertia\Response;
 
 final class DashboardController extends Controller
 {
-    public function __invoke(Request $request, DashboardService $dashboard): Response
+    public function __invoke(Request $request, DashboardService $dashboard, ProcurementDashboardService $procurement): Response
     {
         $user = $request->user();
 
@@ -40,6 +41,9 @@ final class DashboardController extends Controller
                 : null,
             'canViewProfit' => $user->can('dashboard.view-profit'),
             'widgets' => $this->visibleWidgets($user),
+            'procurementKpis' => $user->can('procurement.view')
+                ? $procurement->kpis($branchId)
+                : null,
         ]);
     }
 
@@ -57,6 +61,10 @@ final class DashboardController extends Controller
         if ($user->can('dashboard.view-profit')) {
             $widgets[] = 'sales';
             $widgets[] = 'revenue';
+        }
+
+        if ($user->can('procurement.view')) {
+            $widgets[] = 'procurement';
         }
 
         return array_values(array_unique($widgets));

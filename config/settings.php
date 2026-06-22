@@ -604,6 +604,56 @@ return [
             ],
         ],
 
+        'procurement' => [
+            'label' => 'Procurement',
+            'description' => 'Purchase orders, GRN, matching tolerances, and supplier payment settings.',
+            'icon' => 'truck',
+            'permission' => 'settings.procurement.update',
+            'fields' => [
+                'po_approval_threshold' => [
+                    'type' => 'integer',
+                    'label' => 'PO approval threshold',
+                    'description' => 'Purchase orders above this amount require manager approval.',
+                    'default' => 5000,
+                    'rules' => ['required', 'integer', 'min:0'],
+                ],
+                'matching_price_tolerance_percent' => [
+                    'type' => 'integer',
+                    'label' => 'Price match tolerance (%)',
+                    'default' => 2,
+                    'rules' => ['required', 'integer', 'min:0'],
+                ],
+                'matching_quantity_tolerance_percent' => [
+                    'type' => 'integer',
+                    'label' => 'Quantity match tolerance (%)',
+                    'default' => 0,
+                    'rules' => ['required', 'integer', 'min:0'],
+                ],
+                'allow_partial_receive' => [
+                    'type' => 'boolean',
+                    'label' => 'Allow partial GRN receive',
+                    'default' => true,
+                ],
+                'allow_over_receive' => [
+                    'type' => 'boolean',
+                    'label' => 'Allow over-receive',
+                    'default' => false,
+                ],
+                'auto_close_po' => [
+                    'type' => 'boolean',
+                    'label' => 'Auto-close PO when fully received',
+                    'default' => true,
+                ],
+                'default_currency' => [
+                    'type' => 'select',
+                    'label' => 'Default procurement currency',
+                    'description' => 'Default currency for new purchase orders.',
+                    'options' => config('branches.currencies', []),
+                    'default' => 'USD',
+                ],
+            ],
+        ],
+
     ],
 
 ];

@@ -16,6 +16,7 @@ import {
     KeyRound,
     LayoutDashboard,
     LogIn,
+    ClipboardList,
     Package,
     Shield,
     Tag,
@@ -32,7 +33,7 @@ const fmtMoney = (n) =>
         ? new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
         : '—';
 
-function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canViewProfit, widgets }) {
+function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canViewProfit, widgets, procurementKpis }) {
     const { auth } = usePage().props;
     const showSales = canViewProfit && widgets?.includes('sales');
     const showRevenue = canViewProfit && widgets?.includes('revenue');
@@ -249,6 +250,42 @@ function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canVie
                     </div>
                 </div>
             </div>
+
+            {procurementKpis && widgets?.includes('procurement') ? (
+                <div className="mb-6">
+                    <div className="mb-3 flex items-center justify-between">
+                        <h2 className="rp-section-title mb-0 inline-flex items-center gap-2">
+                            <ClipboardList className="h-4 w-4 text-rp-text-muted" />
+                            Procurement
+                        </h2>
+                        <Link href={route('admin.procurement.reports')} className="text-sm text-teal-600 hover:underline">
+                            View reports
+                        </Link>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        {[
+                            { label: 'Open POs', value: procurementKpis.open_pos, icon: ClipboardList },
+                            { label: 'Pending approvals', value: procurementKpis.pending_approvals, icon: AlertTriangle },
+                            { label: 'Pending receipts', value: procurementKpis.pending_receipts, icon: Package },
+                            { label: 'Outstanding payables', value: procurementKpis.outstanding_payables, icon: Truck, format: fmtMoney },
+                        ].map((kpi) => {
+                            const Icon = kpi.icon;
+                            const format = kpi.format ?? fmtInt;
+                            return (
+                                <div key={kpi.label} className="rp-kpi-card before:bg-teal-500">
+                                    <div className="mb-3.5">
+                                        <div className="rp-kpi-icon-teal">
+                                            <Icon className="h-[18px] w-[18px]" />
+                                        </div>
+                                    </div>
+                                    <span className="rp-kpi-value">{format(kpi.value)}</span>
+                                    <div className="rp-kpi-label">{kpi.label}</div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            ) : null}
 
             {showSales && salesKpis ? (
                 <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

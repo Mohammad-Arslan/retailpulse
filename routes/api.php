@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\V1\Pos\CartItemController;
 use App\Http\Controllers\Api\V1\Pos\PinController;
 use App\Http\Controllers\Api\V1\Pos\ProductCatalogController;
 use App\Http\Controllers\Api\V1\Pos\ProductSearchController;
+use App\Http\Controllers\Api\V1\Procurement\PurchaseOrderApiController;
+use App\Http\Controllers\Api\V1\Procurement\SupplierApiController;
 use App\Http\Controllers\Api\V1\Sales\HistoricalSaleImportController;
 use App\Http\Controllers\Api\V1\Sales\SaleController;
 use App\Http\Controllers\Api\V1\Sales\SaleExportController;
@@ -83,6 +85,16 @@ Route::prefix('v1')
             ->name('customers.credit-check');
         Route::post('customers/{customer}/wallet/top-up', [CustomerWalletController::class, 'topUp'])
             ->name('customers.wallet.top-up');
+
+        Route::get('procurement/config', [PurchaseOrderApiController::class, 'config'])->name('procurement.config');
+        Route::get('procurement/product-variants/search', [PurchaseOrderApiController::class, 'searchVariants'])
+            ->name('procurement.product-variants.search');
+        Route::get('suppliers', [SupplierApiController::class, 'index'])->name('suppliers.index');
+        Route::get('suppliers/{supplier}', [SupplierApiController::class, 'show'])->name('suppliers.show');
+        Route::get('suppliers/{supplier}/variants/{variant}/price', [SupplierApiController::class, 'price'])
+            ->name('suppliers.variant-price');
+        Route::get('purchase-orders', [PurchaseOrderApiController::class, 'index'])->name('purchase-orders.index');
+        Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderApiController::class, 'show'])->name('purchase-orders.show');
 
         // Static sale routes must precede the {id} wildcard
         Route::post('sales/import-historical', HistoricalSaleImportController::class)->name('sales.import-historical');

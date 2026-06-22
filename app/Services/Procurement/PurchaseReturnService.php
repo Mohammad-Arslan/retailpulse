@@ -1,0 +1,161 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Procurement;
+
+use App\DTOs\Inventory\DeductStockData;
+use App\Enums\ProcurementDocumentType;
+use App\Enums\PurchaseReturnStatus;
+use App\Enums\StockMovementReason;
+use App\Enums\SupplierLedgerEntryType;
+use App\Events\Procurement\DebitNoteIssued;
+use App\Events\Procurement\PurchaseReturnApproved;
+use App\Models\DebitNote;
+use App\Models\GoodsReceivingNote;
+use App\Models\PurchaseReturn;
+use App\Services\InventoryService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+final class PurchaseReturnService
+{
+    public function __construct(
+        private readonly ProcurementDocumentNumberService $documentNumbers,
+        private readonly SupplierLedgerService $ledger,
+        private readonly InventoryService $inventory,
+    ) {}
+
+    /**
+     * @param  list<array<string, mixed>>  $lines
+     */
+    public function create(
+        GoodsReceivingNote $grn,
+        string $reason,
+        array $lines,
+        int $userId,
+        ?string $notes = null,
+    ): PurchaseReturn {
+        return DB::transaction(function () use ($grn, $reason, $lines, $userId, $notes) {
+            $return = PurchaseReturn::query()->create([
+                'branch_id' => $grn->branch_id,
+                'supplier_id' => $grn->supplier_id,
+                'grn_id' => $grn->id,
+                'purchase_order_id' => $grn->purchase_order_id,
+                'reference_no' => $this->documentNumbers->next($grn->branch_id, ProcurementDocumentType::PurchaseReturn),
+                'status' => PurchaseReturnStatus::Draft,
+                'reason' => $reason,
+                'notes' => $notes,
+                'created_by' => $userId,
+                'updated_by' => $userId,
+            ]);
+
+            foreach ($lines as $line) {
+                $return->items()->create($line);
+            }
+
+            return $return->fresh(['items']) ?? $return;
+        });
+    }
+
+    public function approve(PurchaseReturn $return, int $userId): PurchaseReturn
+    {
+        if (! $return->status->canApprove()) {
+            throw ValidationException::withMessages(['status' => __('Only draft returns can be approved.')]);
+        }
+
+        $return->update([
+            'status' => PurchaseReturnStatus::Approved,
+            'approved_by' => $userId,
+            'approved_at' => now(),
+            'updated_by' => $userId,
+        ]);
+
+        event(new PurchaseReturnApproved($return));
+
+        return $return;
+    }
+
+    public function dispatchGoods(PurchaseReturn $return, int $userId, int $warehouseId): PurchaseReturn
+    {
+        if (! $return->status->canDispatch()) {
+            throw ValidationException::withMessages(['status' => __('Return must be approved before dispatch.')]);
+        }
+
+        $return->load(['items.grnItem', 'grn']);
+
+        return DB::transaction(function () use ($return, $userId, $warehouseId) {
+            foreach ($return->items as $item) {
+                $this->inventory->deduct(new DeductStockData(
+                    warehouseId: $warehouseId,
+                    variantId: $item->product_variant_id,
+                    batchId: $item->grnItem?->batch_id,
+                    quantity: (int) ceil((float) $item->qty_returned),
+                    reason: StockMovementReason::ReturnSupplier,
+                    userId: $userId,
+                    referenceType: PurchaseReturn::class,
+                    referenceId: $return->id,
+                ));
+            }
+
+            $return->update([
+                'status' => PurchaseReturnStatus::GoodsDispatched,
+                'dispatched_at' => now(),
+                'updated_by' => $userId,
+            ]);
+
+            return $return;
+        });
+    }
+
+    public function issueDebitNote(PurchaseReturn $return, int $userId): DebitNote
+    {
+        if (! $return->status->canIssueDebitNote()) {
+            throw ValidationException::withMessages(['status' => __('Debit note cannot be issued in current status.')]);
+        }
+
+        $return->load('items');
+        $amount = $return->items->sum('line_total');
+
+        return DB::transaction(function () use ($return, $amount, $userId) {
+            $debitNote = DebitNote::query()->create([
+                'branch_id' => $return->branch_id,
+                'supplier_id' => $return->supplier_id,
+                'purchase_return_id' => $return->id,
+                'reference_no' => $this->documentNumbers->next($return->branch_id, ProcurementDocumentType::DebitNote),
+                'amount' => $amount,
+                'currency_code' => 'USD',
+                'exchange_rate' => 1,
+                'functional_amount' => $amount,
+                'status' => 'issued',
+                'issued_at' => now(),
+                'created_by' => $userId,
+                'updated_by' => $userId,
+            ]);
+
+            $this->ledger->recordEntry(
+                supplierId: $return->supplier_id,
+                branchId: $return->branch_id,
+                type: SupplierLedgerEntryType::DebitNote,
+                amount: $amount,
+                currencyCode: $debitNote->currency_code,
+                exchangeRate: (float) $debitNote->exchange_rate,
+                functionalAmount: (float) $debitNote->functional_amount,
+                referenceType: DebitNote::class,
+                referenceId: $debitNote->id,
+                referenceNo: $debitNote->reference_no,
+                notes: __('Debit note for return :ref', ['ref' => $return->reference_no]),
+                userId: $userId,
+            );
+
+            $return->update([
+                'status' => PurchaseReturnStatus::DebitNoteIssued,
+                'updated_by' => $userId,
+            ]);
+
+            event(new DebitNoteIssued($debitNote));
+
+            return $debitNote;
+        });
+    }
+}
