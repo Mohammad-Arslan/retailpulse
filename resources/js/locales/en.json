@@ -1104,7 +1104,12 @@
             "dispatchFrom": "Dispatch From",
             "dispatchGoods": "Dispatch Goods",
             "issueDebitNote": "Issue Debit Note",
-            "debitNote": "Debit Note"
+            "debitNote": "Debit Note",
+            "grnStatuses": {
+                "draft": "Draft",
+                "posted": "Posted",
+                "cancelled": "Cancelled"
+            }
         },
         "procurement": {
             "matchStatuses": {
@@ -1126,6 +1131,43 @@
                 "supplier_acknowledged": "Supplier Acknowledged",
                 "debit_note_issued": "Debit Note Issued",
                 "closed": "Closed"
+            }
+        },
+        "procurementReports": {
+            "title": "Procurement Reports",
+            "description": "Open POs, Payables, GRNs, and Matching",
+            "empty": "No Records.",
+            "resolve": "Resolve",
+            "tabs": {
+                "openPos": "Open POs",
+                "pendingApprovals": "Pending Approvals",
+                "grns": "GRN Report",
+                "invoices": "Invoices",
+                "balances": "Supplier Balances",
+                "exceptions": "Match Exceptions",
+                "returns": "Purchase Returns"
+            },
+            "columns": {
+                "reference": "Reference",
+                "supplier": "Supplier",
+                "status": "Status",
+                "total": "Total",
+                "submitted": "Submitted",
+                "po": "PO",
+                "received": "Received",
+                "match": "Match",
+                "code": "Code",
+                "balance": "Balance",
+                "onTimePercent": "On-Time %",
+                "invoice": "Invoice",
+                "reason": "Reason",
+                "actions": "Actions"
+            },
+            "filters": {
+                "searchPlaceholder": "Search reference or supplier…",
+                "dateFrom": "Date From",
+                "dateTo": "Date To",
+                "allMatchStatuses": "All Match Statuses"
             }
         },
         "settings": {

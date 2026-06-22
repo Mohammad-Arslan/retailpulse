@@ -3,6 +3,12 @@ import Select from '@/Components/ui/select';
 import { Button } from '@/Components/ui/button';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
+import {
+    grnStatusLabel,
+    invoiceStatusLabel,
+    matchStatusLabel,
+    returnStatusLabel,
+} from '@/lib/procurementI18n';
 import { Head, Link, router } from '@inertiajs/react';
 import { FileText } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -124,7 +130,7 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [] }) {
 
             <div className="mb-6 rounded-lg border bg-card p-6 text-sm">
                 <p>Warehouse: {grn.warehouse?.name}</p>
-                <p>Status: {grn.status}</p>
+                <p>Status: {grnStatusLabel(t, grn.status)}</p>
                 <p>Received: {grn.received_at}</p>
                 {grn.purchase_order && (
                     <p>
@@ -167,12 +173,12 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [] }) {
                             <li key={inv.id} className="rounded border p-3">
                                 <div className="flex flex-wrap justify-between gap-2">
                                     <span className="font-medium">{inv.reference_no}</span>
-                                    <span className="capitalize">{inv.status}</span>
+                                    <span>{invoiceStatusLabel(t, inv.status)}</span>
                                 </div>
                                 <div>Total: {inv.total}</div>
                                 {inv.match_result && (
                                     <div className="mt-2 text-amber-700 dark:text-amber-400">
-                                        Match: {inv.match_result.match_status.replace(/_/g, ' ')}
+                                        Match: {matchStatusLabel(t, inv.match_result.match_status)}
                                         {inv.match_result.exception_reason &&
                                             ` — ${inv.match_result.exception_reason}`}
                                         {MATCH_EXCEPTION_STATUSES.includes(inv.match_result.match_status) &&
@@ -231,7 +237,7 @@ function Show({ grn, branchId, paymentMethods = [], warehouses = [] }) {
                             <li key={ret.id} className="rounded border p-3">
                                 <div className="flex flex-wrap justify-between gap-2">
                                     <span className="font-medium">{ret.reference_no}</span>
-                                    <span className="capitalize">{ret.status.replace(/_/g, ' ')}</span>
+                                    <span>{returnStatusLabel(t, ret.status)}</span>
                                 </div>
                                 {ret.reason && <p className="mt-1 text-muted-foreground">{ret.reason}</p>}
                                 {ret.debit_note && (

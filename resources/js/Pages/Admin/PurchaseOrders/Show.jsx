@@ -4,6 +4,11 @@ import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
+import {
+    grnStatusLabel,
+    invoiceStatusLabel,
+    matchStatusLabel,
+} from '@/lib/procurementI18n';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { CheckCircle, FileText, Mail, Package, Send, XCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -351,7 +356,7 @@ function Show({ order, config, warehouses, approval = {} }) {
                                     {grn.reference_no}
                                 </Link>
                                 {' — '}
-                                {grn.warehouse?.name} · {grn.status}
+                                {grn.warehouse?.name} · {grnStatusLabel(t, grn.status)}
                             </li>
                         ))}
                     </ul>
@@ -366,12 +371,12 @@ function Show({ order, config, warehouses, approval = {} }) {
                             <li key={inv.id} className="rounded border p-3">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <span className="font-medium">{inv.reference_no}</span>
-                                    <span className="capitalize">{inv.status}</span>
+                                    <span>{invoiceStatusLabel(t, inv.status)}</span>
                                 </div>
                                 <div>Total: {inv.total} {order.currency_code}</div>
                                 {inv.match_result && (
                                     <div className="mt-2 text-amber-700 dark:text-amber-400">
-                                        Match: {inv.match_result.match_status.replace(/_/g, ' ')}
+                                        Match: {matchStatusLabel(t, inv.match_result.match_status)}
                                         {inv.match_result.exception_reason &&
                                             ` — ${inv.match_result.exception_reason}`}
                                         {MATCH_EXCEPTION_STATUSES.includes(inv.match_result.match_status) &&

@@ -66,3 +66,14 @@ export function invoiceStatusLabel(t, status) {
 
     return label === key ? titleCaseEnum(status) : label;
 }
+
+export function grnStatusLabel(t, status) {
+    if (!status) {
+        return '';
+    }
+
+    const key = `pages.goodsReceiving.grnStatuses.${status}`;
+    const label = t(key);
+
+    return label === key ? titleCaseEnum(status) : label;
+}
