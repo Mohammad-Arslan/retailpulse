@@ -4,6 +4,7 @@ import './echo';
 
 import AppProviders from '@/Components/common/AppProviders';
 import FlashToasts from '@/Components/common/FlashToasts';
+import LocaleSync from '@/Components/common/LocaleSync';
 import { syncCsrfToken } from '@/lib/csrf';
 import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
@@ -33,6 +34,7 @@ createInertiaApp({
                 <App {...props}>
                     {({ Component, key, props: pageProps }) => (
                         <>
+                            <LocaleSync locale={pageProps.locale} />
                             {createElement(Component, { key, ...pageProps })}
                             <FlashToasts />
                         </>

@@ -50,6 +50,26 @@ return [
                     ],
                     'rules' => ['required', 'string'],
                 ],
+                'default_locale' => [
+                    'type' => 'select',
+                    'label' => 'Default language',
+                    'description' => 'Default UI language for new sessions when no preference is saved.',
+                    'default' => config('locales.default', 'en'),
+                    'options' => collect(config('locales.available', []))
+                        ->mapWithKeys(fn (array $meta, string $code) => [$code => $meta['label']])
+                        ->all(),
+                    'rules' => ['required', 'string', 'max:12'],
+                ],
+                'enabled_locales' => [
+                    'type' => 'multiselect',
+                    'label' => 'Enabled languages',
+                    'description' => 'Languages shown in the header language switcher.',
+                    'default' => [config('locales.default', 'en')],
+                    'options' => collect(config('locales.available', []))
+                        ->mapWithKeys(fn (array $meta, string $code) => [$code => $meta['label']])
+                        ->all(),
+                    'rules' => ['required', 'array', 'min:1'],
+                ],
                 'low_stock_threshold' => [
                     'type' => 'integer',
                     'label' => 'Low stock threshold',

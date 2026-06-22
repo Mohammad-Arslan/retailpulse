@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureAdminAccess;
 use App\Http\Middleware\EnsurePosAccess;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetBranchContext;
+use App\Http\Middleware\SetLocale;
 use App\Jobs\BuildArAgingSnapshotsJob;
 use App\Jobs\CreateScheduledCountSessionsJob;
 use App\Jobs\Procurement\PoApprovalEscalationJob;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
 
         $middleware->web(append: [
+            SetLocale::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);

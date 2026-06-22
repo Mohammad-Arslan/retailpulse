@@ -1,0 +1,158 @@
+{
+    "nav": {
+        "dashboard": "ڈیش بورڈ",
+        "pos": "پوائنٹ آف سیل",
+        "sales": "سیلز",
+        "customersSection": "کسٹمرز",
+        "customers": "کسٹمرز",
+        "customerGroups": "کسٹمر گروپس",
+        "arAging": "AR ایجنگ",
+        "users": "صارفین",
+        "roles": "کردار",
+        "permissions": "اجازتیں",
+        "branches": "برانچز",
+        "warehouses": "گودام",
+        "catalog": "کیٹلاگ",
+        "categories": "زمرے",
+        "brands": "برانڈز",
+        "units": "یونٹس",
+        "products": "مصنوعات",
+        "inventorySection": "انوینٹری",
+        "inventory": "اسٹاک لیولز",
+        "stockTransfers": "ٹرانسفرز",
+        "suppliers": "سپلائرز",
+        "purchaseOrders": "خریداری کے آرڈر",
+        "goodsReceiving": "سامان وصولی",
+        "procurementReports": "خریداری رپورٹس",
+        "overview": "جائزہ",
+        "organization": "تنظیم",
+        "admin": "ایڈمن",
+        "settings": "ترتیبات"
+    },
+    "common": {
+        "search": "تلاش",
+        "allStatuses": "تمام اسٹیٹس",
+        "allSuppliers": "تمام سپلائرز",
+        "allBranches": "تمام برانچز",
+        "branch": "برانچ",
+        "language": "زبان",
+        "selectLanguage": "زبان منتخب کریں",
+        "view": "دیکھیں",
+        "edit": "ترمیم",
+        "delete": "حذف",
+        "actions": "اعمال",
+        "logOut": "لاگ آؤٹ",
+        "openMenu": "مینو کھولیں",
+        "closeMenu": "مینو بند کریں",
+        "commandPalette": "صفحات، صارفین، اعمال تلاش کریں…",
+        "switchToLight": "لائٹ موڈ",
+        "switchToDark": "ڈارک موڈ",
+        "expandSidebar": "سائیڈبار کھولیں",
+        "collapseSidebar": "سائیڈبار بند کریں",
+        "active": "فعال",
+        "inactive": "غیر فعال",
+        "noResults": "کوئی نتیجہ نہیں ملا۔"
+    },
+    "auth": {
+        "welcomeBack": "خوش آمدید۔",
+        "signInSubtitle": "اپنے RetailPulse ورک اسپیس میں سائن ان کریں۔",
+        "email": "ای میل پتہ",
+        "password": "پاس ورڈ",
+        "remember": "اس ڈیوائس کو یاد رکھیں",
+        "signIn": "سائن ان",
+        "adminOnly": "صرف ایڈمن رسائی۔ اکاؤنٹ کے لیے اپنے منتظم سے رابطہ کریں۔"
+    },
+    "pages": {
+        "settings": {
+            "title": "ترتیبات",
+            "description": "علاقے کے لحاظ سے عالمی ایپلیکیشن کنفیگریشن منظم کریں۔",
+            "empty": "آپ کو کسی ترتیبات گروپ تک رسائی نہیں ہے۔",
+            "readOnly": "صرف دیکھیں",
+            "readOnlyHint": "آپ یہ ترتیبات دیکھ سکتے ہیں لیکن تبدیل کرنے کی اجازت نہیں ہے۔",
+            "back": "تمام ترتیبات",
+            "save": "ترتیبات محفوظ کریں",
+            "saving": "محفوظ ہو رہا ہے…"
+        },
+        "purchaseOrders": {
+            "title": "خریداری کے آرڈر",
+            "description": "سپلائرز سے خریداری کے آرڈرز بنائیں اور منظم کریں۔",
+            "createTitle": "نیا خریداری آرڈر",
+            "searchPlaceholder": "حوالہ یا سپلائر تلاش کریں…",
+            "empty": "کوئی خریداری آرڈر نہیں ملا۔",
+            "statuses": {
+                "draft": "ڈرافٹ",
+                "submitted": "جمع شدہ",
+                "approved": "منظور شدہ",
+                "rejected": "مسترد",
+                "cancelled": "منسوخ",
+                "closed": "بند"
+            },
+            "actions": {
+                "submit": "منظوری کے لیے جمع کریں",
+                "approve": "منظور کریں",
+                "reject": "مسترد کریں",
+                "receiveGoods": "سامان وصول کریں",
+                "cancel": "PO منسوخ کریں",
+                "printPdf": "PDF پرنٹ کریں",
+                "downloadInvoicePdf": "انوائس PDF ڈاؤن لوڈ کریں"
+            }
+        },
+        "suppliers": {
+            "title": "سپلائرز",
+            "description": "سپلائر ڈائریکٹری اور خریداری کے تعلقات۔",
+            "createTitle": "نیا سپلائر",
+            "searchPlaceholder": "کوڈ، نام، یا ای میل تلاش کریں…"
+        },
+        "procurementReports": {
+            "title": "خریداری رپورٹس",
+            "description": "کھلے PO، قابل ادائیگی، GRN، اور میچنگ",
+            "empty": "کوئی ریکارڈ نہیں۔",
+            "resolve": "حل کریں",
+            "tabs": {
+                "openPos": "کھلے PO",
+                "pendingApprovals": "زیر التواء منظوریاں",
+                "grns": "GRN رپورٹ",
+                "invoices": "انوائسز",
+                "balances": "سپلائر بیلنس",
+                "exceptions": "میچ استثناء",
+                "returns": "خریداری واپسی"
+            },
+            "columns": {
+                "reference": "حوالہ",
+                "supplier": "سپلائر",
+                "status": "اسٹیٹس",
+                "total": "کل",
+                "match": "میچ",
+                "actions": "اعمال"
+            },
+            "filters": {
+                "searchPlaceholder": "حوالہ یا سپلائر تلاش کریں…",
+                "dateFrom": "تاریخ سے",
+                "dateTo": "تاریخ تک",
+                "allMatchStatuses": "تمام میچ اسٹیٹس"
+            }
+        },
+        "goodsReceiving": {
+            "title": "سامان وصولی نوٹس",
+            "grnStatuses": {
+                "draft": "ڈرافٹ",
+                "posted": "پوسٹ شدہ",
+                "cancelled": "منسوخ"
+            }
+        },
+        "procurement": {
+            "matchStatuses": {
+                "fully_matched": "مکمل میچ",
+                "partially_matched": "جزوی میچ",
+                "unmatched": "غیر میچ"
+            },
+            "invoiceStatuses": {
+                "draft": "ڈرافٹ",
+                "matched": "میچ شدہ",
+                "approved": "منظور شدہ",
+                "paid": "ادا شدہ",
+                "cancelled": "منسوخ"
+            }
+        }
+    }
+}

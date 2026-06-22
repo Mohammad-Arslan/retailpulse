@@ -66,6 +66,8 @@
         "selectBranch": "Select Branch…",
         "allStatuses": "All Statuses",
         "allSuppliers": "All Suppliers",
+        "language": "Language",
+        "selectLanguage": "Select Language",
         "active": "Active",
         "inactive": "Inactive",
         "noResults": "No results found.",

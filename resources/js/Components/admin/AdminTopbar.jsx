@@ -1,4 +1,5 @@
 import BranchSwitcher from '@/Components/admin/BranchSwitcher';
+import LanguageSwitcher from '@/Components/admin/LanguageSwitcher';
 import NotificationsMenu from '@/Components/admin/NotificationsMenu';
 import UserMenu from '@/Components/admin/UserMenu';
 import { cn } from '@/lib/utils';
@@ -83,6 +84,7 @@ export default function AdminTopbar({
             )}
 
             <div className="ml-auto flex items-center gap-2">
+                <LanguageSwitcher />
                 <BranchSwitcher />
                 <button
                     type="button"
