@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\ArAgingController;
 use App\Http\Controllers\Admin\BranchContextController;
 use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\BrandController;
@@ -9,12 +10,16 @@ use App\Http\Controllers\Admin\CatalogBulkController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CountScheduleRuleController;
 use App\Http\Controllers\Admin\CountSessionController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\CustomerGroupController;
+use App\Http\Controllers\Admin\CustomerWalletController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\StockTransferController;
 use App\Http\Controllers\Admin\UnitController;
@@ -106,6 +111,18 @@ Route::middleware(['auth', 'admin', 'branch.context'])
 
         Route::resource('stock-transfers', StockTransferController::class)
             ->only(['index', 'create', 'store', 'show']);
+        Route::get('sales', [SaleController::class, 'index'])->name('sales.index');
+        Route::get('sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
+
+        Route::resource('customers', CustomerController::class);
+        Route::post('customers/{customer}/wallet/top-up', [CustomerWalletController::class, 'topUp'])
+            ->name('customers.wallet.top-up');
+        Route::post('customers/{customer}/send-statement', [CustomerController::class, 'sendStatement'])
+            ->name('customers.send-statement');
+        Route::resource('customer-groups', CustomerGroupController::class)->except(['show']);
+        Route::get('ar-aging', [ArAgingController::class, 'index'])->name('ar-aging.index');
+        Route::get('ar-aging/export', [ArAgingController::class, 'export'])->name('ar-aging.export');
+
         Route::post('stock-transfers/{stock_transfer}/ship', [StockTransferController::class, 'ship'])
             ->name('stock-transfers.ship');
         Route::post('stock-transfers/{stock_transfer}/receive', [StockTransferController::class, 'receive'])

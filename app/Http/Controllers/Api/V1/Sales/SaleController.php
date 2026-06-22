@@ -11,6 +11,7 @@ use App\Models\Sale;
 use App\Models\SaleInvoice;
 use App\Services\Checkout\CheckoutService;
 use App\Services\Checkout\InvoiceService;
+use App\Services\Checkout\InvoiceShareService;
 use App\Services\Checkout\SalePaymentProcessor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ final class SaleController extends Controller
     public function __construct(
         private readonly CheckoutService $checkout,
         private readonly InvoiceService $invoices,
+        private readonly InvoiceShareService $share,
         private readonly SalePaymentProcessor $paymentProcessor,
     ) {}
 
@@ -55,6 +57,7 @@ final class SaleController extends Controller
                         ? (float) $request->validated('tendered_amount')
                         : null,
                     meta: $request->validated('meta') ?? [],
+                    managerPin: $request->validated('manager_pin'),
                 ),
                 cashierId: $request->user()->id,
             );
@@ -120,7 +123,7 @@ final class SaleController extends Controller
             'method' => ['required', 'in:email,link,whatsapp,print'],
         ]);
 
-        $sale = Sale::query()->with('invoice')->findOrFail($id);
+        $sale = Sale::query()->with(['invoice', 'customer'])->findOrFail($id);
 
         if ($sale->invoice === null) {
             throw ValidationException::withMessages([
@@ -128,11 +131,9 @@ final class SaleController extends Controller
             ]);
         }
 
-        return response()->json([
-            'method' => $request->input('method'),
-            'public_url' => route('invoice.public', $sale->invoice->public_token),
-            'pdf_path' => $sale->invoice->pdf_path,
-        ]);
+        $result = $this->share->share($sale, $sale->invoice, (string) $request->input('method'));
+
+        return response()->json($result);
     }
 
     /**

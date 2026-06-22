@@ -12,6 +12,7 @@ const ENTITY_PERMISSIONS = {
     brands: { import: 'products.import', export: 'products.export' },
     units: { import: 'products.import', export: 'products.export' },
     products: { import: 'products.import', export: 'products.export' },
+    customers: { import: 'customers.import', export: 'customers.export' },
     inventory: { import: 'inventory.import-opening-stock', export: 'inventory.reports' },
     'inventory-adjustments': {
         import: 'inventory.bulk-adjustment-import',

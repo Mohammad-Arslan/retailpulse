@@ -7,9 +7,13 @@ namespace App\Providers;
 use App\Models\Branch;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\Role;
+use App\Models\Sale;
+use App\Models\SaleInvoice;
+use App\Models\SalePayment;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -19,6 +23,7 @@ use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Repositories\Contracts\BrandRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\CountSessionRepositoryInterface;
+use App\Repositories\Contracts\CustomerRepositoryInterface;
 use App\Repositories\Contracts\IdentifierSequenceRepositoryInterface;
 use App\Repositories\Contracts\ImageRepositoryInterface;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
@@ -37,6 +42,7 @@ use App\Repositories\Eloquent\BranchRepository;
 use App\Repositories\Eloquent\BrandRepository;
 use App\Repositories\Eloquent\CategoryRepository;
 use App\Repositories\Eloquent\CountSessionRepository;
+use App\Repositories\Eloquent\CustomerRepository;
 use App\Repositories\Eloquent\IdentifierSequenceRepository;
 use App\Repositories\Eloquent\ImageRepository;
 use App\Repositories\Eloquent\InventoryRepository;
@@ -68,6 +74,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(WarehouseRepositoryInterface::class, WarehouseRepository::class);
         $this->app->bind(CategoryRepositoryInterface::class, CategoryRepository::class);
         $this->app->bind(BrandRepositoryInterface::class, BrandRepository::class);
+        $this->app->bind(CustomerRepositoryInterface::class, CustomerRepository::class);
         $this->app->bind(UnitRepositoryInterface::class, UnitRepository::class);
         $this->app->bind(ProductRepositoryInterface::class, ProductRepository::class);
         $this->app->bind(ImageRepositoryInterface::class, ImageRepository::class);
@@ -93,6 +100,10 @@ class AppServiceProvider extends ServiceProvider
         Brand::observe(AuditObserver::class);
         Unit::observe(AuditObserver::class);
         Product::observe(AuditObserver::class);
+        Customer::observe(AuditObserver::class);
+        Sale::observe(AuditObserver::class);
+        SalePayment::observe(AuditObserver::class);
+        SaleInvoice::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email');

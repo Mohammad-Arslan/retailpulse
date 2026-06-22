@@ -14,5 +14,6 @@ final readonly class AddPaymentData
         public float $amount,
         public ?float $tenderedAmount = null,
         public array $meta = [],
+        public ?string $managerPin = null,
     ) {}
 }

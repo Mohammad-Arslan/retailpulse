@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Scan, Search, X } from 'lucide-react';
+import { Scan, Search, UserRound, X } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { PosTopbar } from '@/Components/pos/PosTopbar';
 import { PinModal } from '@/Components/pos/PinModal';
@@ -8,6 +8,7 @@ import { CartTabs } from '@/Components/pos/CartTabs';
 import { CartTable } from '@/Components/pos/CartTable';
 import { CartBottomBar } from '@/Components/pos/CartBottomBar';
 import { cartApi, cartItemApi, searchApi } from '@/lib/posApi';
+import { customerApi } from '@/lib/checkoutApi';
 import { usePosDialog } from '@/Hooks/usePosDialog';
 import { usePosKeyboard } from '@/Hooks/usePosKeyboard';
 import { usePosWebSocket } from '@/Hooks/usePosWebSocket';
@@ -16,6 +17,10 @@ import { useCan } from '@/Hooks/useCan';
 
 const PIN_INACTIVITY_MS = 30 * 60 * 1000;
 const SEARCH_DEBOUNCE_MS = 300;
+
+function customerStorageKey(cartId) {
+    return `checkout-customer-${cartId}`;
+}
 
 function ProductDropdown({ results, loading, query, onAdd, processing }) {
     if (!query) return null;
@@ -91,6 +96,11 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
     const [catalogLoading, setCatalogLoading] = useState(false);
     const [searchFocused, setSearchFocused] = useState(false);
 
+    const [customerQuery, setCustomerQuery] = useState('');
+    const [customerResults, setCustomerResults] = useState([]);
+    const [cartCustomers, setCartCustomers] = useState({});
+    const customerSearchTimer = useRef(null);
+
     const searchInputRef = useRef(null);
     const searchWrapRef = useRef(null);
     // Cache: query string → results array. Avoids re-fetching the same query.
@@ -100,6 +110,60 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
         () => carts.find((c) => c.id === activeCartId) ?? null,
         [carts, activeCartId],
     );
+
+    const selectedCustomer = activeCartId ? cartCustomers[activeCartId] ?? null : null;
+
+    useEffect(() => {
+        if (!activeCartId) return;
+        const stored = sessionStorage.getItem(customerStorageKey(activeCartId));
+        if (!stored) return;
+        try {
+            const parsed = JSON.parse(stored);
+            setCartCustomers((prev) => ({ ...prev, [activeCartId]: parsed }));
+        } catch {
+            sessionStorage.removeItem(customerStorageKey(activeCartId));
+        }
+    }, [activeCartId]);
+
+    useEffect(() => {
+        if (customerQuery.length < 2) {
+            setCustomerResults([]);
+            return undefined;
+        }
+
+        customerSearchTimer.current = setTimeout(async () => {
+            try {
+                const results = await customerApi.search(customerQuery);
+                setCustomerResults(results);
+            } catch {
+                setCustomerResults([]);
+            }
+        }, SEARCH_DEBOUNCE_MS);
+
+        return () => {
+            if (customerSearchTimer.current) {
+                clearTimeout(customerSearchTimer.current);
+            }
+        };
+    }, [customerQuery]);
+
+    function attachCustomer(customer) {
+        if (!activeCartId) return;
+        setCartCustomers((prev) => ({ ...prev, [activeCartId]: customer }));
+        sessionStorage.setItem(customerStorageKey(activeCartId), JSON.stringify(customer));
+        setCustomerQuery('');
+        setCustomerResults([]);
+    }
+
+    function clearCustomer() {
+        if (!activeCartId) return;
+        setCartCustomers((prev) => {
+            const next = { ...prev };
+            delete next[activeCartId];
+            return next;
+        });
+        sessionStorage.removeItem(customerStorageKey(activeCartId));
+    }
 
     const taxRatePct = parseFloat(posConfig.default_tax_rate ?? '0') * 100;
 
@@ -436,6 +500,12 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
         }
         setProcessing(true);
         try {
+            if (selectedCustomer) {
+                sessionStorage.setItem(
+                    customerStorageKey(activeCart.id),
+                    JSON.stringify(selectedCustomer),
+                );
+            }
             await cartApi.checkout(activeCart.id);
             setCarts((prev) =>
                 prev.map((c) => (c.id === activeCart.id ? { ...c, status: 'completing' } : c)),
@@ -535,6 +605,62 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
                     maxReached={carts.length >= 5}
                     processing={processing}
                 />
+
+                {/* Customer attach row */}
+                <div className="shrink-0 border-b border-rp-border bg-rp-surface px-4 py-2">
+                    {selectedCustomer ? (
+                        <div className="flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 dark:border-teal-800 dark:bg-teal-950/30">
+                            <div className="flex items-center gap-2">
+                                <UserRound className="h-4 w-4 text-teal-600" />
+                                <div>
+                                    <p className="text-sm font-medium text-rp-text">{selectedCustomer.name}</p>
+                                    {selectedCustomer.phone && (
+                                        <p className="text-xs text-rp-text-muted">{selectedCustomer.phone}</p>
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={clearCustomer}
+                                className="flex h-6 w-6 items-center justify-center rounded text-rp-text-muted hover:text-rp-text"
+                                aria-label="Remove customer"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="relative">
+                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                <UserRound className="h-4 w-4 text-rp-text-muted" />
+                            </div>
+                            <input
+                                type="search"
+                                value={customerQuery}
+                                onChange={(e) => setCustomerQuery(e.target.value)}
+                                placeholder="Attach customer by name or phone…"
+                                className="w-full rounded-xl border border-rp-border bg-rp-surface-inset py-2 pl-9 pr-3 text-sm text-rp-text placeholder:text-rp-text-muted focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                            />
+                            {customerResults.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-40 overflow-y-auto rounded-xl border border-rp-border bg-rp-surface py-1 shadow-xl">
+                                    {customerResults.map((customer) => (
+                                        <button
+                                            key={customer.id}
+                                            type="button"
+                                            onMouseDown={(e) => e.preventDefault()}
+                                            onClick={() => attachCustomer(customer)}
+                                            className="block w-full px-4 py-2 text-left hover:bg-rp-surface-subtle"
+                                        >
+                                            <p className="text-sm font-medium text-rp-text">{customer.name}</p>
+                                            <p className="text-xs text-rp-text-muted">
+                                                {[customer.phone, customer.email].filter(Boolean).join(' · ')}
+                                            </p>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
 
                 {/* Search bar row */}
                 <div className="shrink-0 border-b border-rp-border bg-rp-surface px-4 py-2">

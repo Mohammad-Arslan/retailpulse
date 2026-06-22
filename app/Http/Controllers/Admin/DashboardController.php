@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\DashboardService;
 use App\Support\BranchContext;
 use Illuminate\Http\Request;
@@ -32,8 +33,8 @@ final class DashboardController extends Controller
         return Inertia::render('Admin/Dashboard', [
             'stats' => $dashboard->stats($branchId, $accessibleBranchIds),
             'charts' => $dashboard->charts($branchId, $accessibleBranchIds),
-            'salesKpis' => $dashboard->salesKpis(),
-            'revenueCharts' => $dashboard->revenueCharts(),
+            'salesKpis' => $dashboard->salesKpis($branchId, $accessibleBranchIds),
+            'revenueCharts' => $dashboard->revenueCharts($branchId, $accessibleBranchIds),
             'superAdmin' => $isSuperAdmin
                 ? $dashboard->superAdminOverview($branchId, $accessibleBranchIds)
                 : null,
@@ -45,7 +46,7 @@ final class DashboardController extends Controller
     /**
      * @return list<string>
      */
-    private function visibleWidgets(\App\Models\User $user): array
+    private function visibleWidgets(User $user): array
     {
         $widgets = ['rbac', 'activity'];
 

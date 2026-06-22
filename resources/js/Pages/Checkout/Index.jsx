@@ -3,18 +3,158 @@ import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Button } from '@/Components/ui/button';
 import { Printer } from 'lucide-react';
-import { checkoutApi, saleApi } from '@/lib/checkoutApi';
+import { checkoutApi, customerApi, saleApi } from '@/lib/checkoutApi';
+import { pinApi } from '@/lib/posApi';
 import { usePosDialog } from '@/Hooks/usePosDialog';
+import { useTranslation } from 'react-i18next';
 
-const METHOD_LABELS = {
-    cash: 'Cash',
-    card: 'Card',
-    mobile_wallet: 'Mobile Wallet',
-    bank_transfer: 'Bank Transfer',
-    credit: 'Credit',
-};
+function customerStorageKey(cartId) {
+    return `checkout-customer-${cartId}`;
+}
+
+function ManagerPinModal({ onVerified, onCancel, t }) {
+    const [digits, setDigits] = useState(['', '', '', '', '', '']);
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const inputRefs = useRef([]);
+
+    useEffect(() => {
+        inputRefs.current[0]?.focus();
+    }, []);
+
+    function handleDigitChange(index, value) {
+        if (!/^\d?$/.test(value)) return;
+        const next = [...digits];
+        next[index] = value;
+        setDigits(next);
+
+        if (value && index < 5) {
+            inputRefs.current[index + 1]?.focus();
+        }
+
+        if (next.every((d) => d !== '')) {
+            submitPin(next.join(''));
+        }
+    }
+
+    function handleKeyDown(index, e) {
+        if (e.key === 'Backspace' && !digits[index] && index > 0) {
+            inputRefs.current[index - 1]?.focus();
+        }
+    }
+
+    async function submitPin(pin) {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const res = await pinApi.verify(pin);
+            if (res.verified) {
+                onVerified(pin);
+            } else {
+                setError(t('checkout.managerPin.incorrect'));
+                setDigits(['', '', '', '', '', '']);
+                inputRefs.current[0]?.focus();
+            }
+        } catch (err) {
+            const msg =
+                err?.response?.data?.errors?.pin?.[0] ||
+                err?.response?.data?.message ||
+                t('checkout.managerPin.failed');
+            setError(msg);
+            setDigits(['', '', '', '', '', '']);
+            inputRefs.current[0]?.focus();
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-sm rounded-2xl bg-card p-8 shadow-2xl">
+                <div className="mb-6 text-center">
+                    <h2 className="text-xl font-semibold">{t('checkout.managerPin.title')}</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        {t('checkout.managerPin.description')}
+                    </p>
+                </div>
+                <div className="mb-4 flex justify-center gap-3">
+                    {digits.map((digit, i) => (
+                        <input
+                            key={i}
+                            ref={(el) => (inputRefs.current[i] = el)}
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={digit}
+                            onChange={(e) => handleDigitChange(i, e.target.value)}
+                            onKeyDown={(e) => handleKeyDown(i, e)}
+                            disabled={loading}
+                            className="h-12 w-12 rounded-lg border-2 text-center text-xl font-bold focus:border-primary focus:outline-none disabled:opacity-50"
+                        />
+                    ))}
+                </div>
+                {error && <p className="mb-2 text-center text-sm text-destructive">{error}</p>}
+                <div className="flex justify-center gap-2">
+                    <Button type="button" variant="outline" onClick={onCancel}>
+                        {t('confirm.cancel')}
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function CustomerProfileCard({ profile, currency, t }) {
+    if (!profile) return null;
+
+    return (
+        <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+            <div className="mb-2 flex items-center justify-between">
+                <div className="font-medium">{profile.name}</div>
+                {profile.loyalty_tier?.name && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-500/20 dark:text-amber-200">
+                        {profile.loyalty_tier.name}
+                    </span>
+                )}
+            </div>
+            {(profile.phone || profile.email) && (
+                <p className="mb-2 text-xs text-muted-foreground">
+                    {[profile.phone, profile.email].filter(Boolean).join(' · ')}
+                </p>
+            )}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                    <span className="text-muted-foreground">{t('checkout.customerCard.wallet')}</span>
+                    <div className="font-medium">
+                        {profile.wallet_balance ?? '0.00'} {currency}
+                    </div>
+                </div>
+                <div>
+                    <span className="text-muted-foreground">{t('checkout.customerCard.storeCredit')}</span>
+                    <div className="font-medium">
+                        {profile.store_credit_balance ?? '0.00'} {currency}
+                    </div>
+                </div>
+                <div>
+                    <span className="text-muted-foreground">{t('checkout.customerCard.arOutstanding')}</span>
+                    <div className="font-medium">
+                        {profile.ar_outstanding ?? '0.00'} {currency}
+                    </div>
+                </div>
+                <div>
+                    <span className="text-muted-foreground">{t('checkout.customerCard.creditAvailable')}</span>
+                    <div className="font-medium text-teal-600">
+                        {profile.credit_available ?? '—'} {profile.credit_available != null ? currency : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default function CheckoutIndex({ cartId }) {
+    const { t } = useTranslation();
     const { error, success, confirmVoidCart } = usePosDialog();
 
     const [loading, setLoading] = useState(true);
@@ -25,30 +165,97 @@ export default function CheckoutIndex({ cartId }) {
     const [tenderedAmount, setTenderedAmount] = useState('');
     const [paymentAmount, setPaymentAmount] = useState('');
     const [completed, setCompleted] = useState(false);
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [customerProfile, setCustomerProfile] = useState(null);
+    const [customerQuery, setCustomerQuery] = useState('');
+    const [customerResults, setCustomerResults] = useState([]);
+    const [bankReference, setBankReference] = useState('');
+    const [bankName, setBankName] = useState('');
+    const [managerPinOverride, setManagerPinOverride] = useState(null);
+    const [showManagerPinModal, setShowManagerPinModal] = useState(false);
+    const [pendingPayment, setPendingPayment] = useState(false);
     const autoPrintFiredRef = useRef(false);
+    const customerSearchTimer = useRef(null);
+
+    const config = bootstrap?.config ?? {};
+    const currency = bootstrap?.currency ?? 'PKR';
+
+    const methodLabel = useCallback(
+        (method) => t(`checkout.paymentMethods.${method}`, { defaultValue: method }),
+        [t],
+    );
+
+    const loadCustomerProfile = useCallback(async (customerId) => {
+        if (!customerId) {
+            setCustomerProfile(null);
+            return;
+        }
+        try {
+            const profile = await customerApi.profile(customerId);
+            setCustomerProfile(profile);
+        } catch {
+            setCustomerProfile(null);
+        }
+    }, []);
 
     const loadBootstrap = useCallback(async () => {
         setLoading(true);
         try {
             const data = await checkoutApi.bootstrap(cartId);
             setBootstrap(data);
+
+            const stored = sessionStorage.getItem(customerStorageKey(cartId));
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    setSelectedCustomer(parsed);
+                    await loadCustomerProfile(parsed.id);
+                } catch {
+                    sessionStorage.removeItem(customerStorageKey(cartId));
+                }
+            }
+
             if (data.sale_id) {
                 const saleData = await saleApi.get(data.sale_id);
                 setSale(saleData);
                 setCompleted(saleData.status === 'completed');
+                if (saleData.customer?.id) {
+                    setSelectedCustomer(saleData.customer);
+                    await loadCustomerProfile(saleData.customer.id);
+                }
             }
         } catch (err) {
-            error(err?.response?.data?.message || 'Could not load checkout.');
+            error(err?.response?.data?.message || t('checkout.errors.loadFailed'));
         } finally {
             setLoading(false);
         }
-    }, [cartId, error]);
+    }, [cartId, error, loadCustomerProfile, t]);
 
     useEffect(() => {
         loadBootstrap();
     }, [loadBootstrap]);
 
-    const config = bootstrap?.config ?? {};
+    useEffect(() => {
+        if (customerQuery.length < 2) {
+            setCustomerResults([]);
+            return undefined;
+        }
+
+        customerSearchTimer.current = setTimeout(async () => {
+            try {
+                const results = await customerApi.search(customerQuery);
+                setCustomerResults(results);
+            } catch {
+                setCustomerResults([]);
+            }
+        }, 300);
+
+        return () => {
+            if (customerSearchTimer.current) {
+                clearTimeout(customerSearchTimer.current);
+            }
+        };
+    }, [customerQuery]);
 
     const handlePrint = useCallback(() => {
         const token = sale?.invoice?.public_token;
@@ -87,67 +294,170 @@ export default function CheckoutIndex({ cartId }) {
         return Math.max(0, tendered - balanceDue);
     }, [selectedMethod, tenderedAmount, balanceDue, config.cash_change_enabled]);
 
+    const activeCustomer = sale?.customer ?? selectedCustomer;
+    const activeProfile = customerProfile;
+
+    const creditLimitExceeded = useMemo(() => {
+        if (selectedMethod !== 'credit' || !activeProfile?.credit_limit) return false;
+        const limit = parseFloat(activeProfile.credit_limit);
+        const outstanding = parseFloat(activeProfile.ar_outstanding ?? '0');
+        const projected = outstanding + balanceDue;
+        return projected > limit;
+    }, [selectedMethod, activeProfile, balanceDue]);
+
+    const paymentMethods = useMemo(() => {
+        const base = config.payment_methods ?? ['cash'];
+        const extras = [];
+        if (activeCustomer && parseFloat(activeProfile?.wallet_balance ?? '0') > 0) {
+            extras.push('wallet');
+        }
+        if (activeCustomer && parseFloat(activeProfile?.store_credit_balance ?? '0') > 0) {
+            extras.push('store_credit');
+        }
+        return [...new Set([...base, ...extras])];
+    }, [config.payment_methods, activeCustomer, activeProfile]);
+
+    async function selectCustomer(customer) {
+        setSelectedCustomer(customer);
+        setCustomerQuery('');
+        setCustomerResults([]);
+        setManagerPinOverride(null);
+        sessionStorage.setItem(customerStorageKey(cartId), JSON.stringify(customer));
+        await loadCustomerProfile(customer.id);
+    }
+
+    function clearCustomer() {
+        setSelectedCustomer(null);
+        setCustomerProfile(null);
+        setManagerPinOverride(null);
+        sessionStorage.removeItem(customerStorageKey(cartId));
+    }
+
     async function handleConfirmSale() {
         setProcessing(true);
         try {
-            const confirmed = await checkoutApi.confirm(cartId);
+            const payload = {};
+            if (selectedCustomer?.id) {
+                payload.customer_id = selectedCustomer.id;
+            }
+            const confirmed = await checkoutApi.confirm(cartId, payload);
             const saleData = await saleApi.get(confirmed.id);
             setSale(saleData);
-            success('Sale confirmed', 'Collect payment to complete.');
+            if (saleData.customer?.id) {
+                await loadCustomerProfile(saleData.customer.id);
+            }
+            success(t('checkout.confirmSale'), t('checkout.payment'));
         } catch (err) {
-            error(err?.response?.data?.message || 'Could not confirm sale.');
+            error(err?.response?.data?.message || t('checkout.errors.confirmFailed'));
         } finally {
             setProcessing(false);
+        }
+    }
+
+    async function executePayment(managerPin = null) {
+        const payload = { method: selectedMethod };
+
+        if (selectedMethod === 'cash') {
+            payload.tendered_amount = parseFloat(tenderedAmount || String(balanceDue));
+            payload.amount = balanceDue;
+        } else if (config.split_tender_enabled && paymentAmount) {
+            payload.amount = parseFloat(paymentAmount);
+        } else {
+            payload.amount = balanceDue;
+        }
+
+        if (selectedMethod === 'bank_transfer') {
+            if (!bankReference.trim()) {
+                error(t('checkout.bankReferenceRequired'));
+                return;
+            }
+            payload.meta = {
+                bank_name: bankName.trim() || null,
+                reference_number: bankReference.trim(),
+                deposited_at: new Date().toISOString(),
+            };
+        }
+
+        if (managerPin) {
+            payload.manager_pin = managerPin;
+        }
+
+        const updated = await saleApi.addPayment(sale.id, payload);
+
+        if (updated.payment_error) {
+            error(updated.payment_error);
+        }
+
+        setSale(updated);
+
+        if (updated.status === 'completed') {
+            setCompleted(true);
+            sessionStorage.removeItem(customerStorageKey(cartId));
+            success(t('checkout.paymentComplete'), updated.invoice?.number ?? '');
+        } else {
+            setTenderedAmount('');
+            setPaymentAmount('');
         }
     }
 
     async function handlePayment() {
         if (!sale?.id) return;
+
+        const customerId = sale.customer?.id ?? selectedCustomer?.id;
+        if (
+            (selectedMethod === 'credit' || selectedMethod === 'wallet' || selectedMethod === 'store_credit') &&
+            !customerId
+        ) {
+            error(t('checkout.customerRequiredCredit'));
+            return;
+        }
+
+        if (creditLimitExceeded && !managerPinOverride) {
+            setPendingPayment(true);
+            setShowManagerPinModal(true);
+            return;
+        }
+
         setProcessing(true);
         try {
-            const payload = {
-                method: selectedMethod,
-            };
-
-            if (selectedMethod === 'cash') {
-                payload.tendered_amount = parseFloat(tenderedAmount || String(balanceDue));
-                payload.amount = balanceDue;
-            } else if (config.split_tender_enabled && paymentAmount) {
-                payload.amount = parseFloat(paymentAmount);
-            } else {
-                payload.amount = balanceDue;
-            }
-
-            const updated = await saleApi.addPayment(sale.id, payload);
-
-            if (updated.payment_error) {
-                error(updated.payment_error);
-            }
-
-            setSale(updated);
-
-            if (updated.status === 'completed') {
-                setCompleted(true);
-                success('Payment complete', `Invoice ${updated.invoice?.number ?? ''}`.trim());
-            } else {
-                setTenderedAmount('');
-                setPaymentAmount('');
-            }
+            await executePayment(managerPinOverride);
         } catch (err) {
             const messages = err?.response?.data?.errors;
             if (messages) {
                 error(Object.values(messages).flat().join(' '));
             } else {
-                error(err?.response?.data?.message || 'Payment failed.');
+                error(err?.response?.data?.message || t('checkout.errors.paymentFailed'));
             }
         } finally {
             setProcessing(false);
+            setPendingPayment(false);
+        }
+    }
+
+    function handleManagerPinVerified(pin) {
+        setManagerPinOverride(pin);
+        setShowManagerPinModal(false);
+        if (pendingPayment) {
+            setProcessing(true);
+            executePayment(pin)
+                .catch((err) => {
+                    const messages = err?.response?.data?.errors;
+                    error(
+                        messages
+                            ? Object.values(messages).flat().join(' ')
+                            : err?.response?.data?.message || t('checkout.errors.paymentFailed'),
+                    );
+                })
+                .finally(() => {
+                    setProcessing(false);
+                    setPendingPayment(false);
+                });
         }
     }
 
     async function handleBackToPos() {
         if (sale?.id) {
-            error('Sale already confirmed. Complete payment or void the sale.');
+            error(t('checkout.errors.saleConfirmed'));
             return;
         }
 
@@ -156,7 +466,7 @@ export default function CheckoutIndex({ cartId }) {
             await checkoutApi.abandon(cartId);
             router.visit(route('admin.pos.index'));
         } catch (err) {
-            error(err?.response?.data?.message || 'Could not return to POS.');
+            error(err?.response?.data?.message || t('checkout.errors.returnFailed'));
         } finally {
             setProcessing(false);
         }
@@ -174,9 +484,10 @@ export default function CheckoutIndex({ cartId }) {
         setProcessing(true);
         try {
             await saleApi.void(sale.id);
+            sessionStorage.removeItem(customerStorageKey(cartId));
             router.visit(route('admin.pos.index'));
         } catch (err) {
-            error(err?.response?.data?.message || 'Could not void sale.');
+            error(err?.response?.data?.message || t('checkout.errors.voidFailed'));
         } finally {
             setProcessing(false);
         }
@@ -185,9 +496,9 @@ export default function CheckoutIndex({ cartId }) {
     if (loading) {
         return (
             <AdminLayout fullHeight>
-                <Head title="Checkout" />
+                <Head title={t('checkout.title')} />
                 <div className="flex flex-1 items-center justify-center text-muted-foreground">
-                    Loading checkout…
+                    {t('checkout.loading')}
                 </div>
             </AdminLayout>
         );
@@ -195,34 +506,36 @@ export default function CheckoutIndex({ cartId }) {
 
     return (
         <AdminLayout fullHeight>
-            <Head title="Checkout" />
+            <Head title={t('checkout.title')} />
             <div className="flex h-full flex-col gap-4 p-4 lg:flex-row">
                 <section className="flex flex-1 flex-col rounded-lg border bg-card p-4">
                     <div className="mb-4 flex items-center justify-between">
                         <div>
-                            <h1 className="text-xl font-semibold">Checkout</h1>
-                            <p className="text-sm text-muted-foreground">Cart {cartId}</p>
+                            <h1 className="text-xl font-semibold">{t('checkout.title')}</h1>
+                            <p className="text-sm text-muted-foreground">
+                                {t('checkout.cartLabel', { id: cartId })}
+                            </p>
                         </div>
                         <div className="flex gap-2">
                             {!completed && (
                                 <Button variant="outline" onClick={handleBackToPos} disabled={processing}>
-                                    Back to POS
+                                    {t('checkout.backToPos')}
                                 </Button>
                             )}
                             {!completed && (
                                 <Button variant="destructive" onClick={handleVoid} disabled={processing}>
-                                    Void
+                                    {t('checkout.void')}
                                 </Button>
                             )}
                             {completed && config.receipt_print_mode !== 'off' && (
                                 <Button variant="outline" onClick={handlePrint}>
                                     <Printer className="mr-2 h-4 w-4" />
-                                    Print Receipt
+                                    {t('checkout.printReceipt')}
                                 </Button>
                             )}
                             {completed && (
                                 <Button onClick={() => router.visit(route('admin.pos.index'))}>
-                                    New Sale
+                                    {t('checkout.newSale')}
                                 </Button>
                             )}
                         </div>
@@ -234,10 +547,8 @@ export default function CheckoutIndex({ cartId }) {
                                 <tr className="border-b text-left text-muted-foreground">
                                     <th className="py-2">Item</th>
                                     <th className="py-2">Qty</th>
-                                    {config.tax_enabled && (
-                                        <th className="py-2 text-right">Tax</th>
-                                    )}
-                                    <th className="py-2 text-right">Total</th>
+                                    {config.tax_enabled && <th className="py-2 text-right">{t('checkout.tax')}</th>}
+                                    <th className="py-2 text-right">{t('checkout.total')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -262,29 +573,29 @@ export default function CheckoutIndex({ cartId }) {
 
                     <div className="mt-4 space-y-1 border-t pt-4 text-sm">
                         <div className="flex justify-between">
-                            <span>Subtotal</span>
-                            <span>{bootstrap?.subtotal} {bootstrap?.currency}</span>
+                            <span>{t('checkout.subtotal')}</span>
+                            <span>{bootstrap?.subtotal} {currency}</span>
                         </div>
                         {parseFloat(bootstrap?.total_discount ?? '0') > 0 && (
                             <div className="flex justify-between text-green-600">
-                                <span>Discount</span>
-                                <span>-{bootstrap?.total_discount} {bootstrap?.currency}</span>
+                                <span>{t('checkout.discount')}</span>
+                                <span>-{bootstrap?.total_discount} {currency}</span>
                             </div>
                         )}
                         {config.tax_enabled && (
                             <div className="flex justify-between text-muted-foreground">
-                                <span>Tax</span>
-                                <span>{bootstrap?.tax_total} {bootstrap?.currency}</span>
+                                <span>{t('checkout.tax')}</span>
+                                <span>{bootstrap?.tax_total} {currency}</span>
                             </div>
                         )}
                         <div className="flex justify-between text-lg font-semibold">
-                            <span>Total</span>
-                            <span>{bootstrap?.grand_total} {bootstrap?.currency}</span>
+                            <span>{t('checkout.total')}</span>
+                            <span>{bootstrap?.grand_total} {currency}</span>
                         </div>
                         {sale && (
                             <div className="flex justify-between text-amber-600">
-                                <span>Balance Due</span>
-                                <span>{sale.balance_due} {bootstrap?.currency}</span>
+                                <span>{t('checkout.balanceDue')}</span>
+                                <span>{sale.balance_due} {currency}</span>
                             </div>
                         )}
                     </div>
@@ -293,19 +604,65 @@ export default function CheckoutIndex({ cartId }) {
                 <section className="w-full rounded-lg border bg-card p-4 lg:w-96">
                     {!sale ? (
                         <div className="space-y-4">
-                            <h2 className="font-semibold">Confirm Sale</h2>
-                            <p className="text-sm text-muted-foreground">
-                                Review the cart and confirm to begin payment collection.
-                            </p>
+                            <h2 className="font-semibold">{t('checkout.confirmSale')}</h2>
+                            <p className="text-sm text-muted-foreground">{t('checkout.confirmDescription')}</p>
+
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">
+                                    {t('checkout.customerOptional')}
+                                </label>
+                                {selectedCustomer ? (
+                                    <div className="space-y-2">
+                                        <CustomerProfileCard
+                                            profile={activeProfile ?? selectedCustomer}
+                                            currency={currency}
+                                            t={t}
+                                        />
+                                        <Button type="button" variant="ghost" size="sm" onClick={clearCustomer}>
+                                            {t('checkout.clearCustomer')}
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <input
+                                            type="search"
+                                            value={customerQuery}
+                                            onChange={(e) => setCustomerQuery(e.target.value)}
+                                            placeholder={t('checkout.customerSearchPlaceholder')}
+                                            className="w-full rounded-md border px-3 py-2 text-sm"
+                                        />
+                                        {customerResults.length > 0 && (
+                                            <div className="max-h-48 overflow-auto rounded-md border">
+                                                {customerResults.map((customer) => (
+                                                    <button
+                                                        key={customer.id}
+                                                        type="button"
+                                                        className="block w-full border-b px-3 py-2 text-left text-sm hover:bg-muted/50"
+                                                        onClick={() => selectCustomer(customer)}
+                                                    >
+                                                        <div className="font-medium">{customer.name}</div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {[customer.phone, customer.email]
+                                                                .filter(Boolean)
+                                                                .join(' · ')}
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
                             <Button className="w-full" onClick={handleConfirmSale} disabled={processing}>
-                                Confirm & Collect Payment
+                                {t('checkout.confirmButton')}
                             </Button>
                         </div>
                     ) : completed ? (
                         <div className="space-y-4">
                             <div className="flex items-center gap-2">
                                 <div className="h-3 w-3 rounded-full bg-green-500" />
-                                <h2 className="font-semibold text-green-600">Sale Complete</h2>
+                                <h2 className="font-semibold text-green-600">{t('checkout.saleComplete')}</h2>
                             </div>
 
                             {sale.invoice && (
@@ -314,29 +671,15 @@ export default function CheckoutIndex({ cartId }) {
                                     <div className="text-xs text-muted-foreground">
                                         {new Date().toLocaleString()}
                                     </div>
-                                    {config.fbr_enabled && (
-                                        <div className="mt-1 text-xs text-muted-foreground">
-                                            FBR: {sale.invoice.fbr_status ?? 'pending'}
-                                            {sale.invoice.fbr_invoice_number && (
-                                                <span className="ml-1 font-mono">{sale.invoice.fbr_invoice_number}</span>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
                             )}
 
                             {(sale.payments ?? []).map((payment) => (
                                 <div key={payment.id} className="rounded border p-2 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="font-medium">{METHOD_LABELS[payment.method] ?? payment.method}</span>
-                                        <span>{payment.amount} {bootstrap?.currency}</span>
+                                        <span className="font-medium">{methodLabel(payment.method)}</span>
+                                        <span>{payment.amount} {currency}</span>
                                     </div>
-                                    {payment.meta?.change_due > 0 && (
-                                        <div className="flex justify-between text-green-600">
-                                            <span>Change</span>
-                                            <span>{Number(payment.meta.change_due).toFixed(2)} {bootstrap?.currency}</span>
-                                        </div>
-                                    )}
                                 </div>
                             ))}
 
@@ -347,30 +690,106 @@ export default function CheckoutIndex({ cartId }) {
                                     onClick={handlePrint}
                                 >
                                     <Printer className="mr-2 h-4 w-4" />
-                                    {config.receipt_print_mode === 'auto' ? 'Reprint Receipt' : 'Print Receipt'}
+                                    {config.receipt_print_mode === 'auto'
+                                        ? t('checkout.reprintReceipt')
+                                        : t('checkout.printReceipt')}
                                 </Button>
                             )}
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            <h2 className="font-semibold">Payment</h2>
+                            {activeCustomer && (
+                                <CustomerProfileCard
+                                    profile={activeProfile ?? activeCustomer}
+                                    currency={currency}
+                                    t={t}
+                                />
+                            )}
+
+                            <h2 className="font-semibold">{t('checkout.payment')}</h2>
 
                             <div className="grid grid-cols-2 gap-2">
-                                {(config.payment_methods ?? ['cash']).map((method) => (
+                                {paymentMethods.map((method) => (
                                     <Button
                                         key={method}
                                         type="button"
                                         variant={selectedMethod === method ? 'default' : 'outline'}
-                                        onClick={() => setSelectedMethod(method)}
+                                        onClick={() => {
+                                            setSelectedMethod(method);
+                                            setManagerPinOverride(null);
+                                        }}
                                     >
-                                        {METHOD_LABELS[method] ?? method}
+                                        {methodLabel(method)}
                                     </Button>
                                 ))}
                             </div>
 
+                            {creditLimitExceeded && (
+                                <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
+                                    <p className="font-medium">{t('checkout.creditLimit.warning')}</p>
+                                    <p className="mt-1 text-xs">
+                                        {t('checkout.creditLimit.exceeded', {
+                                            projected: (
+                                                parseFloat(activeProfile?.ar_outstanding ?? '0') + balanceDue
+                                            ).toFixed(2),
+                                            limit: activeProfile?.credit_limit,
+                                        })}
+                                    </p>
+                                    {!managerPinOverride ? (
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            className="mt-2"
+                                            onClick={() => setShowManagerPinModal(true)}
+                                        >
+                                            {t('checkout.creditLimit.overrideButton')}
+                                        </Button>
+                                    ) : (
+                                        <p className="mt-2 text-xs text-green-700 dark:text-green-400">
+                                            {t('checkout.creditLimit.overrideRequired')} ✓
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {selectedMethod === 'bank_transfer' && (
+                                <div className="space-y-2">
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">
+                                            {t('checkout.bankName')}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={bankName}
+                                            onChange={(e) => setBankName(e.target.value)}
+                                            className="w-full rounded-md border px-3 py-2 text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">
+                                            {t('checkout.bankReference')}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={bankReference}
+                                            onChange={(e) => setBankReference(e.target.value)}
+                                            className="w-full rounded-md border px-3 py-2 text-sm"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectedMethod === 'credit' && !sale.customer && !selectedCustomer && (
+                                <p className="text-sm text-amber-600">{t('checkout.creditRequiresCustomer')}</p>
+                            )}
+
                             {selectedMethod === 'cash' && config.cash_change_enabled && (
                                 <div>
-                                    <label className="mb-1 block text-sm font-medium">Tendered Amount</label>
+                                    <label className="mb-1 block text-sm font-medium">
+                                        {t('checkout.tenderedAmount')}
+                                    </label>
                                     <input
                                         type="number"
                                         min={balanceDue}
@@ -382,7 +801,7 @@ export default function CheckoutIndex({ cartId }) {
                                     />
                                     {changeDue > 0 && (
                                         <p className="mt-2 text-lg font-semibold text-green-600">
-                                            Change: {changeDue.toFixed(2)} {bootstrap?.currency}
+                                            {t('checkout.change')}: {changeDue.toFixed(2)} {currency}
                                         </p>
                                     )}
                                 </div>
@@ -390,7 +809,9 @@ export default function CheckoutIndex({ cartId }) {
 
                             {config.split_tender_enabled && selectedMethod !== 'cash' && balanceDue > 0 && (
                                 <div>
-                                    <label className="mb-1 block text-sm font-medium">Payment Amount</label>
+                                    <label className="mb-1 block text-sm font-medium">
+                                        {t('checkout.paymentAmount')}
+                                    </label>
                                     <input
                                         type="number"
                                         min="0.01"
@@ -406,27 +827,44 @@ export default function CheckoutIndex({ cartId }) {
 
                             {(sale.payments ?? []).length > 0 && (
                                 <div className="space-y-2">
-                                    <h3 className="text-sm font-medium">Applied Payments</h3>
+                                    <h3 className="text-sm font-medium">{t('checkout.appliedPayments')}</h3>
                                     {sale.payments.map((payment) => (
                                         <div key={payment.id} className="rounded border px-2 py-1 text-sm">
-                                            {METHOD_LABELS[payment.method] ?? payment.method}: {payment.amount}
-                                            {payment.status === 'failed' && (
-                                                <span className="ml-2 text-destructive">Failed</span>
-                                            )}
+                                            {methodLabel(payment.method)}: {payment.amount}
                                         </div>
                                     ))}
                                 </div>
                             )}
 
-                            <Button className="w-full" onClick={handlePayment} disabled={processing}>
-                                {config.split_tender_enabled && paymentAmount && parseFloat(paymentAmount) < balanceDue
-                                    ? 'Apply Partial Payment'
-                                    : 'Complete Payment'}
+                            <Button
+                                className="w-full"
+                                onClick={handlePayment}
+                                disabled={
+                                    processing ||
+                                    (creditLimitExceeded && !managerPinOverride)
+                                }
+                            >
+                                {config.split_tender_enabled &&
+                                paymentAmount &&
+                                parseFloat(paymentAmount) < balanceDue
+                                    ? t('checkout.partialPayment')
+                                    : t('checkout.completePayment')}
                             </Button>
                         </div>
                     )}
                 </section>
             </div>
+
+            {showManagerPinModal && (
+                <ManagerPinModal
+                    t={t}
+                    onVerified={handleManagerPinVerified}
+                    onCancel={() => {
+                        setShowManagerPinModal(false);
+                        setPendingPayment(false);
+                    }}
+                />
+            )}
         </AdminLayout>
     );
 }
