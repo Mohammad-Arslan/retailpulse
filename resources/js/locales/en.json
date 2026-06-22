@@ -23,6 +23,7 @@
         "suppliers": "Suppliers",
         "purchaseOrders": "Purchase Orders",
         "goodsReceiving": "Goods Receiving",
+        "supplierPriceLists": "Supplier Price Lists",
         "procurementReports": "Procurement Reports",
         "binStock": "Bin Stock",
         "binTransfer": "Bin Transfer",
@@ -96,7 +97,11 @@
         "continue": "Continue",
         "yes": "Yes",
         "no": "No",
-        "save": "Save"
+        "save": "Save",
+        "back": "Back",
+        "clear": "Clear",
+        "download": "Download",
+        "status": "Status"
     },
     "bulk": {
         "selectionBar": "Bulk actions",
@@ -1020,11 +1025,36 @@
             "quickActions": {
                 "purchaseOrdersTitle": "Purchase Orders",
                 "purchaseOrdersDesc": "View POs for this supplier",
+                "priceListsTitle": "Price Lists",
+                "priceListsDesc": "Manage supplier contracts and pricing",
                 "statementPdfTitle": "Statement PDF",
                 "statementPdfDesc": "Download supplier statement",
                 "emailStatementTitle": "Email Statement",
                 "deactivateTitle": "Deactivate",
                 "deactivateDesc": "Mark supplier inactive"
+            },
+            "ledgerTitle": "Ledger / Statement",
+            "recordPayment": "Record Payment",
+            "paymentAmount": "Amount",
+            "paymentMethod": "Method",
+            "paySupplier": "Pay Supplier",
+            "performance": {
+                "title": "Performance",
+                "onTimeDelivery": "On-Time Delivery",
+                "qualityRejection": "Quality Rejection Rate",
+                "lastScored": "Last Scored",
+                "historyTitle": "Score History",
+                "period": "Period",
+                "score": "Score"
+            },
+            "attachments": {
+                "title": "Attachments",
+                "file": "File",
+                "notes": "Notes",
+                "notesPlaceholder": "Optional description…",
+                "upload": "Upload",
+                "empty": "No attachments yet.",
+                "deleteConfirm": "Delete this attachment?"
             },
             "columns": {
                 "supplier": "Supplier",
@@ -1075,7 +1105,9 @@
                 "supplier": "Supplier",
                 "currency": "Currency",
                 "expectedDelivery": "Expected Delivery",
+                "options": "Options",
                 "dropShip": "Drop Ship (No Inventory Increase)",
+                "linkedSale": "Linked Sale",
                 "managerPin": "Manager PIN (Required — PO Exceeds Approval Threshold)",
                 "rejectionReason": "Rejection Reason",
                 "warehouse": "Warehouse"
@@ -1086,8 +1118,12 @@
                 "notes": "Internal notes for this purchase order…",
                 "qty": "Qty",
                 "batchNo": "Batch No",
-                "managerPin": "Enter 6-Digit PIN"
+                "managerPin": "Enter 6-Digit PIN",
+                "saleSearch": "Search by invoice no. or sale ID…"
             },
+            "linkedSale": "Linked sale",
+            "saleRequired": "Select a customer sale when drop ship is enabled.",
+            "dropShipHint": "Goods ship directly to the customer; inventory is not increased on receive.",
             "pinHint": "Enter the 6-digit POS PIN from your user profile (Admin → Users → Edit).",
             "pinRequired": "Enter your 6-digit manager PIN to approve this purchase order.",
             "noPinConfigured": "No POS PIN is set on your account. Set one under Admin → Users → Edit your profile before approving."
@@ -1095,6 +1131,14 @@
         "goodsReceiving": {
             "title": "Goods Receiving Notes",
             "description": "GRN history and pending receipts.",
+            "empty": "No GRNs found.",
+            "searchPlaceholder": "Search reference…",
+            "warehouse": "Warehouse",
+            "status": "Status",
+            "received": "Received",
+            "po": "PO",
+            "virtualReceive": "Virtual receive (drop ship — no stock movement)",
+            "linkedSale": "Linked sale",
             "createInvoice": "Create Supplier Invoice",
             "createInvoiceSubmit": "Create Invoice from GRN",
             "invoiceDate": "Invoice Date",
@@ -1105,12 +1149,84 @@
             "purchaseReturns": "Purchase Returns",
             "dispatchFrom": "Dispatch From",
             "dispatchGoods": "Dispatch Goods",
+            "approveReturn": "Approve Return",
+            "acknowledgeReturn": "Acknowledge Return",
             "issueDebitNote": "Issue Debit Note",
+            "closeReturn": "Close Return",
             "debitNote": "Debit Note",
+            "downloadDebitNotePdf": "Download Debit Note PDF",
+            "columns": {
+                "reference": "Reference",
+                "supplier": "Supplier",
+                "po": "PO",
+                "warehouse": "Warehouse",
+                "received": "Received",
+                "status": "Status"
+            },
+            "allocationMethods": {
+                "quantity": "Quantity",
+                "weight": "Weight",
+                "value": "Value",
+                "manual": "Manual"
+            },
+            "chargeTypes": {
+                "freight": "Freight",
+                "duty": "Duty",
+                "insurance": "Insurance",
+                "customs": "Customs",
+                "handling": "Handling",
+                "other": "Other"
+            },
+            "landedCost": {
+                "title": "Landed Cost",
+                "chargeType": "Charge Type",
+                "amount": "Amount",
+                "allocationMethod": "Allocation Method",
+                "description": "Description",
+                "descriptionPlaceholder": "Optional notes for this charge…",
+                "add": "Add Landed Cost",
+                "deleteConfirm": "Remove this landed cost entry?"
+            },
             "grnStatuses": {
                 "draft": "Draft",
                 "posted": "Posted",
                 "cancelled": "Cancelled"
+            }
+        },
+        "supplierPriceLists": {
+            "title": "Supplier Price Lists",
+            "description": "Manage supplier contracts, validity periods, and line pricing.",
+            "empty": "No price lists found.",
+            "searchPlaceholder": "Search reference or supplier…",
+            "createTitle": "New Price List",
+            "createDescription": "Create a price list with contract terms and variant pricing.",
+            "editTitle": "Edit {{name}}",
+            "createSubmit": "Save Price List",
+            "updateSubmit": "Update Price List",
+            "save": "Save Price List",
+            "fields": {
+                "supplier": "Supplier",
+                "name": "Name",
+                "currency": "Currency",
+                "validFrom": "Valid From",
+                "validTo": "Valid To",
+                "notes": "Notes",
+                "active": "Active",
+                "unitPrice": "Unit Price",
+                "minQty": "Min Qty",
+                "leadTime": "Lead Time (Days)",
+                "variant": "Variant / SKU"
+            },
+            "lineItems": "Line Items",
+            "addLine": "Add Line",
+            "columns": {
+                "name": "Name",
+                "reference": "Reference",
+                "supplier": "Supplier",
+                "validFrom": "Valid From",
+                "validTo": "Valid To",
+                "items": "Lines",
+                "status": "Status"
             }
         },
         "procurement": {

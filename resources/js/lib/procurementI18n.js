@@ -77,3 +77,25 @@ export function grnStatusLabel(t, status) {
 
     return label === key ? titleCaseEnum(status) : label;
 }
+
+export function allocationMethodLabel(t, method) {
+    if (!method) {
+        return '';
+    }
+
+    const key = `pages.goodsReceiving.allocationMethods.${method}`;
+    const label = t(key);
+
+    return label === key ? titleCaseEnum(method) : label;
+}
+
+export function chargeTypeLabel(t, type) {
+    if (!type) {
+        return '';
+    }
+
+    const key = `pages.goodsReceiving.chargeTypes.${type}`;
+    const label = t(key);
+
+    return label === key ? titleCaseEnum(type) : label;
+}

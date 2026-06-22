@@ -96,6 +96,7 @@ function Index({ orders, filters, statuses = [], suppliers = [] }) {
     );
 
     const rowActions = (order) => {
+        const canSendPo = order.is_historical || ['approved', 'closed'].includes(order.status);
         const actions = [
             {
                 label: t('common.view'),
@@ -103,14 +104,17 @@ function Index({ orders, filters, statuses = [], suppliers = [] }) {
                 href: route('admin.purchase-orders.show', order.id),
                 permission: 'procurement.view',
             },
-            {
+        ];
+
+        if (canSendPo) {
+            actions.push({
                 label: t('pages.purchaseOrders.actions.printPdf'),
                 type: 'view',
                 icon: FileText,
                 onClick: () => window.open(route('admin.purchase-orders.pdf', order.id), '_blank'),
                 permission: 'procurement.view',
-            },
-        ];
+            });
+        }
 
         if (order.status === 'draft' && can('procurement.create')) {
             actions.push({

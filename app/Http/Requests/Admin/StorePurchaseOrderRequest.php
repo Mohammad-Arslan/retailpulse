@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class StorePurchaseOrderRequest extends FormRequest
 {
@@ -26,7 +27,12 @@ final class StorePurchaseOrderRequest extends FormRequest
             'expected_delivery_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
             'drop_ship' => ['boolean'],
-            'sale_id' => ['nullable', 'integer', 'exists:sales,id'],
+            'sale_id' => [
+                Rule::requiredIf(fn () => (bool) $this->boolean('drop_ship')),
+                'nullable',
+                'integer',
+                'exists:sales,id',
+            ],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.product_variant_id' => ['required', 'integer', 'exists:product_variants,id'],
             'lines.*.qty_ordered' => ['required', 'numeric', 'min:0.0001'],

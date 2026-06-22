@@ -63,6 +63,8 @@ function Show({ order, config, warehouses, approval = {} }) {
 
     const needsPin = approval.requiresPin ?? Number(order.total) >= Number(config.po_approval_threshold);
     const approverHasPin = approval.approverHasPin ?? true;
+    const canSendPo =
+        order.is_historical || ['approved', 'closed'].includes(order.status);
 
     const submitPo = () => router.post(route('admin.purchase-orders.submit', order.id));
     const approvePo = () => {
@@ -157,7 +159,18 @@ function Show({ order, config, warehouses, approval = {} }) {
                     Total: <strong className="text-rp-text">{order.total}</strong> {order.currency_code}
                 </span>
                 {order.drop_ship && (
-                    <span className="text-sm font-medium text-amber-600">Drop ship</span>
+                    <span className="text-sm font-medium text-amber-600">
+                        {t('pages.purchaseOrders.fields.dropShip')}
+                    </span>
+                )}
+                {order.sale && (
+                    <Link
+                        href={route('admin.sales.show', order.sale.id)}
+                        className="text-sm text-teal-600 hover:underline"
+                    >
+                        {t('pages.purchaseOrders.linkedSale')}:{' '}
+                        {order.sale.invoice_no || `#${order.sale.id}`}
+                    </Link>
                 )}
             </div>
 
@@ -194,7 +207,7 @@ function Show({ order, config, warehouses, approval = {} }) {
                     )}
 
                     <div className="flex flex-wrap gap-2">
-                        {can('procurement.view') && (
+                        {can('procurement.view') && canSendPo && (
                             <a
                                 href={route('admin.purchase-orders.pdf', order.id)}
                                 target="_blank"
@@ -202,13 +215,13 @@ function Show({ order, config, warehouses, approval = {} }) {
                                 className="rp-btn-outline"
                             >
                                 <FileText className="h-4 w-4" />
-                                Print PDF
+                                {t('pages.purchaseOrders.actions.printPdf')}
                             </a>
                         )}
-                        {can('procurement.view') && (
+                        {can('procurement.view') && canSendPo && (
                             <Button type="button" variant="outline" onClick={emailPo}>
                                 <Mail className="h-4 w-4" />
-                                Email PO
+                                {t('pages.purchaseOrders.actions.emailPo')}
                             </Button>
                         )}
                         {order.status === 'draft' && can('procurement.create') && (

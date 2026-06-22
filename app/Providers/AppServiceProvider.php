@@ -4,18 +4,29 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Events\Procurement\DropShipGrnConfirmed;
+use App\Events\Procurement\GoodsReceived;
+use App\Events\Procurement\SupplierInvoiceMatched;
+use App\Listeners\Procurement\LogDropShipGrnConfirmed;
+use App\Listeners\Procurement\LogGoodsReceived;
+use App\Listeners\Procurement\LogSupplierInvoiceMatched;
 use App\Models\Branch;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Customer;
+use App\Models\DebitNote;
+use App\Models\GoodsReceivingNote;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseReturn;
 use App\Models\Role;
 use App\Models\Sale;
 use App\Models\SaleInvoice;
 use App\Models\SalePayment;
 use App\Models\Supplier;
+use App\Models\SupplierInvoice;
+use App\Models\SupplierPayment;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -62,8 +73,11 @@ use App\Repositories\Eloquent\SystemSettingRepository;
 use App\Repositories\Eloquent\UnitRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\WarehouseRepository;
+use App\Services\Procurement\Contracts\ProcurementPostingHook;
+use App\Services\Procurement\NullProcurementPostingHook;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -93,6 +107,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(StockMovementRepositoryInterface::class, StockMovementRepository::class);
         $this->app->bind(StockTransferRepositoryInterface::class, StockTransferRepository::class);
         $this->app->bind(SystemSettingRepositoryInterface::class, SystemSettingRepository::class);
+        $this->app->singleton(ProcurementPostingHook::class, NullProcurementPostingHook::class);
     }
 
     public function boot(): void
@@ -111,6 +126,11 @@ class AppServiceProvider extends ServiceProvider
         Customer::observe(AuditObserver::class);
         Supplier::observe(AuditObserver::class);
         PurchaseOrder::observe(AuditObserver::class);
+        GoodsReceivingNote::observe(AuditObserver::class);
+        SupplierInvoice::observe(AuditObserver::class);
+        SupplierPayment::observe(AuditObserver::class);
+        PurchaseReturn::observe(AuditObserver::class);
+        DebitNote::observe(AuditObserver::class);
         Sale::observe(AuditObserver::class);
         SalePayment::observe(AuditObserver::class);
         SaleInvoice::observe(AuditObserver::class);
@@ -120,5 +140,9 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by(strtolower($email).'|'.$request->ip());
         });
+
+        Event::listen(DropShipGrnConfirmed::class, LogDropShipGrnConfirmed::class);
+        Event::listen(GoodsReceived::class, LogGoodsReceived::class);
+        Event::listen(SupplierInvoiceMatched::class, LogSupplierInvoiceMatched::class);
     }
 }

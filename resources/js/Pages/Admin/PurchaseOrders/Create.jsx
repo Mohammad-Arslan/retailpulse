@@ -5,8 +5,9 @@ import PageHeader from '@/Components/common/PageHeader';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import axios from 'axios';
 import { Plus, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function emptyLine() {
@@ -29,7 +30,15 @@ function supplierCurrency(suppliers, supplierId, defaultCurrency, currencies) {
     return allowed[0] ?? 'USD';
 }
 
-function Create({ suppliers, config, branchId, preselectedSupplierId = null, currencies = [], defaultCurrency = 'USD' }) {
+function Create({
+    suppliers,
+    config,
+    branchId,
+    preselectedSupplierId = null,
+    preselectedSaleId = null,
+    currencies = [],
+    defaultCurrency = 'USD',
+}) {
     const { branch: branchContext, errors: serverErrors } = usePage().props;
     const { t } = useTranslation();
 
@@ -59,6 +68,11 @@ function Create({ suppliers, config, branchId, preselectedSupplierId = null, cur
     const [lines, setLines] = useState([emptyLine()]);
     const [formError, setFormError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [saleQuery, setSaleQuery] = useState('');
+    const [saleResults, setSaleResults] = useState([]);
+    const [selectedSale, setSelectedSale] = useState(
+        preselectedSaleId ? { id: preselectedSaleId, label: `Sale #${preselectedSaleId}` } : null,
+    );
 
     const { data, setData, errors } = useForm({
         branch_id: resolvedBranchId ? String(resolvedBranchId) : '',
@@ -67,9 +81,24 @@ function Create({ suppliers, config, branchId, preselectedSupplierId = null, cur
         expected_delivery_date: '',
         notes: '',
         drop_ship: false,
+        sale_id: preselectedSaleId ? String(preselectedSaleId) : '',
         exchange_rate: 1,
         lines: [],
     });
+
+    useEffect(() => {
+        if (!data.drop_ship || saleQuery.length < 2) {
+            setSaleResults([]);
+            return undefined;
+        }
+        const timer = setTimeout(() => {
+            axios
+                .get(route('admin.purchase-orders.sales.search'), { params: { q: saleQuery } })
+                .then((res) => setSaleResults(res.data ?? []))
+                .catch(() => setSaleResults([]));
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [saleQuery, data.drop_ship]);
 
     const onSupplierChange = (value) => {
         setData('supplier_id', value);
@@ -177,6 +206,11 @@ function Create({ suppliers, config, branchId, preselectedSupplierId = null, cur
             }
         }
 
+        if (data.drop_ship && !data.sale_id) {
+            setFormError(t('pages.purchaseOrders.saleRequired'));
+            return;
+        }
+
         router.post(
             route('admin.purchase-orders.store'),
             {
@@ -187,6 +221,7 @@ function Create({ suppliers, config, branchId, preselectedSupplierId = null, cur
                 expected_delivery_date: data.expected_delivery_date || null,
                 notes: data.notes || null,
                 drop_ship: data.drop_ship,
+                sale_id: data.drop_ship && data.sale_id ? Number(data.sale_id) : null,
                 lines: payloadLines,
             },
             { preserveScroll: true, onStart: () => setSubmitting(true), onFinish: () => setSubmitting(false) },
@@ -267,21 +302,85 @@ function Create({ suppliers, config, branchId, preselectedSupplierId = null, cur
                                 onChange={(e) => setData('expected_delivery_date', e.target.value)}
                             />
                         </AdminFormField>
-                        <AdminFormField label="Options">
+                        <AdminFormField label={t('pages.purchaseOrders.fields.options')}>
                             <label className="flex min-h-[42px] items-center gap-2 text-sm text-rp-text-secondary">
                                 <input
                                     type="checkbox"
                                     className="h-4 w-4 rounded border-rp-border text-teal-600"
                                     checked={data.drop_ship}
-                                    onChange={(e) => setData('drop_ship', e.target.checked)}
+                                    onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setData('drop_ship', checked);
+                                        if (!checked) {
+                                            setData('sale_id', '');
+                                            setSelectedSale(null);
+                                            setSaleQuery('');
+                                        }
+                                    }}
                                 />
-                                Drop ship (no inventory increase)
+                                {t('pages.purchaseOrders.fields.dropShip')}
                             </label>
                         </AdminFormField>
                     </div>
+                    {data.drop_ship && (
+                        <div className="mt-4 space-y-2 border-t pt-4">
+                            <AdminFormField
+                                label={t('pages.purchaseOrders.fields.linkedSale')}
+                                error={displayErrors.sale_id}
+                            >
+                                {selectedSale ? (
+                                    <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                                        <span>{selectedSale.label}</span>
+                                        <button
+                                            type="button"
+                                            className="text-xs text-rose-600 hover:underline"
+                                            onClick={() => {
+                                                setSelectedSale(null);
+                                                setData('sale_id', '');
+                                            }}
+                                        >
+                                            {t('common.clear')}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <input
+                                            className="rp-form-input w-full"
+                                            value={saleQuery}
+                                            onChange={(e) => setSaleQuery(e.target.value)}
+                                            placeholder={t('pages.purchaseOrders.placeholders.saleSearch')}
+                                        />
+                                        {saleResults.length > 0 && (
+                                            <ul className="mt-1 max-h-40 overflow-auto rounded-md border text-sm">
+                                                {saleResults.map((sale) => (
+                                                    <li key={sale.id}>
+                                                        <button
+                                                            type="button"
+                                                            className="w-full px-3 py-2 text-left hover:bg-muted"
+                                                            onClick={() => {
+                                                                setSelectedSale(sale);
+                                                                setData('sale_id', String(sale.id));
+                                                                setSaleQuery('');
+                                                                setSaleResults([]);
+                                                            }}
+                                                        >
+                                                            {sale.label}
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </>
+                                )}
+                            </AdminFormField>
+                            <p className="text-xs text-rp-text-muted">{t('pages.purchaseOrders.dropShipHint')}</p>
+                        </div>
+                    )}
                     <p className="text-xs text-rp-text-muted">
-                        POs above {Number(config.po_approval_threshold).toLocaleString()} {data.currency_code}{' '}
-                        require manager approval.
+                        {t('pages.purchaseOrders.approvalHint', {
+                            amount: Number(config.po_approval_threshold).toLocaleString(),
+                            currency: data.currency_code,
+                        })}
                     </p>
                 </FormCard>
 

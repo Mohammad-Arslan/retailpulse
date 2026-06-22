@@ -127,6 +127,8 @@ final class PermissionSeeder extends Seeder
             ['name' => 'procurement.manage-returns', 'description' => 'Manage purchase returns and RMA'],
             ['name' => 'suppliers.import', 'description' => 'Import suppliers from spreadsheets'],
             ['name' => 'suppliers.export', 'description' => 'Export suppliers to spreadsheets'],
+            ['name' => 'supplier-price-lists.import', 'description' => 'Import supplier price lists from spreadsheets'],
+            ['name' => 'supplier-price-lists.export', 'description' => 'Export supplier price lists to spreadsheets'],
         ],
     ];
 

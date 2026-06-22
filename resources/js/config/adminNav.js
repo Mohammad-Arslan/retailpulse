@@ -135,6 +135,15 @@ export const ADMIN_NAV_SECTIONS = [
                 keywords: ['grn', 'receiving', 'receipt', 'procurement'],
             },
             {
+                label: 'Supplier Price Lists',
+                labelKey: 'supplierPriceLists',
+                href: 'admin.supplier-price-lists.index',
+                routeName: 'admin.supplier-price-lists.*',
+                permission: 'procurement.manage-suppliers',
+                icon: Tag,
+                keywords: ['price list', 'contract', 'supplier pricing', 'procurement'],
+            },
+            {
                 label: 'Procurement Reports',
                 labelKey: 'procurementReports',
                 href: 'admin.procurement.reports',

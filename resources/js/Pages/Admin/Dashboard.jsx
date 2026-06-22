@@ -13,6 +13,7 @@ import {
     Box,
     Building2,
     Calendar,
+    FileText,
     KeyRound,
     LayoutDashboard,
     LogIn,
@@ -267,7 +268,20 @@ function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canVie
                             { label: 'Open POs', value: procurementKpis.open_pos, icon: ClipboardList },
                             { label: 'Pending approvals', value: procurementKpis.pending_approvals, icon: AlertTriangle },
                             { label: 'Pending receipts', value: procurementKpis.pending_receipts, icon: Package },
-                            { label: 'Outstanding payables', value: procurementKpis.outstanding_payables, icon: Truck, format: fmtMoney },
+                            { label: 'Pending invoices', value: procurementKpis.pending_invoices, icon: FileText },
+                            {
+                                label: 'Outstanding payables',
+                                value: procurementKpis.outstanding_payables,
+                                icon: Truck,
+                                format: fmtMoney,
+                            },
+                            {
+                                label: 'Monthly purchases',
+                                value: procurementKpis.monthly_purchases,
+                                icon: Tag,
+                                format: fmtMoney,
+                            },
+                            { label: 'Open returns', value: procurementKpis.open_returns, icon: ArrowLeftRight },
                         ].map((kpi) => {
                             const Icon = kpi.icon;
                             const format = kpi.format ?? fmtInt;
@@ -284,6 +298,36 @@ function Dashboard({ stats, charts, superAdmin, salesKpis, revenueCharts, canVie
                             );
                         })}
                     </div>
+                    {procurementKpis.top_suppliers?.length > 0 && (
+                        <div className="mt-4 rounded-lg border bg-card p-4">
+                            <h3 className="mb-3 text-sm font-medium text-rp-text-secondary">Top suppliers by balance</h3>
+                            <table className="w-full text-left text-sm">
+                                <thead>
+                                    <tr className="border-b text-muted-foreground">
+                                        <th className="py-2">Supplier</th>
+                                        <th>Balance</th>
+                                        <th>On-time %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {procurementKpis.top_suppliers.map((s) => (
+                                        <tr key={s.id} className="border-b">
+                                            <td className="py-2">
+                                                <Link
+                                                    href={route('admin.suppliers.show', s.id)}
+                                                    className="text-teal-600 hover:underline"
+                                                >
+                                                    {s.name}
+                                                </Link>
+                                            </td>
+                                            <td>{fmtMoney(Number(s.balance))}</td>
+                                            <td>{s.on_time_delivery_rate ?? '—'}%</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             ) : null}
 

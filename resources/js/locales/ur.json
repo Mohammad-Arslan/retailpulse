@@ -23,6 +23,7 @@
         "suppliers": "سپلائرز",
         "purchaseOrders": "خریداری کے آرڈر",
         "goodsReceiving": "سامان وصولی",
+        "supplierPriceLists": "سپلائر قیمت فہرستیں",
         "procurementReports": "خریداری رپورٹس",
         "overview": "جائزہ",
         "organization": "تنظیم",
@@ -51,7 +52,9 @@
         "collapseSidebar": "سائیڈبار بند کریں",
         "active": "فعال",
         "inactive": "غیر فعال",
-        "noResults": "کوئی نتیجہ نہیں ملا۔"
+        "noResults": "کوئی نتیجہ نہیں ملا۔",
+        "back": "واپس",
+        "status": "اسٹیٹس"
     },
     "auth": {
         "welcomeBack": "خوش آمدید۔",
@@ -134,10 +137,72 @@
         },
         "goodsReceiving": {
             "title": "سامان وصولی نوٹس",
+            "description": "GRN تاریخ اور زیر التواء وصولی۔",
+            "empty": "کوئی GRN نہیں ملا۔",
+            "searchPlaceholder": "حوالہ تلاش کریں…",
+            "landedCost": {
+                "title": "لینڈڈ کاسٹ",
+                "chargeType": "چارج کی قسم",
+                "amount": "رقم",
+                "allocationMethod": "تقسیم کا طریقہ",
+                "description": "تفصیل",
+                "descriptionPlaceholder": "اختیاری نوٹ…",
+                "add": "لینڈڈ کاسٹ شامل کریں",
+                "deleteConfirm": "یہ لینڈڈ کاسٹ حذف کریں؟"
+            },
+            "chargeTypes": {
+                "freight": "فریٹ",
+                "duty": "ڈیوٹی",
+                "insurance": "انشورنس",
+                "customs": "کسٹمز",
+                "handling": "ہینڈلنگ",
+                "other": "دیگر"
+            },
+            "allocationMethods": {
+                "quantity": "مقدار",
+                "weight": "وزن",
+                "value": "قیمت",
+                "manual": "دستی"
+            },
             "grnStatuses": {
                 "draft": "ڈرافٹ",
                 "posted": "پوسٹ شدہ",
                 "cancelled": "منسوخ"
+            }
+        },
+        "supplierPriceLists": {
+            "title": "سپلائر قیمت فہرستیں",
+            "description": "سپلائر معاہدے، میعاد، اور لائن قیمتیں منظم کریں۔",
+            "empty": "کوئی قیمت فہرست نہیں ملی۔",
+            "searchPlaceholder": "حوالہ یا سپلائر تلاش کریں…",
+            "createTitle": "نئی قیمت فہرست",
+            "createDescription": "معاہدے کی شرائط اور قیمتوں کے ساتھ فہرست بنائیں۔",
+            "editTitle": "{{name}} میں ترمیم",
+            "createSubmit": "قیمت فہرست محفوظ کریں",
+            "updateSubmit": "قیمت فہرست اپ ڈیٹ کریں",
+            "save": "قیمت فہرست محفوظ کریں",
+            "lineItems": "لائن آئٹمز",
+            "addLine": "لائن شامل کریں",
+            "fields": {
+                "supplier": "سپلائر",
+                "name": "نام",
+                "currency": "کرنسی",
+                "validFrom": "درست از",
+                "validTo": "درست تا",
+                "notes": "نوٹس",
+                "active": "فعال",
+                "unitPrice": "یونٹ قیمت",
+                "minQty": "کم از کم مقدار",
+                "leadTime": "لیڈ ٹائم (دن)",
+                "variant": "ویرینٹ / SKU"
+            },
+            "columns": {
+                "name": "نام",
+                "supplier": "سپلائر",
+                "validFrom": "درست از",
+                "validTo": "درست تا",
+                "items": "لائنز",
+                "status": "اسٹیٹس"
             }
         },
         "procurement": {

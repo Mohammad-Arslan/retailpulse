@@ -18,6 +18,8 @@ use App\Services\ImportExport\Handlers\ProductExportHandler;
 use App\Services\ImportExport\Handlers\ProductImportHandler;
 use App\Services\ImportExport\Handlers\SupplierExportHandler;
 use App\Services\ImportExport\Handlers\SupplierImportHandler;
+use App\Services\ImportExport\Handlers\SupplierPriceListExportHandler;
+use App\Services\ImportExport\Handlers\SupplierPriceListImportHandler;
 use App\Services\ImportExport\Handlers\UnitImportHandler;
 use App\Services\ImportExport\ImportExportRegistry;
 use App\Services\ImportExport\Storage\ImportExportStorageManager;
@@ -42,6 +44,11 @@ final class ImportExportServiceProvider extends ServiceProvider
         ImportExportRegistry::register('products', ProductImportHandler::class, ProductExportHandler::class);
         ImportExportRegistry::register('customers', CustomerImportHandler::class, CustomerExportHandler::class);
         ImportExportRegistry::register('suppliers', SupplierImportHandler::class, SupplierExportHandler::class);
+        ImportExportRegistry::register(
+            'supplier-price-lists',
+            SupplierPriceListImportHandler::class,
+            SupplierPriceListExportHandler::class,
+        );
         ImportExportRegistry::register('inventory', InventoryImportHandler::class, InventoryExportHandler::class);
         ImportExportRegistry::register(
             'inventory-adjustments',

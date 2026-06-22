@@ -7,10 +7,15 @@ namespace App\Services\Procurement;
 use App\Enums\LandedCostAllocationMethod;
 use App\Models\GoodsReceivingNote;
 use App\Models\LandedCostEntry;
+use App\Services\Procurement\Contracts\ProcurementPostingHook;
 use Illuminate\Support\Facades\DB;
 
 final class LandedCostService
 {
+    public function __construct(
+        private readonly ProcurementPostingHook $postingHook,
+    ) {}
+
     /**
      * @param  list<array<string, mixed>>  $manualAllocations
      */
@@ -48,14 +53,17 @@ final class LandedCostService
                 LandedCostAllocationMethod::Manual => $manualAllocations,
                 LandedCostAllocationMethod::Quantity => $this->allocateByQuantity($grn, $amount, $exchangeRate),
                 LandedCostAllocationMethod::Value => $this->allocateByValue($grn, $amount, $exchangeRate),
-                LandedCostAllocationMethod::Weight => $this->allocateByQuantity($grn, $amount, $exchangeRate),
+                LandedCostAllocationMethod::Weight => $this->allocateByWeight($grn, $amount, $exchangeRate),
             };
 
             foreach ($allocations as $allocation) {
                 $entry->allocations()->create($allocation);
             }
 
-            return $entry->fresh(['allocations']) ?? $entry;
+            $entry = $entry->fresh(['allocations']) ?? $entry;
+            $this->postingHook->applyLandedCost($entry);
+
+            return $entry;
         });
     }
 
@@ -102,6 +110,40 @@ final class LandedCostService
         foreach ($grn->items as $item) {
             $lineValue = (float) $item->qty_received * (float) ($item->purchaseOrderItem?->unit_price ?? 0);
             $share = $lineValue / $totalValue;
+            $allocated = round($amount * $share, 4);
+            $allocations[] = [
+                'grn_item_id' => $item->id,
+                'allocated_amount' => $allocated,
+                'functional_amount' => round($allocated * $exchangeRate, 4),
+            ];
+        }
+
+        return $allocations;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function allocateByWeight(GoodsReceivingNote $grn, float $amount, float $exchangeRate): array
+    {
+        $grn->load('items.variant');
+
+        $totalWeight = $grn->items->sum(function ($item) {
+            $unitWeight = (float) ($item->variant?->metadata['weight'] ?? 1);
+
+            return (float) $item->qty_received * max($unitWeight, 0.0001);
+        });
+
+        if ($totalWeight <= 0) {
+            return $this->allocateByQuantity($grn, $amount, $exchangeRate);
+        }
+
+        $allocations = [];
+
+        foreach ($grn->items as $item) {
+            $unitWeight = (float) ($item->variant?->metadata['weight'] ?? 1);
+            $lineWeight = (float) $item->qty_received * max($unitWeight, 0.0001);
+            $share = $lineWeight / $totalWeight;
             $allocated = round($amount * $share, 4);
             $allocations[] = [
                 'grn_item_id' => $item->id,

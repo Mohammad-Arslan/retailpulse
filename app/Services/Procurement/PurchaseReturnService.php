@@ -15,6 +15,7 @@ use App\Models\DebitNote;
 use App\Models\GoodsReceivingNote;
 use App\Models\PurchaseReturn;
 use App\Services\InventoryService;
+use App\Services\Procurement\Contracts\ProcurementPostingHook;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -24,6 +25,7 @@ final class PurchaseReturnService
         private readonly ProcurementDocumentNumberService $documentNumbers,
         private readonly SupplierLedgerService $ledger,
         private readonly InventoryService $inventory,
+        private readonly ProcurementPostingHook $postingHook,
     ) {}
 
     /**
@@ -154,8 +156,37 @@ final class PurchaseReturnService
             ]);
 
             event(new DebitNoteIssued($debitNote));
+            $this->postingHook->postPurchaseReturn($return->fresh() ?? $return);
 
             return $debitNote;
         });
+    }
+
+    public function acknowledge(PurchaseReturn $return, int $userId): PurchaseReturn
+    {
+        if (! $return->status->canAcknowledge()) {
+            throw ValidationException::withMessages(['status' => __('Return must be dispatched before acknowledgement.')]);
+        }
+
+        $return->update([
+            'status' => PurchaseReturnStatus::SupplierAcknowledged,
+            'updated_by' => $userId,
+        ]);
+
+        return $return;
+    }
+
+    public function close(PurchaseReturn $return, int $userId): PurchaseReturn
+    {
+        if (! $return->status->canClose()) {
+            throw ValidationException::withMessages(['status' => __('Return must have a debit note before closing.')]);
+        }
+
+        $return->update([
+            'status' => PurchaseReturnStatus::Closed,
+            'updated_by' => $userId,
+        ]);
+
+        return $return;
     }
 }

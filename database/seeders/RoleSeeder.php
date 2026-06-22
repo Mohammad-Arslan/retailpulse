@@ -98,6 +98,8 @@ final class RoleSeeder extends Seeder
                 'procurement.manage-returns',
                 'suppliers.import',
                 'suppliers.export',
+                'supplier-price-lists.import',
+                'supplier-price-lists.export',
                 'settings.procurement.update',
             ],
         ],
@@ -148,6 +150,8 @@ final class RoleSeeder extends Seeder
                 'procurement.manage-suppliers',
                 'suppliers.import',
                 'suppliers.export',
+                'supplier-price-lists.import',
+                'supplier-price-lists.export',
             ],
         ],
         'accountant' => [

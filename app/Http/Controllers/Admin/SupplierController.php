@@ -86,6 +86,7 @@ final class SupplierController extends Controller
         $this->authorize('view', $supplier);
 
         $supplier = $this->suppliers->findById($supplier->id) ?? $supplier;
+        $supplier->load(['attachments.uploader', 'performanceScores' => fn ($q) => $q->orderByDesc('period_end')->limit(6)]);
 
         $branchId = app(BranchContext::class)->branchId;
         $ledgerEntries = $this->ledger->statement($supplier->id, $branchId);
@@ -111,6 +112,22 @@ final class SupplierController extends Controller
                 'last_scored_at' => $supplier->last_scored_at?->toIso8601String(),
                 'contacts' => $supplier->contacts,
                 'addresses' => $supplier->addresses,
+                'attachments' => $supplier->attachments->map(fn ($a) => [
+                    'id' => $a->id,
+                    'file_name' => $a->file_name,
+                    'file_size' => $a->file_size,
+                    'mime_type' => $a->mime_type,
+                    'notes' => $a->notes,
+                    'uploaded_by' => $a->uploader?->name,
+                    'created_at' => $a->created_at?->toIso8601String(),
+                ]),
+                'performanceScores' => $supplier->performanceScores->map(fn ($s) => [
+                    'period_start' => $s->period_start?->toDateString(),
+                    'period_end' => $s->period_end?->toDateString(),
+                    'on_time_delivery_rate' => $s->on_time_delivery_rate,
+                    'quality_rejection_rate' => $s->quality_rejection_rate,
+                    'score' => $s->score,
+                ]),
             ],
             'ledgerEntries' => $ledgerEntries->map(fn ($e) => [
                 'id' => $e->id,

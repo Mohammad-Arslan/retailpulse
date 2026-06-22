@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\CustomerWalletController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\GoodsReceivingNoteController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\LandedCostController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PoMatchController;
 use App\Http\Controllers\Admin\ProcurementReportController;
@@ -27,9 +28,11 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\StockTransferController;
+use App\Http\Controllers\Admin\SupplierAttachmentController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\SupplierInvoiceController;
 use App\Http\Controllers\Admin\SupplierPaymentController;
+use App\Http\Controllers\Admin\SupplierPriceListController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WarehouseBinController;
@@ -127,7 +130,20 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::post('suppliers/{supplier}/send-statement', [SupplierController::class, 'sendStatement'])
             ->name('suppliers.send-statement');
 
+        Route::post('suppliers/{supplier}/send-statement', [SupplierController::class, 'sendStatement'])
+            ->name('suppliers.send-statement');
+        Route::post('suppliers/{supplier}/attachments', [SupplierAttachmentController::class, 'store'])
+            ->name('suppliers.attachments.store');
+        Route::delete('suppliers/{supplier}/attachments/{attachment}', [SupplierAttachmentController::class, 'destroy'])
+            ->name('suppliers.attachments.destroy');
+        Route::get('suppliers/{supplier}/attachments/{attachment}/download', [SupplierAttachmentController::class, 'download'])
+            ->name('suppliers.attachments.download');
+
+        Route::resource('supplier-price-lists', SupplierPriceListController::class)->except(['show']);
+
         Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index', 'create', 'store', 'show']);
+        Route::get('purchase-orders/sales/search', [PurchaseOrderController::class, 'searchSales'])
+            ->name('purchase-orders.sales.search');
         Route::post('purchase-orders/{purchase_order}/submit', [PurchaseOrderController::class, 'submit'])
             ->name('purchase-orders.submit');
         Route::post('purchase-orders/{purchase_order}/approve', [PurchaseOrderController::class, 'approve'])
@@ -151,6 +167,10 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             ->name('goods-receiving-notes.invoices.store');
         Route::post('goods-receiving-notes/{goods_receiving_note}/returns', [PurchaseReturnController::class, 'store'])
             ->name('goods-receiving-notes.returns.store');
+        Route::post('goods-receiving-notes/{goods_receiving_note}/landed-costs', [LandedCostController::class, 'store'])
+            ->name('goods-receiving-notes.landed-costs.store');
+        Route::delete('goods-receiving-notes/{goods_receiving_note}/landed-costs/{landed_cost_entry}', [LandedCostController::class, 'destroy'])
+            ->name('goods-receiving-notes.landed-costs.destroy');
 
         Route::post('supplier-invoices/{supplier_invoice}/approve', [SupplierInvoiceController::class, 'approve'])
             ->name('supplier-invoices.approve');
@@ -167,6 +187,12 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             ->name('purchase-returns.dispatch');
         Route::post('purchase-returns/{purchase_return}/debit-note', [PurchaseReturnController::class, 'issueDebitNote'])
             ->name('purchase-returns.debit-note');
+        Route::post('purchase-returns/{purchase_return}/acknowledge', [PurchaseReturnController::class, 'acknowledge'])
+            ->name('purchase-returns.acknowledge');
+        Route::post('purchase-returns/{purchase_return}/close', [PurchaseReturnController::class, 'close'])
+            ->name('purchase-returns.close');
+        Route::get('debit-notes/{debit_note}/pdf', [PurchaseReturnController::class, 'debitNotePdf'])
+            ->name('debit-notes.pdf');
 
         Route::get('procurement/reports', [ProcurementReportController::class, 'index'])
             ->name('procurement.reports');

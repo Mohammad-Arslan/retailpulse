@@ -55,6 +55,7 @@ final class PurchaseOrderRepository implements PurchaseOrderRepositoryInterface
             ->with([
                 'supplier',
                 'branch',
+                'sale',
                 'items.variant.product',
                 'grns.items.variant',
                 'grns.warehouse',

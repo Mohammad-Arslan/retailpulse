@@ -30,7 +30,7 @@ final class SupplierExportHandler implements ExportHandler
         return Supplier::query()->orderBy('name');
     }
 
-    public function mapRecord(object $record): array
+    public function map(mixed $record, ExportContext $context): array
     {
         /** @var Supplier $record */
         return [
@@ -43,5 +43,10 @@ final class SupplierExportHandler implements ExportHandler
             'balance' => $record->balance,
             'is_active' => $record->is_active ? '1' : '0',
         ];
+    }
+
+    public function chunkSize(): int
+    {
+        return 500;
     }
 }

@@ -15,6 +15,7 @@ use App\Http\Requests\Admin\ReceiveGrnRequest;
 use App\Http\Requests\Admin\RejectPurchaseOrderRequest;
 use App\Http\Requests\Admin\StorePurchaseOrderRequest;
 use App\Models\PurchaseOrder;
+use App\Models\Sale;
 use App\Models\Supplier;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\PurchaseOrderRepositoryInterface;
@@ -26,6 +27,7 @@ use App\Services\Procurement\PurchaseOrderService;
 use App\Support\BranchContext;
 use App\Support\BranchOperationalOptions;
 use App\Support\ListPagination;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -62,6 +64,7 @@ final class PurchaseOrderController extends Controller
                 'id' => $o->id,
                 'reference_no' => $o->reference_no,
                 'status' => $o->status->value,
+                'is_historical' => (bool) $o->is_historical,
                 'supplier' => $o->supplier ? ['id' => $o->supplier->id, 'name' => $o->supplier->name] : null,
                 'total' => number_format((float) $o->total, 2, '.', ''),
                 'expected_delivery_date' => $o->expected_delivery_date?->toDateString(),
@@ -85,9 +88,37 @@ final class PurchaseOrderController extends Controller
             'config' => $config,
             'branchId' => $branchId,
             'preselectedSupplierId' => $request->integer('supplier_id') ?: null,
+            'preselectedSaleId' => $request->integer('sale_id') ?: null,
             'currencies' => BranchOperationalOptions::currencyOptions(),
             'defaultCurrency' => (string) ($config['default_currency'] ?? BranchOperationalOptions::defaultCurrency()),
         ]);
+    }
+
+    public function searchSales(Request $request): JsonResponse
+    {
+        $this->authorize('create', PurchaseOrder::class);
+
+        $search = (string) $request->query('q', '');
+
+        $sales = Sale::query()
+            ->where('is_historical', false)
+            ->when($search !== '', function ($q) use ($search) {
+                $term = '%'.addcslashes($search, '%_\\').'%';
+                $q->where(function ($q) use ($term, $search) {
+                    $q->where('invoice_no', 'like', $term);
+                    if (is_numeric($search)) {
+                        $q->orWhere('id', (int) $search);
+                    }
+                });
+            })
+            ->orderByDesc('id')
+            ->limit(15)
+            ->get(['id', 'invoice_no', 'total', 'status']);
+
+        return response()->json($sales->map(fn (Sale $s) => [
+            'id' => $s->id,
+            'label' => ($s->invoice_no ?: 'Sale #'.$s->id).' — '.number_format((float) $s->total, 2),
+        ]));
     }
 
     public function store(StorePurchaseOrderRequest $request): RedirectResponse
@@ -126,7 +157,7 @@ final class PurchaseOrderController extends Controller
     {
         $this->authorize('view', $purchaseOrder);
 
-        $order = $this->orders->findByIdWithRelations($purchaseOrder->id) ?? $purchaseOrder;
+        $order = $this->orders->findByIdWithRelations($purchaseOrder->id) ?? $purchaseOrder->load(['sale']);
         $branchId = app(BranchContext::class)->branchId;
         $user = $request->user();
         $posPin = app(PosPinService::class);
@@ -140,6 +171,12 @@ final class PurchaseOrderController extends Controller
                 'currency_code' => $order->currency_code,
                 'total' => number_format((float) $order->total, 2, '.', ''),
                 'drop_ship' => $order->drop_ship,
+                'is_historical' => (bool) $order->is_historical,
+                'sale_id' => $order->sale_id,
+                'sale' => $order->sale ? [
+                    'id' => $order->sale->id,
+                    'invoice_no' => $order->sale->invoice_no,
+                ] : null,
                 'supplier' => $order->supplier ? ['id' => $order->supplier->id, 'name' => $order->supplier->name] : null,
                 'items' => $order->items->map(fn ($item) => [
                     'id' => $item->id,
@@ -261,6 +298,7 @@ final class PurchaseOrderController extends Controller
     public function pdf(PurchaseOrder $purchaseOrder): BinaryFileResponse
     {
         $this->authorize('view', $purchaseOrder);
+        $this->ensureSendable($purchaseOrder);
 
         $path = $this->pdf->generate($purchaseOrder->load(['supplier', 'branch', 'items.variant.product']));
 
@@ -273,6 +311,7 @@ final class PurchaseOrderController extends Controller
     public function email(Request $request, PurchaseOrder $purchaseOrder): RedirectResponse
     {
         $this->authorize('view', $purchaseOrder);
+        $this->ensureSendable($purchaseOrder);
 
         $purchaseOrder->load('supplier');
         $email = $purchaseOrder->supplier?->email;
@@ -296,5 +335,16 @@ final class PurchaseOrderController extends Controller
         );
 
         return back()->with('success', __('PO emailed to :email.', ['email' => $email]));
+    }
+
+    private function ensureSendable(PurchaseOrder $purchaseOrder): void
+    {
+        if ($purchaseOrder->is_historical) {
+            return;
+        }
+
+        if (! in_array($purchaseOrder->status, [PurchaseOrderStatus::Approved, PurchaseOrderStatus::Closed], true)) {
+            abort(403, __('Purchase order must be approved before it can be sent to the supplier.'));
+        }
     }
 }

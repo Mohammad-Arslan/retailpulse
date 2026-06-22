@@ -55,12 +55,13 @@ final class GoodsReceivingNoteController extends Controller
 
         $grn = $goodsReceivingNote->load([
             'supplier',
-            'purchaseOrder',
+            'purchaseOrder.sale',
             'warehouse',
             'items.variant',
             'items.purchaseOrderItem',
             'supplierInvoices.matchResult',
             'purchaseReturns.debitNote',
+            'landedCostEntries.allocations',
         ]);
 
         $branchId = $grn->branch_id;
@@ -74,7 +75,16 @@ final class GoodsReceivingNoteController extends Controller
                 'received_at' => $grn->received_at?->toIso8601String(),
                 'branch_id' => $grn->branch_id,
                 'supplier' => $grn->supplier ? ['id' => $grn->supplier->id, 'name' => $grn->supplier->name, 'currency_code' => $grn->supplier->currency_code] : null,
-                'purchase_order' => $grn->purchaseOrder ? ['id' => $grn->purchaseOrder->id, 'reference_no' => $grn->purchaseOrder->reference_no] : null,
+                'purchase_order' => $grn->purchaseOrder ? [
+                    'id' => $grn->purchaseOrder->id,
+                    'reference_no' => $grn->purchaseOrder->reference_no,
+                    'drop_ship' => $grn->purchaseOrder->drop_ship,
+                    'sale' => $grn->purchaseOrder->sale ? [
+                        'id' => $grn->purchaseOrder->sale->id,
+                        'invoice_no' => $grn->purchaseOrder->sale->invoice_no,
+                    ] : null,
+                ] : null,
+                'is_virtual' => (bool) $grn->is_virtual,
                 'warehouse' => $grn->warehouse ? ['name' => $grn->warehouse->name] : null,
                 'items' => $grn->items->map(fn ($item) => [
                     'id' => $item->id,
@@ -105,9 +115,26 @@ final class GoodsReceivingNoteController extends Controller
                     'status' => $ret->status->value,
                     'reason' => $ret->reason,
                     'debit_note' => $ret->debitNote ? [
+                        'id' => $ret->debitNote->id,
                         'reference_no' => $ret->debitNote->reference_no,
                     ] : null,
                 ]),
+                'landed_cost_entries' => $grn->landedCostEntries->map(fn ($entry) => [
+                    'id' => $entry->id,
+                    'charge_type' => $entry->charge_type,
+                    'description' => $entry->description,
+                    'amount' => number_format((float) $entry->amount, 2, '.', ''),
+                    'currency_code' => $entry->currency_code,
+                    'allocation_method' => $entry->allocation_method->value,
+                    'allocations' => $entry->allocations->map(fn ($a) => [
+                        'grn_item_id' => $a->grn_item_id,
+                        'allocated_amount' => (float) $a->allocated_amount,
+                    ]),
+                ]),
+            ],
+            'landedCostConfig' => [
+                'charge_types' => $config['landed_cost_charge_types'] ?? [],
+                'allocation_methods' => $config['landed_cost_allocation_methods'] ?? [],
             ],
             'branchId' => $branchId,
             'paymentMethods' => $config['payment_methods'] ?? ['cash', 'bank_transfer'],

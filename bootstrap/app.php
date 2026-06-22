@@ -8,6 +8,7 @@ use App\Http\Middleware\SetLocale;
 use App\Jobs\BuildArAgingSnapshotsJob;
 use App\Jobs\CreateScheduledCountSessionsJob;
 use App\Jobs\Procurement\PoApprovalEscalationJob;
+use App\Jobs\Procurement\PriceListExpiryAlertJob;
 use App\Jobs\Procurement\SupplierPerformanceScoringJob;
 use App\Jobs\RecalculateLoyaltyTiersJob;
 use App\Jobs\SendOverdueRemindersJob;
@@ -55,4 +56,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->job(SendOverdueRemindersJob::class)->dailyAt('08:00');
         $schedule->job(SupplierPerformanceScoringJob::class)->monthlyOn(1, '04:00');
         $schedule->job(PoApprovalEscalationJob::class)->hourly();
+        $schedule->job(PriceListExpiryAlertJob::class)->dailyAt('07:00');
     })->create();
