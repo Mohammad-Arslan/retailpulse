@@ -97,7 +97,7 @@ final class SystemSettingService
         $fieldDefs = SettingGroupRegistry::fields($group);
         $stored = $this->settings->keyedForGroup($group);
 
-        DB::transaction(function () use ($data, $group, $fieldDefs, $stored, $user) {
+        DB::transaction(function () use ($data, $group, $fieldDefs) {
             foreach ($fieldDefs as $fieldKey => $fieldDef) {
                 if (! array_key_exists($fieldKey, $data->values)) {
                     continue;
@@ -121,6 +121,10 @@ final class SystemSettingService
 
             SystemSetting::flushGroupCache($group);
         });
+
+        if ($group === 'general') {
+            $this->validateLocaleSettings($data->values);
+        }
 
         if (SettingGroupRegistry::testsConnection($group)) {
             app()->forgetInstance(ImportExportStorageManager::class);
@@ -192,6 +196,37 @@ final class SystemSettingService
             return filter_var($value, FILTER_VALIDATE_BOOLEAN);
         }
 
+        if ($type === 'multiselect') {
+            return is_array($value) ? array_values($value) : [];
+        }
+
         return $value;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private function validateLocaleSettings(array $values): void
+    {
+        if (! isset($values['default_locale'], $values['enabled_locales'])) {
+            return;
+        }
+
+        $enabled = is_array($values['enabled_locales']) ? $values['enabled_locales'] : [];
+        $available = array_keys(config('locales.available', []));
+
+        foreach ($enabled as $code) {
+            if (! in_array($code, $available, true)) {
+                throw ValidationException::withMessages([
+                    'values.enabled_locales' => __('One or more selected languages are not available.'),
+                ]);
+            }
+        }
+
+        if (! in_array($values['default_locale'], $enabled, true)) {
+            throw ValidationException::withMessages([
+                'values.default_locale' => __('The default language must be one of the enabled languages.'),
+            ]);
+        }
     }
 }

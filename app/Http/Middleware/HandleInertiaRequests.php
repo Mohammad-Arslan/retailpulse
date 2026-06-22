@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Services\BranchContextService;
+use App\Services\LocaleService;
 use App\Support\BranchContext;
 use Closure;
 use Illuminate\Http\Request;
@@ -77,6 +78,7 @@ class HandleInertiaRequests extends Middleware
                     : [],
             ],
             'branch' => fn () => $this->shareBranch($request, $user, $branchContext),
+            'locale' => fn () => $this->shareLocale($request),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
@@ -105,6 +107,23 @@ class HandleInertiaRequests extends Middleware
             'options' => $service->switcherOptions($user),
             'canViewAll' => ! $context->isRestricted(),
             'isAllBranches' => $context->isAllBranches(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function shareLocale(Request $request): array
+    {
+        $service = app(LocaleService::class);
+        $active = $service->resolve($request);
+
+        return [
+            'active' => $active['code'],
+            'label' => $active['label'],
+            'nativeLabel' => $active['native'],
+            'rtl' => $active['rtl'],
+            'options' => $service->switcherOptions(),
         ];
     }
 }

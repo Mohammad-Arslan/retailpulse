@@ -12,7 +12,7 @@ final class SettingFieldType
             'integer' => 'integer',
             'boolean' => 'boolean',
             'encrypted' => 'encrypted',
-            'json' => 'json',
+            'json', 'multiselect' => 'json',
             default => 'string',
         };
     }

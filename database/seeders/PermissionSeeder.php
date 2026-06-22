@@ -87,6 +87,7 @@ final class PermissionSeeder extends Seeder
             ['name' => 'settings.checkout.update', 'description' => 'Update checkout, payment, and invoice settings'],
             ['name' => 'settings.fbr.update', 'description' => 'Update FBR IRIS integration settings'],
             ['name' => 'settings.inventory.update', 'description' => 'Update inventory reservation and count settings'],
+            ['name' => 'settings.procurement.update', 'description' => 'Update procurement and supplier settings'],
         ],
         'pos' => [
             ['name' => 'pos.access', 'description' => 'Enter and operate the POS screen'],
@@ -112,6 +113,22 @@ final class PermissionSeeder extends Seeder
             ['name' => 'customers.import', 'description' => 'Import customers from spreadsheets'],
             ['name' => 'customers.export', 'description' => 'Export customers to spreadsheets'],
             ['name' => 'customers.write-off-debt', 'description' => 'Write off customer bad debt'],
+        ],
+        'procurement' => [
+            ['name' => 'procurement.view', 'description' => 'View procurement documents and suppliers'],
+            ['name' => 'procurement.create', 'description' => 'Create purchase orders and requisitions'],
+            ['name' => 'procurement.update', 'description' => 'Update draft procurement documents'],
+            ['name' => 'procurement.delete', 'description' => 'Delete draft procurement documents'],
+            ['name' => 'procurement.approve-po', 'description' => 'Approve purchase orders above threshold'],
+            ['name' => 'procurement.resolve-match-exception', 'description' => 'Resolve three-way match exceptions'],
+            ['name' => 'procurement.receive-grn', 'description' => 'Post goods receiving notes'],
+            ['name' => 'procurement.manage-suppliers', 'description' => 'Manage supplier master data'],
+            ['name' => 'procurement.process-payments', 'description' => 'Record supplier payments'],
+            ['name' => 'procurement.manage-returns', 'description' => 'Manage purchase returns and RMA'],
+            ['name' => 'suppliers.import', 'description' => 'Import suppliers from spreadsheets'],
+            ['name' => 'suppliers.export', 'description' => 'Export suppliers to spreadsheets'],
+            ['name' => 'supplier-price-lists.import', 'description' => 'Import supplier price lists from spreadsheets'],
+            ['name' => 'supplier-price-lists.export', 'description' => 'Export supplier price lists to spreadsheets'],
         ],
     ];
 

@@ -27,6 +27,18 @@ final class ImportExportAuthorization
                 'import' => 'products.import',
                 'export' => 'products.export',
             ],
+            'customers' => [
+                'import' => 'customers.import',
+                'export' => 'customers.export',
+            ],
+            'suppliers' => [
+                'import' => 'suppliers.import',
+                'export' => 'suppliers.export',
+            ],
+            'supplier-price-lists' => [
+                'import' => 'supplier-price-lists.import',
+                'export' => 'supplier-price-lists.export',
+            ],
             default => [
                 'import' => 'products.import',
                 'export' => 'products.export',

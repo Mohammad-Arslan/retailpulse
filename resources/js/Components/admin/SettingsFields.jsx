@@ -51,6 +51,37 @@ export default function SettingsFields({ fields, values, setValue, errors, disab
                                 value={values[field.key] ?? ''}
                                 onChange={(value) => setValue(field.key, value ?? '')}
                             />
+                        ) : field.type === 'multiselect' ? (
+                            <div className="space-y-2">
+                                {Object.entries(field.options ?? {}).map(([value, label]) => {
+                                    const selected = Array.isArray(values[field.key])
+                                        ? values[field.key]
+                                        : [];
+
+                                    return (
+                                        <label key={value} className="rp-checkbox-label">
+                                            <input
+                                                type="checkbox"
+                                                disabled={disabled}
+                                                checked={selected.includes(value)}
+                                                className="accent-teal-500"
+                                                onChange={(e) => {
+                                                    const next = new Set(selected);
+                                                    if (e.target.checked) {
+                                                        next.add(value);
+                                                    } else {
+                                                        next.delete(value);
+                                                    }
+                                                    setValue(field.key, Array.from(next));
+                                                }}
+                                            />
+                                            <span className="text-sm text-ink-600 dark:text-ink-300">
+                                                {label}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
                         ) : field.type === 'encrypted' ? (
                             <input
                                 id={id}

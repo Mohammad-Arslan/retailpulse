@@ -1,0 +1,367 @@
+{
+    "nav": {
+        "dashboard": "ڈیش بورڈ",
+        "pos": "پوائنٹ آف سیل",
+        "sales": "سیلز",
+        "customersSection": "کسٹمرز",
+        "customers": "کسٹمرز",
+        "customerGroups": "کسٹمر گروپس",
+        "arAging": "AR ایجنگ",
+        "users": "صارفین",
+        "roles": "کردار",
+        "permissions": "اجازتیں",
+        "branches": "برانچز",
+        "warehouses": "گودام",
+        "catalog": "کیٹلاگ",
+        "categories": "زمرے",
+        "brands": "برانڈز",
+        "units": "یونٹس",
+        "products": "مصنوعات",
+        "inventorySection": "انوینٹری",
+        "inventory": "اسٹاک لیولز",
+        "stockTransfers": "ٹرانسفرز",
+        "suppliers": "سپلائرز",
+        "purchaseOrders": "خریداری کے آرڈر",
+        "goodsReceiving": "سامان وصولی",
+        "supplierPriceLists": "سپلائر قیمت فہرستیں",
+        "procurementReports": "خریداری رپورٹس",
+        "overview": "جائزہ",
+        "organization": "تنظیم",
+        "admin": "ایڈمن",
+        "settings": "ترتیبات"
+    },
+    "common": {
+        "search": "تلاش",
+        "allStatuses": "تمام اسٹیٹس",
+        "allSuppliers": "تمام سپلائرز",
+        "allBranches": "تمام برانچز",
+        "branch": "برانچ",
+        "language": "زبان",
+        "selectLanguage": "زبان منتخب کریں",
+        "view": "دیکھیں",
+        "edit": "ترمیم",
+        "delete": "حذف",
+        "actions": "اعمال",
+        "logOut": "لاگ آؤٹ",
+        "openMenu": "مینو کھولیں",
+        "closeMenu": "مینو بند کریں",
+        "commandPalette": "صفحات، صارفین، اعمال تلاش کریں…",
+        "switchToLight": "لائٹ موڈ",
+        "switchToDark": "ڈارک موڈ",
+        "expandSidebar": "سائیڈبار کھولیں",
+        "collapseSidebar": "سائیڈبار بند کریں",
+        "active": "فعال",
+        "inactive": "غیر فعال",
+        "noResults": "کوئی نتیجہ نہیں ملا۔",
+        "back": "واپس",
+        "status": "اسٹیٹس",
+        "clear": "صاف کریں",
+        "saving": "محفوظ ہو رہا ہے…",
+        "selectCurrency": "کرنسی منتخب کریں…",
+        "selectBranch": "برانچ منتخب کریں…"
+    },
+    "auth": {
+        "welcomeBack": "خوش آمدید۔",
+        "signInSubtitle": "اپنے RetailPulse ورک اسپیس میں سائن ان کریں۔",
+        "email": "ای میل پتہ",
+        "password": "پاس ورڈ",
+        "remember": "اس ڈیوائس کو یاد رکھیں",
+        "signIn": "سائن ان",
+        "adminOnly": "صرف ایڈمن رسائی۔ اکاؤنٹ کے لیے اپنے منتظم سے رابطہ کریں۔"
+    },
+    "confirm": {
+        "cancel": "منسوخ"
+    },
+    "pages": {
+        "dashboard": {
+            "procurement": {
+                "title": "خریداری",
+                "viewReports": "رپورٹس دیکھیں",
+                "alertsTitle": "خریداری الرٹس",
+                "openPos": "کھلے PO",
+                "pendingApprovals": "زیر التواء منظوریاں",
+                "pendingReceipts": "زیر التواء وصولی",
+                "pendingInvoices": "زیر التواء انوائسز",
+                "outstandingPayables": "بقایا قابل ادائیگی",
+                "monthlyPurchases": "ماہانہ خریداری",
+                "openReturns": "کھلی واپسی",
+                "topSuppliers": "بیلنس کے لحاظ سے سرفہرست سپلائرز",
+                "supplierColumn": "سپلائر",
+                "balanceColumn": "بیلنس",
+                "onTimeColumn": "وقت پر %"
+            }
+        },
+        "settings": {
+            "title": "ترتیبات",
+            "description": "علاقے کے لحاظ سے عالمی ایپلیکیشن کنفیگریشن منظم کریں۔",
+            "empty": "آپ کو کسی ترتیبات گروپ تک رسائی نہیں ہے۔",
+            "readOnly": "صرف دیکھیں",
+            "readOnlyHint": "آپ یہ ترتیبات دیکھ سکتے ہیں لیکن تبدیل کرنے کی اجازت نہیں ہے۔",
+            "back": "تمام ترتیبات",
+            "save": "ترتیبات محفوظ کریں",
+            "saving": "محفوظ ہو رہا ہے…"
+        },
+        "purchaseOrders": {
+            "title": "خریداری کے آرڈر",
+            "description": "سپلائرز سے خریداری کے آرڈرز بنائیں اور منظم کریں۔",
+            "createTitle": "نیا خریداری آرڈر",
+            "searchPlaceholder": "حوالہ یا سپلائر تلاش کریں…",
+            "empty": "کوئی خریداری آرڈر نہیں ملا۔",
+            "createDescription": "ڈرافٹ خریداری آرڈر بنائیں۔ تیار ہونے پر منظوری کے لیے جمع کریں۔",
+            "noSuppliers": "کوئی سپلائر دستیاب نہیں",
+            "approvalHint": "{{threshold}} سے زیادہ PO کے لیے مینیجر کی منظوری درکار ہے۔",
+            "createSubmit": "ڈرافٹ PO بنائیں",
+            "addLine": "لائن شامل کریں",
+            "estimatedTotal": "تخمینی کل",
+            "lineTotalLabel": "لائن کل",
+            "saleRequired": "ڈراپ شپ فعال ہونے پر کسٹمر سیل منتخب کریں۔",
+            "dropShipHint": "سامان براہ راست کسٹمر کو بھیجا جاتا ہے؛ وصولی پر انوینٹری نہیں بڑھتی۔",
+            "placeholders": {
+                "unitPrice": "0.00",
+                "priceOverride": "اختیاری",
+                "notes": "اس خریداری آرڈر کے لیے اندرونی نوٹس…",
+                "saleSearch": "انوائس نمبر یا سیل ID تلاش کریں…"
+            },
+            "hints": {
+                "overrideReason": "اگر قیمت سپلائر فہرست سے مختلف ہو تو ضروری"
+            },
+            "validation": {
+                "selectSupplier": "سپلائر منتخب کریں۔",
+                "selectBranch": "اس خریداری آرڈر کے لیے برانچ منتخب کریں۔",
+                "addLine": "کم از کم ایک پروڈکٹ لائن شامل کریں۔",
+                "invalidQty": "لائن {{line}} پر درست مقدار درج کریں۔",
+                "invalidPrice": "لائن {{line}} پر یونٹ قیمت درج کریں۔",
+                "overrideRequired": "لائن {{line}} پر قیمت اوور رائیڈ کی وجہ درکار ہے۔"
+            },
+            "statuses": {
+                "draft": "ڈرافٹ",
+                "submitted": "جمع شدہ",
+                "approved": "منظور شدہ",
+                "rejected": "مسترد",
+                "cancelled": "منسوخ",
+                "closed": "بند"
+            },
+            "actions": {
+                "submit": "منظوری کے لیے جمع کریں",
+                "approve": "منظور کریں",
+                "reject": "مسترد کریں",
+                "receiveGoods": "سامان وصول کریں",
+                "cancel": "PO منسوخ کریں",
+                "printPdf": "PDF پرنٹ کریں",
+                "downloadInvoicePdf": "انوائس PDF ڈاؤن لوڈ کریں",
+                "approveInvoice": "انوائس منظور کریں",
+                "payInvoice": "انوائس ادا کریں",
+                "resolveException": "استثناء حل کریں"
+            },
+            "badges": {
+                "historical": "تاریخی"
+            },
+            "columns": {
+                "reference": "حوالہ",
+                "supplier": "سپلائر",
+                "status": "اسٹیٹس",
+                "total": "کل",
+                "expected": "متوقع",
+                "created": "تخلیق"
+            },
+            "viewReports": "رپورٹس",
+            "backToList": "فہرست پر واپس",
+            "totalLabel": "کل",
+            "lineColumns": {
+                "sku": "SKU",
+                "product": "پروڈکٹ",
+                "qtyOrdered": "آرڈر مقدار",
+                "qtyReceived": "وصول شدہ",
+                "unitPrice": "یونٹ قیمت",
+                "qty": "مقدار",
+                "batch": "بیچ"
+            },
+            "sections": {
+                "lineItems": "لائن آئٹمز",
+                "grns": "سامان وصولی نوٹس",
+                "invoices": "سپلائر انوائسز اور میچنگ"
+            },
+            "fields": {
+                "branch": "برانچ",
+                "supplier": "سپلائر",
+                "currency": "کرنسی",
+                "expectedDelivery": "متوقع ڈیلیوری",
+                "options": "اختیارات",
+                "dropShip": "ڈراپ شپ (انوینٹری میں اضافہ نہیں)",
+                "linkedSale": "منسلک سیل",
+                "notes": "نوٹس",
+                "overrideReason": "اوور رائیڈ کی وجہ",
+                "quantity": "مقدار",
+                "warehouse": "گودام",
+                "rejectionReason": "مستردی کی وجہ"
+            },
+            "cancelConfirm": "{{reference}} منسوخ کریں؟",
+            "confirmReject": "مستردی کی تصدیق",
+            "receiveGrnTitle": "سامان وصول کریں (GRN)",
+            "postReceipt": "وصولی پوسٹ کریں"
+        },
+        "suppliers": {
+            "title": "سپلائرز",
+            "description": "سپلائر ڈائریکٹری اور خریداری کے تعلقات۔",
+            "createTitle": "نیا سپلائر",
+            "searchPlaceholder": "کوڈ، نام، یا ای میل تلاش کریں…",
+            "ledgerTitle": "لیجر / اسٹیٹمنٹ",
+            "ledgerEmpty": "ابھی کوئی لیجر اندراج نہیں۔",
+            "ledgerColumns": {
+                "date": "تاریخ",
+                "type": "قسم",
+                "reference": "حوالہ",
+                "debit": "ڈیبٹ",
+                "credit": "کریڈٹ",
+                "balance": "بیلنس"
+            }
+        },
+        "procurementReports": {
+            "title": "خریداری رپورٹس",
+            "description": "کھلے PO، قابل ادائیگی، GRN، اور میچنگ",
+            "empty": "کوئی ریکارڈ نہیں۔",
+            "resolve": "حل کریں",
+            "tabs": {
+                "openPos": "کھلے PO",
+                "pendingApprovals": "زیر التواء منظوریاں",
+                "grns": "GRN رپورٹ",
+                "invoices": "انوائسز",
+                "balances": "سپلائر بیلنس",
+                "exceptions": "میچ استثناء",
+                "returns": "خریداری واپسی"
+            },
+            "columns": {
+                "reference": "حوالہ",
+                "supplier": "سپلائر",
+                "status": "اسٹیٹس",
+                "total": "کل",
+                "match": "میچ",
+                "actions": "اعمال"
+            },
+            "filters": {
+                "searchPlaceholder": "حوالہ یا سپلائر تلاش کریں…",
+                "dateFrom": "تاریخ سے",
+                "dateTo": "تاریخ تک",
+                "allMatchStatuses": "تمام میچ اسٹیٹس"
+            }
+        },
+        "goodsReceiving": {
+            "title": "سامان وصولی نوٹس",
+            "description": "GRN تاریخ اور زیر التواء وصولی۔",
+            "empty": "کوئی GRN نہیں ملا۔",
+            "searchPlaceholder": "حوالہ تلاش کریں…",
+            "returnQty": "واپسی مقدار",
+            "totalLabel": "کل",
+            "matchLabel": "میچ",
+            "columns": {
+                "reference": "حوالہ",
+                "supplier": "سپلائر",
+                "po": "PO",
+                "warehouse": "گودام",
+                "received": "وصول شدہ",
+                "status": "اسٹیٹس",
+                "qtyReceived": "وصول شدہ مقدار",
+                "batch": "بیچ",
+                "expiry": "میعاد"
+            },
+            "landedCost": {
+                "title": "لینڈڈ کاسٹ",
+                "chargeType": "چارج کی قسم",
+                "amount": "رقم",
+                "allocationMethod": "تقسیم کا طریقہ",
+                "description": "تفصیل",
+                "descriptionPlaceholder": "اختیاری نوٹ…",
+                "add": "لینڈڈ کاسٹ شامل کریں",
+                "deleteConfirm": "یہ لینڈڈ کاسٹ حذف کریں؟",
+                "manualAllocations": "فی لائن دستی تقسیم",
+                "allocatedAmount": "تقسیم شدہ رقم"
+            },
+            "chargeTypes": {
+                "freight": "فریٹ",
+                "duty": "ڈیوٹی",
+                "insurance": "انشورنس",
+                "customs": "کسٹمز",
+                "handling": "ہینڈلنگ",
+                "other": "دیگر"
+            },
+            "allocationMethods": {
+                "quantity": "مقدار",
+                "weight": "وزن",
+                "value": "قیمت",
+                "manual": "دستی"
+            },
+            "grnStatuses": {
+                "draft": "ڈرافٹ",
+                "posted": "پوسٹ شدہ",
+                "cancelled": "منسوخ"
+            }
+        },
+        "supplierPriceLists": {
+            "title": "سپلائر قیمت فہرستیں",
+            "description": "سپلائر معاہدے، میعاد، اور لائن قیمتیں منظم کریں۔",
+            "empty": "کوئی قیمت فہرست نہیں ملی۔",
+            "searchPlaceholder": "حوالہ یا سپلائر تلاش کریں…",
+            "createTitle": "نئی قیمت فہرست",
+            "createDescription": "معاہدے کی شرائط اور قیمتوں کے ساتھ فہرست بنائیں۔",
+            "editTitle": "{{name}} میں ترمیم",
+            "createSubmit": "قیمت فہرست محفوظ کریں",
+            "updateSubmit": "قیمت فہرست اپ ڈیٹ کریں",
+            "save": "قیمت فہرست محفوظ کریں",
+            "lineItems": "لائن آئٹمز",
+            "addLine": "لائن شامل کریں",
+            "fields": {
+                "supplier": "سپلائر",
+                "name": "نام",
+                "currency": "کرنسی",
+                "validFrom": "درست از",
+                "validTo": "درست تا",
+                "notes": "نوٹس",
+                "active": "فعال",
+                "unitPrice": "یونٹ قیمت",
+                "minQty": "کم از کم مقدار",
+                "leadTime": "لیڈ ٹائم (دن)",
+                "variant": "ویرینٹ / SKU"
+            },
+            "columns": {
+                "name": "نام",
+                "supplier": "سپلائر",
+                "validFrom": "درست از",
+                "validTo": "درست تا",
+                "items": "لائنز",
+                "status": "اسٹیٹس"
+            },
+            "badges": {
+                "expiringSoon": "جلد ختم ہو رہا ہے"
+            }
+        },
+        "procurement": {
+            "matchStatuses": {
+                "fully_matched": "مکمل میچ",
+                "partially_matched": "جزوی میچ",
+                "unmatched": "غیر میچ"
+            },
+            "invoiceStatuses": {
+                "draft": "ڈرافٹ",
+                "matched": "میچ شدہ",
+                "approved": "منظور شدہ",
+                "paid": "ادا شدہ",
+                "cancelled": "منسوخ"
+            },
+            "returnStatuses": {
+                "draft": "ڈرافٹ",
+                "approved": "منظور شدہ",
+                "goods_dispatched": "سامان بھیجا گیا",
+                "supplier_acknowledged": "سپلائر نے تسلیم کیا",
+                "debit_note_issued": "ڈیبٹ نوٹ جاری",
+                "closed": "بند"
+            },
+            "supplierLedgerEntryTypes": {
+                "invoice": "انوائس",
+                "payment": "ادائیگی",
+                "debit_note": "ڈیبٹ نوٹ",
+                "adjustment": "ایڈجسٹمنٹ",
+                "advance": "ایڈوانس"
+            }
+        }
+    }
+}

@@ -148,7 +148,16 @@ final class ProductController extends Controller
 
     public function searchVariants(Request $request): JsonResponse
     {
-        $this->authorize('viewAny', Product::class);
+        $user = $request->user();
+
+        abort_unless(
+            $user !== null && (
+                $user->can('products.view')
+                || $user->can('inventory.view')
+                || $user->can('procurement.view')
+            ),
+            403,
+        );
 
         $term = (string) $request->query('q', '');
         $excludeProductId = $request->integer('exclude_product_id') ?: null;

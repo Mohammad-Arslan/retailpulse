@@ -14,14 +14,25 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\CustomerGroupController;
 use App\Http\Controllers\Admin\CustomerWalletController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\GoodsReceivingNoteController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\LandedCostController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\PoMatchController;
+use App\Http\Controllers\Admin\ProcurementReportController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
+use App\Http\Controllers\Admin\PurchaseOrderController;
+use App\Http\Controllers\Admin\PurchaseReturnController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\StockTransferController;
+use App\Http\Controllers\Admin\SupplierAttachmentController;
+use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\SupplierInvoiceController;
+use App\Http\Controllers\Admin\SupplierPaymentController;
+use App\Http\Controllers\Admin\SupplierPriceListController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WarehouseBinController;
@@ -111,6 +122,78 @@ Route::middleware(['auth', 'admin', 'branch.context'])
 
         Route::resource('stock-transfers', StockTransferController::class)
             ->only(['index', 'create', 'store', 'show']);
+        Route::resource('suppliers', SupplierController::class);
+        Route::post('suppliers/{supplier}/deactivate', [SupplierController::class, 'deactivate'])
+            ->name('suppliers.deactivate');
+        Route::get('suppliers/{supplier}/statement/pdf', [SupplierController::class, 'statementPdf'])
+            ->name('suppliers.statement.pdf');
+        Route::post('suppliers/{supplier}/send-statement', [SupplierController::class, 'sendStatement'])
+            ->name('suppliers.send-statement');
+        Route::post('suppliers/{supplier}/attachments', [SupplierAttachmentController::class, 'store'])
+            ->name('suppliers.attachments.store');
+        Route::delete('suppliers/{supplier}/attachments/{attachment}', [SupplierAttachmentController::class, 'destroy'])
+            ->name('suppliers.attachments.destroy');
+        Route::get('suppliers/{supplier}/attachments/{attachment}/download', [SupplierAttachmentController::class, 'download'])
+            ->name('suppliers.attachments.download');
+
+        Route::resource('supplier-price-lists', SupplierPriceListController::class)->except(['show']);
+
+        Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index', 'create', 'store', 'show']);
+        Route::get('purchase-orders/sales/search', [PurchaseOrderController::class, 'searchSales'])
+            ->name('purchase-orders.sales.search');
+        Route::post('purchase-orders/{purchase_order}/submit', [PurchaseOrderController::class, 'submit'])
+            ->name('purchase-orders.submit');
+        Route::post('purchase-orders/{purchase_order}/approve', [PurchaseOrderController::class, 'approve'])
+            ->name('purchase-orders.approve');
+        Route::post('purchase-orders/{purchase_order}/reject', [PurchaseOrderController::class, 'reject'])
+            ->name('purchase-orders.reject');
+        Route::post('purchase-orders/{purchase_order}/cancel', [PurchaseOrderController::class, 'cancel'])
+            ->name('purchase-orders.cancel');
+        Route::post('purchase-orders/{purchase_order}/close', [PurchaseOrderController::class, 'close'])
+            ->name('purchase-orders.close');
+        Route::get('purchase-orders/{purchase_order}/pdf', [PurchaseOrderController::class, 'pdf'])
+            ->name('purchase-orders.pdf');
+        Route::post('purchase-orders/{purchase_order}/email', [PurchaseOrderController::class, 'email'])
+            ->name('purchase-orders.email');
+        Route::post('purchase-orders/{purchase_order}/receive', [PurchaseOrderController::class, 'receive'])
+            ->name('purchase-orders.receive');
+
+        Route::resource('goods-receiving-notes', GoodsReceivingNoteController::class)
+            ->only(['index', 'show']);
+        Route::post('goods-receiving-notes/{goods_receiving_note}/invoices', [SupplierInvoiceController::class, 'store'])
+            ->name('goods-receiving-notes.invoices.store');
+        Route::post('goods-receiving-notes/{goods_receiving_note}/returns', [PurchaseReturnController::class, 'store'])
+            ->name('goods-receiving-notes.returns.store');
+        Route::post('goods-receiving-notes/{goods_receiving_note}/landed-costs', [LandedCostController::class, 'store'])
+            ->name('goods-receiving-notes.landed-costs.store');
+        Route::delete('goods-receiving-notes/{goods_receiving_note}/landed-costs/{landed_cost_entry}', [LandedCostController::class, 'destroy'])
+            ->name('goods-receiving-notes.landed-costs.destroy');
+
+        Route::post('supplier-invoices/{supplier_invoice}/approve', [SupplierInvoiceController::class, 'approve'])
+            ->name('supplier-invoices.approve');
+        Route::get('supplier-invoices/{supplier_invoice}/pdf', [SupplierInvoiceController::class, 'pdf'])
+            ->name('supplier-invoices.pdf');
+        Route::post('supplier-payments', [SupplierPaymentController::class, 'store'])
+            ->name('supplier-payments.store');
+        Route::post('po-match-results/{po_match_result}/resolve', [PoMatchController::class, 'resolve'])
+            ->name('po-match-results.resolve');
+
+        Route::post('purchase-returns/{purchase_return}/approve', [PurchaseReturnController::class, 'approve'])
+            ->name('purchase-returns.approve');
+        Route::post('purchase-returns/{purchase_return}/dispatch', [PurchaseReturnController::class, 'dispatch'])
+            ->name('purchase-returns.dispatch');
+        Route::post('purchase-returns/{purchase_return}/debit-note', [PurchaseReturnController::class, 'issueDebitNote'])
+            ->name('purchase-returns.debit-note');
+        Route::post('purchase-returns/{purchase_return}/acknowledge', [PurchaseReturnController::class, 'acknowledge'])
+            ->name('purchase-returns.acknowledge');
+        Route::post('purchase-returns/{purchase_return}/close', [PurchaseReturnController::class, 'close'])
+            ->name('purchase-returns.close');
+        Route::get('debit-notes/{debit_note}/pdf', [PurchaseReturnController::class, 'debitNotePdf'])
+            ->name('debit-notes.pdf');
+
+        Route::get('procurement/reports', [ProcurementReportController::class, 'index'])
+            ->name('procurement.reports');
+
         Route::get('sales', [SaleController::class, 'index'])->name('sales.index');
         Route::get('sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
 

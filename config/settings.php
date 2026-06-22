@@ -50,6 +50,26 @@ return [
                     ],
                     'rules' => ['required', 'string'],
                 ],
+                'default_locale' => [
+                    'type' => 'select',
+                    'label' => 'Default language',
+                    'description' => 'Default UI language for new sessions when no preference is saved.',
+                    'default' => config('locales.default', 'en'),
+                    'options' => collect(config('locales.available', []))
+                        ->mapWithKeys(fn (array $meta, string $code) => [$code => $meta['label']])
+                        ->all(),
+                    'rules' => ['required', 'string', 'max:12'],
+                ],
+                'enabled_locales' => [
+                    'type' => 'multiselect',
+                    'label' => 'Enabled languages',
+                    'description' => 'Languages shown in the header language switcher.',
+                    'default' => [config('locales.default', 'en')],
+                    'options' => collect(config('locales.available', []))
+                        ->mapWithKeys(fn (array $meta, string $code) => [$code => $meta['label']])
+                        ->all(),
+                    'rules' => ['required', 'array', 'min:1'],
+                ],
                 'low_stock_threshold' => [
                     'type' => 'integer',
                     'label' => 'Low stock threshold',
@@ -600,6 +620,134 @@ return [
                     'description' => 'Send reminders when balances fall into configured aging buckets (e.g. 7, 30, 60).',
                     'default' => [7, 30, 60],
                     'rules' => ['required', 'json'],
+                ],
+            ],
+        ],
+
+        'procurement' => [
+            'label' => 'Procurement',
+            'description' => 'Purchase orders, GRN, matching tolerances, and supplier payment settings.',
+            'icon' => 'truck',
+            'permission' => 'settings.procurement.update',
+            'fields' => [
+                'po_approval_threshold' => [
+                    'type' => 'integer',
+                    'label' => 'PO approval threshold',
+                    'description' => 'Purchase orders above this amount require manager approval.',
+                    'default' => 5000,
+                    'rules' => ['required', 'integer', 'min:0'],
+                ],
+                'matching_price_tolerance_percent' => [
+                    'type' => 'integer',
+                    'label' => 'Price match tolerance (%)',
+                    'default' => 2,
+                    'rules' => ['required', 'integer', 'min:0'],
+                ],
+                'matching_quantity_tolerance_percent' => [
+                    'type' => 'integer',
+                    'label' => 'Quantity match tolerance (%)',
+                    'default' => 0,
+                    'rules' => ['required', 'integer', 'min:0'],
+                ],
+                'allow_partial_receive' => [
+                    'type' => 'boolean',
+                    'label' => 'Allow partial GRN receive',
+                    'default' => true,
+                ],
+                'allow_over_receive' => [
+                    'type' => 'boolean',
+                    'label' => 'Allow over-receive',
+                    'default' => false,
+                ],
+                'auto_close_po' => [
+                    'type' => 'boolean',
+                    'label' => 'Auto-close PO when fully received',
+                    'default' => true,
+                ],
+                'default_currency' => [
+                    'type' => 'select',
+                    'label' => 'Default procurement currency',
+                    'description' => 'Default currency for new purchase orders.',
+                    'options' => config('branches.currencies', []),
+                    'default' => 'USD',
+                ],
+                'po_approval_escalation_hours' => [
+                    'type' => 'integer',
+                    'label' => 'PO approval escalation (hours)',
+                    'description' => 'Hours before a submitted PO triggers an escalation warning.',
+                    'default' => 24,
+                    'rules' => ['required', 'integer', 'min:1'],
+                ],
+                'price_list_expiry_alert_days' => [
+                    'type' => 'integer',
+                    'label' => 'Price list expiry alert (days)',
+                    'description' => 'Days before valid_to to flag expiring supplier price lists.',
+                    'default' => 30,
+                    'rules' => ['required', 'integer', 'min:0'],
+                ],
+                'landed_cost_charge_types' => [
+                    'type' => 'multiselect',
+                    'label' => 'Landed cost charge types',
+                    'default' => ['freight', 'duty', 'insurance', 'customs', 'handling', 'other'],
+                    'options' => [
+                        'freight' => 'Freight',
+                        'duty' => 'Duty',
+                        'insurance' => 'Insurance',
+                        'customs' => 'Customs',
+                        'handling' => 'Handling',
+                        'other' => 'Other',
+                    ],
+                    'rules' => ['required', 'array', 'min:1'],
+                ],
+                'landed_cost_allocation_methods' => [
+                    'type' => 'multiselect',
+                    'label' => 'Landed cost allocation methods',
+                    'default' => ['quantity', 'weight', 'value', 'manual'],
+                    'options' => [
+                        'quantity' => 'By Quantity',
+                        'weight' => 'By Weight',
+                        'value' => 'By Value',
+                        'manual' => 'Manual per Line',
+                    ],
+                    'rules' => ['required', 'array', 'min:1'],
+                ],
+                'payment_method_cash' => [
+                    'type' => 'boolean',
+                    'label' => 'Accept cash (supplier payments)',
+                    'default' => true,
+                ],
+                'payment_method_bank_transfer' => [
+                    'type' => 'boolean',
+                    'label' => 'Accept bank transfer (supplier payments)',
+                    'default' => true,
+                ],
+                'payment_method_cheque' => [
+                    'type' => 'boolean',
+                    'label' => 'Accept cheque (supplier payments)',
+                    'default' => true,
+                ],
+                'payment_method_card' => [
+                    'type' => 'boolean',
+                    'label' => 'Accept card (supplier payments)',
+                    'default' => false,
+                ],
+                'performance_on_time_weight' => [
+                    'type' => 'integer',
+                    'label' => 'Performance on-time weight (%)',
+                    'default' => 40,
+                    'rules' => ['required', 'integer', 'min:0', 'max:100'],
+                ],
+                'performance_quality_weight' => [
+                    'type' => 'integer',
+                    'label' => 'Performance quality weight (%)',
+                    'default' => 30,
+                    'rules' => ['required', 'integer', 'min:0', 'max:100'],
+                ],
+                'performance_lead_time_weight' => [
+                    'type' => 'integer',
+                    'label' => 'Performance lead time weight (%)',
+                    'default' => 30,
+                    'rules' => ['required', 'integer', 'min:0', 'max:100'],
                 ],
             ],
         ],
