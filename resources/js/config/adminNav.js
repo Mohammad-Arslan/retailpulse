@@ -300,6 +300,15 @@ export const ADMIN_NAV_SECTIONS = [
                 icon: Receipt,
                 keywords: ['points earned', 'redemption', 'tier distribution'],
             },
+            {
+                label: 'Loyalty Transactions',
+                labelKey: 'loyaltyTransactions',
+                href: 'admin.loyalty.transactions.index',
+                routeName: 'admin.loyalty.transactions.*',
+                permission: 'loyalty.view-transactions',
+                icon: ClipboardList,
+                keywords: ['points', 'approval', 'redemption', 'adjustment'],
+            },
         ],
     },
     {

@@ -1,6 +1,7 @@
 import PageHeader from '@/Components/common/PageHeader';
 import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
+import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
@@ -38,9 +39,19 @@ function Show({
     const [topUpMethod, setTopUpMethod] = useState('cash');
     const [topUpProcessing, setTopUpProcessing] = useState(false);
     const [statementSending, setStatementSending] = useState(false);
+    const [adjustOpen, setAdjustOpen] = useState(false);
+    const [adjustProgramId, setAdjustProgramId] = useState(String(loyaltyPrograms[0]?.id ?? ''));
+    const [adjustPoints, setAdjustPoints] = useState('');
+    const [adjustReason, setAdjustReason] = useState('');
+    const [adjustProcessing, setAdjustProcessing] = useState(false);
 
     const tierName = customer.loyalty_tier?.name;
     const walletBalance = customer.wallet?.balance ?? '0.00';
+
+    const programOptions = useMemo(
+        () => loyaltyPrograms.map((p) => ({ value: String(p.id), label: p.name })),
+        [loyaltyPrograms],
+    );
 
     const topUpMethodOptions = useMemo(
         () => [
@@ -102,6 +113,32 @@ function Show({
         } catch {
             setStatementSending(false);
         }
+    }
+
+    function handleAdjustPoints(e) {
+        e.preventDefault();
+        setAdjustProcessing(true);
+        router.post(
+            route('admin.loyalty.customers.adjust', customer.id),
+            {
+                program_id: parseInt(adjustProgramId, 10),
+                points: parseInt(adjustPoints, 10),
+                reason: adjustReason,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success(t('pages.loyalty.adjustPoints.submit'));
+                    setAdjustOpen(false);
+                    setAdjustPoints('');
+                    setAdjustReason('');
+                },
+                onError: (errors) => {
+                    toast.error(Object.values(errors).flat().join(' ') || t('pages.customers.topUp.failed'));
+                },
+                onFinish: () => setAdjustProcessing(false),
+            },
+        );
     }
 
     return (
@@ -190,6 +227,62 @@ function Show({
                             <StatCard label={t('pages.customers.loyalty.redeemed')} value={loyalty.wallets[0]?.redeemed_points ?? 0} />
                             <StatCard label={t('pages.customers.loyalty.expired')} value={loyalty.wallets[0]?.expired_points ?? 0} />
                         </div>
+                    )}
+                    {can('loyalty.adjust-points') && loyaltyPrograms.length > 0 && (
+                        <section className="rounded-lg border bg-card p-4">
+                            <div className="mb-3 flex items-center justify-between">
+                                <div>
+                                    <h2 className="font-semibold">{t('pages.loyalty.adjustPoints.title')}</h2>
+                                    <p className="text-sm text-muted-foreground">{t('pages.loyalty.adjustPoints.description')}</p>
+                                </div>
+                                {!adjustOpen && (
+                                    <Button type="button" variant="outline" size="sm" onClick={() => setAdjustOpen(true)}>
+                                        {t('pages.loyalty.adjustPoints.title')}
+                                    </Button>
+                                )}
+                            </div>
+                            {adjustOpen && (
+                                <form onSubmit={handleAdjustPoints} className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">{t('pages.loyalty.adjustPoints.program')}</label>
+                                        <Select
+                                            value={adjustProgramId}
+                                            onChange={setAdjustProgramId}
+                                            options={programOptions}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">{t('pages.loyalty.adjustPoints.points')}</label>
+                                        <input
+                                            type="number"
+                                            value={adjustPoints}
+                                            onChange={(e) => setAdjustPoints(e.target.value)}
+                                            className="w-full rounded-md border px-3 py-2 text-sm"
+                                            required
+                                        />
+                                        <p className="mt-1 text-xs text-muted-foreground">{t('pages.loyalty.adjustPoints.pointsHint')}</p>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <label className="mb-1 block text-sm font-medium">{t('pages.loyalty.adjustPoints.reason')}</label>
+                                        <textarea
+                                            value={adjustReason}
+                                            onChange={(e) => setAdjustReason(e.target.value)}
+                                            className="w-full rounded-md border px-3 py-2 text-sm"
+                                            rows={2}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="flex gap-2 sm:col-span-2">
+                                        <Button type="submit" disabled={adjustProcessing}>
+                                            {t('pages.loyalty.adjustPoints.submit')}
+                                        </Button>
+                                        <Button type="button" variant="outline" onClick={() => setAdjustOpen(false)}>
+                                            {t('pages.loyalty.actions.cancel')}
+                                        </Button>
+                                    </div>
+                                </form>
+                            )}
+                        </section>
                     )}
                     <section>
                         <h2 className="mb-3 font-semibold">{t('pages.customers.loyalty.recentTransactions')}</h2>

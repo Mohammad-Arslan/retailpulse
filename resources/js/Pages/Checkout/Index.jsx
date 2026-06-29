@@ -3,7 +3,7 @@ import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Button } from '@/Components/ui/button';
 import { Printer } from 'lucide-react';
-import { checkoutApi, customerApi, saleApi } from '@/lib/checkoutApi';
+import { checkoutApi, customerApi, loyaltyApi, saleApi } from '@/lib/checkoutApi';
 import { pinApi } from '@/lib/posApi';
 import { usePosDialog } from '@/Hooks/usePosDialog';
 import { useTranslation } from 'react-i18next';
@@ -174,6 +174,8 @@ export default function CheckoutIndex({ cartId }) {
     const [managerPinOverride, setManagerPinOverride] = useState(null);
     const [showManagerPinModal, setShowManagerPinModal] = useState(false);
     const [pendingPayment, setPendingPayment] = useState(false);
+    const [loyaltyOptions, setLoyaltyOptions] = useState(null);
+    const [loyaltyPointsToRedeem, setLoyaltyPointsToRedeem] = useState('');
     const autoPrintFiredRef = useRef(false);
     const customerSearchTimer = useRef(null);
 
@@ -188,6 +190,8 @@ export default function CheckoutIndex({ cartId }) {
     const loadCustomerProfile = useCallback(async (customerId) => {
         if (!customerId) {
             setCustomerProfile(null);
+            setLoyaltyOptions(null);
+            setLoyaltyPointsToRedeem('');
             return;
         }
         try {
@@ -195,6 +199,20 @@ export default function CheckoutIndex({ cartId }) {
             setCustomerProfile(profile);
         } catch {
             setCustomerProfile(null);
+        }
+    }, []);
+
+    const loadLoyaltyOptions = useCallback(async (customerId, loyaltyEnabled = true) => {
+        if (!customerId || !loyaltyEnabled) {
+            setLoyaltyOptions(null);
+            setLoyaltyPointsToRedeem('');
+            return;
+        }
+        try {
+            const data = await loyaltyApi.redemptionOptions(customerId);
+            setLoyaltyOptions(data.options ?? null);
+        } catch {
+            setLoyaltyOptions(null);
         }
     }, []);
 
@@ -210,6 +228,9 @@ export default function CheckoutIndex({ cartId }) {
                     const parsed = JSON.parse(stored);
                     setSelectedCustomer(parsed);
                     await loadCustomerProfile(parsed.id);
+                    if (data.loyalty_enabled) {
+                        await loadLoyaltyOptions(parsed.id, true);
+                    }
                 } catch {
                     sessionStorage.removeItem(customerStorageKey(cartId));
                 }
@@ -324,14 +345,25 @@ export default function CheckoutIndex({ cartId }) {
         setManagerPinOverride(null);
         sessionStorage.setItem(customerStorageKey(cartId), JSON.stringify(customer));
         await loadCustomerProfile(customer.id);
+        await loadLoyaltyOptions(customer.id, bootstrap?.loyalty_enabled);
     }
 
     function clearCustomer() {
         setSelectedCustomer(null);
         setCustomerProfile(null);
+        setLoyaltyOptions(null);
+        setLoyaltyPointsToRedeem('');
         setManagerPinOverride(null);
         sessionStorage.removeItem(customerStorageKey(cartId));
     }
+
+    const loyaltyDiscountPreview = useMemo(() => {
+        const points = parseInt(loyaltyPointsToRedeem || '0', 10);
+        if (!loyaltyOptions || !points || points <= 0) return 0;
+        const rate = loyaltyOptions.conversion_rate ?? { points: 100, currency: 100 };
+        if (!rate.points) return 0;
+        return Math.round((points / rate.points) * rate.currency * 100) / 100;
+    }, [loyaltyOptions, loyaltyPointsToRedeem]);
 
     async function handleConfirmSale() {
         setProcessing(true);
@@ -339,6 +371,10 @@ export default function CheckoutIndex({ cartId }) {
             const payload = {};
             if (selectedCustomer?.id) {
                 payload.customer_id = selectedCustomer.id;
+            }
+            const points = parseInt(loyaltyPointsToRedeem || '0', 10);
+            if (points > 0) {
+                payload.loyalty_points_to_redeem = points;
             }
             const confirmed = await checkoutApi.confirm(cartId, payload);
             const saleData = await saleApi.get(confirmed.id);
@@ -653,6 +689,33 @@ export default function CheckoutIndex({ cartId }) {
                                     </div>
                                 )}
                             </div>
+
+                            {bootstrap?.loyalty_enabled && selectedCustomer && loyaltyOptions?.available_points > 0 && (
+                                <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+                                    <h3 className="mb-2 font-medium">{t('checkout.loyalty.redeemTitle')}</h3>
+                                    <p className="mb-2 text-muted-foreground">
+                                        {t('checkout.loyalty.availablePoints')}: {loyaltyOptions.available_points}
+                                    </p>
+                                    <label className="mb-1 block text-sm font-medium" htmlFor="loyalty-points">
+                                        {t('checkout.loyalty.pointsToRedeem')}
+                                    </label>
+                                    <input
+                                        id="loyalty-points"
+                                        type="number"
+                                        min={loyaltyOptions.min_redeem_points ?? 0}
+                                        max={loyaltyOptions.available_points}
+                                        value={loyaltyPointsToRedeem}
+                                        onChange={(e) => setLoyaltyPointsToRedeem(e.target.value)}
+                                        className="w-full rounded-md border px-3 py-2 text-sm"
+                                        placeholder="0"
+                                    />
+                                    {loyaltyDiscountPreview > 0 && (
+                                        <p className="mt-2 text-teal-600">
+                                            {t('checkout.loyalty.discountPreview')}: {loyaltyDiscountPreview.toFixed(2)} {currency}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
 
                             <Button className="w-full" onClick={handleConfirmSale} disabled={processing}>
                                 {t('checkout.confirmButton')}

@@ -49,6 +49,14 @@ final class LoyaltyRedemptionService
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function resolveRedemptionConfig(LoyaltyProgram $program): ?array
+    {
+        return $this->ruleEngine->resolveRedemptionConfig($program);
+    }
+
     public function redeem(
         CustomerLoyaltyWallet $wallet,
         LoyaltyProgram $program,
@@ -56,6 +64,8 @@ final class LoyaltyRedemptionService
         int $branchId,
         ?int $userId = null,
         ?float $saleTotal = null,
+        ?string $referenceType = null,
+        ?int $referenceId = null,
     ): CustomerLoyaltyTransaction {
         $config = $this->ruleEngine->resolveRedemptionConfig($program);
 
@@ -114,8 +124,8 @@ final class LoyaltyRedemptionService
             $points,
             LoyaltyTransactionType::Redeem,
             $status,
-            null,
-            null,
+            $referenceType,
+            $referenceId,
             __('Redeemed :points points for :amount discount', [
                 'points' => $points,
                 'amount' => number_format($discount, 2),

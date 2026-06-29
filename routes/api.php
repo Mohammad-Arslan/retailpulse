@@ -96,6 +96,8 @@ Route::prefix('v1')
             ->name('customers.loyalty.tier');
         Route::get('customers/{customer}/loyalty/redemption-options', [LoyaltyApiController::class, 'redemptionOptions'])
             ->name('customers.loyalty.redemption-options');
+        Route::post('customers/{customer}/loyalty/redeem', [LoyaltyApiController::class, 'redeem'])
+            ->name('customers.loyalty.redeem');
         Route::get('loyalty/campaigns', [LoyaltyApiController::class, 'campaigns'])
             ->name('loyalty.campaigns');
 

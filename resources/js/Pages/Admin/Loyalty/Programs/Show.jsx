@@ -7,6 +7,11 @@ import PageHeader from '@/Components/common/PageHeader';
 import { Button } from '@/Components/ui/button';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
+import {
+    loyaltyProgramScopeTypeLabel,
+    loyaltyProgramStatusLabel,
+    loyaltyScopeModeLabel,
+} from '@/lib/loyaltyI18n';
 import { Head, Link, router } from '@inertiajs/react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -114,19 +119,19 @@ function Show({
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div className="rounded-lg border bg-card p-4">
                             <p className="text-xs uppercase text-muted-foreground">{t('pages.loyalty.programs.columns.status')}</p>
-                            <p className="mt-1 text-lg font-semibold capitalize">{program.status?.replace('_', ' ')}</p>
+                            <p className="mt-1 text-lg font-semibold">{loyaltyProgramStatusLabel(t, program.status)}</p>
                         </div>
                         <div className="rounded-lg border bg-card p-4">
                             <p className="text-xs uppercase text-muted-foreground">{t('pages.loyalty.programs.columns.scope')}</p>
-                            <p className="mt-1 text-lg font-semibold capitalize">{program.scope_type?.replace('_', ' ')}</p>
+                            <p className="mt-1 text-lg font-semibold">{loyaltyProgramScopeTypeLabel(t, program.scope_type)}</p>
                         </div>
                         <div className="rounded-lg border bg-card p-4">
                             <p className="text-xs uppercase text-muted-foreground">{t('pages.loyalty.programs.fields.earnScope')}</p>
-                            <p className="mt-1 text-lg font-semibold capitalize">{program.earn_scope}</p>
+                            <p className="mt-1 text-lg font-semibold">{loyaltyScopeModeLabel(t, program.earn_scope)}</p>
                         </div>
                         <div className="rounded-lg border bg-card p-4">
                             <p className="text-xs uppercase text-muted-foreground">{t('pages.loyalty.programs.fields.redeemScope')}</p>
-                            <p className="mt-1 text-lg font-semibold capitalize">{program.redeem_scope}</p>
+                            <p className="mt-1 text-lg font-semibold">{loyaltyScopeModeLabel(t, program.redeem_scope)}</p>
                         </div>
                     </div>
 

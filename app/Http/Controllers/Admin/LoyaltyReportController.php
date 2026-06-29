@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\LoyaltyProgram;
 use App\Services\Loyalty\LoyaltyReportService;
 use App\Support\BranchContext;
@@ -28,13 +29,27 @@ final class LoyaltyReportController extends Controller
         $filters = ListPagination::filters($request, ['from', 'to', 'search', 'program_id']);
         $programId = $request->integer('program_id') ?: null;
 
+        $branchNames = Branch::query()->pluck('name', 'id');
+
         return Inertia::render('Admin/Loyalty/Reports', [
             'tab' => $tab,
             'filters' => $filters,
             'programs' => LoyaltyProgram::query()->orderBy('name')->get(['id', 'name']),
-            'pointsEarned' => $this->reports->pointsEarned($branchId, $filters),
-            'pointsRedeemed' => $this->reports->pointsRedeemed($branchId, $filters),
-            'pointsExpired' => $this->reports->pointsExpired($branchId, $filters),
+            'pointsEarned' => $this->reports->pointsEarned($branchId, $filters)->map(fn ($row) => [
+                'branch' => $row->branch_id ? ($branchNames[$row->branch_id] ?? __('Branch #:id', ['id' => $row->branch_id])) : __('Global'),
+                'total_points' => (int) $row->total_points,
+                'transaction_count' => (int) $row->transaction_count,
+            ])->values(),
+            'pointsRedeemed' => $this->reports->pointsRedeemed($branchId, $filters)->map(fn ($row) => [
+                'branch' => $row->branch_id ? ($branchNames[$row->branch_id] ?? __('Branch #:id', ['id' => $row->branch_id])) : __('Global'),
+                'total_points' => (int) $row->total_points,
+                'transaction_count' => (int) $row->transaction_count,
+            ])->values(),
+            'pointsExpired' => $this->reports->pointsExpired($branchId, $filters)->map(fn ($row) => [
+                'branch' => $row->branch_id ? ($branchNames[$row->branch_id] ?? __('Branch #:id', ['id' => $row->branch_id])) : __('Global'),
+                'total_points' => (int) $row->total_points,
+                'transaction_count' => (int) $row->transaction_count,
+            ])->values(),
             'customerLoyalty' => $this->reports->customerLoyalty($programId, $filters)->map(fn ($w) => [
                 'customer' => $w->customer?->name,
                 'phone' => $w->customer?->phone,
@@ -47,7 +62,13 @@ final class LoyaltyReportController extends Controller
                 'customer_count' => $row->customer_count,
                 'total_points' => $row->total_points,
             ]),
-            'branchLoyalty' => $this->reports->branchLoyalty($filters),
+            'branchLoyalty' => $this->reports->branchLoyalty($filters)->map(fn ($row) => [
+                'branch' => $row->branch?->name ?? __('Global'),
+                'customer_count' => (int) $row->customer_count,
+                'available_points' => (int) $row->available_points,
+                'lifetime_earned' => (int) $row->lifetime_earned,
+                'redeemed_points' => (int) $row->redeemed_points,
+            ])->values(),
             'campaignEffectiveness' => $this->reports->campaignEffectiveness($programId, $filters),
             'topCustomers' => $this->reports->topCustomers($programId, $filters)->map(fn ($w) => [
                 'customer' => $w->customer?->name,

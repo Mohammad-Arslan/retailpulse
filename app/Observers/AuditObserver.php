@@ -7,7 +7,12 @@ namespace App\Observers;
 use App\Models\Branch;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\LoyaltyApprovalPolicy;
+use App\Models\LoyaltyCampaign;
+use App\Models\LoyaltyExpiryRule;
 use App\Models\LoyaltyProgram;
+use App\Models\LoyaltyProgramTier;
+use App\Models\LoyaltyRule;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\Role;
@@ -47,6 +52,11 @@ final class AuditObserver
             && ! $model instanceof Brand
             && ! $model instanceof Product
             && ! $model instanceof LoyaltyProgram
+            && ! $model instanceof LoyaltyRule
+            && ! $model instanceof LoyaltyProgramTier
+            && ! $model instanceof LoyaltyApprovalPolicy
+            && ! $model instanceof LoyaltyExpiryRule
+            && ! $model instanceof LoyaltyCampaign
         ) {
             return;
         }

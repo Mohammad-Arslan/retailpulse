@@ -6,9 +6,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\DTOs\Loyalty\AdjustLoyaltyPointsData;
 use App\DTOs\Loyalty\ApproveLoyaltyTransactionData;
+use App\DTOs\Loyalty\RejectLoyaltyTransactionData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Loyalty\AdjustLoyaltyPointsRequest;
 use App\Http\Requests\Admin\Loyalty\ApproveLoyaltyTransactionRequest;
+use App\Http\Requests\Admin\Loyalty\RejectLoyaltyTransactionRequest;
 use App\Models\Customer;
 use App\Models\CustomerLoyaltyTransaction;
 use App\Models\LoyaltyProgram;
@@ -103,11 +105,11 @@ final class LoyaltyTransactionController extends Controller
         return back()->with('success', __('Loyalty transaction approved.'));
     }
 
-    public function reject(Request $request, CustomerLoyaltyTransaction $transaction): RedirectResponse
+    public function reject(RejectLoyaltyTransactionRequest $request, CustomerLoyaltyTransaction $transaction): RedirectResponse
     {
-        $this->authorize('approve', LoyaltyProgram::class);
+        $data = RejectLoyaltyTransactionData::fromRequest($request);
 
-        $this->approvals->reject($transaction, $request->user(), $request->string('reason'));
+        $this->approvals->reject($transaction, $request->user(), $data->reason);
 
         return back()->with('success', __('Loyalty transaction rejected.'));
     }

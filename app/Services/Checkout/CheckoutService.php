@@ -28,6 +28,7 @@ use App\Services\Customer\CustomerCreditService;
 use App\Services\Customer\StoreCreditService;
 use App\Services\Customer\WalletService;
 use App\Services\InventoryService;
+use App\Services\Loyalty\CheckoutLoyaltyService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -44,6 +45,7 @@ final class CheckoutService
         private readonly WalletService $wallet,
         private readonly StoreCreditService $storeCredit,
         private readonly CustomerCreditService $customerCredit,
+        private readonly CheckoutLoyaltyService $checkoutLoyalty,
     ) {}
 
     /**
@@ -87,6 +89,7 @@ final class CheckoutService
             'currency' => $settings['currency'],
             'notes' => $cart->notes,
             'customer' => $existingSale?->customer_id,
+            'loyalty_enabled' => (bool) SystemSetting::get('loyalty', 'enabled', true),
             'config' => $settings,
         ];
     }
@@ -159,6 +162,11 @@ final class CheckoutService
 
             foreach ($saleItems as $row) {
                 $sale->items()->create($row);
+            }
+
+            if ($data->loyaltyPointsToRedeem > 0) {
+                $this->checkoutLoyalty->applyRedemptionToSale($sale, $data->loyaltyPointsToRedeem, $cashierId);
+                $sale->refresh();
             }
 
             $this->carts->update($cart, [

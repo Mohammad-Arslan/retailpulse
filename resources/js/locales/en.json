@@ -9,6 +9,7 @@
         "arAging": "AR Aging",
         "loyaltyPrograms": "Loyalty Programs",
         "loyaltyReports": "Loyalty Reports",
+        "loyaltyTransactions": "Loyalty Transactions",
         "users": "Users",
         "roles": "Roles",
         "permissions": "Permissions",
@@ -819,6 +820,7 @@
             "reports": {
                 "title": "Loyalty Reports",
                 "description": "Points earned, redeemed, expired, and tier distribution.",
+                "empty": "No data for this report.",
                 "tabs": {
                     "earned": "Points Earned",
                     "redeemed": "Points Redeemed",
@@ -828,11 +830,57 @@
                     "branches": "Branch Loyalty",
                     "campaigns": "Campaign Effectiveness",
                     "top": "Top Customers"
+                },
+                "columns": {
+                    "branch": "Branch",
+                    "totalPoints": "Total Points",
+                    "transactions": "Transactions",
+                    "customers": "Customers",
+                    "availablePoints": "Available Points",
+                    "lifetimeEarned": "Lifetime Earned",
+                    "redeemed": "Redeemed",
+                    "customer": "Customer",
+                    "phone": "Phone",
+                    "tier": "Tier",
+                    "bonusEvents": "Bonus Events"
                 }
             },
             "transactions": {
                 "title": "Loyalty Transactions",
-                "description": "Review and approve loyalty point movements."
+                "description": "Review and approve loyalty point movements.",
+                "columns": {
+                    "customer": "Customer",
+                    "program": "Program",
+                    "type": "Type",
+                    "points": "Points",
+                    "status": "Status",
+                    "reason": "Reason",
+                    "date": "Date",
+                    "actions": "Actions"
+                },
+                "filters": {
+                    "allStatuses": "All Statuses",
+                    "pendingApproval": "Pending Approval"
+                },
+                "actions": {
+                    "approve": "Approve",
+                    "reject": "Reject"
+                },
+                "approveTitle": "Approve Transaction",
+                "approveDescription": "Enter your manager PIN to approve this transaction.",
+                "rejectTitle": "Reject Transaction",
+                "rejectReason": "Rejection Reason",
+                "pin": "Manager PIN",
+                "empty": "No loyalty transactions found."
+            },
+            "adjustPoints": {
+                "title": "Adjust Points",
+                "description": "Manually credit or debit loyalty points.",
+                "program": "Loyalty Program",
+                "points": "Points",
+                "pointsHint": "Use a negative value to debit points.",
+                "reason": "Reason",
+                "submit": "Apply Adjustment"
             },
             "tabs": {
                 "overview": "Overview",
@@ -983,6 +1031,25 @@
                 "thresholdTypes": {
                     "points": "Points",
                     "currency": "Currency"
+                },
+                "programStatuses": {
+                    "draft": "Draft",
+                    "active": "Active",
+                    "inactive": "Inactive"
+                },
+                "transactionTypes": {
+                    "earn": "Earn",
+                    "redeem": "Redeem",
+                    "expire": "Expire",
+                    "adjustment": "Adjustment",
+                    "bonus": "Bonus",
+                    "reversal": "Reversal"
+                },
+                "transactionStatuses": {
+                    "completed": "Completed",
+                    "pending_approval": "Pending Approval",
+                    "rejected": "Rejected",
+                    "cancelled": "Cancelled"
                 }
             },
             "actions": {
@@ -1742,7 +1809,16 @@
             "wallet": "Wallet",
             "storeCredit": "Store credit",
             "arOutstanding": "AR outstanding",
-            "creditAvailable": "Credit available"
+            "creditAvailable": "Credit available",
+            "loyaltyPoints": "Loyalty Points"
+        },
+        "loyalty": {
+            "redeemTitle": "Redeem Loyalty Points",
+            "availablePoints": "Available Points",
+            "pointsToRedeem": "Points To Redeem",
+            "discountPreview": "Discount Preview",
+            "minPoints": "Minimum {{min}} points",
+            "maxDiscount": "Maximum discount {{amount}} {{currency}}"
         },
         "creditLimit": {
             "warning": "This sale exceeds the customer's credit limit.",

@@ -4,23 +4,31 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Loyalty;
 
+use App\DTOs\Loyalty\RedeemLoyaltyPointsData;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\Loyalty\RedeemLoyaltyPointsRequest;
 use App\Models\Customer;
 use App\Models\CustomerLoyaltyEvent;
 use App\Models\CustomerLoyaltyTransaction;
 use App\Models\CustomerLoyaltyWallet;
 use App\Models\LoyaltyCampaign;
+use App\Models\Sale;
+use App\Services\Loyalty\CheckoutLoyaltyService;
 use App\Services\Loyalty\LoyaltyProgramService;
 use App\Services\Loyalty\LoyaltyRedemptionService;
+use App\Services\Loyalty\LoyaltyWalletService;
 use App\Support\BranchContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 final class LoyaltyApiController extends Controller
 {
     public function __construct(
         private readonly LoyaltyProgramService $programs,
         private readonly LoyaltyRedemptionService $redemption,
+        private readonly LoyaltyWalletService $wallets,
+        private readonly CheckoutLoyaltyService $checkoutLoyalty,
     ) {}
 
     public function wallet(Request $request, Customer $customer): JsonResponse
@@ -192,5 +200,72 @@ final class LoyaltyApiController extends Controller
         return response()->json([
             'options' => $this->redemption->redemptionOptions($wallet, $program),
         ]);
+    }
+
+    public function redeem(RedeemLoyaltyPointsRequest $request, Customer $customer): JsonResponse
+    {
+        $data = RedeemLoyaltyPointsData::fromRequest($request);
+        $branchId = $data->branchId ?? app(BranchContext::class)->branchId;
+
+        if ($branchId === null) {
+            return response()->json([
+                'message' => __('Branch context is required for loyalty redemption.'),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($data->saleId !== null) {
+            $sale = Sale::query()->findOrFail($data->saleId);
+
+            if ($sale->customer_id !== $customer->id) {
+                abort(Response::HTTP_FORBIDDEN);
+            }
+
+            $this->checkoutLoyalty->applyRedemptionToSale($sale, $data->points, (int) $request->user()->id);
+            $sale->refresh();
+
+            return response()->json([
+                'sale' => [
+                    'id' => $sale->id,
+                    'grand_total' => number_format((float) $sale->grand_total, 2, '.', ''),
+                    'balance_due' => number_format((float) $sale->balance_due, 2, '.', ''),
+                    'total_discount' => number_format((float) $sale->total_discount, 2, '.', ''),
+                ],
+            ]);
+        }
+
+        $program = $this->programs->resolveActiveProgramForBranch((int) $branchId);
+
+        if ($program === null) {
+            return response()->json([
+                'message' => __('No active loyalty program for this branch.'),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $walletBranchId = $program->redeem_scope->value === 'branch' ? (int) $branchId : null;
+        $wallet = $this->wallets->getOrCreateWallet($customer->id, $program, $walletBranchId);
+
+        $transaction = $this->redemption->redeem(
+            $wallet,
+            $program,
+            $data->points,
+            (int) $branchId,
+            (int) $request->user()->id,
+        );
+
+        $wallet->refresh();
+
+        $wallet->refresh();
+
+        return response()->json([
+            'transaction' => [
+                'id' => $transaction->id,
+                'points' => $transaction->points,
+                'status' => $transaction->status->value,
+                'reason' => $transaction->reason,
+            ],
+            'wallet' => [
+                'available_points' => $wallet->available_points,
+            ],
+        ], Response::HTTP_CREATED);
     }
 }

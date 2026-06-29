@@ -23,6 +23,13 @@ export const checkoutApi = {
     abandon: (cartId) => post(r('api.v1.checkout.abandon', { cartId })),
 };
 
+export const loyaltyApi = {
+    redemptionOptions: (customerId) =>
+        get(r('api.v1.customers.loyalty.redemption-options', { customer: customerId })),
+    redeem: (customerId, payload) =>
+        post(r('api.v1.customers.loyalty.redeem', { customer: customerId }), payload),
+};
+
 export const saleApi = {
     get: (id) => get(r('api.v1.sales.show', { id })),
     addPayment: (id, payload) => post(r('api.v1.sales.payments.store', { id }), payload),
