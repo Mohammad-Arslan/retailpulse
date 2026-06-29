@@ -277,4 +277,71 @@ final class LoyaltyWalletService
             return $transaction->fresh();
         });
     }
+
+    public function reverseCompletedDebit(
+        CustomerLoyaltyTransaction $transaction,
+        ?int $userId = null,
+        ?string $reason = null,
+    ): CustomerLoyaltyTransaction {
+        return DB::transaction(function () use ($transaction, $userId, $reason) {
+            $transaction = CustomerLoyaltyTransaction::query()->lockForUpdate()->findOrFail($transaction->id);
+
+            if ($transaction->status !== LoyaltyTransactionStatus::Completed || $transaction->points >= 0) {
+                return $transaction;
+            }
+
+            $existing = CustomerLoyaltyTransaction::query()
+                ->where('transaction_type', LoyaltyTransactionType::Reversal)
+                ->where('reference_type', CustomerLoyaltyTransaction::class)
+                ->where('reference_id', $transaction->id)
+                ->first();
+
+            if ($existing !== null) {
+                return $existing;
+            }
+
+            $points = abs((int) $transaction->points);
+            $wallet = CustomerLoyaltyWallet::query()->lockForUpdate()->findOrFail($transaction->wallet_id);
+            $before = (int) $wallet->available_points;
+
+            $wallet->update([
+                'available_points' => $before + $points,
+                'redeemed_points' => max(0, (int) $wallet->redeemed_points - $points),
+            ]);
+
+            $after = $before + $points;
+
+            $reversal = CustomerLoyaltyTransaction::query()->create([
+                'tenant_id' => $wallet->tenant_id,
+                'customer_id' => $wallet->customer_id,
+                'program_id' => $wallet->program_id,
+                'wallet_id' => $wallet->id,
+                'branch_id' => $wallet->branch_id,
+                'transaction_type' => LoyaltyTransactionType::Reversal,
+                'points' => $points,
+                'balance_before' => $before,
+                'balance_after' => $after,
+                'reference_type' => CustomerLoyaltyTransaction::class,
+                'reference_id' => $transaction->id,
+                'reason' => $reason ?? __('Reversed loyalty redemption.'),
+                'status' => LoyaltyTransactionStatus::Completed,
+                'created_by' => $userId,
+            ]);
+
+            $wallet->loadMissing('program');
+            $this->timeline->record(
+                $wallet->customer_id,
+                $wallet->program,
+                LoyaltyEventType::Adjustment,
+                $points,
+                $before,
+                $after,
+                $reversal->reason,
+                ['transaction_id' => $reversal->id, 'reversed_transaction_id' => $transaction->id],
+                $userId,
+            );
+
+            return $reversal;
+        });
+    }
 }

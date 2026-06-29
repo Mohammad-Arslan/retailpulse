@@ -7,7 +7,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export default function Create({ loyaltyTiers = [], customerGroups = [] }) {
+export default function Create({ loyaltyTiers = [], customerGroups = [], legacyLoyaltyEnabled = false }) {
     const { t } = useTranslation();
     const tierOptions = useMemo(() => mapToSelectOptions(loyaltyTiers), [loyaltyTiers]);
     const groupOptions = useMemo(() => mapToSelectOptions(customerGroups), [customerGroups]);
@@ -104,20 +104,22 @@ export default function Create({ loyaltyTiers = [], customerGroups = [] }) {
                             onChange={(e) => setData('credit_limit', e.target.value)}
                         />
                     </AdminFormField>
-                    <AdminFormField
-                        label={t('pages.customers.fields.loyaltyTier')}
-                        id="loyalty_tier_id"
-                        error={errors.loyalty_tier_id}
-                    >
-                        <Select
+                    {legacyLoyaltyEnabled && (
+                        <AdminFormField
+                            label={t('pages.customers.fields.loyaltyTier')}
                             id="loyalty_tier_id"
-                            options={tierOptions}
-                            value={data.loyalty_tier_id}
-                            placeholder={t('pages.customers.noTier')}
-                            isClearable
-                            onChange={(value) => setData('loyalty_tier_id', value || null)}
-                        />
-                    </AdminFormField>
+                            error={errors.loyalty_tier_id}
+                        >
+                            <Select
+                                id="loyalty_tier_id"
+                                options={tierOptions}
+                                value={data.loyalty_tier_id}
+                                placeholder={t('pages.customers.noTier')}
+                                isClearable
+                                onChange={(value) => setData('loyalty_tier_id', value || null)}
+                            />
+                        </AdminFormField>
+                    )}
                     <AdminFormField
                         label={t('pages.customers.fields.customerGroup')}
                         id="customer_group_id"

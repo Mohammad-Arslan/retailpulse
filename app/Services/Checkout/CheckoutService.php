@@ -370,6 +370,8 @@ final class CheckoutService
         DB::transaction(function () use ($sale) {
             $sale->payments()->where('status', PaymentStatus::Pending)->delete();
 
+            $this->checkoutLoyalty->reverseSaleRedemptions($sale, $sale->cashier_id);
+
             $sale->update([
                 'status' => SaleStatus::Voided,
                 'voided_at' => now(),

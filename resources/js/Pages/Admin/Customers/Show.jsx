@@ -1,9 +1,12 @@
 import PageHeader from '@/Components/common/PageHeader';
 import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
-import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
+import {
+    loyaltyTransactionStatusLabel,
+    loyaltyTransactionTypeLabel,
+} from '@/lib/loyaltyI18n';
 import { Head, Link, router } from '@inertiajs/react';
 import { Mail, Pencil, Plus, Wallet } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -28,6 +31,7 @@ function Show({
     arLedger = [],
     currency = 'PKR',
     canViewCredit = false,
+    legacyLoyaltyEnabled = false,
     loyalty = { enabled: false, wallets: [], transactions: [], timeline: [] },
     loyaltyPrograms = [],
 }) {
@@ -168,7 +172,7 @@ function Show({
             </PageHeader>
 
             <div className="mb-6 flex flex-wrap items-center gap-3">
-                {tierName && (
+                {legacyLoyaltyEnabled && tierName && (
                     <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800 dark:bg-amber-500/20 dark:text-amber-200">
                         {tierName}
                         {customer.loyalty_tier?.points_multiplier && (
@@ -307,9 +311,9 @@ function Show({
                                         loyalty.transactions.map((tx) => (
                                             <tr key={tx.id} className="border-b">
                                                 <td className="px-3 py-2">{tx.created_at ? new Date(tx.created_at).toLocaleString() : '—'}</td>
-                                                <td className="px-3 py-2 capitalize">{tx.type?.replace('_', ' ')}</td>
+                                                <td className="px-3 py-2">{loyaltyTransactionTypeLabel(t, tx.type)}</td>
                                                 <td className="px-3 py-2">{tx.points > 0 ? `+${tx.points}` : tx.points}</td>
-                                                <td className="px-3 py-2 capitalize">{tx.status?.replace('_', ' ')}</td>
+                                                <td className="px-3 py-2">{loyaltyTransactionStatusLabel(t, tx.status)}</td>
                                             </tr>
                                         ))
                                     )}
@@ -356,10 +360,12 @@ function Show({
                     label={t('pages.customers.stats.salesCount')}
                     value={stats.sales_count ?? 0}
                 />
-                <StatCard
-                    label={t('pages.customers.stats.loyaltyPoints')}
-                    value={customer.loyalty_points ?? 0}
-                />
+                {legacyLoyaltyEnabled && (
+                    <StatCard
+                        label={t('pages.customers.stats.loyaltyPoints')}
+                        value={customer.loyalty_points ?? 0}
+                    />
+                )}
                 {canViewCredit && (
                     <StatCard
                         label={t('pages.customers.stats.creditAvailable')}

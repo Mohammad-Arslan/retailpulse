@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Loyalty;
 
 use App\Enums\LoyaltyTransactionStatus;
+use App\Enums\LoyaltyTransactionType;
+use App\Models\CustomerLoyaltyTransaction;
 use App\Models\Sale;
 use App\Models\SystemSetting;
 use Illuminate\Validation\ValidationException;
@@ -67,5 +69,26 @@ final class CheckoutLoyaltyService
             'grand_total' => round(max(0, (float) $sale->grand_total - $discount), 2),
             'balance_due' => round(max(0, (float) $sale->balance_due - $discount), 2),
         ]);
+    }
+
+    public function reverseSaleRedemptions(Sale $sale, ?int $userId = null): void
+    {
+        if (! (bool) SystemSetting::get('loyalty', 'enabled', true)) {
+            return;
+        }
+
+        CustomerLoyaltyTransaction::query()
+            ->where('reference_type', Sale::class)
+            ->where('reference_id', $sale->id)
+            ->where('transaction_type', LoyaltyTransactionType::Redeem)
+            ->where('status', LoyaltyTransactionStatus::Completed)
+            ->get()
+            ->each(function (CustomerLoyaltyTransaction $transaction) use ($sale, $userId): void {
+                $this->wallets->reverseCompletedDebit(
+                    $transaction,
+                    $userId,
+                    __('Reversed loyalty redemption for voided sale #:id.', ['id' => $sale->id]),
+                );
+            });
     }
 }

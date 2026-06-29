@@ -7,6 +7,7 @@ namespace Tests\Integration\Loyalty;
 use App\Enums\LoyaltyEventType;
 use App\Enums\LoyaltyProgramScopeType;
 use App\Enums\LoyaltyScopeMode;
+use App\Enums\LoyaltyTransactionStatus;
 use App\Enums\LoyaltyTransactionType;
 use App\Enums\SaleStatus;
 use App\Events\SaleCompleted;
@@ -20,7 +21,10 @@ use App\Models\LoyaltyProgram;
 use App\Models\LoyaltyProgramTier;
 use App\Models\Sale;
 use App\Models\User;
+use App\Services\Checkout\CheckoutService;
+use App\Services\Loyalty\CheckoutLoyaltyService;
 use App\Services\Loyalty\LoyaltyTierService;
+use App\Services\Loyalty\LoyaltyWalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\SeedsLoyaltyEngine;
 use Tests\Concerns\SeedsRbac;
@@ -170,6 +174,66 @@ final class LoyaltyCheckoutIntegrationTest extends TestCase
             CustomerLoyaltyEvent::query()
                 ->where('customer_id', $customer->id)
                 ->where('event_type', LoyaltyEventType::TierChange)
+                ->exists()
+        );
+    }
+
+    public function test_checkout_loyalty_redemption_is_reversed_when_pending_sale_is_voided(): void
+    {
+        $branch = Branch::query()->create([
+            'name' => 'Void Redemption Branch',
+            'code' => 'VRB',
+            'currency' => 'PKR',
+            'timezone' => 'Asia/Karachi',
+            'is_active' => true,
+        ]);
+
+        $customer = Customer::query()->create([
+            'name' => 'Void Redemption Customer',
+            'phone' => '03001234567',
+            'is_active' => true,
+        ]);
+
+        $cashier = User::factory()->create(['is_active' => true]);
+
+        $wallet = app(LoyaltyWalletService::class)->getOrCreateWallet($customer->id, $this->program);
+        app(LoyaltyWalletService::class)->credit(
+            $wallet,
+            1000,
+            LoyaltyTransactionType::Earn,
+            LoyaltyTransactionStatus::Completed,
+        );
+
+        $sale = Sale::query()->create([
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'cashier_id' => $cashier->id,
+            'status' => SaleStatus::PendingPayment,
+            'subtotal' => 1000,
+            'total_discount' => 0,
+            'grand_total' => 1000,
+            'balance_due' => 1000,
+        ]);
+
+        app(CheckoutLoyaltyService::class)->applyRedemptionToSale($sale, 500, $cashier->id);
+
+        $wallet->refresh();
+        $sale->refresh();
+
+        $this->assertSame(500, $wallet->available_points);
+        $this->assertSame(500, $wallet->redeemed_points);
+        $this->assertSame('500.00', (string) $sale->balance_due);
+
+        app(CheckoutService::class)->voidSale($sale);
+
+        $wallet->refresh();
+
+        $this->assertSame(1000, $wallet->available_points);
+        $this->assertSame(0, $wallet->redeemed_points);
+        $this->assertTrue(
+            CustomerLoyaltyTransaction::query()
+                ->where('transaction_type', LoyaltyTransactionType::Reversal)
+                ->where('customer_id', $customer->id)
                 ->exists()
         );
     }

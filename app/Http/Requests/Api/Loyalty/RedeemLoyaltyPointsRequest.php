@@ -10,7 +10,8 @@ final class RedeemLoyaltyPointsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        return ($this->user()?->can('pos.access') ?? false)
+            || ($this->user()?->can('loyalty.adjust-points') ?? false);
     }
 
     /**
