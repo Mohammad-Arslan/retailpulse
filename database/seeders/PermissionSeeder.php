@@ -114,6 +114,16 @@ final class PermissionSeeder extends Seeder
             ['name' => 'customers.export', 'description' => 'Export customers to spreadsheets'],
             ['name' => 'customers.write-off-debt', 'description' => 'Write off customer bad debt'],
         ],
+        'loyalty' => [
+            ['name' => 'loyalty.view', 'description' => 'View loyalty programs and customer wallets'],
+            ['name' => 'loyalty.manage', 'description' => 'Manage loyalty engine settings'],
+            ['name' => 'loyalty.manage-programs', 'description' => 'Create and update loyalty programs'],
+            ['name' => 'loyalty.manage-rules', 'description' => 'Manage loyalty earning and redemption rules'],
+            ['name' => 'loyalty.adjust-points', 'description' => 'Manually adjust customer loyalty points'],
+            ['name' => 'loyalty.approve', 'description' => 'Approve loyalty transactions requiring authorization'],
+            ['name' => 'loyalty.view-transactions', 'description' => 'View loyalty transaction history'],
+            ['name' => 'loyalty.manage-campaigns', 'description' => 'Manage loyalty campaigns'],
+        ],
         'procurement' => [
             ['name' => 'procurement.view', 'description' => 'View procurement documents and suppliers'],
             ['name' => 'procurement.create', 'description' => 'Create purchase orders and requisitions'],

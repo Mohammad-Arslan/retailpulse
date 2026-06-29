@@ -68,6 +68,21 @@ class Customer extends Model
         return $this->hasMany(CustomerArLedger::class);
     }
 
+    public function loyaltyWallets(): HasMany
+    {
+        return $this->hasMany(CustomerLoyaltyWallet::class);
+    }
+
+    public function loyaltyTransactions(): HasMany
+    {
+        return $this->hasMany(CustomerLoyaltyTransaction::class);
+    }
+
+    public function loyaltyEvents(): HasMany
+    {
+        return $this->hasMany(CustomerLoyaltyEvent::class);
+    }
+
     public function totalLoyaltyPoints(): int
     {
         return (int) $this->loyaltyPoints()->sum('points');

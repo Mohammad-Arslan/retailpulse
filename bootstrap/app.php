@@ -7,6 +7,7 @@ use App\Http\Middleware\SetBranchContext;
 use App\Http\Middleware\SetLocale;
 use App\Jobs\BuildArAgingSnapshotsJob;
 use App\Jobs\CreateScheduledCountSessionsJob;
+use App\Jobs\ProcessLoyaltyExpiryJob;
 use App\Jobs\Procurement\PoApprovalEscalationJob;
 use App\Jobs\Procurement\PriceListExpiryAlertJob;
 use App\Jobs\Procurement\SupplierPerformanceScoringJob;
@@ -53,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->job(CreateScheduledCountSessionsJob::class)->dailyAt('01:00');
         $schedule->job(BuildArAgingSnapshotsJob::class)->dailyAt('02:30');
         $schedule->job(RecalculateLoyaltyTiersJob::class)->dailyAt('03:00');
+        $schedule->job(ProcessLoyaltyExpiryJob::class)->dailyAt('03:30');
         $schedule->job(SendOverdueRemindersJob::class)->dailyAt('08:00');
         $schedule->job(SupplierPerformanceScoringJob::class)->monthlyOn(1, '04:00');
         $schedule->job(PoApprovalEscalationJob::class)->hourly();

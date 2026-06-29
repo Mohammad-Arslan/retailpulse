@@ -71,6 +71,12 @@ const ROUTE_CRUMBS = {
     'Admin/CustomerGroups/Create': ['home', 'customerGroups', 'create'],
     'Admin/CustomerGroups/Edit': ['home', 'customerGroups', 'edit'],
     'Admin/ArAging/Index': ['home', 'arAging'],
+    'Admin/Loyalty/Programs/Index': ['home', 'loyaltyPrograms'],
+    'Admin/Loyalty/Programs/Create': ['home', 'loyaltyPrograms', 'create'],
+    'Admin/Loyalty/Programs/Edit': ['home', 'loyaltyPrograms', 'edit'],
+    'Admin/Loyalty/Programs/Show': ['home', 'loyaltyPrograms', 'view'],
+    'Admin/Loyalty/Transactions/Index': ['home', 'loyaltyPrograms', 'loyaltyTransactions'],
+    'Admin/Loyalty/Reports': ['home', 'loyaltyReports'],
     'Admin/Sales/Index': ['home', 'sales'],
     'Admin/Sales/Show': ['home', 'sales', 'view'],
     'Admin/Settings/Index': ['home', 'settings'],
@@ -104,6 +110,9 @@ const CRUMB_HREFS = {
     customers: 'admin.customers.index',
     customerGroups: 'admin.customer-groups.index',
     arAging: 'admin.ar-aging.index',
+    loyaltyPrograms: 'admin.loyalty.programs.index',
+    loyaltyTransactions: 'admin.loyalty.transactions.index',
+    loyaltyReports: 'admin.loyalty.reports.index',
     sales: 'admin.sales.index',
     settings: 'admin.settings.index',
 };
@@ -117,6 +126,26 @@ export function useBreadcrumbs() {
             return props.breadcrumbs;
         }
 
+        if (component === 'Admin/Loyalty/Programs/Show' && props.program?.name) {
+            return [
+                { label: t('breadcrumbs.home'), href: route(CRUMB_HREFS.home) },
+                { label: t('breadcrumbs.loyaltyPrograms'), href: route(CRUMB_HREFS.loyaltyPrograms) },
+                { label: props.program.name },
+            ];
+        }
+
+        if (component === 'Admin/Loyalty/Programs/Edit' && props.program?.name) {
+            return [
+                { label: t('breadcrumbs.home'), href: route(CRUMB_HREFS.home) },
+                { label: t('breadcrumbs.loyaltyPrograms'), href: route(CRUMB_HREFS.loyaltyPrograms) },
+                {
+                    label: props.program.name,
+                    href: route('admin.loyalty.programs.show', props.program.id),
+                },
+                { label: t('breadcrumbs.edit') },
+            ];
+        }
+
         const keys = ROUTE_CRUMBS[component] ?? ['home'];
 
         return keys.map((key, index) => ({
@@ -126,5 +155,5 @@ export function useBreadcrumbs() {
                     ? route(CRUMB_HREFS[key])
                     : undefined,
         }));
-    }, [component, props.breadcrumbs, t]);
+    }, [component, props.breadcrumbs, props.program, t]);
 }

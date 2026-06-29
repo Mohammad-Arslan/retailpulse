@@ -16,7 +16,10 @@ use App\Http\Controllers\Admin\CustomerWalletController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\GoodsReceivingNoteController;
 use App\Http\Controllers\Admin\InventoryController;
-use App\Http\Controllers\Admin\LandedCostController;
+use App\Http\Controllers\Admin\LoyaltyProgramConfigController;
+use App\Http\Controllers\Admin\LoyaltyProgramController;
+use App\Http\Controllers\Admin\LoyaltyReportController;
+use App\Http\Controllers\Admin\LoyaltyTransactionController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PoMatchController;
 use App\Http\Controllers\Admin\ProcurementReportController;
@@ -205,6 +208,59 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::resource('customer-groups', CustomerGroupController::class)->except(['show']);
         Route::get('ar-aging', [ArAgingController::class, 'index'])->name('ar-aging.index');
         Route::get('ar-aging/export', [ArAgingController::class, 'export'])->name('ar-aging.export');
+
+        Route::prefix('loyalty')->name('loyalty.')->group(function () {
+            Route::resource('programs', LoyaltyProgramController::class)->except(['destroy']);
+            Route::post('programs/{program}/activate', [LoyaltyProgramController::class, 'activate'])
+                ->name('programs.activate');
+            Route::post('programs/{program}/deactivate', [LoyaltyProgramController::class, 'deactivate'])
+                ->name('programs.deactivate');
+
+            Route::post('programs/{program}/rules', [LoyaltyProgramConfigController::class, 'storeRule'])
+                ->name('programs.rules.store');
+            Route::put('programs/{program}/rules/{rule}', [LoyaltyProgramConfigController::class, 'updateRule'])
+                ->name('programs.rules.update');
+            Route::delete('programs/{program}/rules/{rule}', [LoyaltyProgramConfigController::class, 'destroyRule'])
+                ->name('programs.rules.destroy');
+
+            Route::post('programs/{program}/tiers', [LoyaltyProgramConfigController::class, 'storeTier'])
+                ->name('programs.tiers.store');
+            Route::put('programs/{program}/tiers/{tier}', [LoyaltyProgramConfigController::class, 'updateTier'])
+                ->name('programs.tiers.update');
+            Route::delete('programs/{program}/tiers/{tier}', [LoyaltyProgramConfigController::class, 'destroyTier'])
+                ->name('programs.tiers.destroy');
+
+            Route::post('programs/{program}/approval-policies', [LoyaltyProgramConfigController::class, 'storeApprovalPolicy'])
+                ->name('programs.approval-policies.store');
+            Route::put('programs/{program}/approval-policies/{policy}', [LoyaltyProgramConfigController::class, 'updateApprovalPolicy'])
+                ->name('programs.approval-policies.update');
+            Route::delete('programs/{program}/approval-policies/{policy}', [LoyaltyProgramConfigController::class, 'destroyApprovalPolicy'])
+                ->name('programs.approval-policies.destroy');
+
+            Route::post('programs/{program}/expiry-rules', [LoyaltyProgramConfigController::class, 'storeExpiryRule'])
+                ->name('programs.expiry-rules.store');
+            Route::put('programs/{program}/expiry-rules/{expiryRule}', [LoyaltyProgramConfigController::class, 'updateExpiryRule'])
+                ->name('programs.expiry-rules.update');
+            Route::delete('programs/{program}/expiry-rules/{expiryRule}', [LoyaltyProgramConfigController::class, 'destroyExpiryRule'])
+                ->name('programs.expiry-rules.destroy');
+
+            Route::post('programs/{program}/campaigns', [LoyaltyProgramConfigController::class, 'storeCampaign'])
+                ->name('programs.campaigns.store');
+            Route::put('programs/{program}/campaigns/{campaign}', [LoyaltyProgramConfigController::class, 'updateCampaign'])
+                ->name('programs.campaigns.update');
+            Route::delete('programs/{program}/campaigns/{campaign}', [LoyaltyProgramConfigController::class, 'destroyCampaign'])
+                ->name('programs.campaigns.destroy');
+
+            Route::get('transactions', [LoyaltyTransactionController::class, 'index'])
+                ->name('transactions.index');
+            Route::post('customers/{customer}/adjust', [LoyaltyTransactionController::class, 'adjust'])
+                ->name('customers.adjust');
+            Route::post('transactions/{transaction}/approve', [LoyaltyTransactionController::class, 'approve'])
+                ->name('transactions.approve');
+            Route::post('transactions/{transaction}/reject', [LoyaltyTransactionController::class, 'reject'])
+                ->name('transactions.reject');
+            Route::get('reports', [LoyaltyReportController::class, 'index'])->name('reports.index');
+        });
 
         Route::post('stock-transfers/{stock_transfer}/ship', [StockTransferController::class, 'ship'])
             ->name('stock-transfers.ship');

@@ -13,12 +13,14 @@ use App\Models\Customer;
 use App\Models\CustomerArLedger;
 use App\Models\CustomerGroup;
 use App\Models\CustomerWalletTransaction;
+use App\Models\LoyaltyProgram;
 use App\Models\LoyaltyTier;
 use App\Models\SystemSetting;
 use App\Repositories\Contracts\CustomerRepositoryInterface;
 use App\Services\Customer\CustomerProfileService;
 use App\Services\Customer\CustomerService;
 use App\Services\Customer\CustomerStatementService;
+use App\Services\Loyalty\LoyaltyProfileService;
 use App\Support\BranchContext;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
@@ -35,6 +37,7 @@ final class CustomerController extends Controller
         private readonly CustomerService $customerService,
         private readonly CustomerProfileService $profileService,
         private readonly CustomerStatementService $statements,
+        private readonly LoyaltyProfileService $loyaltyProfile,
     ) {}
 
     public function index(Request $request): Response
@@ -201,6 +204,11 @@ final class CustomerController extends Controller
             'arLedger' => $arLedger,
             'currency' => $currency,
             'canViewCredit' => $canViewCredit,
+            'loyalty' => $this->loyaltyProfile->buildLoyaltySummary($customer, $branchId),
+            'loyaltyPrograms' => LoyaltyProgram::query()
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 

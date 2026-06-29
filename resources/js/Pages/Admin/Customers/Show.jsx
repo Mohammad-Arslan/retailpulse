@@ -27,10 +27,13 @@ function Show({
     arLedger = [],
     currency = 'PKR',
     canViewCredit = false,
+    loyalty = { enabled: false, wallets: [], transactions: [], timeline: [] },
+    loyaltyPrograms = [],
 }) {
     const can = useCan();
     const { t } = useTranslation();
     const [topUpOpen, setTopUpOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('overview');
     const [topUpAmount, setTopUpAmount] = useState('');
     const [topUpMethod, setTopUpMethod] = useState('cash');
     const [topUpProcessing, setTopUpProcessing] = useState(false);
@@ -150,6 +153,107 @@ function Show({
                 )}
             </div>
 
+            <div className="mb-6 flex gap-2 border-b">
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('overview')}
+                    className={`px-4 py-2 text-sm font-medium ${activeTab === 'overview' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-muted-foreground'}`}
+                >
+                    {t('pages.customers.tabs.overview')}
+                </button>
+                {loyalty.enabled && (
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('loyalty')}
+                        className={`px-4 py-2 text-sm font-medium ${activeTab === 'loyalty' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-muted-foreground'}`}
+                    >
+                        {t('pages.customers.tabs.loyalty')}
+                    </button>
+                )}
+            </div>
+
+            {activeTab === 'loyalty' && loyalty.enabled && (
+                <div className="mb-8 space-y-6">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {(loyalty.wallets ?? []).map((wallet, idx) => (
+                            <StatCard
+                                key={idx}
+                                label={wallet.program ?? t('pages.customers.loyalty.program')}
+                                value={wallet.available_points ?? 0}
+                                hint={wallet.tier?.name ? `${t('pages.customers.loyalty.tier')}: ${wallet.tier.name}` : undefined}
+                            />
+                        ))}
+                    </div>
+                    {(loyalty.wallets ?? []).length > 0 && (
+                        <div className="grid gap-4 sm:grid-cols-3">
+                            <StatCard label={t('pages.customers.loyalty.lifetimeEarned')} value={loyalty.wallets[0]?.lifetime_earned_points ?? 0} />
+                            <StatCard label={t('pages.customers.loyalty.redeemed')} value={loyalty.wallets[0]?.redeemed_points ?? 0} />
+                            <StatCard label={t('pages.customers.loyalty.expired')} value={loyalty.wallets[0]?.expired_points ?? 0} />
+                        </div>
+                    )}
+                    <section>
+                        <h2 className="mb-3 font-semibold">{t('pages.customers.loyalty.recentTransactions')}</h2>
+                        <div className="overflow-x-auto rounded-lg border">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b bg-muted/30 text-left text-muted-foreground">
+                                        <th className="px-3 py-2">{t('pages.customers.columns.date')}</th>
+                                        <th className="px-3 py-2">{t('pages.customers.columns.type')}</th>
+                                        <th className="px-3 py-2">{t('pages.customers.loyalty.points')}</th>
+                                        <th className="px-3 py-2">{t('pages.customers.loyalty.status')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(loyalty.transactions ?? []).length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
+                                                {t('pages.customers.loyalty.noTransactions')}
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        loyalty.transactions.map((tx) => (
+                                            <tr key={tx.id} className="border-b">
+                                                <td className="px-3 py-2">{tx.created_at ? new Date(tx.created_at).toLocaleString() : '—'}</td>
+                                                <td className="px-3 py-2 capitalize">{tx.type?.replace('_', ' ')}</td>
+                                                <td className="px-3 py-2">{tx.points > 0 ? `+${tx.points}` : tx.points}</td>
+                                                <td className="px-3 py-2 capitalize">{tx.status?.replace('_', ' ')}</td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                    <section>
+                        <h2 className="mb-3 font-semibold">{t('pages.customers.loyalty.timeline')}</h2>
+                        <ul className="space-y-2 rounded-lg border p-4">
+                            {(loyalty.timeline ?? []).length === 0 ? (
+                                <li className="text-sm text-muted-foreground">{t('pages.customers.loyalty.noTimeline')}</li>
+                            ) : (
+                                loyalty.timeline.map((event) => (
+                                    <li key={event.id} className="flex items-start justify-between gap-4 border-b pb-2 text-sm last:border-0">
+                                        <div>
+                                            <p className="font-medium capitalize">{event.event_type?.replace('_', ' ')}</p>
+                                            <p className="text-muted-foreground">{event.description}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className={event.points >= 0 ? 'text-teal-600' : 'text-amber-600'}>
+                                                {event.points > 0 ? `+${event.points}` : event.points}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {event.created_at ? new Date(event.created_at).toLocaleString() : ''}
+                                            </p>
+                                        </div>
+                                    </li>
+                                ))
+                            )}
+                        </ul>
+                    </section>
+                </div>
+            )}
+
+            {activeTab === 'overview' && (
+            <>
             <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     label={t('pages.customers.stats.atv')}
@@ -389,6 +493,8 @@ function Show({
                     </section>
                 )}
             </div>
+            </>
+            )}
 
             {topUpOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">

@@ -13,6 +13,7 @@ use App\Enums\PosCartStatus;
 use App\Enums\SaleStatus;
 use App\Enums\StockMovementReason;
 use App\Enums\TaxMode;
+use App\Events\SaleCompleted;
 use App\Jobs\SubmitFbrInvoiceJob;
 use App\Models\Customer;
 use App\Models\PosCart;
@@ -24,7 +25,6 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\PosCartRepositoryInterface;
 use App\Services\Customer\CustomerCreditService;
-use App\Services\Customer\LoyaltyService;
 use App\Services\Customer\StoreCreditService;
 use App\Services\Customer\WalletService;
 use App\Services\InventoryService;
@@ -44,7 +44,6 @@ final class CheckoutService
         private readonly WalletService $wallet,
         private readonly StoreCreditService $storeCredit,
         private readonly CustomerCreditService $customerCredit,
-        private readonly LoyaltyService $loyalty,
     ) {}
 
     /**
@@ -442,7 +441,7 @@ final class CheckoutService
             $this->customerCredit->recordCreditSale($sale, $creditTotal, $cashierId);
         }
 
-        $this->loyalty->earnOnSaleComplete($sale);
+        SaleCompleted::dispatch($sale);
 
         if ($fbrEnabled && $failureMode === 'queue') {
             SubmitFbrInvoiceJob::dispatch($invoice->id);
