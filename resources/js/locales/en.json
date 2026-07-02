@@ -1779,6 +1779,7 @@
         "completePayment": "Complete Payment",
         "partialPayment": "Apply Partial Payment",
         "appliedPayments": "Applied Payments",
+        "removePayment": "Remove Payment",
         "customerOptional": "Customer (optional)",
         "customerSearchPlaceholder": "Search by name or phone…",
         "clearCustomer": "Clear",
@@ -1838,6 +1839,7 @@
             "paymentFailed": "Payment failed.",
             "returnFailed": "Could not return to POS.",
             "voidFailed": "Could not void sale.",
+            "removePaymentFailed": "Could not remove the payment.",
             "saleConfirmed": "Sale already confirmed. Complete payment or void the sale."
         }
     }

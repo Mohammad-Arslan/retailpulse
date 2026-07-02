@@ -6,6 +6,7 @@ import {
     Pause,
     RotateCcw,
     Trash2,
+    UserRound,
     Wallet,
 } from 'lucide-react';
 import { computeCartTotals, estimateCartTax, formatPkr } from '@/lib/posCartTotals';
@@ -23,6 +24,8 @@ export function CartBottomBar({
     onVoid,
     onReopen,
     canSuspend,
+    onAttachCustomer,
+    hasCustomer = false,
 }) {
     const [moreOpen, setMoreOpen] = useState(false);
 
@@ -161,10 +164,14 @@ export function CartBottomBar({
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setMoreOpen(false)}
+                                        onClick={() => {
+                                            setMoreOpen(false);
+                                            onAttachCustomer?.();
+                                        }}
                                         className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-rp-text-secondary hover:bg-rp-surface-subtle hover:text-rp-text"
                                     >
-                                        Link Customer (coming soon)
+                                        <UserRound className="h-3.5 w-3.5 shrink-0" />
+                                        {hasCustomer ? 'Change Customer' : 'Attach Customer'}
                                     </button>
                                 </div>
                             </>

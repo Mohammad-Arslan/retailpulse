@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Button } from '@/Components/ui/button';
-import { Printer } from 'lucide-react';
+import { Printer, X } from 'lucide-react';
 import { checkoutApi, customerApi, loyaltyApi, saleApi } from '@/lib/checkoutApi';
 import { pinApi } from '@/lib/posApi';
 import { usePosDialog } from '@/Hooks/usePosDialog';
@@ -10,6 +10,38 @@ import { useTranslation } from 'react-i18next';
 
 function customerStorageKey(cartId) {
     return `checkout-customer-${cartId}`;
+}
+
+// The customer profile API returns a nested shape (customer.*, wallet.balance,
+// store_credit.balance, ar_balance, credit_limit). The checkout UI works with a
+// flat shape, so normalise here and derive credit_available.
+function normalizeCustomerProfile(profile) {
+    if (!profile) return null;
+
+    const customer = profile.customer ?? {};
+    const creditLimit = profile.credit_limit ?? null;
+    const arBalance = profile.ar_balance ?? null;
+    const creditAvailable =
+        creditLimit != null
+            ? Math.max(
+                  0,
+                  parseFloat(creditLimit) - parseFloat(arBalance ?? '0'),
+              ).toFixed(2)
+            : null;
+
+    return {
+        id: customer.id ?? profile.id,
+        name: customer.name ?? profile.name,
+        phone: customer.phone ?? profile.phone,
+        email: customer.email ?? profile.email,
+        loyalty_tier: profile.loyalty_tier ?? null,
+        loyalty_points: profile.metrics?.loyalty_points ?? null,
+        wallet_balance: profile.wallet?.balance ?? '0.00',
+        store_credit_balance: profile.store_credit?.balance ?? '0.00',
+        ar_outstanding: arBalance,
+        credit_limit: creditLimit,
+        credit_available: creditAvailable,
+    };
 }
 
 function ManagerPinModal({ onVerified, onCancel, t }) {
@@ -196,7 +228,7 @@ export default function CheckoutIndex({ cartId }) {
         }
         try {
             const profile = await customerApi.profile(customerId);
-            setCustomerProfile(profile);
+            setCustomerProfile(normalizeCustomerProfile(profile));
         } catch {
             setCustomerProfile(null);
         }
@@ -385,6 +417,33 @@ export default function CheckoutIndex({ cartId }) {
             success(t('checkout.confirmSale'), t('checkout.payment'));
         } catch (err) {
             error(err?.response?.data?.message || t('checkout.errors.confirmFailed'));
+        } finally {
+            setProcessing(false);
+        }
+    }
+
+    function selectPaymentMethod(method) {
+        setSelectedMethod(method);
+        setManagerPinOverride(null);
+        setTenderedAmount('');
+        setPaymentAmount('');
+        setBankReference('');
+        setBankName('');
+    }
+
+    async function handleRemovePayment(paymentId) {
+        if (!sale?.id || processing) return;
+        setProcessing(true);
+        try {
+            const updated = await saleApi.removePayment(sale.id, paymentId);
+            setSale(updated);
+            setTenderedAmount('');
+            setPaymentAmount('');
+            if (updated.customer?.id) {
+                await loadCustomerProfile(updated.customer.id);
+            }
+        } catch (err) {
+            error(err?.response?.data?.message || t('checkout.errors.removePaymentFailed'));
         } finally {
             setProcessing(false);
         }
@@ -777,10 +836,7 @@ export default function CheckoutIndex({ cartId }) {
                                         key={method}
                                         type="button"
                                         variant={selectedMethod === method ? 'default' : 'outline'}
-                                        onClick={() => {
-                                            setSelectedMethod(method);
-                                            setManagerPinOverride(null);
-                                        }}
+                                        onClick={() => selectPaymentMethod(method)}
                                     >
                                         {methodLabel(method)}
                                     </Button>
@@ -892,8 +948,23 @@ export default function CheckoutIndex({ cartId }) {
                                 <div className="space-y-2">
                                     <h3 className="text-sm font-medium">{t('checkout.appliedPayments')}</h3>
                                     {sale.payments.map((payment) => (
-                                        <div key={payment.id} className="rounded border px-2 py-1 text-sm">
-                                            {methodLabel(payment.method)}: {payment.amount}
+                                        <div
+                                            key={payment.id}
+                                            className="flex items-center justify-between rounded border px-2 py-1 text-sm"
+                                        >
+                                            <span>
+                                                {methodLabel(payment.method)}: {payment.amount} {currency}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemovePayment(payment.id)}
+                                                disabled={processing}
+                                                className="ml-2 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+                                                title={t('checkout.removePayment')}
+                                                aria-label={t('checkout.removePayment')}
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
                                         </div>
                                     ))}
                                 </div>

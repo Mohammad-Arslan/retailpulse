@@ -15,6 +15,7 @@ use App\Models\StockReservation;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
 use App\Repositories\Contracts\PosCartRepositoryInterface;
+use App\Support\Pos\PosBranchWarehouses;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -368,10 +369,7 @@ final class PosCartService
 
     private function availableStock(int $branchId, int $variantId): int
     {
-        return $this->inventories->availableQuantity(
-            warehouseId: $this->defaultWarehouseForBranch($branchId),
-            variantId: $variantId,
-        );
+        return PosBranchWarehouses::totalAvailable($branchId, $variantId);
     }
 
     private function availableForLine(PosCart $cart, ?PosCartItem $item, int $variantId): int
@@ -406,8 +404,10 @@ final class PosCartService
             return;
         }
 
+        $warehouseId = $this->warehouseForReservation($cart, $item, $quantity);
+
         $this->inventory->reserve(new ReserveStockData(
-            warehouseId: $this->defaultWarehouseForBranch($cart->branch_id),
+            warehouseId: $warehouseId,
             variantId: $item->product_variant_id,
             batchId: null,
             quantity: $quantity,
@@ -429,15 +429,58 @@ final class PosCartService
             return;
         }
 
-        $this->inventory->release(new ReserveStockData(
-            warehouseId: $this->defaultWarehouseForBranch($cart->branch_id),
-            variantId: $item->product_variant_id,
-            batchId: null,
-            quantity: $quantity,
-            userId: $cart->cashier_id,
-            referenceType: self::RESERVATION_REFERENCE_TYPE,
-            referenceId: $item->id,
-        ));
+        $remaining = $quantity;
+
+        StockReservation::query()
+            ->whereNull('released_at')
+            ->where('reference_type', self::RESERVATION_REFERENCE_TYPE)
+            ->where('reference_id', $item->id)
+            ->orderBy('id')
+            ->get()
+            ->each(function (StockReservation $reservation) use ($cart, $item, &$remaining): void {
+                if ($remaining <= 0) {
+                    return;
+                }
+
+                $toRelease = min($remaining, (int) $reservation->quantity);
+
+                $this->inventory->release(new ReserveStockData(
+                    warehouseId: (int) $reservation->warehouse_id,
+                    variantId: $item->product_variant_id,
+                    batchId: $reservation->batch_id !== null ? (int) $reservation->batch_id : null,
+                    quantity: $toRelease,
+                    userId: $cart->cashier_id,
+                    referenceType: self::RESERVATION_REFERENCE_TYPE,
+                    referenceId: $item->id,
+                ));
+
+                $remaining -= $toRelease;
+            });
+    }
+
+    private function warehouseForReservation(PosCart $cart, PosCartItem $item, int $quantity): int
+    {
+        $existing = StockReservation::query()
+            ->whereNull('released_at')
+            ->where('reference_type', self::RESERVATION_REFERENCE_TYPE)
+            ->where('reference_id', $item->id)
+            ->value('warehouse_id');
+
+        if ($existing !== null) {
+            return (int) $existing;
+        }
+
+        $resolved = PosBranchWarehouses::resolveForVariant(
+            $cart->branch_id,
+            $item->product_variant_id,
+            max($quantity, (int) $item->quantity),
+        );
+
+        if ($resolved !== null) {
+            return $resolved;
+        }
+
+        return $this->defaultWarehouseForBranch($cart->branch_id);
     }
 
     private function syncItemReservation(

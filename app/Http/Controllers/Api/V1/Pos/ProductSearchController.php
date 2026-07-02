@@ -8,7 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Models\BranchProductPrice;
 use App\Models\Inventory;
 use App\Models\ProductVariant;
-use App\Models\Warehouse;
+use App\Support\Pos\PosBranchWarehouses;
+use App\Support\Pos\PosSellableProducts;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -28,8 +29,6 @@ final class ProductSearchController extends Controller
             return response()->json(['results' => []]);
         }
 
-        $warehouseId = $this->defaultWarehouseId($branchId);
-
         $variants = ProductVariant::query()
             ->select([
                 'product_variants.id',
@@ -39,14 +38,18 @@ final class ProductSearchController extends Controller
                 'product_variants.name as variant_name',
                 'product_variants.sell_price',
             ])
-            ->with(['product:id,name,is_active'])
+            ->with(['product:id,name,is_active,type'])
             ->join('products', 'products.id', '=', 'product_variants.product_id')
             ->where('products.is_active', true)
             ->where(function ($q) use ($search) {
                 $q->where('products.name', 'like', "%{$search}%")
                     ->orWhere('product_variants.sku', 'like', "%{$search}%")
                     ->orWhere('product_variants.barcode', 'like', "%{$search}%");
-            })
+            });
+
+        PosSellableProducts::restrictToInStock($variants, $branchId);
+
+        $variants = $variants
             ->limit(20)
             ->get();
 
@@ -55,13 +58,14 @@ final class ProductSearchController extends Controller
             ->whereIn('product_variant_id', $variants->pluck('id'))
             ->pluck('sell_price', 'product_variant_id');
 
+        $warehouseIds = PosBranchWarehouses::activeIds($branchId);
         $stockLevels = [];
 
-        if ($warehouseId !== null) {
+        if ($warehouseIds !== []) {
             $stockLevels = Inventory::query()
-                ->where('warehouse_id', $warehouseId)
+                ->whereIn('warehouse_id', $warehouseIds)
                 ->whereIn('product_variant_id', $variants->pluck('id'))
-                ->selectRaw('product_variant_id, SUM(quantity_on_hand - quantity_reserved) as available')
+                ->selectRaw('product_variant_id, SUM(quantity_on_hand - quantity_reserved - COALESCE(quantity_in_quarantine, 0)) as available')
                 ->groupBy('product_variant_id')
                 ->pluck('available', 'product_variant_id')
                 ->map(fn ($v) => max(0, (int) $v))
@@ -71,6 +75,7 @@ final class ProductSearchController extends Controller
         $results = $variants->map(function (ProductVariant $variant) use ($branchPrices, $stockLevels) {
             $price = $branchPrices[$variant->id] ?? $variant->sell_price ?? 0;
             $available = $stockLevels[$variant->id] ?? 0;
+            $tracksInventory = $variant->product->tracksInventory();
 
             return [
                 'id' => $variant->id,
@@ -79,26 +84,11 @@ final class ProductSearchController extends Controller
                 'barcode' => $variant->barcode,
                 'name' => $variant->product->name.($variant->variant_name ? ' — '.$variant->variant_name : ''),
                 'unit_price' => (float) $price,
-                'available_stock' => $available,
-                'in_stock' => $available > 0,
+                'available_stock' => $tracksInventory ? $available : null,
+                'in_stock' => ! $tracksInventory || $available > 0,
             ];
         });
 
         return response()->json(['results' => $results->all()]);
-    }
-
-    private function defaultWarehouseId(int $branchId): ?int
-    {
-        $warehouse = Warehouse::query()
-            ->where('branch_id', $branchId)
-            ->where('is_default', true)
-            ->where('is_active', true)
-            ->first()
-            ?? Warehouse::query()
-                ->where('branch_id', $branchId)
-                ->where('is_active', true)
-                ->first();
-
-        return $warehouse?->id;
     }
 }

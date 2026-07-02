@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Minus, Plus, X } from 'lucide-react';
 import { cartItemApi } from '@/lib/posApi';
 import { usePosDialog } from '@/Hooks/usePosDialog';
@@ -31,6 +31,8 @@ export function CartItemRow({
 }) {
     const [showDiscount, setShowDiscount] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [qtyInput, setQtyInput] = useState(String(item.quantity));
+    const [editingQty, setEditingQty] = useState(false);
     const { error, confirmRemoveItem } = usePosDialog();
 
     const locked = readOnly || processing || saving;
@@ -38,6 +40,12 @@ export function CartItemRow({
     const gross = lineGross(item);
     const total = lineTotal(item);
     const saved = lineDiscount(item);
+
+    useEffect(() => {
+        if (!editingQty) {
+            setQtyInput(String(item.quantity));
+        }
+    }, [item.quantity, editingQty]);
 
     async function changeQty(delta) {
         const next = item.quantity + delta;
@@ -47,6 +55,7 @@ export function CartItemRow({
         try {
             const updated = await cartItemApi.update(cartId, item.id, { quantity: next });
             onUpdated(updated);
+            setQtyInput(String(updated.quantity));
         } catch (err) {
             const msg =
                 err?.response?.data?.errors?.quantity?.[0] ||
@@ -55,6 +64,58 @@ export function CartItemRow({
             error(msg);
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function commitQty(raw) {
+        const next = Number.parseInt(raw, 10);
+        if (!Number.isInteger(next) || next < 1) {
+            setQtyInput(String(item.quantity));
+            return;
+        }
+        if (next === item.quantity || locked) {
+            setQtyInput(String(item.quantity));
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const updated = await cartItemApi.update(cartId, item.id, { quantity: next });
+            onUpdated(updated);
+            setQtyInput(String(updated.quantity));
+        } catch (err) {
+            setQtyInput(String(item.quantity));
+            const msg =
+                err?.response?.data?.errors?.quantity?.[0] ||
+                err?.response?.data?.message ||
+                'Failed to update quantity.';
+            error(msg);
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    function handleQtyChange(e) {
+        const value = e.target.value;
+        if (value === '' || /^\d+$/.test(value)) {
+            setQtyInput(value);
+        }
+    }
+
+    function handleQtyBlur() {
+        setEditingQty(false);
+        void commitQty(qtyInput);
+    }
+
+    function handleQtyKeyDown(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.currentTarget.blur();
+        }
+        if (e.key === 'Escape') {
+            setQtyInput(String(item.quantity));
+            setEditingQty(false);
+            e.currentTarget.blur();
         }
     }
 
@@ -147,9 +208,19 @@ export function CartItemRow({
                                 >
                                     <Minus className="h-3.5 w-3.5" />
                                 </button>
-                                <span className="min-w-[2rem] text-center text-sm font-semibold text-rp-text">
-                                    {item.quantity}
-                                </span>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    value={qtyInput}
+                                    onChange={handleQtyChange}
+                                    onFocus={() => setEditingQty(true)}
+                                    onBlur={handleQtyBlur}
+                                    onKeyDown={handleQtyKeyDown}
+                                    disabled={locked}
+                                    aria-label="Quantity"
+                                    className="w-12 rounded-lg border border-rp-border bg-rp-surface-inset px-1 py-1 text-center text-sm font-semibold text-rp-text focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-40"
+                                />
                                 <button
                                     type="button"
                                     onClick={() => changeQty(1)}

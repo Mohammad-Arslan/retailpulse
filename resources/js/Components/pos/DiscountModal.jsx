@@ -71,7 +71,7 @@ export function DiscountModal({ item, onSave, onClose }) {
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setNeedsApproval(false)}
-                                className="flex-1 rounded-lg border border-zinc-300 py-2 text-sm hover:bg-zinc-50 dark:border-zinc-600"
+                                className="flex-1 rounded-lg border border-zinc-300 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
                             >
                                 Back
                             </button>
@@ -99,7 +99,7 @@ export function DiscountModal({ item, onSave, onClose }) {
                                         className={`flex-1 rounded-lg border py-2 text-sm font-medium transition-colors ${
                                             type === t
                                                 ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                                : 'border-zinc-300 hover:bg-zinc-50 dark:border-zinc-600'
+                                                : 'border-zinc-300 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800'
                                         }`}
                                     >
                                         {t === 'percent' ? '% Percent' : 'PKR Flat'}
@@ -152,7 +152,7 @@ export function DiscountModal({ item, onSave, onClose }) {
                                 <button
                                     type="button"
                                     onClick={clearDiscount}
-                                    className="rounded-lg border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-50 dark:border-zinc-600"
+                                    className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
                                 >
                                     Remove
                                 </button>
@@ -160,7 +160,7 @@ export function DiscountModal({ item, onSave, onClose }) {
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="flex-1 rounded-lg border border-zinc-300 py-2 text-sm hover:bg-zinc-50 dark:border-zinc-600"
+                                className="flex-1 rounded-lg border border-zinc-300 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
                             >
                                 Cancel
                             </button>

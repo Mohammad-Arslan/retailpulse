@@ -8,7 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Models\BranchProductPrice;
 use App\Models\Inventory;
 use App\Models\ProductVariant;
-use App\Models\Warehouse;
+use App\Support\Pos\PosBranchWarehouses;
+use App\Support\Pos\PosSellableProducts;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -29,8 +30,6 @@ final class ProductCatalogController extends Controller
         $search = trim((string) $request->input('q', ''));
         $perPage = (int) $request->input('per_page', 24);
 
-        $warehouseId = $this->defaultWarehouseId($branchId);
-
         $query = ProductVariant::query()
             ->select([
                 'product_variants.id',
@@ -40,7 +39,7 @@ final class ProductCatalogController extends Controller
                 'product_variants.name as variant_name',
                 'product_variants.sell_price',
             ])
-            ->with(['product.primaryImage', 'product:id,name,category_id,is_active'])
+            ->with(['product.primaryImage', 'product:id,name,category_id,is_active,type'])
             ->join('products', 'products.id', '=', 'product_variants.product_id')
             ->where('products.is_active', true)
             ->when($categoryId, fn ($q) => $q->where('products.category_id', (int) $categoryId))
@@ -54,6 +53,8 @@ final class ProductCatalogController extends Controller
             ->orderBy('products.name')
             ->orderBy('product_variants.sort_order');
 
+        PosSellableProducts::restrictToInStock($query, $branchId);
+
         $paginator = $query->paginate($perPage);
 
         $variantIds = collect($paginator->items())->pluck('id');
@@ -63,13 +64,14 @@ final class ProductCatalogController extends Controller
             ->whereIn('product_variant_id', $variantIds)
             ->pluck('sell_price', 'product_variant_id');
 
+        $warehouseIds = PosBranchWarehouses::activeIds($branchId);
         $stockLevels = [];
 
-        if ($warehouseId !== null && $variantIds->isNotEmpty()) {
+        if ($warehouseIds !== [] && $variantIds->isNotEmpty()) {
             $stockLevels = Inventory::query()
-                ->where('warehouse_id', $warehouseId)
+                ->whereIn('warehouse_id', $warehouseIds)
                 ->whereIn('product_variant_id', $variantIds)
-                ->selectRaw('product_variant_id, SUM(quantity_on_hand - quantity_reserved) as available')
+                ->selectRaw('product_variant_id, SUM(quantity_on_hand - quantity_reserved - COALESCE(quantity_in_quarantine, 0)) as available')
                 ->groupBy('product_variant_id')
                 ->pluck('available', 'product_variant_id')
                 ->map(fn ($v) => max(0, (int) $v))
@@ -79,6 +81,7 @@ final class ProductCatalogController extends Controller
         $results = collect($paginator->items())->map(function (ProductVariant $variant) use ($branchPrices, $stockLevels) {
             $price = $branchPrices[$variant->id] ?? $variant->sell_price ?? 0;
             $available = $stockLevels[$variant->id] ?? 0;
+            $tracksInventory = $variant->product->tracksInventory();
             $image = $variant->product?->primaryImage;
 
             return [
@@ -89,8 +92,8 @@ final class ProductCatalogController extends Controller
                 'barcode' => $variant->barcode,
                 'name' => $variant->product->name.($variant->variant_name ? ' — '.$variant->variant_name : ''),
                 'unit_price' => (float) $price,
-                'available_stock' => $available,
-                'in_stock' => $available > 0,
+                'available_stock' => $tracksInventory ? $available : null,
+                'in_stock' => ! $tracksInventory || $available > 0,
                 'image_url' => $image !== null ? ($image->thumbnailUrl() ?? $image->url()) : null,
             ];
         });
@@ -104,20 +107,5 @@ final class ProductCatalogController extends Controller
                 'total' => $paginator->total(),
             ],
         ]);
-    }
-
-    private function defaultWarehouseId(int $branchId): ?int
-    {
-        $warehouse = Warehouse::query()
-            ->where('branch_id', $branchId)
-            ->where('is_default', true)
-            ->where('is_active', true)
-            ->first()
-            ?? Warehouse::query()
-                ->where('branch_id', $branchId)
-                ->where('is_active', true)
-                ->first();
-
-        return $warehouse?->id;
     }
 }

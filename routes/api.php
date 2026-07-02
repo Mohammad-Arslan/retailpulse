@@ -71,6 +71,7 @@ Route::prefix('v1')
         Route::post('checkout/{cartId}/abandon', [CheckoutController::class, 'abandon'])->name('checkout.abandon');
 
         Route::post('sales/{id}/payments', [SaleController::class, 'addPayment'])->name('sales.payments.store');
+        Route::delete('sales/{id}/payments/{paymentId}', [SaleController::class, 'removePayment'])->name('sales.payments.destroy');
         Route::post('sales/{id}/void', [SaleController::class, 'void'])->name('sales.void');
     });
 

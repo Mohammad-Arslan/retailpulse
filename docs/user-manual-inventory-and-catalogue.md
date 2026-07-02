@@ -6,6 +6,8 @@
 
 This manual explains **where to click**, **what each screen does**, **how data flows**, and **what every term means**. Hand it to customers who manage products and stock in RetailPulse.
 
+**See also:** [`user-manual-put-product-in-stock.md`](user-manual-put-product-in-stock.md) — focused step-by-step guide for putting a product **in hand** at any branch (receive, adjust, transfer, import, POS verify).
+
 ---
 
 ## Table of contents
@@ -833,6 +835,7 @@ Movements are **permanent audit records** — they are not edited or deleted.
 
 | Document | Content |
 |----------|---------|
+| `docs/user-manual-put-product-in-stock.md` | Step-by-step: put product in stock for any branch |
 | `docs/products-crud.md` | Technical product field reference |
 | `docs/phases/phase-04-product-information.md` | Catalogue phase spec |
 | `docs/phases/phase-05-inventory-warehouse.md` | Inventory phase spec |
