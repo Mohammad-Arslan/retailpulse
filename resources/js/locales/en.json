@@ -570,6 +570,7 @@
             "approve": "Approve variances",
             "post": "Post adjustments",
             "blindMode": "Blind count",
+            "requiresApproval": "Variances exceed the configured threshold — manager approval is required before posting.",
             "columns": {
                 "reference": "Reference",
                 "warehouse": "Warehouse",

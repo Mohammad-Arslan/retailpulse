@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\DTOs\CountSession\CreateCountSessionData;
 use App\DTOs\CountSession\SubmitCountLinesData;
+use App\Enums\CountSessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCountSessionRequest;
 use App\Http\Requests\Admin\SubmitCountLinesRequest;
@@ -123,6 +124,8 @@ final class CountSessionController extends Controller
                     'variance_qty' => $line->variance_qty,
                     'variance_value' => $line->variance_value,
                 ])->values()->all(),
+                'requiresApproval' => $session->status === CountSessionStatus::UnderReview
+                    && $this->countSessionService->exceedsVarianceThreshold($session),
             ],
         ]);
     }
@@ -142,7 +145,7 @@ final class CountSessionController extends Controller
     {
         $this->authorize('update', $countSession);
 
-        $this->countSessionService->submitCounts(
+        $session = $this->countSessionService->submitCounts(
             $countSession,
             new SubmitCountLinesData(
                 lines: $request->validated('lines'),
@@ -150,9 +153,13 @@ final class CountSessionController extends Controller
             ),
         );
 
+        $message = $session->status === CountSessionStatus::Approved
+            ? __('Counts approved — variances are within threshold.')
+            : __('Counts submitted for manager approval.');
+
         return redirect()
             ->route('admin.count-sessions.show', $countSession)
-            ->with('success', __('Counts submitted for review.'));
+            ->with('success', $message);
     }
 
     public function approve(CountSession $countSession, Request $request): RedirectResponse
