@@ -42,7 +42,7 @@ final class InventoryController extends Controller
 
         $filters = ListPagination::filters(
             $request,
-            ['search', 'warehouse_id', 'sort', 'direction'],
+            ['search', 'warehouse_id', 'availability', 'quarantine', 'batch', 'bin', 'sort', 'direction'],
         );
         $branchId = app(BranchContext::class)->branchId;
 
@@ -189,25 +189,39 @@ final class InventoryController extends Controller
         $this->authorize('branchStockSettings', Inventory::class);
 
         $branchId = app(BranchContext::class)->branchId;
-        $accessibleIds = $this->branchContext->accessibleBranchIds($request->user());
-        $search = trim((string) $request->query('search', ''));
+        $filters = ListPagination::filters($request, ['search', 'sort', 'direction']);
+        $search = trim((string) ($filters['search'] ?? ''));
 
-        $variants = ProductVariant::query()
+        $query = ProductVariant::query()
             ->with(['product', 'branchSettings' => fn ($q) => $q->when(
                 $branchId !== null,
                 fn ($inner) => $inner->where('branch_id', $branchId),
             )])
             ->whereHas('product', fn ($q) => $q->where('is_active', true))
             ->when($search !== '', function ($q) use ($search) {
-                $q->where(function ($inner) use ($search) {
-                    $inner->where('sku', 'like', "%{$search}%")
-                        ->orWhereHas('product', fn ($p) => $p->where('name', 'like', "%{$search}%"));
+                $term = '%'.addcslashes($search, '%_\\').'%';
+                $q->where(function ($inner) use ($term) {
+                    $inner->where('sku', 'like', $term)
+                        ->orWhere('name', 'like', $term)
+                        ->orWhereHas('product', fn ($p) => $p->where('name', 'like', $term));
                 });
-            })
-            ->orderBy('sku')
-            ->limit(100)
-            ->get()
-            ->map(function (ProductVariant $variant) use ($branchId) {
+            });
+
+        $sort = $filters['sort'] ?? 'sku';
+        $direction = ($filters['direction'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
+
+        if ($sort === 'product_name') {
+            $query->join('products', 'product_variants.product_id', '=', 'products.id')
+                ->orderBy('products.name', $direction)
+                ->select('product_variants.*');
+        } else {
+            $query->orderBy('sku', $direction);
+        }
+
+        $paginator = $query
+            ->paginate(ListPagination::resolve($filters['per_page']))
+            ->withQueryString()
+            ->through(function (ProductVariant $variant) use ($branchId) {
                 $setting = $branchId !== null
                     ? $variant->branchSettings->firstWhere('branch_id', $branchId)
                     : null;
@@ -221,13 +235,11 @@ final class InventoryController extends Controller
                     'reorder_point' => $setting?->reorder_point,
                     'safety_stock_qty' => $setting?->safety_stock_qty,
                 ];
-            })
-            ->values()
-            ->all();
+            });
 
         return Inertia::render('Admin/Inventory/BranchStockSettings', [
-            'variants' => $variants,
-            'filters' => ['search' => $search],
+            'variants' => $paginator,
+            'filters' => $filters,
             'branchId' => $branchId,
         ]);
     }

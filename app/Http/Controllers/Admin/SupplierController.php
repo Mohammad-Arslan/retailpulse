@@ -120,6 +120,9 @@ final class SupplierController extends Controller
                     'notes' => $a->notes,
                     'uploaded_by' => $a->uploader?->name,
                     'created_at' => $a->created_at?->toIso8601String(),
+                    'preview_url' => str_starts_with((string) $a->mime_type, 'image/')
+                        ? route('admin.suppliers.attachments.preview', [$supplier->id, $a->id])
+                        : null,
                 ]),
                 'performanceScores' => $supplier->performanceScores->map(fn ($s) => [
                     'period_start' => $s->period_start?->toDateString(),

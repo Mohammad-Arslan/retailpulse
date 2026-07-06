@@ -1,3 +1,4 @@
+import ScrollArea from '@/Components/common/ScrollArea';
 import { ADMIN_NAV_SECTIONS } from '@/config/adminNav';
 import { useCan } from '@/Hooks/useCan';
 import { cn } from '@/lib/utils';
@@ -77,7 +78,7 @@ export default function CommandPalette({ open, onClose }) {
                         ESC
                     </kbd>
                 </div>
-                <ul className="max-h-72 overflow-y-auto p-2">
+                <ScrollArea as="ul" className="max-h-72 overflow-y-auto p-2">
                     {filtered.length === 0 ? (
                         <li className="px-3 py-6 text-center text-sm text-rp-text-muted">
                             {t('common.noResults')}
@@ -112,7 +113,7 @@ export default function CommandPalette({ open, onClose }) {
                             );
                         })
                     )}
-                </ul>
+                </ScrollArea>
             </div>
         </div>
     );

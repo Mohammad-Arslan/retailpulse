@@ -430,8 +430,24 @@
             "title": "Stock levels",
             "description": "Real-time on-hand and reserved quantities by warehouse.",
             "empty": "No inventory records yet. Receive stock to get started.",
-            "searchPlaceholder": "Search SKU or product…",
+            "searchPlaceholder": "Search SKU, product, batch, or bin…",
             "allWarehouses": "All warehouses",
+            "filters": {
+                "allAvailability": "All availability",
+                "inStock": "In stock",
+                "outOfStock": "Out of stock",
+                "lowStock": "Low stock",
+                "reserved": "Has reserved",
+                "allQuarantine": "All quarantine",
+                "inQuarantine": "In quarantine",
+                "notInQuarantine": "Not in quarantine",
+                "allBatches": "All batches",
+                "withBatch": "With batch",
+                "withoutBatch": "Without batch",
+                "allBins": "All bins",
+                "binAssigned": "Bin assigned",
+                "binUnassigned": "No bin"
+            },
             "adjust": "Adjust stock",
             "adjustShort": "Adjust",
             "receive": "Receive stock",
@@ -1392,7 +1408,9 @@
                 "notesPlaceholder": "Optional description…",
                 "upload": "Upload",
                 "empty": "No attachments yet.",
-                "deleteConfirm": "Delete this attachment?"
+                "dropHint": "Drag and drop a file here, or click to browse",
+                "dropSubhint": "Images, PDFs, and documents up to 10 MB",
+                "removeSelected": "Remove selected file"
             },
             "columns": {
                 "supplier": "Supplier",

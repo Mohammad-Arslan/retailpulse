@@ -176,9 +176,21 @@
         @apply overflow-hidden rounded-2xl border border-rp-border bg-rp-surface;
     }
 
+    .rp-scroll-table {
+        @apply w-full border-separate border-spacing-0 text-sm;
+    }
+
+    .rp-scroll-table thead th {
+        @apply sticky top-0 z-20 border-b border-rp-border bg-rp-surface-inset px-4 py-3 text-left text-[11px] font-bold tracking-wider text-rp-text-muted uppercase;
+        box-shadow: 0 1px 0 0 var(--rp-border);
+    }
+
+    .rp-scroll-table tbody tr {
+        @apply border-b border-rp-border/50 bg-rp-surface;
+    }
+
     .rp-table-pagination {
         @apply min-w-0 overflow-x-auto;
-        scrollbar-width: thin;
     }
 
     .rp-filter-bar {
@@ -237,25 +249,36 @@
         @apply rounded-lg border border-rp-border bg-rp-surface-inset px-3.5 py-2 text-[13px] font-medium text-rp-text-secondary;
     }
 
-    .rp-sidebar-scroll {
+    .rp-scroll,
+    .rp-sidebar-scroll,
+    .rp-table-pagination {
         scrollbar-width: thin;
         scrollbar-color: var(--rp-border) transparent;
     }
 
-    .rp-sidebar-scroll::-webkit-scrollbar {
+    .rp-scroll::-webkit-scrollbar,
+    .rp-sidebar-scroll::-webkit-scrollbar,
+    .rp-table-pagination::-webkit-scrollbar {
         width: 3px;
+        height: 3px;
     }
 
-    .rp-sidebar-scroll::-webkit-scrollbar-track {
+    .rp-scroll::-webkit-scrollbar-track,
+    .rp-sidebar-scroll::-webkit-scrollbar-track,
+    .rp-table-pagination::-webkit-scrollbar-track {
         background: transparent;
     }
 
-    .rp-sidebar-scroll::-webkit-scrollbar-thumb {
+    .rp-scroll::-webkit-scrollbar-thumb,
+    .rp-sidebar-scroll::-webkit-scrollbar-thumb,
+    .rp-table-pagination::-webkit-scrollbar-thumb {
         background-color: var(--rp-border);
         border-radius: 3px;
     }
 
-    .dark .rp-sidebar-scroll::-webkit-scrollbar-thumb {
+    .dark .rp-scroll::-webkit-scrollbar-thumb,
+    .dark .rp-sidebar-scroll::-webkit-scrollbar-thumb,
+    .dark .rp-table-pagination::-webkit-scrollbar-thumb {
         background-color: var(--color-ink-700);
     }
 }

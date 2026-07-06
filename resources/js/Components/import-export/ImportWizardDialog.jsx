@@ -1,4 +1,5 @@
 import Modal from '@/Components/Modal';
+import ScrollArea from '@/Components/common/ScrollArea';
 import ImportDataPreview from '@/Components/import-export/ImportDataPreview';
 import ImportErrorReport from '@/Components/import-export/ImportErrorReport';
 import ImportProgressPanel from '@/Components/import-export/ImportProgressPanel';
@@ -301,7 +302,7 @@ export default function ImportWizardDialog({
 
             <ImportWizardStepper steps={wizardSteps} currentStep={step} />
 
-            <div className="max-h-[65vh] space-y-5 overflow-y-auto px-6 py-5">
+            <ScrollArea className="max-h-[65vh] space-y-5 overflow-y-auto px-6 py-5">
                 {step === 1 && (
                     <form onSubmit={handleUpload} className="space-y-5">
                         <div className="rounded-lg border border-rp-border bg-rp-surface-subtle px-4 py-3 text-sm text-rp-text-secondary">
@@ -550,7 +551,7 @@ export default function ImportWizardDialog({
                         </WizardActions>
                     </div>
                 )}
-            </div>
+            </ScrollArea>
         </Modal>
     );
 }

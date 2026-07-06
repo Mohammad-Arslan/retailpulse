@@ -20,6 +20,7 @@ import {
     TableRow,
 } from '@/Components/ui/table';
 import { useConfirm } from '@/Components/common/ConfirmDialogProvider';
+import ScrollArea from '@/Components/common/ScrollArea';
 import { useCan } from '@/Hooks/useCan';
 import { cn } from '@/lib/utils';
 import { Link, router } from '@inertiajs/react';
@@ -368,7 +369,7 @@ export default function DataTable({
 
     return (
         <div className={cn('rp-user-table-wrap', className)}>
-            <div className="overflow-x-auto">
+            <ScrollArea className="overflow-x-auto">
                 <Table>
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
@@ -484,7 +485,7 @@ export default function DataTable({
                     )}
                 </TableBody>
             </Table>
-            </div>
+            </ScrollArea>
 
             {paginator && indexRoute && (
                 <div className="border-t border-rp-border bg-rp-surface-inset px-4 py-3.5">

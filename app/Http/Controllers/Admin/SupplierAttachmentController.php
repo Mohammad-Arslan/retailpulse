@@ -10,6 +10,7 @@ use App\Models\Supplier;
 use App\Models\SupplierAttachment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class SupplierAttachmentController extends Controller
@@ -56,5 +57,24 @@ final class SupplierAttachmentController extends Controller
         }
 
         return Storage::disk('local')->download($attachment->file_path, $attachment->file_name);
+    }
+
+    public function preview(Supplier $supplier, SupplierAttachment $attachment): Response
+    {
+        $this->authorize('view', $supplier);
+
+        if ($attachment->supplier_id !== $supplier->id) {
+            abort(404);
+        }
+
+        if (! str_starts_with((string) $attachment->mime_type, 'image/')) {
+            abort(404);
+        }
+
+        return Storage::disk('local')->response(
+            $attachment->file_path,
+            $attachment->file_name,
+            ['Content-Disposition' => 'inline; filename="'.$attachment->file_name.'"'],
+        );
     }
 }

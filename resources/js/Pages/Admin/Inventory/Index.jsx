@@ -17,6 +17,10 @@ function Index({ inventory, filters, warehouses }) {
             filters: {
                 search: filters.search ?? undefined,
                 warehouse_id: filters.warehouse_id ?? undefined,
+                availability: filters.availability ?? undefined,
+                quarantine: filters.quarantine ?? undefined,
+                batch: filters.batch ?? undefined,
+                bin: filters.bin ?? undefined,
             },
         }),
         [filters],
@@ -115,8 +119,8 @@ function Index({ inventory, filters, warehouses }) {
                 <InventoryPageActions exportOptions={exportOptions} onJobStarted={trackJob} />
             </PageHeader>
 
-            <form onSubmit={search} className="rp-filter-bar">
-                <div className="rp-search-inset flex-1">
+            <form onSubmit={search} className="rp-filter-bar flex-wrap gap-2">
+                <div className="rp-search-inset min-w-[200px] flex-1">
                     <Search className="h-3.5 w-3.5 shrink-0 text-rp-text-muted" />
                     <input
                         name="search"
@@ -135,6 +139,48 @@ function Index({ inventory, filters, warehouses }) {
                             value: String(warehouse.id),
                             label: `${warehouse.name} (${warehouse.branch_name})`,
                         })),
+                    ]}
+                />
+                <Select
+                    name="availability"
+                    defaultValue={filters.availability ?? ''}
+                    className="w-auto min-w-[10rem]"
+                    options={[
+                        { value: '', label: t('pages.inventory.filters.allAvailability') },
+                        { value: 'in_stock', label: t('pages.inventory.filters.inStock') },
+                        { value: 'out_of_stock', label: t('pages.inventory.filters.outOfStock') },
+                        { value: 'low_stock', label: t('pages.inventory.filters.lowStock') },
+                        { value: 'reserved', label: t('pages.inventory.filters.reserved') },
+                    ]}
+                />
+                <Select
+                    name="quarantine"
+                    defaultValue={filters.quarantine ?? ''}
+                    className="w-auto min-w-[10rem]"
+                    options={[
+                        { value: '', label: t('pages.inventory.filters.allQuarantine') },
+                        { value: 'yes', label: t('pages.inventory.filters.inQuarantine') },
+                        { value: 'no', label: t('pages.inventory.filters.notInQuarantine') },
+                    ]}
+                />
+                <Select
+                    name="batch"
+                    defaultValue={filters.batch ?? ''}
+                    className="w-auto min-w-[9rem]"
+                    options={[
+                        { value: '', label: t('pages.inventory.filters.allBatches') },
+                        { value: 'yes', label: t('pages.inventory.filters.withBatch') },
+                        { value: 'no', label: t('pages.inventory.filters.withoutBatch') },
+                    ]}
+                />
+                <Select
+                    name="bin"
+                    defaultValue={filters.bin ?? ''}
+                    className="w-auto min-w-[9rem]"
+                    options={[
+                        { value: '', label: t('pages.inventory.filters.allBins') },
+                        { value: 'assigned', label: t('pages.inventory.filters.binAssigned') },
+                        { value: 'unassigned', label: t('pages.inventory.filters.binUnassigned') },
                     ]}
                 />
                 <button type="submit" className="rp-btn-outline">

@@ -138,6 +138,8 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             ->name('suppliers.attachments.destroy');
         Route::get('suppliers/{supplier}/attachments/{attachment}/download', [SupplierAttachmentController::class, 'download'])
             ->name('suppliers.attachments.download');
+        Route::get('suppliers/{supplier}/attachments/{attachment}/preview', [SupplierAttachmentController::class, 'preview'])
+            ->name('suppliers.attachments.preview');
 
         Route::resource('supplier-price-lists', SupplierPriceListController::class)->except(['show']);
 

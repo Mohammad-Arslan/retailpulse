@@ -1,18 +1,27 @@
+import ListPaginationBar from '@/Components/common/ListPaginationBar';
 import PageHeader from '@/Components/common/PageHeader';
+import ScrollArea from '@/Components/common/ScrollArea';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Search } from 'lucide-react';
+import { Package, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 function BranchStockSettings({ variants, filters, branchId }) {
     const { t } = useTranslation();
+    const rows = variants?.data ?? [];
 
     const search = (e) => {
         e.preventDefault();
         const form = new FormData(e.target);
-        router.get(route('admin.inventory.branch-stock-settings'), Object.fromEntries(form), {
-            preserveState: true,
-        });
+        router.get(
+            route('admin.inventory.branch-stock-settings'),
+            {
+                ...filters,
+                search: form.get('search') || undefined,
+                page: 1,
+            },
+            { preserveState: true },
+        );
     };
 
     return (
@@ -42,31 +51,45 @@ function BranchStockSettings({ variants, filters, branchId }) {
                         </button>
                     </form>
 
-                    <div className="overflow-x-auto rounded-xl border border-rp-border">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-rp-border bg-rp-surface-muted text-left text-rp-text-muted">
-                                    <th className="px-4 py-3">{t('pages.inventory.columns.product')}</th>
-                                    <th className="px-4 py-3">{t('pages.branchStockSettings.defaultReorder')}</th>
-                                    <th className="px-4 py-3">{t('pages.branchStockSettings.branchReorder')}</th>
-                                    <th className="px-4 py-3">{t('pages.branchStockSettings.safetyStock')}</th>
-                                    <th className="px-4 py-3" />
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {variants.map((variant) => (
-                                    <VariantRow
-                                        key={variant.id}
-                                        variant={variant}
-                                        branchId={branchId}
-                                    />
-                                ))}
-                            </tbody>
-                        </table>
-                        {variants.length === 0 && (
-                            <p className="p-6 text-center text-sm text-rp-text-muted">
-                                {t('pages.branchStockSettings.empty')}
-                            </p>
+                    <div className="rp-user-table-wrap overflow-hidden rounded-xl border border-rp-border">
+                        <ScrollArea className="max-h-[min(70vh,48rem)] overflow-auto">
+                            <table className="rp-scroll-table">
+                                <thead>
+                                    <tr>
+                                        <th>{t('pages.inventory.columns.product')}</th>
+                                        <th>{t('pages.branchStockSettings.defaultReorder')}</th>
+                                        <th>{t('pages.branchStockSettings.branchReorder')}</th>
+                                        <th>{t('pages.branchStockSettings.safetyStock')}</th>
+                                        <th className="w-24" />
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {rows.map((variant) => (
+                                        <VariantRow
+                                            key={variant.id}
+                                            variant={variant}
+                                            branchId={branchId}
+                                        />
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            {rows.length === 0 && (
+                                <div className="flex flex-col items-center gap-3 py-16 text-center">
+                                    <Package className="h-10 w-10 text-rp-text-muted" />
+                                    <p className="text-sm text-rp-text-secondary">
+                                        {t('pages.branchStockSettings.empty')}
+                                    </p>
+                                </div>
+                            )}
+                        </ScrollArea>
+
+                        {(variants?.total ?? 0) > 0 && (
+                            <ListPaginationBar
+                                pagination={variants}
+                                filters={filters}
+                                indexRoute="admin.inventory.branch-stock-settings"
+                            />
                         )}
                     </div>
                 </>
@@ -90,7 +113,7 @@ function VariantRow({ variant, branchId }) {
     };
 
     return (
-        <tr className="border-b border-rp-border/50">
+        <tr className="hover:bg-teal-500/[0.02]">
             <td className="px-4 py-3">
                 <div className="font-medium">{variant.product_name}</div>
                 <div className="text-xs text-rp-text-muted">

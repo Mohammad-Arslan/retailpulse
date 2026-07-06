@@ -1,6 +1,7 @@
 import ImportErrorReport from '@/Components/import-export/ImportErrorReport';
 import ImportProgressPanel from '@/Components/import-export/ImportProgressPanel';
 import Modal from '@/Components/Modal';
+import ScrollArea from '@/Components/common/ScrollArea';
 import { useImportExportJob } from '@/Hooks/useImportExportJob';
 import { fetchJob, fetchLatestImport, jobErrorsUrl } from '@/lib/importExportApi';
 import { FileText } from 'lucide-react';
@@ -139,7 +140,7 @@ export default function ImportLogsDialog({
                 </div>
             </div>
 
-            <div className="max-h-[70vh] space-y-5 overflow-y-auto px-6 py-5">
+            <ScrollArea className="max-h-[70vh] space-y-5 overflow-y-auto px-6 py-5">
                 {loading && (
                     <p className="text-sm text-rp-text-muted">{t('importExport.logsLoading')}</p>
                 )}
@@ -206,7 +207,7 @@ export default function ImportLogsDialog({
                         )}
                     </>
                 )}
-            </div>
+            </ScrollArea>
 
             <div className="flex justify-end gap-2 border-t border-rp-border px-6 py-4">
                 {errorDownloadUrl && job?.ulid && TERMINAL_STATUSES.includes(status) && (

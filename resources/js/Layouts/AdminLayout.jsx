@@ -4,6 +4,7 @@ import CommandPalette from '@/Components/admin/CommandPalette';
 import SidebarSearch from '@/Components/admin/SidebarSearch';
 import BrandIcon from '@/Components/brand/BrandIcon';
 import Breadcrumbs from '@/Components/common/Breadcrumbs';
+import ScrollArea from '@/Components/common/ScrollArea';
 import { ADMIN_NAV_SECTIONS } from '@/config/adminNav';
 import { isAdminNavItemActive } from '@/lib/adminNav';
 import { useCommandPalette } from '@/Hooks/useCommandPalette';
@@ -142,12 +143,12 @@ export default function AdminLayout({ children, fullHeight = false, posMode = fa
 
             <SidebarSearch collapsed={collapsed} onOpen={openPalette} />
 
-            <nav className="rp-sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden py-2">
+            <ScrollArea as="nav" className="flex-1 overflow-y-auto overflow-x-hidden py-2">
                 <SidebarNav
                     collapsed={collapsed}
                     onNavigate={() => setMobileOpen(false)}
                 />
-            </nav>
+            </ScrollArea>
 
             <div className="border-t border-rp-border p-3 dark:border-ink-800">
                 <div
