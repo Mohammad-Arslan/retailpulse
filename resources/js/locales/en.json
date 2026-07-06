@@ -412,13 +412,21 @@
             "columns": {
                 "name": "Warehouse",
                 "branch": "Branch",
+                "type": "Type",
                 "default": "Default",
                 "status": "Status"
+            },
+            "types": {
+                "backroom": "Backroom",
+                "sales_floor": "Sales Floor",
+                "offsite": "Offsite",
+                "central": "Central"
             },
             "fields": {
                 "branch": "Branch",
                 "name": "Name",
                 "code": "Warehouse code",
+                "type": "Warehouse type",
                 "default": "Set as default warehouse for this branch"
             },
             "codeGenerating": "Checking availability…",

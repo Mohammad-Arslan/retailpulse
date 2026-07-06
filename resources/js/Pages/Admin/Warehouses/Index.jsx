@@ -1,3 +1,4 @@
+import { warehouseTypeLabel } from '@/lib/warehouseI18n';
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
@@ -54,6 +55,16 @@ function Index({ warehouses, filters, branches }) {
                       },
                   ]
                 : []),
+            {
+                id: 'type',
+                accessorKey: 'type',
+                header: t('pages.warehouses.columns.type'),
+                cell: ({ row }) => (
+                    <span className="text-sm text-rp-text-secondary">
+                        {warehouseTypeLabel(t, row.original.type)}
+                    </span>
+                ),
+            },
             {
                 id: 'is_default',
                 accessorKey: 'is_default',

@@ -1,18 +1,27 @@
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
+import Select from '@/Components/ui/select';
 import { useCan } from '@/Hooks/useCan';
+import { warehouseTypeOptions } from '@/lib/warehouseI18n';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export default function Edit({ warehouse }) {
+export default function Edit({ warehouse, warehouseTypes = [] }) {
     const can = useCan();
     const { t } = useTranslation();
     const { data, setData, put, processing, errors } = useForm({
         name: warehouse.name,
+        type: warehouse.type ?? 'backroom',
         is_default: warehouse.is_default,
     });
+
+    const typeOptions = useMemo(
+        () => warehouseTypeOptions(t, warehouseTypes),
+        [t, warehouseTypes],
+    );
 
     const submit = (e) => {
         e.preventDefault();
@@ -87,6 +96,20 @@ export default function Edit({ warehouse }) {
                             </AdminFormField>
                         </div>
                     </div>
+
+                    <AdminFormField
+                        label={t('pages.warehouses.fields.type')}
+                        id="type"
+                        error={errors.type}
+                    >
+                        <Select
+                            id="type"
+                            options={typeOptions}
+                            value={data.type}
+                            onChange={(value) => setData('type', value)}
+                            disabled={!warehouse.is_active}
+                        />
+                    </AdminFormField>
 
                     {warehouse.is_active && (
                         <label className="flex items-center gap-2 text-sm text-rp-text-secondary">

@@ -10,12 +10,10 @@ use App\DTOs\BinLocation\CreateWarehouseZoneData;
 use App\DTOs\BinLocation\UpdateBinLocationData;
 use App\DTOs\BinLocation\UpdateWarehouseZoneData;
 use App\Enums\StockMovementReason;
-use App\Events\InventoryStockChanged;
 use App\Models\BinLocation;
 use App\Models\WarehouseZone;
 use App\Repositories\Contracts\BinLocationRepositoryInterface;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
-use App\Repositories\Contracts\StockMovementRepositoryInterface;
 use App\Support\InventoryFreezeGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -25,7 +23,7 @@ final class BinLocationService
     public function __construct(
         private readonly BinLocationRepositoryInterface $bins,
         private readonly InventoryRepositoryInterface $inventories,
-        private readonly StockMovementRepositoryInterface $movements,
+        private readonly InventoryService $inventoryService,
     ) {}
 
     public function createZone(CreateWarehouseZoneData $data): WarehouseZone
@@ -137,48 +135,29 @@ final class BinLocationService
                 ]);
             }
 
-            $dest = $this->inventories->lockOrCreate(
-                $data->warehouseId,
-                $data->variantId,
-                $data->batchId,
-                $toBin->id,
+            $transferNote = $data->notes ?? "Bin transfer: {$fromBin->bin_code} → {$toBin->bin_code}";
+
+            $this->inventoryService->applyDelta(
+                warehouseId: $data->warehouseId,
+                variantId: $data->variantId,
+                batchId: $data->batchId,
+                qtyDelta: -$data->quantity,
+                reason: StockMovementReason::BinTransferOut,
+                userId: $data->userId,
+                notes: $transferNote,
+                binLocationId: $fromBin->id,
             );
 
-            $sourcePrevOnHand = $source->quantity_on_hand;
-            $sourcePrevReserved = $source->quantity_reserved;
-            $destPrevOnHand = $dest->quantity_on_hand;
-            $destPrevReserved = $dest->quantity_reserved;
-
-            $source->decrement('quantity_on_hand', $data->quantity);
-            $dest->increment('quantity_on_hand', $data->quantity);
-
-            $source = $source->fresh() ?? $source;
-            $dest = $dest->fresh() ?? $dest;
-
-            $this->movements->create([
-                'warehouse_id' => $data->warehouseId,
-                'product_variant_id' => $data->variantId,
-                'batch_id' => $data->batchId,
-                'reason' => StockMovementReason::BinTransferOut,
-                'qty_delta' => -$data->quantity,
-                'quantity_on_hand_after' => $source->quantity_on_hand,
-                'user_id' => $data->userId,
-                'notes' => $data->notes ?? "Bin transfer out: {$fromBin->bin_code} → {$toBin->bin_code}",
-            ]);
-
-            $this->movements->create([
-                'warehouse_id' => $data->warehouseId,
-                'product_variant_id' => $data->variantId,
-                'batch_id' => $data->batchId,
-                'reason' => StockMovementReason::BinTransferIn,
-                'qty_delta' => $data->quantity,
-                'quantity_on_hand_after' => $dest->quantity_on_hand,
-                'user_id' => $data->userId,
-                'notes' => $data->notes ?? "Bin transfer in: {$fromBin->bin_code} → {$toBin->bin_code}",
-            ]);
-
-            event(new InventoryStockChanged($source, $sourcePrevOnHand, $sourcePrevReserved, StockMovementReason::BinTransferOut));
-            event(new InventoryStockChanged($dest, $destPrevOnHand, $destPrevReserved, StockMovementReason::BinTransferIn));
+            $this->inventoryService->applyDelta(
+                warehouseId: $data->warehouseId,
+                variantId: $data->variantId,
+                batchId: $data->batchId,
+                qtyDelta: $data->quantity,
+                reason: StockMovementReason::BinTransferIn,
+                userId: $data->userId,
+                notes: $transferNote,
+                binLocationId: $toBin->id,
+            );
         });
     }
 }

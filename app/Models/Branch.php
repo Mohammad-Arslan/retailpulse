@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\PickingStrategy;
+use App\Enums\WarehouseType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -50,5 +51,13 @@ class Branch extends Model
     public function defaultWarehouse(): ?Warehouse
     {
         return $this->warehouses()->where('is_default', true)->first();
+    }
+
+    /**
+     * @return HasMany<Warehouse, $this>
+     */
+    public function warehousesOfType(WarehouseType $type): HasMany
+    {
+        return $this->warehouses()->where('type', $type->value);
     }
 }

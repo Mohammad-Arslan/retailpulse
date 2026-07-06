@@ -12,6 +12,11 @@ use App\Http\Requests\Api\Pos\PosStockDeductRequest;
 use App\Services\InventoryService;
 use Illuminate\Http\JsonResponse;
 
+/**
+ * Legacy POS inventory endpoints — not registered in routes.
+ *
+ * @deprecated Do not wire without pos.access middleware and full authorization review.
+ */
 final class InventoryController extends Controller
 {
     public function __construct(

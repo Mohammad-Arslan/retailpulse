@@ -8,6 +8,7 @@ use App\DTOs\Branch\CreateBranchData;
 use App\DTOs\Branch\UpdateBranchData;
 use App\DTOs\User\BranchAssignmentData;
 use App\DTOs\Warehouse\CreateWarehouseData;
+use App\Enums\WarehouseType;
 use App\Models\Branch;
 use App\Models\User;
 use App\Repositories\Contracts\BranchRepositoryInterface;
@@ -42,6 +43,7 @@ final class BranchService
             $this->warehouseService->create(new CreateWarehouseData(
                 branchId: $branch->id,
                 name: $this->resolveInitialWarehouseName($data->initialWarehouseId),
+                type: WarehouseType::Backroom,
                 isDefault: true,
             ));
 

@@ -246,9 +246,9 @@ final class InventoryRepository implements InventoryRepositoryInterface
         }
 
         $query = Inventory::query()
-            ->where('warehouse_id', $warehouseId)
-            ->where('product_variant_id', $variantId)
-            ->whereRaw('quantity_on_hand > quantity_reserved')
+            ->where('inventories.warehouse_id', $warehouseId)
+            ->where('inventories.product_variant_id', $variantId)
+            ->whereRaw('inventories.quantity_on_hand > inventories.quantity_reserved')
             ->select('inventories.*');
 
         if ($strategy === PickingStrategy::Fefo) {
