@@ -624,6 +624,27 @@ return [
             ],
         ],
 
+        'loyalty' => [
+            'label' => 'Loyalty & Rewards',
+            'description' => 'Loyalty engine feature flags and workflow integration.',
+            'icon' => 'gift',
+            'permission' => 'settings.general.update',
+            'fields' => [
+                'enabled' => [
+                    'type' => 'boolean',
+                    'label' => 'Enable Loyalty Engine',
+                    'description' => 'Use configurable loyalty programs instead of legacy points settings.',
+                    'default' => true,
+                ],
+                'workflow_enabled' => [
+                    'type' => 'boolean',
+                    'label' => 'Workflow Approval',
+                    'description' => 'Route loyalty approvals through the workflow engine when Phase 29 is active.',
+                    'default' => false,
+                ],
+            ],
+        ],
+
         'procurement' => [
             'label' => 'Procurement',
             'description' => 'Purchase orders, GRN, matching tolerances, and supplier payment settings.',

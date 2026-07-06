@@ -13,12 +13,14 @@ use App\Models\Customer;
 use App\Models\CustomerArLedger;
 use App\Models\CustomerGroup;
 use App\Models\CustomerWalletTransaction;
+use App\Models\LoyaltyProgram;
 use App\Models\LoyaltyTier;
 use App\Models\SystemSetting;
 use App\Repositories\Contracts\CustomerRepositoryInterface;
 use App\Services\Customer\CustomerProfileService;
 use App\Services\Customer\CustomerService;
 use App\Services\Customer\CustomerStatementService;
+use App\Services\Loyalty\LoyaltyProfileService;
 use App\Support\BranchContext;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
@@ -35,6 +37,7 @@ final class CustomerController extends Controller
         private readonly CustomerService $customerService,
         private readonly CustomerProfileService $profileService,
         private readonly CustomerStatementService $statements,
+        private readonly LoyaltyProfileService $loyaltyProfile,
     ) {}
 
     public function index(Request $request): Response
@@ -52,6 +55,7 @@ final class CustomerController extends Controller
         );
 
         $canViewCredit = (bool) $request->user()?->can('customers.view-credit');
+        $loyaltyEngineEnabled = (bool) SystemSetting::get('loyalty', 'enabled', true);
 
         return Inertia::render('Admin/Customers/Index', [
             'customers' => $paginator->through(fn (Customer $customer): array => [
@@ -60,7 +64,7 @@ final class CustomerController extends Controller
                 'phone' => $customer->phone,
                 'email' => $customer->email,
                 'is_active' => $customer->is_active,
-                'loyalty_tier' => $customer->loyaltyTier ? ['name' => $customer->loyaltyTier->name] : null,
+                'loyalty_tier' => ! $loyaltyEngineEnabled && $customer->loyaltyTier ? ['name' => $customer->loyaltyTier->name] : null,
                 'customer_group' => $customer->customerGroup ? ['name' => $customer->customerGroup->name] : null,
                 'credit_limit' => $canViewCredit && $customer->credit_limit !== null
                     ? number_format((float) $customer->credit_limit, 2, '.', '')
@@ -69,6 +73,7 @@ final class CustomerController extends Controller
             ]),
             'filters' => $filters,
             'canViewCredit' => $canViewCredit,
+            'legacyLoyaltyEnabled' => ! $loyaltyEngineEnabled,
             'loyaltyTiers' => LoyaltyTier::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name']),
             'customerGroups' => CustomerGroup::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
         ]);
@@ -77,8 +82,10 @@ final class CustomerController extends Controller
     public function create(): Response
     {
         $this->authorize('create', Customer::class);
+        $loyaltyEngineEnabled = (bool) SystemSetting::get('loyalty', 'enabled', true);
 
         return Inertia::render('Admin/Customers/Create', [
+            'legacyLoyaltyEnabled' => ! $loyaltyEngineEnabled,
             'loyaltyTiers' => LoyaltyTier::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name']),
             'customerGroups' => CustomerGroup::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
         ]);
@@ -103,6 +110,7 @@ final class CustomerController extends Controller
         $branchId = $context->branchId;
         $profile = $this->profileService->buildProfile($customer, $branchId);
         $canViewCredit = (bool) $request->user()?->can('customers.view-credit');
+        $loyaltyEngineEnabled = (bool) SystemSetting::get('loyalty', 'enabled', true);
 
         $creditLimit = $profile['credit_limit'] ?? null;
         $arOutstanding = $profile['ar_balance'] ?? '0.00';
@@ -118,9 +126,9 @@ final class CustomerController extends Controller
         }
 
         $customerData = array_merge($profile['customer'], [
-            'loyalty_tier' => $profile['loyalty_tier'],
+            'loyalty_tier' => ! $loyaltyEngineEnabled ? $profile['loyalty_tier'] : null,
             'customer_group' => $profile['customer_group'],
-            'loyalty_points' => $profile['metrics']['loyalty_points'],
+            'loyalty_points' => ! $loyaltyEngineEnabled ? $profile['metrics']['loyalty_points'] : null,
             'wallet' => $profile['wallet'],
             'store_credit_balance' => $profile['store_credit']['balance'],
             'ar_outstanding' => $canViewCredit ? $arOutstanding : null,
@@ -201,12 +209,19 @@ final class CustomerController extends Controller
             'arLedger' => $arLedger,
             'currency' => $currency,
             'canViewCredit' => $canViewCredit,
+            'legacyLoyaltyEnabled' => ! $loyaltyEngineEnabled,
+            'loyalty' => $this->loyaltyProfile->buildLoyaltySummary($customer, $branchId),
+            'loyaltyPrograms' => LoyaltyProgram::query()
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 
     public function edit(Customer $customer): Response
     {
         $this->authorize('update', $customer);
+        $loyaltyEngineEnabled = (bool) SystemSetting::get('loyalty', 'enabled', true);
 
         return Inertia::render('Admin/Customers/Edit', [
             'customer' => [
@@ -225,6 +240,7 @@ final class CustomerController extends Controller
                 'preferred_payment_method' => $customer->preferred_payment_method,
                 'notes' => $customer->notes,
             ],
+            'legacyLoyaltyEnabled' => ! $loyaltyEngineEnabled,
             'loyaltyTiers' => LoyaltyTier::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name']),
             'customerGroups' => CustomerGroup::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
         ]);

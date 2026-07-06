@@ -10,7 +10,14 @@ import { Plus, Search, UserRound } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-function Index({ customers, filters, loyaltyTiers = [], customerGroups = [], canViewCredit = false }) {
+function Index({
+    customers,
+    filters,
+    loyaltyTiers = [],
+    customerGroups = [],
+    canViewCredit = false,
+    legacyLoyaltyEnabled = false,
+}) {
     const can = useCan();
     const { t } = useTranslation();
     const { trackJob } = useImportJobsTray();
@@ -48,11 +55,15 @@ function Index({ customers, filters, loyaltyTiers = [], customerGroups = [], can
                     </div>
                 ),
             },
-            {
-                id: 'loyalty_tier',
-                header: t('pages.customers.columns.tier'),
-                cell: ({ row }) => row.original.loyalty_tier?.name ?? '—',
-            },
+            ...(legacyLoyaltyEnabled
+                ? [
+                      {
+                          id: 'loyalty_tier',
+                          header: t('pages.customers.columns.tier'),
+                          cell: ({ row }) => row.original.loyalty_tier?.name ?? '—',
+                      },
+                  ]
+                : []),
             {
                 id: 'customer_group',
                 header: t('pages.customers.columns.group'),
@@ -81,7 +92,7 @@ function Index({ customers, filters, loyaltyTiers = [], customerGroups = [], can
                 ),
             },
         ],
-        [t, canViewCredit],
+        [t, canViewCredit, legacyLoyaltyEnabled],
     );
 
     const rowActions = (customer) => {
@@ -122,7 +133,7 @@ function Index({ customers, filters, loyaltyTiers = [], customerGroups = [], can
 
     const exportFilters = {
         search: filters.search ?? undefined,
-        loyalty_tier_id: filters.loyalty_tier_id ?? undefined,
+        loyalty_tier_id: legacyLoyaltyEnabled ? (filters.loyalty_tier_id ?? undefined) : undefined,
         customer_group_id: filters.customer_group_id ?? undefined,
         is_active: filters.is_active ?? undefined,
     };
@@ -160,15 +171,17 @@ function Index({ customers, filters, loyaltyTiers = [], customerGroups = [], can
                         className="rp-search-input"
                     />
                 </div>
-                <Select
-                    name="loyalty_tier_id"
-                    defaultValue={filters.loyalty_tier_id ?? ''}
-                    className="w-auto min-w-[10rem]"
-                    options={[
-                        { value: '', label: t('pages.customers.allTiers') },
-                        ...mapToSelectOptions(loyaltyTiers),
-                    ]}
-                />
+                {legacyLoyaltyEnabled && (
+                    <Select
+                        name="loyalty_tier_id"
+                        defaultValue={filters.loyalty_tier_id ?? ''}
+                        className="w-auto min-w-[10rem]"
+                        options={[
+                            { value: '', label: t('pages.customers.allTiers') },
+                            ...mapToSelectOptions(loyaltyTiers),
+                        ]}
+                    />
+                )}
                 <Select
                     name="customer_group_id"
                     defaultValue={filters.customer_group_id ?? ''}

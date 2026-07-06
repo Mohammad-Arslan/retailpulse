@@ -98,10 +98,14 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
 
     const [customerQuery, setCustomerQuery] = useState('');
     const [customerResults, setCustomerResults] = useState([]);
+    const [customerLoading, setCustomerLoading] = useState(false);
+    const [customerFocused, setCustomerFocused] = useState(false);
     const [cartCustomers, setCartCustomers] = useState({});
     const customerSearchTimer = useRef(null);
 
     const searchInputRef = useRef(null);
+    const customerInputRef = useRef(null);
+    const customerRowRef = useRef(null);
     const searchWrapRef = useRef(null);
     // Cache: query string → results array. Avoids re-fetching the same query.
     const searchCacheRef = useRef(new Map());
@@ -128,15 +132,19 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
     useEffect(() => {
         if (customerQuery.length < 2) {
             setCustomerResults([]);
+            setCustomerLoading(false);
             return undefined;
         }
 
+        setCustomerLoading(true);
         customerSearchTimer.current = setTimeout(async () => {
             try {
                 const results = await customerApi.search(customerQuery);
                 setCustomerResults(results);
             } catch {
                 setCustomerResults([]);
+            } finally {
+                setCustomerLoading(false);
             }
         }, SEARCH_DEBOUNCE_MS);
 
@@ -147,10 +155,15 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
         };
     }, [customerQuery]);
 
-    function attachCustomer(customer) {
-        if (!activeCartId) return;
-        setCartCustomers((prev) => ({ ...prev, [activeCartId]: customer }));
-        sessionStorage.setItem(customerStorageKey(activeCartId), JSON.stringify(customer));
+    async function attachCustomer(customer) {
+        let cartId = activeCartId;
+        if (!cartId) {
+            const cart = await createNewCart();
+            if (!cart) return;
+            cartId = cart.id;
+        }
+        setCartCustomers((prev) => ({ ...prev, [cartId]: customer }));
+        sessionStorage.setItem(customerStorageKey(cartId), JSON.stringify(customer));
         setCustomerQuery('');
         setCustomerResults([]);
     }
@@ -163,6 +176,16 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
             return next;
         });
         sessionStorage.removeItem(customerStorageKey(activeCartId));
+    }
+
+    function focusCustomerSearch() {
+        customerRowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (selectedCustomer) {
+            clearCustomer();
+            window.setTimeout(() => customerInputRef.current?.focus(), 0);
+            return;
+        }
+        customerInputRef.current?.focus();
     }
 
     const taxRatePct = parseFloat(posConfig.default_tax_rate ?? '0') * 100;
@@ -296,7 +319,7 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
             .search(debouncedQuery, branchId)
             .then((data) => {
                 if (cancelled) return;
-                const results = data.results || [];
+                const results = (data.results || []).filter((r) => r.in_stock);
                 searchCacheRef.current.set(debouncedQuery, results);
                 setProducts(results);
             })
@@ -607,7 +630,10 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
                 />
 
                 {/* Customer attach row */}
-                <div className="shrink-0 border-b border-rp-border bg-rp-surface px-4 py-2">
+                <div
+                    ref={customerRowRef}
+                    className="shrink-0 border-b border-rp-border bg-rp-surface px-4 py-2"
+                >
                     {selectedCustomer ? (
                         <div className="flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 dark:border-teal-800 dark:bg-teal-950/30">
                             <div className="flex items-center gap-2">
@@ -634,28 +660,40 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
                                 <UserRound className="h-4 w-4 text-rp-text-muted" />
                             </div>
                             <input
+                                ref={customerInputRef}
                                 type="search"
                                 value={customerQuery}
                                 onChange={(e) => setCustomerQuery(e.target.value)}
+                                onFocus={() => setCustomerFocused(true)}
+                                onBlur={() => setTimeout(() => setCustomerFocused(false), 150)}
                                 placeholder="Attach customer by name or phone…"
                                 className="w-full rounded-xl border border-rp-border bg-rp-surface-inset py-2 pl-9 pr-3 text-sm text-rp-text placeholder:text-rp-text-muted focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                             />
-                            {customerResults.length > 0 && (
-                                <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-40 overflow-y-auto rounded-xl border border-rp-border bg-rp-surface py-1 shadow-xl">
-                                    {customerResults.map((customer) => (
-                                        <button
-                                            key={customer.id}
-                                            type="button"
-                                            onMouseDown={(e) => e.preventDefault()}
-                                            onClick={() => attachCustomer(customer)}
-                                            className="block w-full px-4 py-2 text-left hover:bg-rp-surface-subtle"
-                                        >
-                                            <p className="text-sm font-medium text-rp-text">{customer.name}</p>
-                                            <p className="text-xs text-rp-text-muted">
-                                                {[customer.phone, customer.email].filter(Boolean).join(' · ')}
-                                            </p>
-                                        </button>
-                                    ))}
+                            {customerFocused && customerQuery.length >= 2 && (
+                                <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-rp-border bg-rp-surface py-1 shadow-xl">
+                                    {customerLoading ? (
+                                        <p className="px-4 py-2.5 text-xs text-rp-text-muted">Searching…</p>
+                                    ) : customerResults.length === 0 ? (
+                                        <p className="px-4 py-2.5 text-xs text-rp-text-muted">
+                                            No customers found for "{customerQuery}"
+                                        </p>
+                                    ) : (
+                                        customerResults.map((customer) => (
+                                            <button
+                                                key={customer.id}
+                                                type="button"
+                                                onMouseDown={(e) => e.preventDefault()}
+                                                onClick={() => attachCustomer(customer)}
+                                                disabled={processing}
+                                                className="block w-full px-4 py-2 text-left hover:bg-rp-surface-subtle disabled:opacity-50"
+                                            >
+                                                <p className="text-sm font-medium text-rp-text">{customer.name}</p>
+                                                <p className="text-xs text-rp-text-muted">
+                                                    {[customer.phone, customer.email].filter(Boolean).join(' · ')}
+                                                </p>
+                                            </button>
+                                        ))
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -734,6 +772,8 @@ export default function PosIndex({ hasPin, lockout: initialLockout, categories =
                     onVoid={handleVoid}
                     onReopen={handleReopenCart}
                     canSuspend={can('pos.suspend-cart')}
+                    onAttachCustomer={focusCustomerSearch}
+                    hasCustomer={Boolean(selectedCustomer)}
                 />
             </div>
         </AdminLayout>

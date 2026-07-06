@@ -6,6 +6,7 @@ namespace App\Services\Checkout;
 
 use App\DTOs\Checkout\AddPaymentData;
 use App\DTOs\Checkout\ConfirmCheckoutData;
+use App\DTOs\Inventory\AdjustStockData;
 use App\DTOs\Inventory\DeductStockData;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -13,6 +14,7 @@ use App\Enums\PosCartStatus;
 use App\Enums\SaleStatus;
 use App\Enums\StockMovementReason;
 use App\Enums\TaxMode;
+use App\Events\SaleCompleted;
 use App\Jobs\SubmitFbrInvoiceJob;
 use App\Models\Customer;
 use App\Models\PosCart;
@@ -24,10 +26,11 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\PosCartRepositoryInterface;
 use App\Services\Customer\CustomerCreditService;
-use App\Services\Customer\LoyaltyService;
 use App\Services\Customer\StoreCreditService;
 use App\Services\Customer\WalletService;
 use App\Services\InventoryService;
+use App\Services\Loyalty\CheckoutLoyaltyService;
+use App\Support\Pos\PosBranchWarehouses;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -44,7 +47,7 @@ final class CheckoutService
         private readonly WalletService $wallet,
         private readonly StoreCreditService $storeCredit,
         private readonly CustomerCreditService $customerCredit,
-        private readonly LoyaltyService $loyalty,
+        private readonly CheckoutLoyaltyService $checkoutLoyalty,
     ) {}
 
     /**
@@ -52,7 +55,13 @@ final class CheckoutService
      */
     public function bootstrap(PosCart $cart): array
     {
-        if ($cart->status !== PosCartStatus::Completing) {
+        $existingSale = Sale::query()->where('cart_id', $cart->id)->first();
+
+        // Allow resuming checkout when the cart is awaiting payment (Completing)
+        // or when a sale already exists for it. The latter covers reloads after
+        // the sale has been confirmed (cart becomes Completed) but payment is
+        // still pending or already completed — so a refresh never loses the cart.
+        if ($cart->status !== PosCartStatus::Completing && $existingSale === null) {
             throw ValidationException::withMessages([
                 'status' => __('Cart is not ready for checkout.'),
             ]);
@@ -68,8 +77,6 @@ final class CheckoutService
         $taxTotal = collect($items)->sum(fn ($i) => (float) $i['tax_amount']);
         $grandTotal = collect($items)->sum(fn ($i) => (float) $i['line_total_inc_tax']);
         $grossSubtotal = $cart->items->sum(fn (PosCartItem $i) => (float) $i->unit_price * $i->quantity);
-
-        $existingSale = Sale::query()->where('cart_id', $cart->id)->first();
 
         return [
             'cart_id' => $cart->id,
@@ -88,6 +95,7 @@ final class CheckoutService
             'currency' => $settings['currency'],
             'notes' => $cart->notes,
             'customer' => $existingSale?->customer_id,
+            'loyalty_enabled' => (bool) SystemSetting::get('loyalty', 'enabled', true),
             'config' => $settings,
         ];
     }
@@ -160,6 +168,11 @@ final class CheckoutService
 
             foreach ($saleItems as $row) {
                 $sale->items()->create($row);
+            }
+
+            if ($data->loyaltyPointsToRedeem > 0) {
+                $this->checkoutLoyalty->applyRedemptionToSale($sale, $data->loyaltyPointsToRedeem, $cashierId);
+                $sale->refresh();
             }
 
             $this->carts->update($cart, [
@@ -336,6 +349,97 @@ final class CheckoutService
         });
     }
 
+    public function removePayment(Sale $sale, SalePayment $payment, int $cashierId): Sale
+    {
+        if ($payment->sale_id !== $sale->id) {
+            throw ValidationException::withMessages([
+                'payment' => __('Payment does not belong to this sale.'),
+            ]);
+        }
+
+        if ($sale->status->isImmutable()) {
+            throw ValidationException::withMessages([
+                'status' => __('Payments on a completed or voided sale cannot be removed.'),
+            ]);
+        }
+
+        return DB::transaction(function () use ($sale, $payment, $cashierId) {
+            $settings = $this->config->resolve($sale->branch_id);
+            $wasCompleted = $payment->status === PaymentStatus::Completed;
+            $amount = (float) $payment->amount;
+            $method = $payment->method;
+
+            if ($wasCompleted && $sale->customer_id !== null && $method === PaymentMethod::Wallet) {
+                $this->wallet->topUp(
+                    customerId: $sale->customer_id,
+                    amount: $amount,
+                    userId: $cashierId,
+                    meta: ['reason' => 'payment_reversal', 'sale_id' => $sale->id],
+                );
+            }
+
+            if ($wasCompleted && $sale->customer_id !== null && $method === PaymentMethod::StoreCredit) {
+                $this->storeCredit->issue(
+                    customerId: $sale->customer_id,
+                    amount: $amount,
+                    sourceSaleId: $sale->id,
+                    userId: $cashierId,
+                    notes: __('Reversal of removed checkout payment.'),
+                );
+            }
+
+            $remainingCompleted = $sale->payments()
+                ->where('status', PaymentStatus::Completed)
+                ->where('id', '!=', $payment->id)
+                ->count();
+
+            if ($wasCompleted
+                && $settings['inventory_deduct_on'] === 'payment_started'
+                && $remainingCompleted === 0) {
+                $this->restoreInventory($sale, $cashierId);
+            }
+
+            $payment->delete();
+
+            $completedTotal = (float) $sale->payments()
+                ->where('status', PaymentStatus::Completed)
+                ->sum('amount');
+
+            $sale->balance_due = max(0, round((float) $sale->grand_total - $completedTotal, 2));
+            $sale->status = $completedTotal > 0
+                ? SaleStatus::PartiallyPaid
+                : SaleStatus::PendingPayment;
+            $sale->save();
+
+            return $sale->fresh(['items', 'payments', 'invoice', 'customer']);
+        });
+    }
+
+    private function restoreInventory(Sale $sale, int $userId): void
+    {
+        if ($sale->is_historical || $sale->warehouse_id === null) {
+            return;
+        }
+
+        $sale->load('items');
+
+        foreach ($sale->items as $item) {
+            if ($item->product_variant_id === null) {
+                continue;
+            }
+
+            $this->inventory->adjust(new AdjustStockData(
+                warehouseId: $sale->warehouse_id,
+                variantId: $item->product_variant_id,
+                batchId: null,
+                quantity: (int) $item->quantity,
+                reason: StockMovementReason::SaleReturn,
+                userId: $userId,
+                notes: __('Restored after checkout payment removal.'),
+            ));
+        }
+    }
+
     public function voidSale(Sale $sale): void
     {
         if ($sale->status->isImmutable()) {
@@ -362,6 +466,8 @@ final class CheckoutService
 
         DB::transaction(function () use ($sale) {
             $sale->payments()->where('status', PaymentStatus::Pending)->delete();
+
+            $this->checkoutLoyalty->reverseSaleRedemptions($sale, $sale->cashier_id);
 
             $sale->update([
                 'status' => SaleStatus::Voided,
@@ -442,7 +548,7 @@ final class CheckoutService
             $this->customerCredit->recordCreditSale($sale, $creditTotal, $cashierId);
         }
 
-        $this->loyalty->earnOnSaleComplete($sale);
+        SaleCompleted::dispatch($sale);
 
         if ($fbrEnabled && $failureMode === 'queue') {
             SubmitFbrInvoiceJob::dispatch($invoice->id);
@@ -551,16 +657,39 @@ final class CheckoutService
                 continue;
             }
 
-            $this->inventory->deduct(new DeductStockData(
-                warehouseId: $sale->warehouse_id,
-                variantId: $item->product_variant_id,
-                batchId: null,
-                quantity: $item->quantity,
-                reason: StockMovementReason::Sale,
-                userId: $userId,
-                referenceType: 'sale',
-                referenceId: $sale->id,
-            ));
+            try {
+                $warehouseId = PosBranchWarehouses::resolveForVariant(
+                    $sale->branch_id,
+                    $item->product_variant_id,
+                    $item->quantity,
+                ) ?? $sale->warehouse_id;
+
+                $this->inventory->deduct(new DeductStockData(
+                    warehouseId: $warehouseId,
+                    variantId: $item->product_variant_id,
+                    batchId: null,
+                    quantity: $item->quantity,
+                    reason: StockMovementReason::Sale,
+                    userId: $userId,
+                    referenceType: 'sale',
+                    referenceId: $sale->id,
+                ));
+            } catch (ValidationException $e) {
+                $label = trim((string) $item->name);
+                if ($item->sku) {
+                    $label = $label === '' ? (string) $item->sku : "{$label} ({$item->sku})";
+                }
+                if ($label === '') {
+                    throw $e;
+                }
+
+                throw ValidationException::withMessages([
+                    'quantity' => __(':message — :product', [
+                        'message' => $e->validator->errors()->first('quantity') ?: __('Insufficient stock on hand.'),
+                        'product' => $label,
+                    ]),
+                ]);
+            }
         }
     }
 }

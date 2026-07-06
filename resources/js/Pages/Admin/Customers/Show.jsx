@@ -3,6 +3,10 @@ import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
+import {
+    loyaltyTransactionStatusLabel,
+    loyaltyTransactionTypeLabel,
+} from '@/lib/loyaltyI18n';
 import { Head, Link, router } from '@inertiajs/react';
 import { Mail, Pencil, Plus, Wallet } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -27,17 +31,31 @@ function Show({
     arLedger = [],
     currency = 'PKR',
     canViewCredit = false,
+    legacyLoyaltyEnabled = false,
+    loyalty = { enabled: false, wallets: [], transactions: [], timeline: [] },
+    loyaltyPrograms = [],
 }) {
     const can = useCan();
     const { t } = useTranslation();
     const [topUpOpen, setTopUpOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('overview');
     const [topUpAmount, setTopUpAmount] = useState('');
     const [topUpMethod, setTopUpMethod] = useState('cash');
     const [topUpProcessing, setTopUpProcessing] = useState(false);
     const [statementSending, setStatementSending] = useState(false);
+    const [adjustOpen, setAdjustOpen] = useState(false);
+    const [adjustProgramId, setAdjustProgramId] = useState(String(loyaltyPrograms[0]?.id ?? ''));
+    const [adjustPoints, setAdjustPoints] = useState('');
+    const [adjustReason, setAdjustReason] = useState('');
+    const [adjustProcessing, setAdjustProcessing] = useState(false);
 
     const tierName = customer.loyalty_tier?.name;
     const walletBalance = customer.wallet?.balance ?? '0.00';
+
+    const programOptions = useMemo(
+        () => loyaltyPrograms.map((p) => ({ value: String(p.id), label: p.name })),
+        [loyaltyPrograms],
+    );
 
     const topUpMethodOptions = useMemo(
         () => [
@@ -101,6 +119,32 @@ function Show({
         }
     }
 
+    function handleAdjustPoints(e) {
+        e.preventDefault();
+        setAdjustProcessing(true);
+        router.post(
+            route('admin.loyalty.customers.adjust', customer.id),
+            {
+                program_id: parseInt(adjustProgramId, 10),
+                points: parseInt(adjustPoints, 10),
+                reason: adjustReason,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success(t('pages.loyalty.adjustPoints.submit'));
+                    setAdjustOpen(false);
+                    setAdjustPoints('');
+                    setAdjustReason('');
+                },
+                onError: (errors) => {
+                    toast.error(Object.values(errors).flat().join(' ') || t('pages.customers.topUp.failed'));
+                },
+                onFinish: () => setAdjustProcessing(false),
+            },
+        );
+    }
+
     return (
         <>
             <Head title={customer.name} />
@@ -128,7 +172,7 @@ function Show({
             </PageHeader>
 
             <div className="mb-6 flex flex-wrap items-center gap-3">
-                {tierName && (
+                {legacyLoyaltyEnabled && tierName && (
                     <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800 dark:bg-amber-500/20 dark:text-amber-200">
                         {tierName}
                         {customer.loyalty_tier?.points_multiplier && (
@@ -150,6 +194,163 @@ function Show({
                 )}
             </div>
 
+            <div className="mb-6 flex gap-2 border-b">
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('overview')}
+                    className={`px-4 py-2 text-sm font-medium ${activeTab === 'overview' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-muted-foreground'}`}
+                >
+                    {t('pages.customers.tabs.overview')}
+                </button>
+                {loyalty.enabled && (
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('loyalty')}
+                        className={`px-4 py-2 text-sm font-medium ${activeTab === 'loyalty' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-muted-foreground'}`}
+                    >
+                        {t('pages.customers.tabs.loyalty')}
+                    </button>
+                )}
+            </div>
+
+            {activeTab === 'loyalty' && loyalty.enabled && (
+                <div className="mb-8 space-y-6">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {(loyalty.wallets ?? []).map((wallet, idx) => (
+                            <StatCard
+                                key={idx}
+                                label={wallet.program ?? t('pages.customers.loyalty.program')}
+                                value={wallet.available_points ?? 0}
+                                hint={wallet.tier?.name ? `${t('pages.customers.loyalty.tier')}: ${wallet.tier.name}` : undefined}
+                            />
+                        ))}
+                    </div>
+                    {(loyalty.wallets ?? []).length > 0 && (
+                        <div className="grid gap-4 sm:grid-cols-3">
+                            <StatCard label={t('pages.customers.loyalty.lifetimeEarned')} value={loyalty.wallets[0]?.lifetime_earned_points ?? 0} />
+                            <StatCard label={t('pages.customers.loyalty.redeemed')} value={loyalty.wallets[0]?.redeemed_points ?? 0} />
+                            <StatCard label={t('pages.customers.loyalty.expired')} value={loyalty.wallets[0]?.expired_points ?? 0} />
+                        </div>
+                    )}
+                    {can('loyalty.adjust-points') && loyaltyPrograms.length > 0 && (
+                        <section className="rounded-lg border bg-card p-4">
+                            <div className="mb-3 flex items-center justify-between">
+                                <div>
+                                    <h2 className="font-semibold">{t('pages.loyalty.adjustPoints.title')}</h2>
+                                    <p className="text-sm text-muted-foreground">{t('pages.loyalty.adjustPoints.description')}</p>
+                                </div>
+                                {!adjustOpen && (
+                                    <Button type="button" variant="outline" size="sm" onClick={() => setAdjustOpen(true)}>
+                                        {t('pages.loyalty.adjustPoints.title')}
+                                    </Button>
+                                )}
+                            </div>
+                            {adjustOpen && (
+                                <form onSubmit={handleAdjustPoints} className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">{t('pages.loyalty.adjustPoints.program')}</label>
+                                        <Select
+                                            value={adjustProgramId}
+                                            onChange={setAdjustProgramId}
+                                            options={programOptions}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">{t('pages.loyalty.adjustPoints.points')}</label>
+                                        <input
+                                            type="number"
+                                            value={adjustPoints}
+                                            onChange={(e) => setAdjustPoints(e.target.value)}
+                                            className="w-full rounded-md border px-3 py-2 text-sm"
+                                            required
+                                        />
+                                        <p className="mt-1 text-xs text-muted-foreground">{t('pages.loyalty.adjustPoints.pointsHint')}</p>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <label className="mb-1 block text-sm font-medium">{t('pages.loyalty.adjustPoints.reason')}</label>
+                                        <textarea
+                                            value={adjustReason}
+                                            onChange={(e) => setAdjustReason(e.target.value)}
+                                            className="w-full rounded-md border px-3 py-2 text-sm"
+                                            rows={2}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="flex gap-2 sm:col-span-2">
+                                        <Button type="submit" disabled={adjustProcessing}>
+                                            {t('pages.loyalty.adjustPoints.submit')}
+                                        </Button>
+                                        <Button type="button" variant="outline" onClick={() => setAdjustOpen(false)}>
+                                            {t('pages.loyalty.actions.cancel')}
+                                        </Button>
+                                    </div>
+                                </form>
+                            )}
+                        </section>
+                    )}
+                    <section>
+                        <h2 className="mb-3 font-semibold">{t('pages.customers.loyalty.recentTransactions')}</h2>
+                        <div className="overflow-x-auto rounded-lg border">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b bg-muted/30 text-left text-muted-foreground">
+                                        <th className="px-3 py-2">{t('pages.customers.columns.date')}</th>
+                                        <th className="px-3 py-2">{t('pages.customers.columns.type')}</th>
+                                        <th className="px-3 py-2">{t('pages.customers.loyalty.points')}</th>
+                                        <th className="px-3 py-2">{t('pages.customers.loyalty.status')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(loyalty.transactions ?? []).length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
+                                                {t('pages.customers.loyalty.noTransactions')}
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        loyalty.transactions.map((tx) => (
+                                            <tr key={tx.id} className="border-b">
+                                                <td className="px-3 py-2">{tx.created_at ? new Date(tx.created_at).toLocaleString() : '—'}</td>
+                                                <td className="px-3 py-2">{loyaltyTransactionTypeLabel(t, tx.type)}</td>
+                                                <td className="px-3 py-2">{tx.points > 0 ? `+${tx.points}` : tx.points}</td>
+                                                <td className="px-3 py-2">{loyaltyTransactionStatusLabel(t, tx.status)}</td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                    <section>
+                        <h2 className="mb-3 font-semibold">{t('pages.customers.loyalty.timeline')}</h2>
+                        <ul className="space-y-2 rounded-lg border p-4">
+                            {(loyalty.timeline ?? []).length === 0 ? (
+                                <li className="text-sm text-muted-foreground">{t('pages.customers.loyalty.noTimeline')}</li>
+                            ) : (
+                                loyalty.timeline.map((event) => (
+                                    <li key={event.id} className="flex items-start justify-between gap-4 border-b pb-2 text-sm last:border-0">
+                                        <div>
+                                            <p className="font-medium capitalize">{event.event_type?.replace('_', ' ')}</p>
+                                            <p className="text-muted-foreground">{event.description}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className={event.points >= 0 ? 'text-teal-600' : 'text-amber-600'}>
+                                                {event.points > 0 ? `+${event.points}` : event.points}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {event.created_at ? new Date(event.created_at).toLocaleString() : ''}
+                                            </p>
+                                        </div>
+                                    </li>
+                                ))
+                            )}
+                        </ul>
+                    </section>
+                </div>
+            )}
+
+            {activeTab === 'overview' && (
+            <>
             <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     label={t('pages.customers.stats.atv')}
@@ -159,10 +360,12 @@ function Show({
                     label={t('pages.customers.stats.salesCount')}
                     value={stats.sales_count ?? 0}
                 />
-                <StatCard
-                    label={t('pages.customers.stats.loyaltyPoints')}
-                    value={customer.loyalty_points ?? 0}
-                />
+                {legacyLoyaltyEnabled && (
+                    <StatCard
+                        label={t('pages.customers.stats.loyaltyPoints')}
+                        value={customer.loyalty_points ?? 0}
+                    />
+                )}
                 {canViewCredit && (
                     <StatCard
                         label={t('pages.customers.stats.creditAvailable')}
@@ -389,6 +592,8 @@ function Show({
                     </section>
                 )}
             </div>
+            </>
+            )}
 
             {topUpOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">

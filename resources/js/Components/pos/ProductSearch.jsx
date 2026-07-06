@@ -27,7 +27,7 @@ export function ProductSearch({ branchId, onAddProduct, inputRef: externalRef })
             setLoading(true);
             try {
                 const res = await searchApi.search(q, branchId);
-                setResults(res.results || []);
+                setResults((res.results || []).filter((r) => r.in_stock));
                 setOpen(true);
                 setSelectedIndex(-1);
             } catch {

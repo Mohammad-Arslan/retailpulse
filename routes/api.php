@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\Checkout\CheckoutController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomerWalletController;
-use App\Http\Controllers\Api\V1\InventoryController;
+use App\Http\Controllers\Api\V1\Loyalty\LoyaltyApiController;
 use App\Http\Controllers\Api\V1\Pos\CartController;
 use App\Http\Controllers\Api\V1\Pos\CartItemController;
 use App\Http\Controllers\Api\V1\Pos\PinController;
@@ -71,6 +71,7 @@ Route::prefix('v1')
         Route::post('checkout/{cartId}/abandon', [CheckoutController::class, 'abandon'])->name('checkout.abandon');
 
         Route::post('sales/{id}/payments', [SaleController::class, 'addPayment'])->name('sales.payments.store');
+        Route::delete('sales/{id}/payments/{paymentId}', [SaleController::class, 'removePayment'])->name('sales.payments.destroy');
         Route::post('sales/{id}/void', [SaleController::class, 'void'])->name('sales.void');
     });
 
@@ -85,6 +86,21 @@ Route::prefix('v1')
             ->name('customers.credit-check');
         Route::post('customers/{customer}/wallet/top-up', [CustomerWalletController::class, 'topUp'])
             ->name('customers.wallet.top-up');
+
+        Route::get('customers/{customer}/loyalty/wallet', [LoyaltyApiController::class, 'wallet'])
+            ->name('customers.loyalty.wallet');
+        Route::get('customers/{customer}/loyalty/transactions', [LoyaltyApiController::class, 'transactions'])
+            ->name('customers.loyalty.transactions');
+        Route::get('customers/{customer}/loyalty/timeline', [LoyaltyApiController::class, 'timeline'])
+            ->name('customers.loyalty.timeline');
+        Route::get('customers/{customer}/loyalty/tier', [LoyaltyApiController::class, 'tierStatus'])
+            ->name('customers.loyalty.tier');
+        Route::get('customers/{customer}/loyalty/redemption-options', [LoyaltyApiController::class, 'redemptionOptions'])
+            ->name('customers.loyalty.redemption-options');
+        Route::post('customers/{customer}/loyalty/redeem', [LoyaltyApiController::class, 'redeem'])
+            ->name('customers.loyalty.redeem');
+        Route::get('loyalty/campaigns', [LoyaltyApiController::class, 'campaigns'])
+            ->name('loyalty.campaigns');
 
         Route::get('procurement/config', [PurchaseOrderApiController::class, 'config'])->name('procurement.config');
         Route::get('procurement/product-variants/search', [PurchaseOrderApiController::class, 'searchVariants'])

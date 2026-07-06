@@ -7,6 +7,8 @@ namespace App\Providers;
 use App\Events\Procurement\DropShipGrnConfirmed;
 use App\Events\Procurement\GoodsReceived;
 use App\Events\Procurement\SupplierInvoiceMatched;
+use App\Events\SaleCompleted;
+use App\Listeners\ProcessLoyaltyOnSaleCompleted;
 use App\Listeners\Procurement\LogDropShipGrnConfirmed;
 use App\Listeners\Procurement\LogGoodsReceived;
 use App\Listeners\Procurement\LogSupplierInvoiceMatched;
@@ -17,6 +19,12 @@ use App\Models\Customer;
 use App\Models\DebitNote;
 use App\Models\GoodsReceivingNote;
 use App\Models\LandedCostEntry;
+use App\Models\LoyaltyApprovalPolicy;
+use App\Models\LoyaltyCampaign;
+use App\Models\LoyaltyExpiryRule;
+use App\Models\LoyaltyProgram;
+use App\Models\LoyaltyProgramTier;
+use App\Models\LoyaltyRule;
 use App\Models\Permission;
 use App\Models\PoMatchResult;
 use App\Models\Product;
@@ -144,6 +152,12 @@ class AppServiceProvider extends ServiceProvider
         Sale::observe(AuditObserver::class);
         SalePayment::observe(AuditObserver::class);
         SaleInvoice::observe(AuditObserver::class);
+        LoyaltyProgram::observe(AuditObserver::class);
+        LoyaltyRule::observe(AuditObserver::class);
+        LoyaltyProgramTier::observe(AuditObserver::class);
+        LoyaltyApprovalPolicy::observe(AuditObserver::class);
+        LoyaltyExpiryRule::observe(AuditObserver::class);
+        LoyaltyCampaign::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email');
@@ -154,5 +168,6 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(DropShipGrnConfirmed::class, LogDropShipGrnConfirmed::class);
         Event::listen(GoodsReceived::class, LogGoodsReceived::class);
         Event::listen(SupplierInvoiceMatched::class, LogSupplierInvoiceMatched::class);
+        Event::listen(SaleCompleted::class, ProcessLoyaltyOnSaleCompleted::class);
     }
 }

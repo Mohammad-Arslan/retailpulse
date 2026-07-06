@@ -9,5 +9,6 @@ final readonly class ConfirmCheckoutData
     public function __construct(
         public ?int $customerId = null,
         public ?string $notes = null,
+        public int $loyaltyPointsToRedeem = 0,
     ) {}
 }

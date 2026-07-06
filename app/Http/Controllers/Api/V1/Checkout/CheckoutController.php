@@ -36,6 +36,7 @@ final class CheckoutController extends Controller
             data: new ConfirmCheckoutData(
                 customerId: $request->validated('customer_id'),
                 notes: $request->validated('notes'),
+                loyaltyPointsToRedeem: (int) ($request->validated('loyalty_points_to_redeem') ?? 0),
             ),
             cashierId: $request->user()->id,
         );

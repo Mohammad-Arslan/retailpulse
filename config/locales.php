@@ -27,6 +27,11 @@ return [
             'native' => 'اردو',
             'rtl' => true,
         ],
+        'ar' => [
+            'label' => 'Arabic',
+            'native' => 'العربية',
+            'rtl' => true,
+        ],
     ],
 
 ];

@@ -7,6 +7,9 @@
         "customers": "Customers",
         "customerGroups": "Customer Groups",
         "arAging": "AR Aging",
+        "loyaltyPrograms": "Loyalty Programs",
+        "loyaltyReports": "Loyalty Reports",
+        "loyaltyTransactions": "Loyalty Transactions",
         "users": "Users",
         "roles": "Roles",
         "permissions": "Permissions",
@@ -748,7 +751,317 @@
                 "invalidAmount": "Enter a valid amount.",
                 "success": "Wallet topped up successfully.",
                 "failed": "Could not top up wallet."
+            },
+            "tabs": {
+                "overview": "Overview",
+                "loyalty": "Loyalty"
+            },
+            "loyalty": {
+                "program": "Program",
+                "tier": "Tier",
+                "lifetimeEarned": "Lifetime Earned",
+                "redeemed": "Redeemed",
+                "expired": "Expired",
+                "points": "Points",
+                "status": "Status",
+                "recentTransactions": "Recent Transactions",
+                "timeline": "Timeline",
+                "noTransactions": "No loyalty transactions yet.",
+                "noTimeline": "No timeline events yet."
             }
+        },
+        "loyalty": {
+            "programs": {
+                "title": "Loyalty Programs",
+                "description": "Configure earning, redemption, tiers, and campaigns.",
+                "createTitle": "New Program",
+                "editTitle": "Edit Program",
+                "empty": "No loyalty programs found.",
+                "columns": {
+                    "name": "Program",
+                    "status": "Status",
+                    "scope": "Scope",
+                    "rules": "Rules",
+                    "members": "Members"
+                },
+                "sections": {
+                    "details": "Program Details",
+                    "scope": "Scope & Branch Behavior",
+                    "schedule": "Schedule"
+                },
+                "fields": {
+                    "name": "Name",
+                    "description": "Description",
+                    "scopeType": "Program Scope",
+                    "earnScope": "Earning Scope",
+                    "redeemScope": "Redemption Scope",
+                    "allowCrossBranchEarn": "Allow Cross-Branch Earning",
+                    "allowCrossBranchRedeem": "Allow Cross-Branch Redemption",
+                    "startsAt": "Starts At",
+                    "endsAt": "Ends At",
+                    "branches": "Participating Branches"
+                },
+                "hints": {
+                    "scopeType": "Controls which branches the program applies to.",
+                    "earnScope": "Whether points are earned globally or per branch.",
+                    "redeemScope": "Whether points are redeemed globally or per branch.",
+                    "branches": "Select the branches that participate in this program."
+                },
+                "scopeTypes": {
+                    "global": "Global (All Branches)",
+                    "branch": "Single Branch",
+                    "selected_branches": "Selected Branches"
+                },
+                "scopeModes": {
+                    "global": "Global",
+                    "branch": "Branch Only"
+                }
+            },
+            "reports": {
+                "title": "Loyalty Reports",
+                "description": "Points earned, redeemed, expired, and tier distribution.",
+                "empty": "No data for this report.",
+                "tabs": {
+                    "earned": "Points Earned",
+                    "redeemed": "Points Redeemed",
+                    "expired": "Points Expired",
+                    "customers": "Customer Loyalty",
+                    "tiers": "Tier Distribution",
+                    "branches": "Branch Loyalty",
+                    "campaigns": "Campaign Effectiveness",
+                    "top": "Top Customers"
+                },
+                "columns": {
+                    "branch": "Branch",
+                    "totalPoints": "Total Points",
+                    "transactions": "Transactions",
+                    "customers": "Customers",
+                    "availablePoints": "Available Points",
+                    "lifetimeEarned": "Lifetime Earned",
+                    "redeemed": "Redeemed",
+                    "customer": "Customer",
+                    "phone": "Phone",
+                    "tier": "Tier",
+                    "bonusEvents": "Bonus Events"
+                }
+            },
+            "transactions": {
+                "title": "Loyalty Transactions",
+                "description": "Review and approve loyalty point movements.",
+                "columns": {
+                    "customer": "Customer",
+                    "program": "Program",
+                    "type": "Type",
+                    "points": "Points",
+                    "status": "Status",
+                    "reason": "Reason",
+                    "date": "Date",
+                    "actions": "Actions"
+                },
+                "filters": {
+                    "allStatuses": "All Statuses",
+                    "pendingApproval": "Pending Approval"
+                },
+                "actions": {
+                    "approve": "Approve",
+                    "reject": "Reject"
+                },
+                "approveTitle": "Approve Transaction",
+                "approveDescription": "Enter your manager PIN to approve this transaction.",
+                "rejectTitle": "Reject Transaction",
+                "rejectReason": "Rejection Reason",
+                "pin": "Manager PIN",
+                "empty": "No loyalty transactions found."
+            },
+            "adjustPoints": {
+                "title": "Adjust Points",
+                "description": "Manually credit or debit loyalty points.",
+                "program": "Loyalty Program",
+                "points": "Points",
+                "pointsHint": "Use a negative value to debit points.",
+                "reason": "Reason",
+                "submit": "Apply Adjustment"
+            },
+            "tabs": {
+                "overview": "Overview",
+                "rules": "Rules",
+                "tiers": "Tiers",
+                "approvals": "Approvals",
+                "expiry": "Expiry",
+                "campaigns": "Campaigns"
+            },
+            "rules": {
+                "title": "Earning & Redemption Rules",
+                "description": "Configure how customers earn and redeem points.",
+                "add": "Add Rule",
+                "edit": "Edit Rule",
+                "empty": "No rules configured yet.",
+                "fields": {
+                    "name": "Rule Name",
+                    "description": "Description",
+                    "ruleType": "Rule Type",
+                    "priority": "Priority",
+                    "isActive": "Active",
+                    "effectiveFrom": "Effective From",
+                    "effectiveTo": "Effective To",
+                    "spendAmount": "Spend Amount",
+                    "points": "Points",
+                    "bonusPoints": "Bonus Points",
+                    "multiplier": "Multiplier",
+                    "productIds": "Product IDs",
+                    "categoryIds": "Categories",
+                    "branchIds": "Branches",
+                    "dayOfWeek": "Days Of Week",
+                    "minRedeemPoints": "Minimum Redeem Points",
+                    "maxRedeemPercent": "Maximum Redeem %",
+                    "pointsPerUnit": "Points Per Unit",
+                    "currencyPerUnit": "Currency Per Unit",
+                    "maxRedeemAmount": "Maximum Redeem Amount",
+                    "matchCurrentMonth": "Match Customer Sign-Up Month"
+                },
+                "hints": {
+                    "productIds": "Comma-separated product IDs.",
+                    "dayOfWeek": "0 = Sunday through 6 = Saturday."
+                }
+            },
+            "tiers": {
+                "title": "Loyalty Tiers",
+                "description": "Define tier levels, qualification thresholds, and multipliers.",
+                "add": "Add Tier",
+                "edit": "Edit Tier",
+                "empty": "No tiers configured yet.",
+                "fields": {
+                    "name": "Tier Name",
+                    "tierLevel": "Tier Level",
+                    "qualificationType": "Qualification Type",
+                    "qualificationValue": "Qualification Value",
+                    "multiplier": "Points Multiplier",
+                    "status": "Status"
+                }
+            },
+            "approvals": {
+                "title": "Approval Policies",
+                "description": "Require manager approval when thresholds are exceeded.",
+                "add": "Add Policy",
+                "edit": "Edit Policy",
+                "empty": "No approval policies configured.",
+                "fields": {
+                    "actionType": "Action Type",
+                    "thresholdType": "Threshold Type",
+                    "thresholdValue": "Threshold Value",
+                    "approvalMode": "Approval Mode",
+                    "approverRole": "Approver Role",
+                    "isActive": "Active"
+                }
+            },
+            "expiry": {
+                "title": "Point Expiry",
+                "description": "Configure when unused points expire.",
+                "add": "Add Expiry Rule",
+                "edit": "Edit Expiry Rule",
+                "empty": "No expiry rules configured.",
+                "fields": {
+                    "expiryType": "Expiry Type",
+                    "value": "Value (Days/Months)",
+                    "gracePeriodDays": "Grace Period Days"
+                }
+            },
+            "campaigns": {
+                "title": "Campaigns",
+                "description": "Time-limited bonus and multiplier campaigns.",
+                "add": "Add Campaign",
+                "edit": "Edit Campaign",
+                "empty": "No campaigns configured.",
+                "fields": {
+                    "name": "Campaign Name",
+                    "description": "Description",
+                    "campaignType": "Campaign Type",
+                    "multiplier": "Multiplier",
+                    "bonusPoints": "Bonus Points",
+                    "status": "Status",
+                    "startsAt": "Starts At",
+                    "endsAt": "Ends At"
+                }
+            },
+            "enums": {
+                "ruleTypes": {
+                    "spend_based": "Spend Based",
+                    "product_based": "Product Based",
+                    "category_based": "Category Based",
+                    "branch_based": "Branch Based",
+                    "time_based": "Time Based",
+                    "birthday": "Birthday",
+                    "first_purchase": "First Purchase",
+                    "campaign": "Campaign Bonus",
+                    "manual_bonus": "Manual Bonus",
+                    "redemption": "Redemption"
+                },
+                "tierQualification": {
+                    "points_based": "Points Based",
+                    "spend_based": "Spend Based",
+                    "visit_based": "Visit Based"
+                },
+                "approvalActions": {
+                    "manual_adjustment": "Manual Adjustment",
+                    "large_redemption": "Large Redemption",
+                    "bonus_points": "Bonus Points",
+                    "tier_override": "Tier Override"
+                },
+                "expiryTypes": {
+                    "fixed_days": "Fixed Days",
+                    "fixed_months": "Fixed Months",
+                    "fiscal_year": "End Of Fiscal Year",
+                    "never": "Never Expire"
+                },
+                "campaignTypes": {
+                    "double_points": "Double Points",
+                    "bonus_points": "Bonus Points",
+                    "multiplier": "Multiplier"
+                },
+                "campaignStatuses": {
+                    "draft": "Draft",
+                    "active": "Active",
+                    "inactive": "Inactive",
+                    "expired": "Expired"
+                },
+                "approvalModes": {
+                    "pin": "PIN Approval",
+                    "workflow": "Workflow Approval"
+                },
+                "thresholdTypes": {
+                    "points": "Points",
+                    "currency": "Currency"
+                },
+                "programStatuses": {
+                    "draft": "Draft",
+                    "active": "Active",
+                    "inactive": "Inactive"
+                },
+                "transactionTypes": {
+                    "earn": "Earn",
+                    "redeem": "Redeem",
+                    "expire": "Expire",
+                    "adjustment": "Adjustment",
+                    "bonus": "Bonus",
+                    "reversal": "Reversal"
+                },
+                "transactionStatuses": {
+                    "completed": "Completed",
+                    "pending_approval": "Pending Approval",
+                    "rejected": "Rejected",
+                    "cancelled": "Cancelled"
+                }
+            },
+            "actions": {
+                "add": "Add",
+                "save": "Save",
+                "cancel": "Cancel",
+                "delete": "Delete",
+                "edit": "Edit",
+                "activate": "Activate",
+                "deactivate": "Deactivate"
+            },
+            "confirmDelete": "Delete this item? This cannot be undone."
         },
         "customerGroups": {
             "title": "Customer Groups",
@@ -1424,6 +1737,9 @@
         "customers": "Customers",
         "customerGroups": "Customer Groups",
         "arAging": "AR Aging",
+        "loyaltyPrograms": "Loyalty Programs",
+        "loyaltyTransactions": "Transactions",
+        "loyaltyReports": "Loyalty Reports",
         "units": "Units",
         "products": "Products",
         "inventory": "Stock Levels",
@@ -1463,6 +1779,7 @@
         "completePayment": "Complete Payment",
         "partialPayment": "Apply Partial Payment",
         "appliedPayments": "Applied Payments",
+        "removePayment": "Remove Payment",
         "customerOptional": "Customer (optional)",
         "customerSearchPlaceholder": "Search by name or phone…",
         "clearCustomer": "Clear",
@@ -1493,7 +1810,16 @@
             "wallet": "Wallet",
             "storeCredit": "Store credit",
             "arOutstanding": "AR outstanding",
-            "creditAvailable": "Credit available"
+            "creditAvailable": "Credit available",
+            "loyaltyPoints": "Loyalty Points"
+        },
+        "loyalty": {
+            "redeemTitle": "Redeem Loyalty Points",
+            "availablePoints": "Available Points",
+            "pointsToRedeem": "Points To Redeem",
+            "discountPreview": "Discount Preview",
+            "minPoints": "Minimum {{min}} points",
+            "maxDiscount": "Maximum discount {{amount}} {{currency}}"
         },
         "creditLimit": {
             "warning": "This sale exceeds the customer's credit limit.",
@@ -1513,6 +1839,7 @@
             "paymentFailed": "Payment failed.",
             "returnFailed": "Could not return to POS.",
             "voidFailed": "Could not void sale.",
+            "removePaymentFailed": "Could not remove the payment.",
             "saleConfirmed": "Sale already confirmed. Complete payment or void the sale."
         }
     }

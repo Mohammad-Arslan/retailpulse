@@ -75,6 +75,25 @@ final class SaleController extends Controller
         return response()->json($response);
     }
 
+    public function removePayment(Request $request, int $id, int $paymentId): JsonResponse
+    {
+        $sale = Sale::query()->with('payments')->findOrFail($id);
+
+        if ($sale->cashier_id !== $request->user()->id && ! $request->user()->can('sales.view')) {
+            abort(Response::HTTP_FORBIDDEN);
+        }
+
+        $payment = $sale->payments->firstWhere('id', $paymentId);
+
+        if ($payment === null) {
+            return response()->json(['message' => __('Payment not found.')], Response::HTTP_NOT_FOUND);
+        }
+
+        $sale = $this->checkout->removePayment($sale, $payment, $request->user()->id);
+
+        return response()->json($this->formatSaleDetail($sale));
+    }
+
     public function void(Request $request, int $id): JsonResponse
     {
         $this->authorize('pos.void-cart');

@@ -6,15 +6,32 @@ namespace App\Services\Customer;
 
 use App\Enums\LoyaltyPointType;
 use App\Models\Customer;
+use App\Models\CustomerLoyaltyWallet;
 use App\Models\LoyaltyPoint;
 use App\Models\LoyaltyTier;
 use App\Models\Sale;
 use App\Models\SystemSetting;
+use App\Services\Loyalty\LoyaltyEarnService;
 use Illuminate\Support\Facades\DB;
 
 final class LoyaltyService
 {
+    public function __construct(
+        private readonly LoyaltyEarnService $loyaltyEngine,
+    ) {}
+
     public function earnOnSaleComplete(Sale $sale): ?LoyaltyPoint
+    {
+        if ((bool) SystemSetting::get('loyalty', 'enabled', true)) {
+            $this->loyaltyEngine->earnOnSaleComplete($sale);
+
+            return null;
+        }
+
+        return $this->earnLegacyOnSaleComplete($sale);
+    }
+
+    private function earnLegacyOnSaleComplete(Sale $sale): ?LoyaltyPoint
     {
         if ($sale->customer_id === null) {
             return null;
@@ -59,6 +76,12 @@ final class LoyaltyService
 
     public function getTotalPoints(int $customerId): int
     {
+        if ((bool) SystemSetting::get('loyalty', 'enabled', true)) {
+            return (int) CustomerLoyaltyWallet::query()
+                ->where('customer_id', $customerId)
+                ->sum('available_points');
+        }
+
         return (int) LoyaltyPoint::query()
             ->where('customer_id', $customerId)
             ->sum('points');

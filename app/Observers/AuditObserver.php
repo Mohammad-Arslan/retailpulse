@@ -7,6 +7,12 @@ namespace App\Observers;
 use App\Models\Branch;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\LoyaltyApprovalPolicy;
+use App\Models\LoyaltyCampaign;
+use App\Models\LoyaltyExpiryRule;
+use App\Models\LoyaltyProgram;
+use App\Models\LoyaltyProgramTier;
+use App\Models\LoyaltyRule;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\Role;
@@ -45,6 +51,12 @@ final class AuditObserver
             && ! $model instanceof Category
             && ! $model instanceof Brand
             && ! $model instanceof Product
+            && ! $model instanceof LoyaltyProgram
+            && ! $model instanceof LoyaltyRule
+            && ! $model instanceof LoyaltyProgramTier
+            && ! $model instanceof LoyaltyApprovalPolicy
+            && ! $model instanceof LoyaltyExpiryRule
+            && ! $model instanceof LoyaltyCampaign
         ) {
             return;
         }
@@ -52,9 +64,9 @@ final class AuditObserver
         $this->audit->log($event, $model, $old, $new);
     }
 
-  /**
-   * @return array<string, mixed>
-   */
+    /**
+     * @return array<string, mixed>
+     */
     private function snapshot(Model $model): array
     {
         return collect($model->getAttributes())
@@ -62,9 +74,9 @@ final class AuditObserver
             ->all();
     }
 
-  /**
-   * @return array<string, mixed>
-   */
+    /**
+     * @return array<string, mixed>
+     */
     private function changedOld(Model $model): array
     {
         return collect($model->getOriginal())
@@ -73,9 +85,9 @@ final class AuditObserver
             ->all();
     }
 
-  /**
-   * @return array<string, mixed>
-   */
+    /**
+     * @return array<string, mixed>
+     */
     private function changedNew(Model $model): array
     {
         return collect($model->getChanges())

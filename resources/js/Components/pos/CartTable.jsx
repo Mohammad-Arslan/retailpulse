@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Minus, Plus, ShoppingCart, X } from 'lucide-react';
 import { cartItemApi } from '@/lib/posApi';
 import { usePosDialog } from '@/Hooks/usePosDialog';
@@ -34,6 +34,8 @@ function CartTableRow({
 }) {
     const [showDiscount, setShowDiscount] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [qtyInput, setQtyInput] = useState(String(item.quantity));
+    const [editingQty, setEditingQty] = useState(false);
     const { error, confirmRemoveItem } = usePosDialog();
 
     const locked = readOnly || processing || saving;
@@ -42,6 +44,12 @@ function CartTableRow({
     const discount = lineDiscount(item);
     const hasDiscount = discount > 0;
 
+    useEffect(() => {
+        if (!editingQty) {
+            setQtyInput(String(item.quantity));
+        }
+    }, [item.quantity, editingQty]);
+
     async function changeQty(delta) {
         const next = item.quantity + delta;
         if (next < 1 || locked) return;
@@ -49,6 +57,7 @@ function CartTableRow({
         try {
             const updated = await cartItemApi.update(cartId, item.id, { quantity: next });
             onUpdated(updated);
+            setQtyInput(String(updated.quantity));
         } catch (err) {
             error(
                 err?.response?.data?.errors?.quantity?.[0] ||
@@ -57,6 +66,58 @@ function CartTableRow({
             );
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function commitQty(raw) {
+        const next = Number.parseInt(raw, 10);
+        if (!Number.isInteger(next) || next < 1) {
+            setQtyInput(String(item.quantity));
+            return;
+        }
+        if (next === item.quantity || locked) {
+            setQtyInput(String(item.quantity));
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const updated = await cartItemApi.update(cartId, item.id, { quantity: next });
+            onUpdated(updated);
+            setQtyInput(String(updated.quantity));
+        } catch (err) {
+            setQtyInput(String(item.quantity));
+            error(
+                err?.response?.data?.errors?.quantity?.[0] ||
+                err?.response?.data?.message ||
+                'Failed to update quantity.',
+            );
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    function handleQtyChange(e) {
+        const value = e.target.value;
+        if (value === '' || /^\d+$/.test(value)) {
+            setQtyInput(value);
+        }
+    }
+
+    function handleQtyBlur() {
+        setEditingQty(false);
+        void commitQty(qtyInput);
+    }
+
+    function handleQtyKeyDown(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.currentTarget.blur();
+        }
+        if (e.key === 'Escape') {
+            setQtyInput(String(item.quantity));
+            setEditingQty(false);
+            e.currentTarget.blur();
         }
     }
 
@@ -128,7 +189,19 @@ function CartTableRow({
                             >
                                 <Minus className="h-3 w-3" />
                             </button>
-                            <span className="w-8 text-center text-sm font-semibold text-rp-text">{item.quantity}</span>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={qtyInput}
+                                onChange={handleQtyChange}
+                                onFocus={() => setEditingQty(true)}
+                                onBlur={handleQtyBlur}
+                                onKeyDown={handleQtyKeyDown}
+                                disabled={locked}
+                                aria-label="Quantity"
+                                className="w-12 rounded-md border border-rp-border bg-rp-surface-inset px-1 py-1 text-center text-sm font-semibold text-rp-text focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-40"
+                            />
                             <button
                                 type="button"
                                 onClick={() => changeQty(1)}
