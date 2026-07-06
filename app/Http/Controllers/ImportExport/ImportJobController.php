@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ImportExportJob;
 use App\Models\ImportRowError;
 use App\Services\ImportExport\ImportErrorFormatter;
-use App\Services\ImportExport\Storage\ImportExportStorageManager;
+use App\Traits\AuthorizesImportExportJob;
 use App\Traits\HandlesImportExportStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ImportJobController extends Controller
 {
+    use AuthorizesImportExportJob;
     use HandlesImportExportStorage;
 
     public function index(Request $request): JsonResponse
@@ -46,7 +47,7 @@ final class ImportJobController extends Controller
         return response()->json(['job' => $job]);
     }
 
-    public function show(string $ulid): JsonResponse
+    public function show(Request $request, string $ulid): JsonResponse
     {
         $job = ImportExportJob::query()
             ->forCurrentTenant()
@@ -54,15 +55,14 @@ final class ImportJobController extends Controller
             ->withCount('rowErrors')
             ->firstOrFail();
 
+        $this->assertJobOwnership($job, $request->user());
+
         return response()->json(['job' => $job]);
     }
 
     public function rowErrors(Request $request, string $ulid): JsonResponse
     {
-        $job = ImportExportJob::query()
-            ->forCurrentTenant()
-            ->byUlid($ulid)
-            ->firstOrFail();
+        $job = $this->findOwnedJob($request, $ulid);
 
         $search = trim((string) $request->query('search', ''));
         $perPage = min(100, max(10, (int) $request->query('per_page', 50)));
@@ -148,12 +148,9 @@ final class ImportJobController extends Controller
         ]);
     }
 
-    public function cancel(string $ulid): JsonResponse
+    public function cancel(Request $request, string $ulid): JsonResponse
     {
-        $job = ImportExportJob::query()
-            ->forCurrentTenant()
-            ->byUlid($ulid)
-            ->firstOrFail();
+        $job = $this->findOwnedJob($request, $ulid);
 
         if (! in_array($job->status, ['pending', 'validating'], true)) {
             return response()->json(['message' => 'Job cannot be cancelled in its current state.'], 422);

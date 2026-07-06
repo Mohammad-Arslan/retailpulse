@@ -3,12 +3,13 @@ import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
 import Select from '@/Components/ui/select';
 import { useWarehouseCodeSuggestion } from '@/Hooks/useWarehouseCodeSuggestion';
+import { warehouseTypeOptions } from '@/lib/warehouseI18n';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export default function Create({ branches, defaultBranchId = null }) {
+export default function Create({ branches, defaultBranchId = null, warehouseTypes = [] }) {
     const { t } = useTranslation();
     const initialBranchId =
         defaultBranchId !== null
@@ -26,9 +27,15 @@ export default function Create({ branches, defaultBranchId = null }) {
         [branches],
     );
 
+    const typeOptions = useMemo(
+        () => warehouseTypeOptions(t, warehouseTypes),
+        [t, warehouseTypes],
+    );
+
     const { data, setData, post, processing, errors } = useForm({
         branch_id: initialBranchId,
         name: '',
+        type: warehouseTypes[0] ?? 'backroom',
         is_default: false,
     });
 
@@ -117,6 +124,19 @@ export default function Create({ branches, defaultBranchId = null }) {
                             )}
                         </div>
                     </div>
+
+                    <AdminFormField
+                        label={t('pages.warehouses.fields.type')}
+                        id="type"
+                        error={errors.type}
+                    >
+                        <Select
+                            id="type"
+                            options={typeOptions}
+                            value={data.type}
+                            onChange={(value) => setData('type', value)}
+                        />
+                    </AdminFormField>
 
                     <label className="flex items-center gap-2 text-sm text-rp-text-secondary">
                         <input

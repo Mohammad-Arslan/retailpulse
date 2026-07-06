@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\Checkout\CheckoutController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomerWalletController;
+use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\Loyalty\LoyaltyApiController;
 use App\Http\Controllers\Api\V1\Pos\CartController;
 use App\Http\Controllers\Api\V1\Pos\CartItemController;
@@ -18,18 +19,6 @@ use App\Http\Controllers\Api\V1\Sales\SaleController;
 use App\Http\Controllers\Api\V1\Sales\SaleExportController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')
-    ->middleware('auth:sanctum')
-    ->name('api.v1.')
-    ->group(function () {
-        Route::post('inventory/check-availability', [InventoryController::class, 'checkAvailability'])
-            ->name('inventory.check-availability');
-    });
-
-/*
-| POS API — uses web session auth so it works from any domain the app is served on,
-| identical to the import/export API pattern. No Sanctum stateful domain config needed.
-*/
 Route::prefix('v1/pos')
     ->middleware(['web', 'auth'])
     ->name('api.v1.pos.')
@@ -62,10 +51,17 @@ Route::prefix('v1/pos')
         }); // end pos.access group
     });
 
+/*
+| POS API — uses web session auth so it works from any domain the app is served on,
+| identical to the import/export API pattern. No Sanctum stateful domain config needed.
+*/
 Route::prefix('v1')
     ->middleware(['web', 'auth', 'pos.access'])
     ->name('api.v1.')
     ->group(function () {
+        Route::post('inventory/check-availability', [InventoryController::class, 'checkAvailability'])
+            ->name('inventory.check-availability');
+
         Route::get('checkout/{cartId}', [CheckoutController::class, 'show'])->name('checkout.show');
         Route::post('checkout/{cartId}/confirm', [CheckoutController::class, 'confirm'])->name('checkout.confirm');
         Route::post('checkout/{cartId}/abandon', [CheckoutController::class, 'abandon'])->name('checkout.abandon');

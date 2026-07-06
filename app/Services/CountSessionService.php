@@ -94,7 +94,16 @@ final class CountSessionService
                 ]);
             }
 
-            $session->update(['status' => CountSessionStatus::UnderReview]);
+            $session = $session->fresh(['lines']) ?? $session;
+
+            if ($this->exceedsVarianceThreshold($session)) {
+                $session->update(['status' => CountSessionStatus::UnderReview]);
+            } else {
+                $session->update([
+                    'status' => CountSessionStatus::Approved,
+                    'approved_by' => $data->userId,
+                ]);
+            }
 
             return $this->sessions->findByIdWithRelations($session->id) ?? $session;
         });
@@ -108,16 +117,43 @@ final class CountSessionService
             ]);
         }
 
-        $session->load('lines');
-
-        $this->assertVarianceWithinThreshold($session);
-
         $session->update([
             'status' => CountSessionStatus::Approved,
             'approved_by' => $userId,
         ]);
 
         return $this->sessions->findByIdWithRelations($session->id) ?? $session;
+    }
+
+    public function exceedsVarianceThreshold(CountSession $session): bool
+    {
+        $session->loadMissing('lines');
+
+        $totalVarianceValue = $session->lines->sum(fn ($line) => abs((float) ($line->variance_value ?? 0)));
+
+        if (
+            $session->variance_threshold_value !== null
+            && $totalVarianceValue > (float) $session->variance_threshold_value
+        ) {
+            return true;
+        }
+
+        foreach ($session->lines as $line) {
+            if ($line->system_qty <= 0 || $line->variance_qty === null) {
+                continue;
+            }
+
+            $pct = abs($line->variance_qty) / $line->system_qty * 100;
+
+            if (
+                $session->variance_threshold_pct !== null
+                && $pct > (float) $session->variance_threshold_pct
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function post(CountSession $session, int $userId): CountSession
@@ -131,6 +167,12 @@ final class CountSessionService
         $session->load('lines');
 
         return DB::transaction(function () use ($session, $userId) {
+            // Mark posted before applying deltas so freeze_mode on this session does not block adjustments.
+            $session->update([
+                'status' => CountSessionStatus::Posted,
+                'posted_at' => now(),
+            ]);
+
             foreach ($session->lines as $line) {
                 if ($line->variance_qty === null || $line->variance_qty === 0) {
                     continue;
@@ -149,11 +191,6 @@ final class CountSessionService
                     binLocationId: $line->bin_location_id,
                 );
             }
-
-            $session->update([
-                'status' => CountSessionStatus::Posted,
-                'posted_at' => now(),
-            ]);
 
             return $this->sessions->findByIdWithRelations($session->id) ?? $session;
         });
@@ -190,37 +227,6 @@ final class CountSessionService
                 'batch_no' => $inventory->batch?->batch_no,
                 'system_qty' => $inventory->quantity_on_hand,
             ]);
-        }
-    }
-
-    private function assertVarianceWithinThreshold(CountSession $session): void
-    {
-        $totalVarianceValue = $session->lines->sum(fn ($line) => abs((float) ($line->variance_value ?? 0)));
-
-        if (
-            $session->variance_threshold_value !== null
-            && $totalVarianceValue > (float) $session->variance_threshold_value
-        ) {
-            throw ValidationException::withMessages([
-                'variance' => __('Total variance value exceeds the approval threshold.'),
-            ]);
-        }
-
-        foreach ($session->lines as $line) {
-            if ($line->system_qty <= 0 || $line->variance_qty === null) {
-                continue;
-            }
-
-            $pct = abs($line->variance_qty) / $line->system_qty * 100;
-
-            if (
-                $session->variance_threshold_pct !== null
-                && $pct > (float) $session->variance_threshold_pct
-            ) {
-                throw ValidationException::withMessages([
-                    'variance' => __('Line variance percentage exceeds the approval threshold.'),
-                ]);
-            }
         }
     }
 

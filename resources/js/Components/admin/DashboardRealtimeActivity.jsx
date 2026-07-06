@@ -1,3 +1,4 @@
+import ScrollArea from '@/Components/common/ScrollArea';
 import { usePage } from '@inertiajs/react';
 import { Activity, Package, User } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -105,7 +106,7 @@ export default function DashboardRealtimeActivity() {
                     Waiting for events. Try receiving stock or signing in from another browser while this stays open.
                 </p>
             ) : (
-                <ul className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                <ScrollArea as="ul" className="max-h-80 space-y-2 overflow-y-auto pr-1">
                     {items.map((row) => (
                         <li
                             key={row.clientId}
@@ -159,7 +160,7 @@ export default function DashboardRealtimeActivity() {
                             )}
                         </li>
                     ))}
-                </ul>
+                </ScrollArea>
             )}
         </div>
     );

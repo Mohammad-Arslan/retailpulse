@@ -1,4 +1,5 @@
 import { openExportDownload } from '@/Components/import-export/ImportExportToolbar';
+import ScrollArea from '@/Components/common/ScrollArea';
 import { fetchJobs } from '@/lib/importExportApi';
 import { filterTrayActiveJobs, isTrayActiveJob } from '@/lib/importJobStatus';
 import { cumulativeImportProgress } from '@/lib/importProgress';
@@ -208,7 +209,7 @@ function ImportJobsTrayPanel({ jobs, open, onOpenChange, onDismiss }) {
                 </button>
             </div>
             {open && (
-                <div className="mt-2 max-h-72 overflow-y-auto rounded-lg border border-ink-200 bg-white shadow-xl dark:border-ink-700 dark:bg-ink-900">
+                <ScrollArea className="mt-2 max-h-72 overflow-y-auto rounded-lg border border-ink-200 bg-white shadow-xl dark:border-ink-700 dark:bg-ink-900">
                     <ul className="divide-y divide-ink-100 dark:divide-ink-800">
                         {active.map((job) => (
                             <li key={job.ulid} className="px-4 py-3 text-sm">
@@ -226,7 +227,7 @@ function ImportJobsTrayPanel({ jobs, open, onOpenChange, onDismiss }) {
                             </li>
                         ))}
                     </ul>
-                </div>
+                </ScrollArea>
             )}
         </div>
     );

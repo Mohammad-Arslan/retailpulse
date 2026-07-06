@@ -1,8 +1,8 @@
 import PageHeader from '@/Components/common/PageHeader';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
-import { Head, Link, router, useForm } from '@inertiajs/react';
-import { useMemo } from 'react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const statusClass = {
@@ -16,6 +16,7 @@ const statusClass = {
 function Show({ session }) {
     const can = useCan();
     const { t } = useTranslation();
+    const { errors: pageErrors } = usePage().props;
     const editable = session.status === 'in_progress';
 
     const initialLines = useMemo(
@@ -27,7 +28,11 @@ function Show({ session }) {
         [session.lines],
     );
 
-    const { data, setData, post, processing } = useForm({ lines: initialLines });
+    const { data, setData, post, processing, errors } = useForm({ lines: initialLines });
+
+    useEffect(() => {
+        setData('lines', initialLines);
+    }, [initialLines, setData]);
 
     const start = () => router.post(route('admin.count-sessions.start', session.id));
     const approve = () => router.post(route('admin.count-sessions.approve', session.id));
@@ -79,7 +84,22 @@ function Show({ session }) {
                 )}
             </div>
 
+            {session.requiresApproval && (
+                <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    {t('pages.countSessions.requiresApproval')}
+                </p>
+            )}
+
+            {(pageErrors?.variance || pageErrors?.status || pageErrors?.warehouse_id) && (
+                <p className="mb-4 text-sm text-red-600">
+                    {pageErrors.variance ?? pageErrors.status ?? pageErrors.warehouse_id}
+                </p>
+            )}
+
             <form onSubmit={submitCounts}>
+                {errors.lines && (
+                    <p className="mb-4 text-sm text-red-600">{errors.lines}</p>
+                )}
                 <div className="overflow-x-auto rounded-xl border border-rp-border">
                     <table className="w-full text-sm">
                         <thead>

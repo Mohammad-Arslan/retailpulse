@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreSupplierPaymentRequest;
+use App\Models\SupplierPayment;
 use App\Services\Procurement\SupplierPaymentService;
 use Illuminate\Http\RedirectResponse;
 
@@ -17,7 +18,7 @@ final class SupplierPaymentController extends Controller
 
     public function store(StoreSupplierPaymentRequest $request): RedirectResponse
     {
-        abort_unless($request->user()?->can('procurement.process-payments'), 403);
+        $this->authorize('create', SupplierPayment::class);
 
         $payment = $this->payments->recordPayment(
             branchId: (int) $request->validated('branch_id'),

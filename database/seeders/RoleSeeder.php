@@ -176,6 +176,8 @@ final class RoleSeeder extends Seeder
                 'dashboard.view',
                 'sales.view',
                 'sales.export',
+                'procurement.view',
+                'procurement.process-payments',
             ],
         ],
         'cashier' => [

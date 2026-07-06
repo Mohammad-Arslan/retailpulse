@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\DTOs\Warehouse\CreateWarehouseData;
 use App\DTOs\Warehouse\UpdateWarehouseData;
+use App\Enums\WarehouseType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreWarehouseRequest;
 use App\Http\Requests\Admin\UpdateWarehouseRequest;
@@ -79,6 +80,7 @@ final class WarehouseController extends Controller
                 ->values()
                 ->all(),
             'defaultBranchId' => $this->resolveDefaultBranchId($request, $accessibleIds),
+            'warehouseTypes' => WarehouseType::values(),
         ]);
     }
 
@@ -160,9 +162,11 @@ final class WarehouseController extends Controller
                 'branch_code' => $warehouse->branch?->code ?? '',
                 'name' => $warehouse->name,
                 'code' => $warehouse->code,
+                'type' => $warehouse->type?->value ?? WarehouseType::Backroom->value,
                 'is_default' => $warehouse->is_default,
                 'is_active' => $warehouse->is_active,
             ],
+            'warehouseTypes' => WarehouseType::values(),
         ]);
     }
 

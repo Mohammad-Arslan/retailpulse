@@ -12,6 +12,7 @@ use App\Services\ImportExport\Storage\ImportExportStorageManager;
 use App\Support\CatalogExportFilters;
 use App\Support\ImportExportAuthorization;
 use App\Support\TenantImportScope;
+use App\Traits\AuthorizesImportExportJob;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class ExportController extends Controller
 {
+    use AuthorizesImportExportJob;
+
     public function initiate(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -66,7 +69,7 @@ final class ExportController extends Controller
         ]);
     }
 
-    public function download(string $ulid): RedirectResponse
+    public function download(Request $request, string $ulid): RedirectResponse
     {
         $job = ImportExportJob::query()
             ->forCurrentTenant()
@@ -74,15 +77,27 @@ final class ExportController extends Controller
             ->where('type', 'export')
             ->firstOrFail();
 
+        $this->assertJobOwnership($job, $request->user());
+
+        if (! ImportExportAuthorization::canExport($request->user(), $job->entity_type)) {
+            abort(Response::HTTP_FORBIDDEN);
+        }
+
         return $this->redirectToOutputFile($job);
     }
 
-    public function errors(string $ulid): RedirectResponse
+    public function errors(Request $request, string $ulid): RedirectResponse
     {
         $job = ImportExportJob::query()
             ->forCurrentTenant()
             ->byUlid($ulid)
             ->firstOrFail();
+
+        $this->assertJobOwnership($job, $request->user());
+
+        if (! ImportExportAuthorization::canExport($request->user(), $job->entity_type)) {
+            abort(Response::HTTP_FORBIDDEN);
+        }
 
         return $this->redirectToOutputFile($job);
     }

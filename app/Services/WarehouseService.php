@@ -26,6 +26,7 @@ final class WarehouseService
                 'branch_id' => $data->branchId,
                 'name' => $data->name,
                 'code' => $this->codeGenerator->generate($data->branchId, $data->name),
+                'type' => $data->type->value,
                 'is_default' => $data->isDefault,
                 'is_active' => true,
             ]);
@@ -43,6 +44,7 @@ final class WarehouseService
         return DB::transaction(function () use ($warehouse, $data) {
             $warehouse = $this->warehouses->update($warehouse, [
                 'name' => $data->name,
+                'type' => $data->type->value,
             ]);
 
             if ($data->isDefault) {

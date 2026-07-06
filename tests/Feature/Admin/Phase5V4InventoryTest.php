@@ -179,6 +179,116 @@ final class Phase5V4InventoryTest extends TestCase
         $this->assertFalse($check[0]['can_sell']);
     }
 
+    public function test_quarantine_release_restores_on_hand(): void
+    {
+        Inventory::query()->create([
+            'warehouse_id' => $this->warehouse->id,
+            'product_variant_id' => $this->variant->id,
+            'quantity_on_hand' => 10,
+            'quantity_reserved' => 0,
+            'quantity_in_quarantine' => 5,
+        ]);
+
+        app(QuarantineService::class)->release(
+            warehouseId: $this->warehouse->id,
+            variantId: $this->variant->id,
+            batchId: null,
+            binLocationId: null,
+            quantity: 3,
+        );
+
+        $this->assertDatabaseHas('inventories', [
+            'quantity_on_hand' => 13,
+            'quantity_in_quarantine' => 2,
+        ]);
+
+        $this->assertDatabaseHas('stock_movements', [
+            'reason' => StockMovementReason::QuarantineRelease->value,
+            'qty_delta' => 3,
+            'quantity_on_hand_after' => 13,
+        ]);
+    }
+
+    public function test_quarantine_scrap_reduces_quarantine_only(): void
+    {
+        Inventory::query()->create([
+            'warehouse_id' => $this->warehouse->id,
+            'product_variant_id' => $this->variant->id,
+            'quantity_on_hand' => 10,
+            'quantity_reserved' => 0,
+            'quantity_in_quarantine' => 4,
+        ]);
+
+        app(QuarantineService::class)->scrap(
+            warehouseId: $this->warehouse->id,
+            variantId: $this->variant->id,
+            batchId: null,
+            binLocationId: null,
+            quantity: 2,
+        );
+
+        $this->assertDatabaseHas('inventories', [
+            'quantity_on_hand' => 10,
+            'quantity_in_quarantine' => 2,
+        ]);
+
+        $this->assertDatabaseHas('stock_movements', [
+            'reason' => StockMovementReason::QuarantineScrap->value,
+            'qty_delta' => -2,
+        ]);
+    }
+
+    public function test_bin_transfer_writes_bin_movement_reasons(): void
+    {
+        $zone = WarehouseZone::query()->create([
+            'warehouse_id' => $this->warehouse->id,
+            'name' => 'A Zone',
+            'code' => 'A',
+            'is_active' => true,
+        ]);
+
+        $binA = BinLocation::query()->create([
+            'warehouse_id' => $this->warehouse->id,
+            'warehouse_zone_id' => $zone->id,
+            'bin_code' => 'A-01',
+            'is_active' => true,
+        ]);
+
+        $binB = BinLocation::query()->create([
+            'warehouse_id' => $this->warehouse->id,
+            'warehouse_zone_id' => $zone->id,
+            'bin_code' => 'A-02',
+            'is_active' => true,
+        ]);
+
+        app(InventoryService::class)->setOpeningBalance(
+            warehouseId: $this->warehouse->id,
+            variantId: $this->variant->id,
+            batchId: null,
+            quantity: 10,
+            binLocationId: $binA->id,
+        );
+
+        app(BinLocationService::class)->transfer(new BinTransferData(
+            warehouseId: $this->warehouse->id,
+            fromBinId: $binA->id,
+            toBinId: $binB->id,
+            variantId: $this->variant->id,
+            batchId: null,
+            quantity: 4,
+            userId: null,
+        ));
+
+        $this->assertDatabaseHas('stock_movements', [
+            'reason' => StockMovementReason::BinTransferOut->value,
+            'qty_delta' => -4,
+        ]);
+        $this->assertDatabaseHas('stock_movements', [
+            'reason' => StockMovementReason::BinTransferIn->value,
+            'qty_delta' => 4,
+        ]);
+    }
+
     public function test_count_session_blind_mode_hides_system_qty_until_submitted(): void
     {
         Inventory::query()->create([

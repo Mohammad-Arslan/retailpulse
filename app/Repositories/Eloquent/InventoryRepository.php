@@ -48,11 +48,14 @@ final class InventoryRepository implements InventoryRepositoryInterface
 
     public function paginateByWarehouse(array $filters, int $perPage = 20): LengthAwarePaginator
     {
+        $availableExpr = '(inventories.quantity_on_hand - inventories.quantity_reserved - inventories.quantity_in_quarantine)';
+
         $query = Inventory::query()
             ->with([
                 'warehouse.branch',
                 'variant.product',
                 'batch',
+                'binLocation',
             ])
             ->when(
                 $filters['warehouse_id'] ?? null,
@@ -69,17 +72,59 @@ final class InventoryRepository implements InventoryRepositoryInterface
                 $filters['search'] ?? null,
                 function ($q, string $search) {
                     $term = '%'.addcslashes($search, '%_\\').'%';
-                    $q->whereHas('variant', function ($variant) use ($term) {
-                        $variant->where('sku', 'like', $term)
-                            ->orWhere('barcode', 'like', $term)
-                            ->orWhere('name', 'like', $term)
-                            ->orWhereHas('product', fn ($p) => $p->where('name', 'like', $term));
+                    $q->where(function ($inner) use ($term) {
+                        $inner->whereHas('variant', function ($variant) use ($term) {
+                            $variant->where('sku', 'like', $term)
+                                ->orWhere('barcode', 'like', $term)
+                                ->orWhere('name', 'like', $term)
+                                ->orWhereHas('product', fn ($p) => $p->where('name', 'like', $term));
+                        })->orWhereHas('batch', fn ($batch) => $batch->where('batch_no', 'like', $term))
+                            ->orWhereHas('binLocation', fn ($bin) => $bin->where('bin_code', 'like', $term));
                     });
                 },
             )
             ->when(
-                $filters['low_stock'] ?? false,
-                fn ($q) => $q->whereRaw('quantity_on_hand <= quantity_reserved'),
+                ($filters['availability'] ?? '') === 'in_stock',
+                fn ($q) => $q->whereRaw("{$availableExpr} > 0"),
+            )
+            ->when(
+                ($filters['availability'] ?? '') === 'out_of_stock',
+                fn ($q) => $q->whereRaw("{$availableExpr} <= 0"),
+            )
+            ->when(
+                ($filters['availability'] ?? '') === 'reserved',
+                fn ($q) => $q->where('quantity_reserved', '>', 0),
+            )
+            ->when(
+                ($filters['availability'] ?? '') === 'low_stock',
+                fn ($q) => $q->whereHas('variant', function ($variant) use ($availableExpr) {
+                    $variant->whereNotNull('reorder_point')
+                        ->whereRaw("GREATEST(0, {$availableExpr}) <= product_variants.reorder_point");
+                }),
+            )
+            ->when(
+                ($filters['quarantine'] ?? '') === 'yes',
+                fn ($q) => $q->where('quantity_in_quarantine', '>', 0),
+            )
+            ->when(
+                ($filters['quarantine'] ?? '') === 'no',
+                fn ($q) => $q->where('quantity_in_quarantine', '=', 0),
+            )
+            ->when(
+                ($filters['batch'] ?? '') === 'yes',
+                fn ($q) => $q->whereNotNull('batch_id'),
+            )
+            ->when(
+                ($filters['batch'] ?? '') === 'no',
+                fn ($q) => $q->whereNull('batch_id'),
+            )
+            ->when(
+                ($filters['bin'] ?? '') === 'assigned',
+                fn ($q) => $q->whereNotNull('bin_location_id'),
+            )
+            ->when(
+                ($filters['bin'] ?? '') === 'unassigned',
+                fn ($q) => $q->whereNull('bin_location_id'),
             );
 
         $sort = $filters['sort'] ?? 'product_name';
@@ -88,7 +133,7 @@ final class InventoryRepository implements InventoryRepositoryInterface
         if ($sort === 'on_hand') {
             $query->orderBy('quantity_on_hand', $direction);
         } elseif ($sort === 'available') {
-            $query->orderByRaw('(quantity_on_hand - quantity_reserved) '.$direction);
+            $query->orderByRaw('(quantity_on_hand - quantity_reserved - quantity_in_quarantine) '.$direction);
         } else {
             $query->join('product_variants', 'inventories.product_variant_id', '=', 'product_variants.id')
                 ->join('products', 'product_variants.product_id', '=', 'products.id')
@@ -201,9 +246,9 @@ final class InventoryRepository implements InventoryRepositoryInterface
         }
 
         $query = Inventory::query()
-            ->where('warehouse_id', $warehouseId)
-            ->where('product_variant_id', $variantId)
-            ->whereRaw('quantity_on_hand > quantity_reserved')
+            ->where('inventories.warehouse_id', $warehouseId)
+            ->where('inventories.product_variant_id', $variantId)
+            ->whereRaw('inventories.quantity_on_hand > inventories.quantity_reserved')
             ->select('inventories.*');
 
         if ($strategy === PickingStrategy::Fefo) {

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\WarehouseType;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class UpdateWarehouseRequest extends FormRequest
 {
@@ -24,6 +26,7 @@ final class UpdateWarehouseRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'type' => ['required', 'string', Rule::in(WarehouseType::values())],
             'is_default' => ['boolean'],
         ];
     }

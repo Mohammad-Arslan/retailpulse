@@ -1,12 +1,13 @@
 import PageHeader from '@/Components/common/PageHeader';
+import SupplierAttachmentSection from '@/Components/admin/SupplierAttachmentSection';
 import Select from '@/Components/ui/select';
 import { Button } from '@/Components/ui/button';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
-import { ClipboardList, Download, FileText, Mail, Paperclip, Pencil, Plus, Tag, Trash2, Truck } from 'lucide-react';
+import { ClipboardList, FileText, Mail, Pencil, Plus, Tag, Truck } from 'lucide-react';
 import { paymentMethodLabel, supplierLedgerEntryTypeLabel } from '@/lib/procurementI18n';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Show({ supplier, ledgerEntries = [], branchId, paymentMethods = [], attachments = [], performanceScores = [] }) {
@@ -15,8 +16,6 @@ function Show({ supplier, ledgerEntries = [], branchId, paymentMethods = [], att
     const [paymentAmount, setPaymentAmount] = useState('');
     const [paymentMethod, setPaymentMethod] = useState(paymentMethods[0] ?? 'cash');
     const [paymentNotes, setPaymentNotes] = useState('');
-    const [attachmentNotes, setAttachmentNotes] = useState('');
-    const fileInputRef = useRef(null);
 
     const supplierAttachments = attachments.length ? attachments : supplier.attachments ?? [];
     const scoreHistory = performanceScores.length ? performanceScores : supplier.performanceScores ?? [];
@@ -52,35 +51,6 @@ function Show({ supplier, ledgerEntries = [], branchId, paymentMethods = [], att
             notes: paymentNotes || null,
             is_advance: false,
         });
-    };
-
-    const uploadAttachment = (e) => {
-        e.preventDefault();
-        const file = fileInputRef.current?.files?.[0];
-        if (!file) return;
-        router.post(
-            route('admin.suppliers.attachments.store', supplier.id),
-            { file, notes: attachmentNotes || null },
-            {
-                forceFormData: true,
-                onSuccess: () => {
-                    setAttachmentNotes('');
-                    if (fileInputRef.current) fileInputRef.current.value = '';
-                },
-            },
-        );
-    };
-
-    const deleteAttachment = (attachmentId) => {
-        if (!confirm(t('pages.suppliers.attachments.deleteConfirm'))) return;
-        router.delete(route('admin.suppliers.attachments.destroy', [supplier.id, attachmentId]));
-    };
-
-    const formatFileSize = (bytes) => {
-        if (!bytes) return '—';
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     };
 
     return (
@@ -331,69 +301,10 @@ function Show({ supplier, ledgerEntries = [], branchId, paymentMethods = [], att
             )}
 
             {can('procurement.manage-suppliers') && (
-                <div className="mb-6 rounded-lg border bg-card p-6">
-                    <h3 className="mb-3 font-medium">{t('pages.suppliers.attachments.title')}</h3>
-                    <form onSubmit={uploadAttachment} className="mb-4 flex flex-wrap items-end gap-3 border-b pb-4">
-                        <div className="min-w-[200px] flex-1">
-                            <label className="text-xs text-rp-text-muted">{t('pages.suppliers.attachments.file')}</label>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                required
-                                className="rp-input mt-1 w-full text-sm"
-                            />
-                        </div>
-                        <div className="min-w-[200px] flex-1">
-                            <label className="text-xs text-rp-text-muted">{t('pages.suppliers.attachments.notes')}</label>
-                            <input
-                                className="rp-form-input mt-1 w-full"
-                                value={attachmentNotes}
-                                onChange={(e) => setAttachmentNotes(e.target.value)}
-                                placeholder={t('pages.suppliers.attachments.notesPlaceholder')}
-                            />
-                        </div>
-                        <Button type="submit">
-                            <Paperclip className="h-4 w-4" />
-                            {t('pages.suppliers.attachments.upload')}
-                        </Button>
-                    </form>
-                    {supplierAttachments.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">{t('pages.suppliers.attachments.empty')}</p>
-                    ) : (
-                        <ul className="space-y-2 text-sm">
-                            {supplierAttachments.map((att) => (
-                                <li key={att.id} className="flex flex-wrap items-center justify-between gap-2 rounded border p-3">
-                                    <div>
-                                        <div className="font-medium">{att.file_name}</div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {formatFileSize(att.file_size)}
-                                            {att.uploaded_by ? ` · ${att.uploaded_by}` : ''}
-                                            {att.created_at ? ` · ${att.created_at.slice(0, 10)}` : ''}
-                                        </div>
-                                        {att.notes && <p className="mt-1 text-xs text-rp-text-secondary">{att.notes}</p>}
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <a
-                                            href={route('admin.suppliers.attachments.download', [supplier.id, att.id])}
-                                            className="rp-btn-outline text-xs"
-                                        >
-                                            <Download className="h-3.5 w-3.5" />
-                                            {t('common.download')}
-                                        </a>
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => deleteAttachment(att.id)}
-                                        >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                        </Button>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
+                <SupplierAttachmentSection
+                    supplierId={supplier.id}
+                    attachments={supplierAttachments}
+                />
             )}
 
             <div className="rounded-lg border bg-card p-6">

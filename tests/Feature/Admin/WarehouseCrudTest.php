@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Admin;
 
 use App\Enums\ProductType;
+use App\Enums\WarehouseType;
 use App\Models\Branch;
 use App\Models\Inventory;
 use App\Models\Product;
@@ -66,6 +67,7 @@ final class WarehouseCrudTest extends TestCase
             ->post(route('admin.warehouses.store'), [
                 'branch_id' => $this->branch->id,
                 'name' => 'Overflow',
+                'type' => 'sales_floor',
                 'is_default' => false,
             ])
             ->assertRedirect();
@@ -74,6 +76,7 @@ final class WarehouseCrudTest extends TestCase
             'branch_id' => $this->branch->id,
             'name' => 'Overflow',
             'code' => 'OVERFLOW',
+            'type' => 'sales_floor',
             'is_active' => true,
         ]);
     }
@@ -95,6 +98,7 @@ final class WarehouseCrudTest extends TestCase
             ->post(route('admin.warehouses.store'), [
                 'branch_id' => $this->branch->id,
                 'name' => 'Overflow Storage',
+                'type' => 'backroom',
                 'is_default' => false,
             ])
             ->assertRedirect();
@@ -194,13 +198,31 @@ final class WarehouseCrudTest extends TestCase
         $this->actingAs($admin)
             ->put(route('admin.warehouses.update', $second), [
                 'name' => 'Secondary',
-                'code' => 'SEC',
+                'type' => 'offsite',
                 'is_default' => true,
             ])
             ->assertRedirect(route('admin.warehouses.edit', $second));
 
         $this->assertFalse($main->fresh()->is_default);
         $this->assertTrue($second->fresh()->is_default);
+        $this->assertSame('offsite', $second->fresh()->type?->value);
+    }
+
+    public function test_warehouses_of_type_helper_scopes_by_branch(): void
+    {
+        Warehouse::query()->create([
+            'branch_id' => $this->branch->id,
+            'name' => 'Floor Stock',
+            'code' => 'FLR',
+            'type' => 'sales_floor',
+            'is_default' => false,
+            'is_active' => true,
+        ]);
+
+        $salesFloor = $this->branch->warehousesOfType(WarehouseType::SalesFloor)->get();
+
+        $this->assertCount(1, $salesFloor);
+        $this->assertSame('FLR', $salesFloor->first()?->code);
     }
 
     public function test_branch_manager_sees_only_assigned_branch_warehouses(): void

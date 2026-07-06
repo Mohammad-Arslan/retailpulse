@@ -33,6 +33,7 @@ final class LoyaltyApiController extends Controller
 
     public function wallet(Request $request, Customer $customer): JsonResponse
     {
+        $this->authorizeLoyaltyView($request);
         $branchId = app(BranchContext::class)->branchId ?? $request->integer('branch_id');
         $program = $this->programs->resolveActiveProgramForBranch((int) $branchId);
 
@@ -64,6 +65,7 @@ final class LoyaltyApiController extends Controller
 
     public function transactions(Request $request, Customer $customer): JsonResponse
     {
+        $this->authorizeLoyaltyTransactions($request);
         $programId = $request->integer('program_id');
 
         $query = CustomerLoyaltyTransaction::query()
@@ -89,6 +91,7 @@ final class LoyaltyApiController extends Controller
 
     public function timeline(Request $request, Customer $customer): JsonResponse
     {
+        $this->authorizeLoyaltyTransactions($request);
         $programId = $request->integer('program_id');
 
         $query = CustomerLoyaltyEvent::query()
@@ -115,6 +118,7 @@ final class LoyaltyApiController extends Controller
 
     public function tierStatus(Request $request, Customer $customer): JsonResponse
     {
+        $this->authorizeLoyaltyView($request);
         $branchId = app(BranchContext::class)->branchId ?? $request->integer('branch_id');
         $program = $this->programs->resolveActiveProgramForBranch((int) $branchId);
 
@@ -150,6 +154,7 @@ final class LoyaltyApiController extends Controller
 
     public function campaigns(Request $request): JsonResponse
     {
+        $this->authorizeLoyaltyView($request);
         $branchId = app(BranchContext::class)->branchId ?? $request->integer('branch_id');
         $program = $this->programs->resolveActiveProgramForBranch((int) $branchId);
 
@@ -177,6 +182,7 @@ final class LoyaltyApiController extends Controller
 
     public function redemptionOptions(Request $request, Customer $customer): JsonResponse
     {
+        $this->authorizeLoyaltyView($request);
         $branchId = app(BranchContext::class)->branchId ?? $request->integer('branch_id');
         $program = $this->programs->resolveActiveProgramForBranch((int) $branchId);
 
@@ -267,5 +273,29 @@ final class LoyaltyApiController extends Controller
                 'available_points' => $wallet->available_points,
             ],
         ], Response::HTTP_CREATED);
+    }
+
+    private function authorizeLoyaltyView(Request $request): void
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user !== null && ($user->can('pos.access') || $user->can('loyalty.view')),
+            Response::HTTP_FORBIDDEN,
+        );
+    }
+
+    private function authorizeLoyaltyTransactions(Request $request): void
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user !== null && (
+                $user->can('pos.access')
+                || $user->can('loyalty.view')
+                || $user->can('loyalty.view-transactions')
+            ),
+            Response::HTTP_FORBIDDEN,
+        );
     }
 }
