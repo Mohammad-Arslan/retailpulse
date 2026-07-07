@@ -141,6 +141,8 @@ use App\Repositories\Eloquent\TaxTypeRepository;
 use App\Repositories\Eloquent\UnitRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\WarehouseRepository;
+use App\Services\Accounting\BranchAccountingModuleGate;
+use App\Services\Accounting\Contracts\AccountingModuleGate;
 use App\Services\Accounting\ProcurementAccountingHook;
 use App\Services\Procurement\Contracts\ProcurementPostingHook;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -190,6 +192,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(StockTransferRepositoryInterface::class, StockTransferRepository::class);
         $this->app->bind(SystemSettingRepositoryInterface::class, SystemSettingRepository::class);
         $this->app->singleton(ProcurementPostingHook::class, ProcurementAccountingHook::class);
+        $this->app->singleton(AccountingModuleGate::class, BranchAccountingModuleGate::class);
     }
 
     public function boot(): void

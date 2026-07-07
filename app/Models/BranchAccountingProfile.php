@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'due_from_account_id',
     'due_to_account_id',
     'status',
+    'accounting_enabled_modules',
 ])]
 class BranchAccountingProfile extends Model
 {
@@ -22,6 +23,7 @@ class BranchAccountingProfile extends Model
     {
         return [
             'interbranch_accounting_enabled' => 'boolean',
+            'accounting_enabled_modules' => 'array',
         ];
     }
 

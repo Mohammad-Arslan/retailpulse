@@ -41,13 +41,11 @@ final class PostingRuleEngine
 
             $amount = $this->resolveAmount($line->amount_source, $payload);
 
-            if ($amount <= 0 && $line->required) {
-                if ($line->required) {
-                    continue;
-                }
-            }
-
             if ($amount <= 0) {
+                if ($line->required) {
+                    throw new DomainException("Required posting rule line {$line->id} resolved to a non-positive amount.");
+                }
+
                 continue;
             }
 

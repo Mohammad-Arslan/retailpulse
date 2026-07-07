@@ -53,7 +53,11 @@ final class FiscalCloseService
             ->withSum('transactions as total_debit', 'debit')
             ->withSum('transactions as total_credit', 'credit')
             ->get()
-            ->filter(fn (JournalEntry $entry) => round((float) ($entry->total_debit ?? 0), 2) !== round((float) ($entry->total_credit ?? 0), 2));
+            ->filter(fn (JournalEntry $entry) => bccomp(
+                (string) ($entry->total_debit ?? '0'),
+                (string) ($entry->total_credit ?? '0'),
+                2,
+            ) !== 0);
 
         if ($unbalanced->isNotEmpty()) {
             $errors[] = $unbalanced->count().' posted journal(s) are unbalanced.';

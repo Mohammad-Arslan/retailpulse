@@ -28,10 +28,10 @@ final class JournalValidationService
 
         $entry->loadMissing('transactions');
 
-        $totalDebit = $entry->transactions->sum('debit');
-        $totalCredit = $entry->transactions->sum('credit');
+        $totalDebit = (string) $entry->transactions->sum('debit');
+        $totalCredit = (string) $entry->transactions->sum('credit');
 
-        if (round((float) $totalDebit, 2) !== round((float) $totalCredit, 2)) {
+        if (bccomp($totalDebit, $totalCredit, 2) !== 0) {
             throw new DomainException('Journal entry is not balanced.');
         }
 

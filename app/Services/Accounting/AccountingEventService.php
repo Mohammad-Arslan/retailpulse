@@ -6,6 +6,7 @@ namespace App\Services\Accounting;
 
 use App\Enums\AccountingEventStatus;
 use App\Models\AccountingEvent;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -36,14 +37,13 @@ final class AccountingEventService
             return $existing;
         }
 
-        $event = $existing ?? AccountingEvent::query()->create([
-            'event_type' => $eventType,
-            'source_type' => $sourceType,
-            'source_id' => $sourceId,
-            'idempotency_key' => $idempotencyKey,
-            'processing_status' => AccountingEventStatus::Pending,
-            'payload' => $payload,
-        ]);
+        $event = $existing ?? $this->createOrFetchExisting(
+            $eventType,
+            $sourceType,
+            $sourceId,
+            $idempotencyKey,
+            $payload,
+        );
 
         $event->update([
             'processing_status' => AccountingEventStatus::Processing,
@@ -102,5 +102,29 @@ final class AccountingEventService
             $event->payload ?? [],
             $userId,
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function createOrFetchExisting(
+        string $eventType,
+        string $sourceType,
+        int $sourceId,
+        string $idempotencyKey,
+        array $payload,
+    ): AccountingEvent {
+        try {
+            return AccountingEvent::query()->create([
+                'event_type' => $eventType,
+                'source_type' => $sourceType,
+                'source_id' => $sourceId,
+                'idempotency_key' => $idempotencyKey,
+                'processing_status' => AccountingEventStatus::Pending,
+                'payload' => $payload,
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            return AccountingEvent::query()->where('idempotency_key', $idempotencyKey)->firstOrFail();
+        }
     }
 }

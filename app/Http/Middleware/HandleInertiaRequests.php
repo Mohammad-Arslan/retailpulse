@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Services\Accounting\Contracts\AccountingModuleGate;
 use App\Services\BranchContextService;
 use App\Services\LocaleService;
 use App\Support\BranchContext;
@@ -79,6 +80,9 @@ class HandleInertiaRequests extends Middleware
             ],
             'branch' => fn () => $this->shareBranch($request, $user, $branchContext),
             'locale' => fn () => $this->shareLocale($request),
+            'enabledAccountingModules' => fn () => $user
+                ? app(AccountingModuleGate::class)->enabledModules($branchContext?->branchId)
+                : [],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

@@ -6,7 +6,7 @@ namespace App\Services\Accounting;
 
 use App\Models\AccountMapping;
 use App\Models\ChartOfAccount;
-use Carbon\CarbonInterface;
+use Carbon\Carbon;
 
 final class AccountResolverService
 {
@@ -15,7 +15,7 @@ final class AccountResolverService
      */
     public function resolveByMappingKey(string $mappingKey, array $context = []): ?ChartOfAccount
     {
-        $date = isset($context['date']) ? CarbonInterface::parse($context['date']) : now();
+        $date = isset($context['date']) ? Carbon::parse($context['date']) : now();
 
         $query = AccountMapping::query()
             ->where('mapping_key', $mappingKey)

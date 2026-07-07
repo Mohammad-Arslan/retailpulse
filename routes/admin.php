@@ -351,14 +351,16 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::post('fiscal-year-reopen-requests/{fiscal_year_reopen_request}/approve', [AccountingSettingsController::class, 'approveReopen'])
                 ->name('fiscal-year-reopen-requests.approve');
 
-            Route::get('cost-centres', [CostCentreController::class, 'index'])
-                ->name('cost-centres.index');
-            Route::post('cost-centres', [CostCentreController::class, 'store'])
-                ->name('cost-centres.store');
-            Route::put('cost-centres/{cost_centre}', [CostCentreController::class, 'update'])
-                ->name('cost-centres.update');
-            Route::delete('cost-centres/{cost_centre}', [CostCentreController::class, 'destroy'])
-                ->name('cost-centres.destroy');
+            Route::middleware(['accounting-module:cost_centres'])->group(function () {
+                Route::get('cost-centres', [CostCentreController::class, 'index'])
+                    ->name('cost-centres.index');
+                Route::post('cost-centres', [CostCentreController::class, 'store'])
+                    ->name('cost-centres.store');
+                Route::put('cost-centres/{cost_centre}', [CostCentreController::class, 'update'])
+                    ->name('cost-centres.update');
+                Route::delete('cost-centres/{cost_centre}', [CostCentreController::class, 'destroy'])
+                    ->name('cost-centres.destroy');
+            });
 
             Route::get('reports', [AccountingReportController::class, 'index'])
                 ->name('reports.index');
@@ -404,55 +406,69 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::post('events/{accounting_event}/retry', [AccountingEventController::class, 'retry'])
                 ->name('events.retry');
 
-            Route::get('credit-notes', [CreditNoteController::class, 'index'])
-                ->name('credit-notes.index');
-            Route::get('credit-notes/create', [CreditNoteController::class, 'create'])
-                ->name('credit-notes.create');
-            Route::post('credit-notes', [CreditNoteController::class, 'store'])
-                ->name('credit-notes.store');
+            Route::middleware(['accounting-module:credit_notes'])->group(function () {
+                Route::get('credit-notes', [CreditNoteController::class, 'index'])
+                    ->name('credit-notes.index');
+                Route::get('credit-notes/create', [CreditNoteController::class, 'create'])
+                    ->name('credit-notes.create');
+                Route::post('credit-notes', [CreditNoteController::class, 'store'])
+                    ->name('credit-notes.store');
+            });
 
-            Route::get('tax-types', [TaxTypeController::class, 'index'])
-                ->name('tax-types.index');
-            Route::post('tax-types', [TaxTypeController::class, 'store'])
-                ->name('tax-types.store');
+            Route::middleware(['accounting-module:tax'])->group(function () {
+                Route::get('tax-types', [TaxTypeController::class, 'index'])
+                    ->name('tax-types.index');
+                Route::post('tax-types', [TaxTypeController::class, 'store'])
+                    ->name('tax-types.store');
+            });
 
-            Route::get('bank-accounts', [BankAccountController::class, 'index'])
-                ->name('bank-accounts.index');
-            Route::post('bank-accounts', [BankAccountController::class, 'store'])
-                ->name('bank-accounts.store');
+            Route::middleware(['accounting-module:bank_reconciliation'])->group(function () {
+                Route::get('bank-accounts', [BankAccountController::class, 'index'])
+                    ->name('bank-accounts.index');
+                Route::post('bank-accounts', [BankAccountController::class, 'store'])
+                    ->name('bank-accounts.store');
 
-            Route::get('reconciliation', [BankReconciliationController::class, 'index'])
-                ->name('reconciliation.index');
-            Route::post('reconciliation/bank-accounts/{bank_account}/import', [BankReconciliationController::class, 'import'])
-                ->name('reconciliation.import');
-            Route::post('reconciliation/lines/{bank_statement_line}/match', [BankReconciliationController::class, 'match'])
-                ->name('reconciliation.match');
+                Route::get('reconciliation', [BankReconciliationController::class, 'index'])
+                    ->name('reconciliation.index');
+                Route::post('reconciliation/bank-accounts/{bank_account}/import', [BankReconciliationController::class, 'import'])
+                    ->name('reconciliation.import');
+                Route::post('reconciliation/lines/{bank_statement_line}/match', [BankReconciliationController::class, 'match'])
+                    ->name('reconciliation.match');
+            });
 
-            Route::get('currencies', [CurrencyController::class, 'index'])
-                ->name('currencies.index');
-            Route::post('currencies', [CurrencyController::class, 'store'])
-                ->name('currencies.store');
-            Route::post('currencies/rates', [CurrencyController::class, 'storeRate'])
-                ->name('currencies.rates.store');
+            Route::middleware(['accounting-module:multi_currency'])->group(function () {
+                Route::get('currencies', [CurrencyController::class, 'index'])
+                    ->name('currencies.index');
+                Route::post('currencies', [CurrencyController::class, 'store'])
+                    ->name('currencies.store');
+                Route::post('currencies/rates', [CurrencyController::class, 'storeRate'])
+                    ->name('currencies.rates.store');
+            });
 
-            Route::get('petty-cash', [PettyCashController::class, 'index'])
-                ->name('petty-cash.index');
-            Route::post('petty-cash/registers', [PettyCashController::class, 'storeRegister'])
-                ->name('petty-cash.registers.store');
+            Route::middleware(['accounting-module:petty_cash'])->group(function () {
+                Route::get('petty-cash', [PettyCashController::class, 'index'])
+                    ->name('petty-cash.index');
+                Route::post('petty-cash/registers', [PettyCashController::class, 'storeRegister'])
+                    ->name('petty-cash.registers.store');
+            });
 
-            Route::get('cheques', [ChequeController::class, 'index'])
-                ->name('cheques.index');
-            Route::post('cheques', [ChequeController::class, 'store'])
-                ->name('cheques.store');
-            Route::patch('cheques/{cheque}/status', [ChequeController::class, 'updateStatus'])
-                ->name('cheques.status.update');
+            Route::middleware(['accounting-module:cheques'])->group(function () {
+                Route::get('cheques', [ChequeController::class, 'index'])
+                    ->name('cheques.index');
+                Route::post('cheques', [ChequeController::class, 'store'])
+                    ->name('cheques.store');
+                Route::patch('cheques/{cheque}/status', [ChequeController::class, 'updateStatus'])
+                    ->name('cheques.status.update');
+            });
 
-            Route::get('fixed-assets', [FixedAssetController::class, 'index'])
-                ->name('fixed-assets.index');
-            Route::post('fixed-assets', [FixedAssetController::class, 'store'])
-                ->name('fixed-assets.store');
-            Route::post('fixed-assets/categories', [FixedAssetController::class, 'storeCategory'])
-                ->name('fixed-assets.categories.store');
+            Route::middleware(['accounting-module:fixed_assets'])->group(function () {
+                Route::get('fixed-assets', [FixedAssetController::class, 'index'])
+                    ->name('fixed-assets.index');
+                Route::post('fixed-assets', [FixedAssetController::class, 'store'])
+                    ->name('fixed-assets.store');
+                Route::post('fixed-assets/categories', [FixedAssetController::class, 'storeCategory'])
+                    ->name('fixed-assets.categories.store');
+            });
         });
 
         $registerImportExport = require __DIR__.'/import-export.php';
