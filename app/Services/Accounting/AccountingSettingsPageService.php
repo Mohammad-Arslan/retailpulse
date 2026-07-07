@@ -7,6 +7,7 @@ namespace App\Services\Accounting;
 use App\DTOs\Accounting\UpdateFinancialSettingsData;
 use App\Repositories\Contracts\ChartOfAccountRepositoryInterface;
 use App\Repositories\Contracts\FiscalYearRepositoryInterface;
+use App\Repositories\Contracts\TaxTypeRepositoryInterface;
 use App\Support\BranchOperationalOptions;
 use App\Support\FinancialSettingsPresenter;
 
@@ -16,6 +17,7 @@ final class AccountingSettingsPageService
         private readonly FinancialSettingsService $settingsService,
         private readonly FiscalYearRepositoryInterface $fiscalYearRepository,
         private readonly ChartOfAccountRepositoryInterface $chartOfAccountRepository,
+        private readonly TaxTypeRepositoryInterface $taxTypeRepository,
     ) {}
 
     /**
@@ -41,6 +43,13 @@ final class AccountingSettingsPageService
             'currencies' => BranchOperationalOptions::currencyOptions(),
             'reopenRequests' => $this->fiscalYearRepository->pendingReopenRequests()
                 ->map(fn ($request) => FinancialSettingsPresenter::reopenRequest($request))
+                ->values(),
+            'taxTypes' => $this->taxTypeRepository->allOrdered()
+                ->map(fn ($type) => [
+                    'id' => $type->id,
+                    'code' => $type->code,
+                    'name' => $type->name,
+                ])
                 ->values(),
         ];
     }

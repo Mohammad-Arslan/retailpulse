@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Sale;
 use App\Services\Accounting\AccountingEventService;
 use App\Services\Accounting\CostService;
+use App\Services\Accounting\FinancialSettingsService;
 use Illuminate\Support\Facades\DB;
 
 final class ProcessAccountingOnSaleCompleted
@@ -16,6 +17,7 @@ final class ProcessAccountingOnSaleCompleted
     public function __construct(
         private readonly CostService $costService,
         private readonly AccountingEventService $accountingEvents,
+        private readonly FinancialSettingsService $financialSettings,
     ) {}
 
     public function handle(SaleCompleted $event): void
@@ -46,6 +48,7 @@ final class ProcessAccountingOnSaleCompleted
             }
 
             $primaryPayment = $sale->payments->first();
+            $settings = $this->financialSettings->get();
 
             $payload = [
                 'date' => $sale->completed_at?->toDateString() ?? now()->toDateString(),
@@ -55,6 +58,8 @@ final class ProcessAccountingOnSaleCompleted
                 'gross_amount' => (float) $sale->grand_total,
                 'net_amount' => round((float) $sale->subtotal - (float) $sale->total_discount, 2),
                 'tax_amount' => (float) $sale->tax_total,
+                'tax_type_id' => $settings->default_sales_tax_type_id ?? $settings->default_tax_type_id,
+                'tax_direction' => 'sales',
                 'discount_amount' => (float) $sale->total_discount,
                 'inventory_cost' => round($inventoryCost, 2),
                 'settlement_amount' => (float) $sale->grand_total,

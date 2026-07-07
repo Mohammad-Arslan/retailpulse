@@ -35,6 +35,11 @@ final class FinancialSettingsPresenter
             'period_lock_mode' => $settings->period_lock_mode,
             'journal_numbering_mode' => $settings->journal_numbering_mode,
             'accounting_cutover_date' => $settings->accounting_cutover_date?->toDateString(),
+            'fiscal_year_reopen_window_hours' => $settings->fiscal_year_reopen_window_hours,
+            'default_sales_tax_type_id' => $settings->default_sales_tax_type_id,
+            'default_purchase_tax_type_id' => $settings->default_purchase_tax_type_id,
+            'tax_reporting_enabled' => $settings->tax_reporting_enabled,
+            'tax_return_frequency' => $settings->tax_return_frequency,
         ];
     }
 

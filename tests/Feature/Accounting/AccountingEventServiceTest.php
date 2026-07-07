@@ -107,4 +107,19 @@ final class AccountingEventServiceTest extends TestCase
         $this->assertSame($racingEvent->id, $result->id);
         $this->assertSame(1, AccountingEvent::query()->where('idempotency_key', $idempotencyKey)->count());
     }
+
+    public function test_process_marks_unknown_event_as_skipped(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+
+        $event = app(AccountingEventService::class)->process(
+            'missing.event.type',
+            'App\\Models\\Sale',
+            99,
+            ['date' => '2026-06-15'],
+            $user->id,
+        );
+
+        $this->assertSame(AccountingEventStatus::Skipped, $event->processing_status);
+    }
 }

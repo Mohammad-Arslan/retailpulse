@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\ImportExport\Handlers;
 
-use App\Enums\AccountingImportBatchStatus;
-use App\Models\CoaImportBatch;
-use App\Models\ImportExportJob;
 use App\Services\Accounting\CoaImportService;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
@@ -45,9 +42,9 @@ final class CoaImportHandler implements ImportHandler
         }
 
         try {
-            $account = $this->coaImport->upsertByCode($row, $context->userId);
+            $this->coaImport->stageLine($row);
 
-            return ImportRowResult::success($account->id);
+            return ImportRowResult::success(null);
         } catch (\Throwable $e) {
             return ImportRowResult::failure($e->getMessage());
         }
@@ -55,26 +52,7 @@ final class CoaImportHandler implements ImportHandler
 
     public function afterImport(ImportContext $context): void
     {
-        if ($context->isDryRun) {
-            return;
-        }
-
-        $job = ImportExportJob::query()->find($context->jobId);
-
-        if ($job === null) {
-            return;
-        }
-
-        CoaImportBatch::query()->create([
-            'file_name' => (string) ($job->original_filename ?? 'coa-import.csv'),
-            'imported_by' => $context->userId,
-            'status' => AccountingImportBatchStatus::Completed,
-            'validation_summary' => [
-                'success_rows' => (int) $job->success_rows,
-                'failed_rows' => (int) $job->failed_rows,
-                'skipped_rows' => (int) $job->skipped_rows,
-            ],
-        ]);
+        $this->coaImport->finalizeBatch($context);
     }
 
     public function chunkSize(): int

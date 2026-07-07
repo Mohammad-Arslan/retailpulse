@@ -25,6 +25,10 @@ final class PostingRulesSeeder extends Seeder
         $this->seedArWriteOffRule($effectiveFrom);
         $this->seedDebitNoteIssuedRule($effectiveFrom);
         $this->seedPurchaseReturnedRule($effectiveFrom);
+        $this->seedSaleReturnedRule($effectiveFrom);
+        $this->seedInventoryAdjustedRule($effectiveFrom);
+        $this->seedStockScrappedRule($effectiveFrom);
+        $this->seedTransferConfirmedRule($effectiveFrom);
     }
 
     private function seedSaleCompletedRule(string $effectiveFrom): void
@@ -133,6 +137,58 @@ final class PostingRulesSeeder extends Seeder
         );
 
         $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'accounts_payable');
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false);
+    }
+
+    private function seedSaleReturnedRule(string $effectiveFrom): void
+    {
+        $ruleSet = $this->createRuleSet(
+            code: 'sale_returned_default',
+            name: 'Sale Returned — Default',
+            eventType: 'sale.returned',
+            effectiveFrom: $effectiveFrom,
+        );
+
+        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false);
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'cogs', required: false);
+    }
+
+    private function seedInventoryAdjustedRule(string $effectiveFrom): void
+    {
+        $ruleSet = $this->createRuleSet(
+            code: 'inventory_adjusted_default',
+            name: 'Inventory Adjusted — Default',
+            eventType: 'inventory.adjusted',
+            effectiveFrom: $effectiveFrom,
+        );
+
+        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false);
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_adjustment', required: false);
+    }
+
+    private function seedStockScrappedRule(string $effectiveFrom): void
+    {
+        $ruleSet = $this->createRuleSet(
+            code: 'stock_scrapped_default',
+            name: 'Stock Scrapped — Default',
+            eventType: 'stock.scrapped',
+            effectiveFrom: $effectiveFrom,
+        );
+
+        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_write_off', required: false);
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false);
+    }
+
+    private function seedTransferConfirmedRule(string $effectiveFrom): void
+    {
+        $ruleSet = $this->createRuleSet(
+            code: 'transfer_confirmed_default',
+            name: 'Transfer Confirmed — Default',
+            eventType: 'transfer.confirmed',
+            effectiveFrom: $effectiveFrom,
+        );
+
+        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false);
         $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false);
     }
 

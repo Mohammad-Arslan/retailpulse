@@ -7,10 +7,13 @@ namespace App\Services\Accounting;
 use App\Enums\AccountResolutionType;
 use App\Enums\AmountSource;
 use App\Enums\PostingRuleEntrySide;
+use App\Models\AccountMapping;
+use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\FixedAsset;
 use App\Models\PostingRuleLine;
 use App\Models\PostingRuleSet;
+use App\Models\TaxType;
 use Carbon\Carbon;
 use DomainException;
 
@@ -19,6 +22,7 @@ final class PostingRuleEngine
     public function __construct(
         private readonly AccountResolverService $resolver,
         private readonly CurrencyConversionService $currencyConversion,
+        private readonly TaxLedgerService $taxLedger,
     ) {}
 
     /**
@@ -27,7 +31,7 @@ final class PostingRuleEngine
      */
     public function buildJournalLines(string $eventType, array $payload): array
     {
-        $ruleSet = $this->resolveRuleSet($eventType, $payload);
+        $ruleSet = $this->findRuleSet($eventType, $payload);
 
         if ($ruleSet === null) {
             throw new DomainException("No active posting rule set for event: {$eventType}");
@@ -40,7 +44,7 @@ final class PostingRuleEngine
                 continue;
             }
 
-            $amount = $this->resolveAmount($line->amount_source, $payload);
+            $amount = $this->resolveAmount($line->amount_source, $payload, $line);
 
             if ($amount <= 0) {
                 if ($line->required) {
@@ -69,6 +73,7 @@ final class PostingRuleEngine
                 $payload['date'] ?? now()->toDateString(),
             );
             $functionalAmount = $fx['functional_amount'];
+            $taxType = $this->resolveTaxTypeForLine($line, $payload);
 
             $lines[] = [
                 'account_id' => $account->id,
@@ -84,7 +89,7 @@ final class PostingRuleEngine
                 'warehouse_id' => $payload['warehouse_id'] ?? null,
                 'party_type' => $payload['party_type'] ?? null,
                 'party_id' => $payload['party_id'] ?? null,
-                'tax_type_id' => $payload['tax_type_id'] ?? null,
+                'tax_type_id' => $taxType?->id,
                 'description' => $line->narration_template,
             ];
         }
@@ -99,7 +104,7 @@ final class PostingRuleEngine
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function resolveRuleSet(string $eventType, array $payload): ?PostingRuleSet
+    public function findRuleSet(string $eventType, array $payload): ?PostingRuleSet
     {
         $date = isset($payload['date']) ? Carbon::parse($payload['date']) : now();
 
@@ -158,9 +163,60 @@ final class PostingRuleEngine
                 ($payload['tax_direction'] ?? 'sales') === 'purchase' ? 'input_tax' : 'output_tax',
                 $context,
             ),
+            AccountResolutionType::BankAccount => $this->resolveBankAccount($payload, $line),
+            AccountResolutionType::ProductCategoryAccount => $this->resolveProductCategoryAccount($line, $context, $payload),
             AccountResolutionType::AssetAccount => $this->resolveAssetAccount($line, $payload),
             default => $line->account,
         };
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function resolveBankAccount(array $payload, PostingRuleLine $line): ?ChartOfAccount
+    {
+        $bankAccountId = $payload['bank_account_id'] ?? null;
+
+        if ($bankAccountId !== null) {
+            $bankAccount = BankAccount::query()->with('coaAccount')->find((int) $bankAccountId);
+
+            return $bankAccount?->coaAccount;
+        }
+
+        return $this->resolver->resolveByMappingKey('bank_account', [
+            'branch_id' => $payload['branch_id'] ?? null,
+            'currency_code' => $payload['currency_code'] ?? null,
+            'date' => $payload['date'] ?? now()->toDateString(),
+        ]) ?? $line->account;
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @param  array<string, mixed>  $payload
+     */
+    private function resolveProductCategoryAccount(
+        PostingRuleLine $line,
+        array $context,
+        array $payload,
+    ): ?ChartOfAccount {
+        if (! empty($payload['product_category_id'])) {
+            $context['product_category_id'] = $payload['product_category_id'];
+        }
+
+        $mappingKey = $line->account_mapping_key ?: 'sales_revenue';
+
+        $mapping = AccountMapping::query()
+            ->where('mapping_key', $mappingKey)
+            ->where('status', 'active')
+            ->when(isset($context['product_category_id']), fn ($q) => $q->where('product_category_id', $context['product_category_id']))
+            ->orderBy('priority')
+            ->first();
+
+        if ($mapping?->account !== null) {
+            return $mapping->account;
+        }
+
+        return $this->resolver->resolveByMappingKey($mappingKey, $context) ?? $line->account;
     }
 
     /**
@@ -197,9 +253,9 @@ final class PostingRuleEngine
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function resolveAmount(AmountSource $source, array $payload): float
+    private function resolveAmount(AmountSource $source, array $payload, PostingRuleLine $line): float
     {
-        return match ($source) {
+        $amount = match ($source) {
             AmountSource::GrossAmount => (float) ($payload['gross_amount'] ?? 0),
             AmountSource::NetAmount => (float) ($payload['net_amount'] ?? 0),
             AmountSource::TaxAmount => (float) ($payload['tax_amount'] ?? 0),
@@ -212,5 +268,36 @@ final class PostingRuleEngine
             AmountSource::DepreciationAmount => (float) ($payload['depreciation_amount'] ?? 0),
             AmountSource::CustomFormula => (float) ($payload['custom_amount'] ?? 0),
         };
+
+        if ($source !== AmountSource::TaxAmount) {
+            return $amount;
+        }
+
+        $direction = (string) ($payload['tax_direction'] ?? 'sales');
+        $taxType = $this->taxLedger->resolveDefaultTaxType($payload, $direction);
+
+        if ($taxType === null) {
+            return $amount;
+        }
+
+        if ($direction === 'purchase' && (float) $taxType->recoverable_percentage < 100) {
+            return round($amount * ((float) $taxType->recoverable_percentage / 100), 2);
+        }
+
+        return $amount;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function resolveTaxTypeForLine(PostingRuleLine $line, array $payload): ?TaxType
+    {
+        if ($line->amount_source === AmountSource::TaxAmount || $line->account_resolution_type === AccountResolutionType::TaxAccount) {
+            $direction = (string) ($payload['tax_direction'] ?? 'sales');
+
+            return $this->taxLedger->resolveDefaultTaxType($payload, $direction);
+        }
+
+        return null;
     }
 }

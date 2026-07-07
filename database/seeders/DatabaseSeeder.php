@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             IdentifierSequenceSeeder::class,
             OrganizationEntitySeeder::class,
             ChartOfAccountsSeeder::class,
+            TaxTypeSeeder::class,
             AccountMappingsSeeder::class,
             PostingRulesSeeder::class,
             FiscalYearSeeder::class,

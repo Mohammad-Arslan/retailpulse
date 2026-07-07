@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\AccountingEventController;
+use App\Http\Controllers\Admin\AccountingImportController;
 use App\Http\Controllers\Admin\AccountingReportController;
 use App\Http\Controllers\Admin\AccountingSettingsController;
 use App\Http\Controllers\Admin\AccountMappingController;
@@ -350,6 +351,15 @@ Route::middleware(['auth', 'admin', 'branch.context'])
                 ->name('fiscal-years.reopen-request');
             Route::post('fiscal-year-reopen-requests/{fiscal_year_reopen_request}/approve', [AccountingSettingsController::class, 'approveReopen'])
                 ->name('fiscal-year-reopen-requests.approve');
+            Route::post('fiscal-year-reopen-requests/{fiscal_year_reopen_request}/reject', [AccountingSettingsController::class, 'rejectReopen'])
+                ->name('fiscal-year-reopen-requests.reject');
+
+            Route::post('imports/coa/{batch}/approve', [AccountingImportController::class, 'approveCoaBatch'])
+                ->name('imports.coa.approve');
+            Route::post('imports/opening-balances/{batch}/approve', [AccountingImportController::class, 'approveOpeningBalanceBatch'])
+                ->name('imports.opening-balances.approve');
+            Route::post('imports/opening-balances/reconciliations/{reconciliation}/approve-variance', [AccountingImportController::class, 'approveOpeningBalanceVariance'])
+                ->name('imports.opening-balances.approve-variance');
 
             Route::middleware(['accounting-module:cost_centres'])->group(function () {
                 Route::get('cost-centres', [CostCentreController::class, 'index'])

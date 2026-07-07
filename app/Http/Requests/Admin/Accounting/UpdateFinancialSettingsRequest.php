@@ -40,6 +40,11 @@ final class UpdateFinancialSettingsRequest extends FormRequest
             'period_lock_mode' => ['nullable', 'string', 'in:fiscal_year,monthly'],
             'journal_numbering_mode' => ['nullable', 'string', 'in:global,branch,branch_fiscal'],
             'accounting_cutover_date' => ['nullable', 'date'],
+            'fiscal_year_reopen_window_hours' => ['nullable', 'integer', 'min:1', 'max:720'],
+            'default_sales_tax_type_id' => ['nullable', 'integer', 'exists:tax_types,id'],
+            'default_purchase_tax_type_id' => ['nullable', 'integer', 'exists:tax_types,id'],
+            'tax_reporting_enabled' => ['boolean'],
+            'tax_return_frequency' => ['nullable', 'string', 'in:monthly,quarterly,annual'],
         ];
     }
 }

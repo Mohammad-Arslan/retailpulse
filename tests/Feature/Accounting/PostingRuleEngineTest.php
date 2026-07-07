@@ -9,6 +9,8 @@ use App\Enums\AmountSource;
 use App\Enums\PostingRuleEntrySide;
 use App\Models\AccountMapping;
 use App\Models\AssetCategory;
+use App\Models\BankAccount;
+use App\Models\Category;
 use App\Models\ChartOfAccount;
 use App\Models\FixedAsset;
 use App\Models\PostingRuleSet;
@@ -235,21 +237,42 @@ final class PostingRuleEngineTest extends TestCase
     }
 
     /**
-     * BankAccount and ProductCategoryAccount are pre-existing gaps: resolveAccount()'s
-     * match falls through to `default => $line->account` for both, so they behave like
-     * FixedAccount rather than performing any bank- or category-specific lookup. This is
-     * documented, not fixed, per this phase's scope — the test pins today's behavior.
+     * BankAccount resolves from payload bank_account_id; ProductCategoryAccount resolves via category mapping.
      */
-    public function test_bank_account_and_product_category_account_fall_through_to_the_lines_own_account(): void
+    public function test_bank_account_and_product_category_account_resolve_from_payload(): void
     {
-        $ruleSet = $this->createRuleSet('test.bank_account_fallthrough');
+        $bankCoa = ChartOfAccount::query()->create(['code' => '1210', 'name' => 'Bank', 'type' => 'asset']);
+        $bankAccount = BankAccount::query()->create([
+            'coa_account_id' => $bankCoa->id,
+            'bank_name' => 'Test Bank',
+            'account_title' => 'Operating',
+            'status' => 'active',
+        ]);
+
+        $category = Category::query()->create(['name' => 'Electronics', 'slug' => 'electronics']);
+        $categoryRevenue = ChartOfAccount::query()->create(['code' => '4101', 'name' => 'Electronics Revenue', 'type' => 'revenue']);
+
+        AccountMapping::query()->create([
+            'mapping_key' => 'sales_revenue',
+            'product_category_id' => $category->id,
+            'account_id' => $categoryRevenue->id,
+            'status' => 'active',
+            'priority' => 100,
+        ]);
+
+        $ruleSet = $this->createRuleSet('test.bank_account_resolution');
         $this->addLine($ruleSet, 1, PostingRuleEntrySide::Debit, AccountResolutionType::BankAccount, AmountSource::GrossAmount, $this->cash->id);
-        $this->addLine($ruleSet, 2, PostingRuleEntrySide::Credit, AccountResolutionType::ProductCategoryAccount, AmountSource::GrossAmount, $this->revenue->id);
+        $this->addLine($ruleSet, 2, PostingRuleEntrySide::Credit, AccountResolutionType::ProductCategoryAccount, AmountSource::GrossAmount, $this->revenue->id, 'sales_revenue');
 
-        $lines = app(PostingRuleEngine::class)->buildJournalLines('test.bank_account_fallthrough', ['date' => '2026-06-15', 'gross_amount' => 15]);
+        $lines = app(PostingRuleEngine::class)->buildJournalLines('test.bank_account_resolution', [
+            'date' => '2026-06-15',
+            'gross_amount' => 15,
+            'bank_account_id' => $bankAccount->id,
+            'product_category_id' => $category->id,
+        ]);
 
-        $this->assertSame($this->cash->id, $lines[0]['account_id']);
-        $this->assertSame($this->revenue->id, $lines[1]['account_id']);
+        $this->assertSame($bankCoa->id, $lines[0]['account_id']);
+        $this->assertSame($categoryRevenue->id, $lines[1]['account_id']);
     }
 
     private function createFixedAsset(AssetCategory $category, array $overrides = []): FixedAsset

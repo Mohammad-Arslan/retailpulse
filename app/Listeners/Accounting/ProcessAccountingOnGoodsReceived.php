@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace App\Listeners\Accounting;
 
 use App\Events\Procurement\GoodsReceived;
+use App\Models\FinancialSetting;
 use App\Models\GoodsReceivingNote;
 use App\Models\Supplier;
 use App\Services\Accounting\AccountingEventService;
+use App\Services\Accounting\FinancialSettingsService;
 
 final class ProcessAccountingOnGoodsReceived
 {
     public function __construct(
         private readonly AccountingEventService $accountingEvents,
+        private readonly FinancialSettingsService $financialSettings,
     ) {}
 
     public function handle(GoodsReceived $event): void
@@ -39,12 +42,13 @@ final class ProcessAccountingOnGoodsReceived
         }
 
         $userId = (int) ($grn->updated_by ?? $grn->created_by ?? 0);
+        $settings = $this->financialSettings->get();
 
         $this->accountingEvents->process(
             'purchase.received',
             GoodsReceivingNote::class,
             (int) $grn->id,
-            $this->buildGrnPayload($grn, $exchangeRate, $landedCost, $userId),
+            $this->buildGrnPayload($grn, $exchangeRate, $landedCost, $userId, $settings),
             $userId,
         );
     }
@@ -57,6 +61,7 @@ final class ProcessAccountingOnGoodsReceived
         float $exchangeRate,
         float $landedCost,
         int $userId,
+        FinancialSetting $settings,
     ): array {
         return [
             'date' => $grn->received_at?->toDateString() ?? now()->toDateString(),
@@ -73,6 +78,7 @@ final class ProcessAccountingOnGoodsReceived
             'party_type' => Supplier::class,
             'party_id' => $grn->supplier_id,
             'tax_direction' => 'purchase',
+            'tax_type_id' => $settings->default_purchase_tax_type_id ?? $settings->default_tax_type_id,
             'user_id' => $userId > 0 ? $userId : null,
         ];
     }

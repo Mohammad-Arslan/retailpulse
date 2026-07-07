@@ -29,6 +29,11 @@ final readonly class UpdateFinancialSettingsData
         public ?string $periodLockMode,
         public ?string $journalNumberingMode,
         public ?string $accountingCutoverDate,
+        public ?int $fiscalYearReopenWindowHours,
+        public ?int $defaultSalesTaxTypeId,
+        public ?int $defaultPurchaseTaxTypeId,
+        public ?bool $taxReportingEnabled,
+        public ?string $taxReturnFrequency,
     ) {}
 
     public static function fromRequest(UpdateFinancialSettingsRequest $request): self
@@ -66,6 +71,15 @@ final readonly class UpdateFinancialSettingsData
             periodLockMode: $request->validated('period_lock_mode'),
             journalNumberingMode: $request->validated('journal_numbering_mode'),
             accountingCutoverDate: $request->validated('accounting_cutover_date'),
+            fiscalYearReopenWindowHours: $request->validated('fiscal_year_reopen_window_hours') !== null
+                ? (int) $request->validated('fiscal_year_reopen_window_hours') : null,
+            defaultSalesTaxTypeId: $request->validated('default_sales_tax_type_id') !== null
+                ? (int) $request->validated('default_sales_tax_type_id') : null,
+            defaultPurchaseTaxTypeId: $request->validated('default_purchase_tax_type_id') !== null
+                ? (int) $request->validated('default_purchase_tax_type_id') : null,
+            taxReportingEnabled: $request->has('tax_reporting_enabled')
+                ? $request->boolean('tax_reporting_enabled') : null,
+            taxReturnFrequency: $request->validated('tax_return_frequency'),
         );
     }
 
@@ -94,6 +108,11 @@ final readonly class UpdateFinancialSettingsData
             'period_lock_mode' => $this->periodLockMode,
             'journal_numbering_mode' => $this->journalNumberingMode,
             'accounting_cutover_date' => $this->accountingCutoverDate,
+            'fiscal_year_reopen_window_hours' => $this->fiscalYearReopenWindowHours,
+            'default_sales_tax_type_id' => $this->defaultSalesTaxTypeId,
+            'default_purchase_tax_type_id' => $this->defaultPurchaseTaxTypeId,
+            'tax_reporting_enabled' => $this->taxReportingEnabled,
+            'tax_return_frequency' => $this->taxReturnFrequency,
         ], fn (mixed $value) => $value !== null);
     }
 }

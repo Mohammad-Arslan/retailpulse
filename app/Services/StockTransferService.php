@@ -11,6 +11,7 @@ use App\DTOs\StockTransfer\ReceiveTransferLineData;
 use App\DTOs\StockTransfer\TransferLineData;
 use App\Enums\StockMovementReason;
 use App\Enums\StockTransferStatus;
+use App\Events\TransferConfirmed;
 use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
@@ -153,6 +154,10 @@ final class StockTransferService
                 'received_by' => $data->userId,
                 'received_at' => $allReceived ? now() : $transfer->received_at,
             ]);
+
+            if ($allReceived) {
+                event(new TransferConfirmed($transfer->fresh(['items', 'fromWarehouse', 'toWarehouse'])));
+            }
 
             return $this->transfers->findByIdWithRelations($transfer->id) ?? $transfer;
         });

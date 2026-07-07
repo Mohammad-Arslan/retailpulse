@@ -5,18 +5,22 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Events\Accounting\CreditNoteIssued;
+use App\Events\InventoryStockChanged;
 use App\Events\Procurement\DebitNoteIssued;
 use App\Events\Procurement\DropShipGrnConfirmed;
 use App\Events\Procurement\GoodsReceived;
 use App\Events\Procurement\SupplierInvoiceMatched;
 use App\Events\Procurement\SupplierPaymentRecorded;
 use App\Events\SaleCompleted;
+use App\Events\TransferConfirmed;
 use App\Listeners\Accounting\PostCreditNoteToAccounting;
 use App\Listeners\Accounting\ProcessAccountingOnDebitNoteIssued;
 use App\Listeners\Accounting\ProcessAccountingOnGoodsReceived;
+use App\Listeners\Accounting\ProcessAccountingOnInventoryMovement;
 use App\Listeners\Accounting\ProcessAccountingOnSaleCompleted;
 use App\Listeners\Accounting\ProcessAccountingOnSupplierInvoiceMatched;
 use App\Listeners\Accounting\ProcessAccountingOnSupplierPaymentRecorded;
+use App\Listeners\Accounting\ProcessAccountingOnTransferConfirmed;
 use App\Listeners\ProcessLoyaltyOnSaleCompleted;
 use App\Listeners\Procurement\LogDropShipGrnConfirmed;
 use App\Listeners\Procurement\LogGoodsReceived;
@@ -265,5 +269,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(SaleCompleted::class, ProcessLoyaltyOnSaleCompleted::class);
         Event::listen(SaleCompleted::class, ProcessAccountingOnSaleCompleted::class);
         Event::listen(CreditNoteIssued::class, PostCreditNoteToAccounting::class);
+        Event::listen(InventoryStockChanged::class, ProcessAccountingOnInventoryMovement::class);
+        Event::listen(TransferConfirmed::class, ProcessAccountingOnTransferConfirmed::class);
     }
 }

@@ -21,7 +21,7 @@ import { Lock, Unlock } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reopenRequests = [] }) {
+function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reopenRequests = [], taxTypes = [] }) {
     const can = useCan();
     const { t } = useTranslation();
     const confirm = useConfirm();
@@ -44,6 +44,15 @@ function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reo
         manual_journal_approval_limit: settings.manual_journal_approval_limit ?? '',
         accounting_cutover_date: settings.accounting_cutover_date?.slice(0, 10) ?? '',
         journal_numbering_mode: settings.journal_numbering_mode ?? 'branch_fiscal',
+        fiscal_year_reopen_window_hours: String(settings.fiscal_year_reopen_window_hours ?? 48),
+        default_sales_tax_type_id: settings.default_sales_tax_type_id
+            ? String(settings.default_sales_tax_type_id)
+            : '',
+        default_purchase_tax_type_id: settings.default_purchase_tax_type_id
+            ? String(settings.default_purchase_tax_type_id)
+            : '',
+        tax_reporting_enabled: settings.tax_reporting_enabled !== false,
+        tax_return_frequency: settings.tax_return_frequency ?? 'monthly',
     });
 
     const readOnly = !can('accounting.manage-fiscal-years');
@@ -66,6 +75,17 @@ function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reo
                 label: c.label ?? c.code,
             })),
         [currencies],
+    );
+
+    const taxTypeOptions = useMemo(
+        () => [
+            { value: '', label: '—' },
+            ...taxTypes.map((type) => ({
+                value: String(type.id),
+                label: `${type.code} — ${type.name}`,
+            })),
+        ],
+        [taxTypes],
     );
 
     const monthOptions = useMemo(
@@ -114,6 +134,10 @@ function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reo
 
     const approveReopen = (requestId) => {
         router.post(route('admin.accounting.fiscal-year-reopen-requests.approve', requestId));
+    };
+
+    const rejectReopen = (requestId) => {
+        router.post(route('admin.accounting.fiscal-year-reopen-requests.reject', requestId));
     };
 
     return (
@@ -169,6 +193,22 @@ function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reo
                             />
                         </AdminFormField>
                         <AdminFormField
+                            label={t('pages.accounting.settings.fields.fiscalYearReopenWindowHours')}
+                            id="fiscal_year_reopen_window_hours"
+                            error={errors.fiscal_year_reopen_window_hours}
+                        >
+                            <input
+                                id="fiscal_year_reopen_window_hours"
+                                type="number"
+                                min="1"
+                                max="720"
+                                value={data.fiscal_year_reopen_window_hours}
+                                onChange={(e) => setData('fiscal_year_reopen_window_hours', e.target.value)}
+                                className="rp-form-input"
+                                disabled={readOnly}
+                            />
+                        </AdminFormField>
+                        <AdminFormField
                             label={t('pages.accounting.settings.fields.journalNumbering')}
                             id="journal_numbering_mode"
                             error={errors.journal_numbering_mode}
@@ -213,6 +253,64 @@ function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reo
                                 />
                             </AdminFormField>
                         ))}
+                    </div>
+                </FormCard>
+
+                <FormCard className="max-w-4xl">
+                    <h3 className="font-semibold">{t('pages.accounting.settings.taxTitle')}</h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <AdminFormField
+                            label={t('pages.accounting.settings.fields.defaultSalesTaxType')}
+                            id="default_sales_tax_type_id"
+                            error={errors.default_sales_tax_type_id}
+                        >
+                            <Select
+                                id="default_sales_tax_type_id"
+                                value={data.default_sales_tax_type_id}
+                                onChange={(value) => setData('default_sales_tax_type_id', value ?? '')}
+                                options={taxTypeOptions}
+                                disabled={readOnly}
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.accounting.settings.fields.defaultPurchaseTaxType')}
+                            id="default_purchase_tax_type_id"
+                            error={errors.default_purchase_tax_type_id}
+                        >
+                            <Select
+                                id="default_purchase_tax_type_id"
+                                value={data.default_purchase_tax_type_id}
+                                onChange={(value) => setData('default_purchase_tax_type_id', value ?? '')}
+                                options={taxTypeOptions}
+                                disabled={readOnly}
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.accounting.settings.fields.taxReturnFrequency')}
+                            id="tax_return_frequency"
+                            error={errors.tax_return_frequency}
+                        >
+                            <Select
+                                id="tax_return_frequency"
+                                value={data.tax_return_frequency}
+                                onChange={(value) => setData('tax_return_frequency', value ?? 'monthly')}
+                                options={[
+                                    { value: 'monthly', label: t('pages.accounting.settings.taxReturnFrequencies.monthly') },
+                                    { value: 'quarterly', label: t('pages.accounting.settings.taxReturnFrequencies.quarterly') },
+                                    { value: 'annual', label: t('pages.accounting.settings.taxReturnFrequencies.annual') },
+                                ]}
+                                disabled={readOnly}
+                            />
+                        </AdminFormField>
+                        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                            <input
+                                type="checkbox"
+                                checked={data.tax_reporting_enabled}
+                                onChange={(e) => setData('tax_reporting_enabled', e.target.checked)}
+                                disabled={readOnly}
+                            />
+                            {t('pages.accounting.settings.fields.taxReportingEnabled')}
+                        </label>
                     </div>
                 </FormCard>
 
@@ -345,16 +443,26 @@ function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reo
                                         </p>
                                     </div>
                                     {can('accounting.reopen-fiscal-year') && (
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => approveReopen(req.id)}
-                                        >
-                                            {req.first_approved_by
-                                                ? t('pages.accounting.settings.secondApproval')
-                                                : t('pages.accounting.settings.firstApprovalAction')}
-                                        </Button>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => approveReopen(req.id)}
+                                            >
+                                                {req.first_approved_by
+                                                    ? t('pages.accounting.settings.secondApproval')
+                                                    : t('pages.accounting.settings.firstApprovalAction')}
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => rejectReopen(req.id)}
+                                            >
+                                                {t('pages.accounting.settings.rejectReopen')}
+                                            </Button>
+                                        </div>
                                     )}
                                 </div>
                             </div>

@@ -9,6 +9,7 @@ enum FiscalYearStatus: string
     case Open = 'open';
     case Closing = 'closing';
     case Closed = 'closed';
+    case Reopening = 'reopening';
 
     /**
      * @return list<string>
