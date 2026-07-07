@@ -18,6 +18,7 @@ use App\Models\SupplierInvoice;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 final class FinancialReportingService
@@ -785,8 +786,10 @@ final class FinancialReportingService
         }
 
         $sums = $query
-            ->selectRaw('COALESCE(SUM(journal_transactions.debit), 0) as total_debit')
-            ->selectRaw('COALESCE(SUM(journal_transactions.credit), 0) as total_credit')
+            ->select([
+                DB::raw('COALESCE(SUM(journal_transactions.debit), 0) as total_debit'),
+                DB::raw('COALESCE(SUM(journal_transactions.credit), 0) as total_credit'),
+            ])
             ->first();
 
         return (float) ($sums->total_debit ?? 0) - (float) ($sums->total_credit ?? 0);
