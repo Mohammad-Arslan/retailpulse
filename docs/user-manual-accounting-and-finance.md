@@ -196,6 +196,7 @@ See [Section 20](#20-permissions-reference-for-support).
 | **Cheque register** | Lifecycle tracking for cheques received/issued with optional GL posting. |
 | **Fixed asset** | Capitalized item depreciated over time. |
 | **Credit note** | Reduces customer AR (refund or adjustment). Triggers `credit_note.issued` accounting event. |
+| **Debit note** | Reduces supplier AP (purchase return adjustment). Issued from Procurement, not a standalone Accounting menu item. Triggers `debit_note.issued`. |
 
 ### 2.6 Abbreviations
 
@@ -847,7 +848,21 @@ Upload CSV → Validate rows → Batch status Validated/Failed → Approve → C
 
 **What if `ar_ap` not enabled?** Credit notes module stays off even if `credit_notes` is in the profile array without `ar_ap`.
 
-### 16.2 Bank accounts & reconciliation (`bank_reconciliation`)
+### 16.2 Debit notes (procurement — no standalone Accounting menu)
+
+Unlike credit notes, **debit notes are not a separate item under Accounting → sidebar**. They are issued from the **Purchase Return** flow in Procurement (Phase 10).
+
+| Where to find it | Procurement → Purchase Returns → issue debit note on an approved return |
+|------------------|---------------------------------------------------------------------------|
+| Accounting event | `debit_note.issued` (listener: `ProcessAccountingOnDebitNoteIssued`) |
+| Typical GL impact | Reduces AP / adjusts purchase accrual per seeded posting rule `debit_note_issued_default` |
+| PDF | Available from the purchase return / debit note route (`debit-notes/{id}/pdf`) |
+
+**What if support searches this manual for "Debit Notes"?** There is no Accounting → Debit Notes page by design — direct the user to **Inventory → Purchase Orders / Goods Receiving → Purchase Returns**, not the Accounting section.
+
+**What if posting fails?** Check Accounting Events for `debit_note.issued` with Failed status; fix mappings/rules the same way as other auto-posted events.
+
+### 16.3 Bank accounts & reconciliation (`bank_reconciliation`)
 
 **Bank Accounts:** Link a bank COA account to a named bank account record.
 
@@ -859,7 +874,7 @@ Upload CSV → Validate rows → Batch status Validated/Failed → Approve → C
 
 **What if bank account not linked to COA?** Reconciliation cannot tie to GL.
 
-### 16.3 Multi-currency (`multi_currency`)
+### 16.4 Multi-currency (`multi_currency`)
 
 **Currencies:** Maintain currency codes and exchange rates.
 
@@ -868,18 +883,18 @@ Upload CSV → Validate rows → Batch status Validated/Failed → Approve → C
 
 **What if exchange rate missing?** Conversion fails for foreign-currency events.
 
-### 16.4 Petty cash (`petty_cash`)
+### 16.5 Petty cash (`petty_cash`)
 
 - Create **register** per branch/imprest holder.
 - Record top-ups, disbursements, adjustments → optional GL events `petty_cash.*`.
 
-### 16.5 Cheques (`cheques`)
+### 16.6 Cheques (`cheques`)
 
 - Register cheques received or issued.
 - Status transitions: received → deposited → cleared / bounced.
 - Each transition may fire accounting events (`cheque.received`, etc.) if rules configured.
 
-### 16.6 Fixed assets (`fixed_assets`)
+### 16.7 Fixed assets (`fixed_assets`)
 
 - Asset categories define depreciation accounts.
 - Assets capitalized; **depreciation** batch posts `asset.depreciation_due` periodically.
@@ -961,6 +976,9 @@ CSV export requires `accounting.export-reports`.
 | Invoice matched | `purchase.invoice_posted` | Dr Expense/Inventory, Dr Input tax, Cr AP |
 | Supplier payment | `payment.made` | Dr AP, Cr Bank |
 | Purchase return | `purchase.returned` | Reverses purchase accrual |
+| Debit note issued (on purchase return) | `debit_note.issued` | Reduces AP / adjusts supplier balance per posting rule |
+
+**Debit notes:** Issued from **Procurement → Purchase Returns**, not from the Accounting sidebar. See [§16.2](#162-debit-notes-procurement--no-standalone-accounting-menu).
 
 ### 18.3 Inventory (Phase 5)
 
@@ -1167,6 +1185,9 @@ A: No cost layers (no GRN/receive history) or optional COGS rule lines skipped w
 **Q: Are payroll journals included?**  
 A: Phase 12 — not in this manual.
 
+**Q: Where are debit notes in Accounting?**  
+A: There is no Accounting → Debit Notes menu. Debit notes are issued from **Procurement → Purchase Returns**. The GL effect appears via `debit_note.issued` in Accounting Events and Journal Entries.
+
 **Q: Customer payment on account without new sale?**  
 A: Distinct `payment.received` event is deferred; partial coverage via sale settlement lines today.
 
@@ -1176,6 +1197,7 @@ A: Distinct `payment.received` event is deferred; partial coverage via sale sett
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.1 | July 2026 | Added §16.2 debit notes (procurement flow); cross-ref §18.2 |
 | 1.0 | July 2026 | Initial manual — Phase 11 accounting module, sub-module gating, fiscal reopen, imports, tax stamping |
 
 ---
