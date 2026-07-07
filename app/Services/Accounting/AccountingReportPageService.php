@@ -7,6 +7,7 @@ namespace App\Services\Accounting;
 use App\Repositories\Contracts\ChartOfAccountRepositoryInterface;
 use App\Repositories\Contracts\CostCentreRepositoryInterface;
 use App\Repositories\Contracts\FiscalYearRepositoryInterface;
+use App\Support\AccountingAuditTypes;
 
 final class AccountingReportPageService
 {
@@ -25,6 +26,19 @@ final class AccountingReportPageService
             'accounts' => $this->chartOfAccountRepository->postableOptions(),
             'costCentres' => $this->costCentreRepository->activeOptions(),
             'fiscalYears' => $this->fiscalYearRepository->options(),
+            'auditEntityTypes' => collect(AccountingAuditTypes::classNames())
+                ->map(fn (string $class) => [
+                    'value' => $class,
+                    'label' => AccountingAuditTypes::shortName($class),
+                ])
+                ->sortBy('label')
+                ->values()
+                ->all(),
+            'auditEvents' => [
+                ['value' => 'created', 'label' => 'Created'],
+                ['value' => 'updated', 'label' => 'Updated'],
+                ['value' => 'deleted', 'label' => 'Deleted'],
+            ],
         ];
     }
 }

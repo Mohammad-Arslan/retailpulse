@@ -1,3 +1,4 @@
+import AdminFormField from '@/Components/common/AdminFormField';
 import PageHeader from '@/Components/common/PageHeader';
 import Select from '@/Components/ui/select';
 import { Button } from '@/Components/ui/button';
@@ -10,7 +11,13 @@ import {
     TableRow,
 } from '@/Components/ui/table';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
-import { journalEntryStatusLabel } from '@/lib/accountingI18n';
+import {
+    auditEntityTypeLabel,
+    auditEventLabel,
+    journalEntryStatusLabel,
+    reportColumnLabel,
+    reportTotalLabel,
+} from '@/lib/accountingI18n';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Download } from 'lucide-react';
 import { useMemo } from 'react';
@@ -64,17 +71,19 @@ const REPORT_COLUMNS = {
     ],
     petty_cash: ['register', 'balance'],
     cheque_status: ['cheque_no', 'party', 'amount', 'status'],
-    audit_trail: ['created_at', 'event', 'auditable_type', 'auditable_id', 'user_id'],
+    audit_trail: ['occurred_at', 'event', 'entity_type', 'entity_label', 'user_name', 'changes_summary'],
     unposted_journals: ['journal_number', 'journal_date', 'status', 'description', 'branch_name'],
     journal_register: ['journal_number', 'journal_date', 'description', 'branch_name', 'posted_at'],
 };
+
+const AS_OF_REPORTS = new Set(['balance_sheet']);
 
 function formatCell(key, value, row, reportKey, t) {
     if (key === 'account_code' && row.account_id && reportKey === 'trial_balance') {
         return (
             <Link
                 href={route('admin.accounting.reports.general-ledger', { account_id: row.account_id })}
-                className="font-mono text-teal-600 hover:underline"
+                className="font-mono text-teal-600 hover:underline dark:text-teal-400"
             >
                 {value}
             </Link>
@@ -85,15 +94,56 @@ function formatCell(key, value, row, reportKey, t) {
         return (
             <Link
                 href={route('admin.accounting.journal-entries.show', row.journal_entry_id)}
-                className="font-mono text-teal-600 hover:underline"
+                className="font-mono text-teal-600 hover:underline dark:text-teal-400"
             >
                 {value}
             </Link>
         );
     }
 
+    if (key === 'entity_label' && row.journal_entry_id) {
+        return (
+            <Link
+                href={route('admin.accounting.journal-entries.show', row.journal_entry_id)}
+                className="text-teal-600 hover:underline dark:text-teal-400"
+            >
+                {value}
+            </Link>
+        );
+    }
+
+    if (key === 'event' && reportKey === 'audit_trail') {
+        return auditEventLabel(t, value);
+    }
+
+    if (key === 'entity_type' && reportKey === 'audit_trail') {
+        return auditEntityTypeLabel(t, value);
+    }
+
     if (key === 'status') {
         return journalEntryStatusLabel(t, value);
+    }
+
+    if (key === 'occurred_at' || key === 'posted_at' || key === 'journal_date') {
+        if (!value) {
+            return '—';
+        }
+
+        const date = new Date(value);
+
+        return Number.isNaN(date.getTime())
+            ? value
+            : date.toLocaleString(undefined, {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: key === 'occurred_at' || key === 'posted_at' ? '2-digit' : undefined,
+                  minute: key === 'occurred_at' || key === 'posted_at' ? '2-digit' : undefined,
+              });
+    }
+
+    if (key === 'changes_summary') {
+        return <span className="text-muted-foreground">{value ?? '—'}</span>;
     }
 
     if (typeof value === 'number') {
@@ -105,6 +155,7 @@ function formatCell(key, value, row, reportKey, t) {
 
 function Show({
     reportKey,
+    reportCardKey,
     reportSlug,
     title,
     filters,
@@ -112,11 +163,18 @@ function Show({
     totals = null,
     accounts = [],
     costCentres = [],
+    auditEntityTypes = [],
+    auditEvents = [],
     canExport = false,
 }) {
     const { t } = useTranslation();
+    const cardKey = reportCardKey ?? reportKey;
+
+    const pageTitle = t(`pages.accounting.reports.cards.${cardKey}.title`, { defaultValue: title });
+    const pageDescription = t(`pages.accounting.reports.cards.${cardKey}.description`);
 
     const columns = REPORT_COLUMNS[reportKey] ?? (rows[0] ? Object.keys(rows[0]) : []);
+    const isAsOfReport = AS_OF_REPORTS.has(reportKey);
 
     const accountOptions = useMemo(
         () => [
@@ -132,6 +190,28 @@ function Show({
             ...costCentres.map((c) => ({ value: String(c.id), label: `${c.code} — ${c.name}` })),
         ],
         [costCentres, t],
+    );
+
+    const entityTypeOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.accounting.reports.allRecordTypes') },
+            ...auditEntityTypes.map((item) => ({
+                value: item.value,
+                label: auditEntityTypeLabel(t, item.label) || item.label,
+            })),
+        ],
+        [auditEntityTypes, t],
+    );
+
+    const eventOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.accounting.reports.allEvents') },
+            ...auditEvents.map((item) => ({
+                value: item.value,
+                label: auditEventLabel(t, item.value) || item.label,
+            })),
+        ],
+        [auditEvents, t],
     );
 
     const applyFilters = (e) => {
@@ -151,10 +231,10 @@ function Show({
 
     return (
         <>
-            <Head title={title} />
+            <Head title={pageTitle} />
             <PageHeader
-                title={title}
-                description={t('pages.accounting.reports.description')}
+                title={pageTitle}
+                description={pageDescription}
                 actions={
                     <Link
                         href={route('admin.accounting.reports.index')}
@@ -166,34 +246,78 @@ function Show({
                 }
             />
 
-            <form onSubmit={applyFilters} className="rp-filter-bar mb-6 flex-wrap gap-2">
-                <input
-                    type="date"
-                    name="date_from"
-                    defaultValue={filters.date_from?.slice(0, 10) ?? ''}
-                    className="rp-form-input w-auto"
-                />
-                <input
-                    type="date"
-                    name="date_to"
-                    defaultValue={filters.date_to?.slice(0, 10) ?? ''}
-                    className="rp-form-input w-auto"
-                />
+            <form onSubmit={applyFilters} className="rp-filter-bar mb-6 flex-wrap items-end gap-3">
+                {isAsOfReport ? (
+                    <AdminFormField label={t('pages.accounting.reports.asOfDate')} id="date_to" className="w-auto">
+                        <input
+                            id="date_to"
+                            type="date"
+                            name="date_to"
+                            defaultValue={filters.date_to?.slice(0, 10) ?? ''}
+                            className="rp-form-input w-auto"
+                        />
+                    </AdminFormField>
+                ) : (
+                    <>
+                        <AdminFormField label={t('pages.accounting.reports.dateFrom')} id="date_from" className="w-auto">
+                            <input
+                                id="date_from"
+                                type="date"
+                                name="date_from"
+                                defaultValue={filters.date_from?.slice(0, 10) ?? ''}
+                                className="rp-form-input w-auto"
+                            />
+                        </AdminFormField>
+                        <AdminFormField label={t('pages.accounting.reports.dateTo')} id="date_to_range" className="w-auto">
+                            <input
+                                id="date_to_range"
+                                type="date"
+                                name="date_to"
+                                defaultValue={filters.date_to?.slice(0, 10) ?? ''}
+                                className="rp-form-input w-auto"
+                            />
+                        </AdminFormField>
+                    </>
+                )}
                 {['general_ledger', 'trial_balance'].includes(reportKey) && (
-                    <Select
-                        name="account_id"
-                        defaultValue={filters.account_id ? String(filters.account_id) : ''}
-                        className="w-auto min-w-[12rem]"
-                        options={accountOptions}
-                    />
+                    <AdminFormField label={t('pages.accounting.reports.selectAccount')} id="account_id" className="min-w-[12rem]">
+                        <Select
+                            id="account_id"
+                            name="account_id"
+                            defaultValue={filters.account_id ? String(filters.account_id) : ''}
+                            options={accountOptions}
+                        />
+                    </AdminFormField>
                 )}
                 {reportKey === 'cost_centre_pl' && (
-                    <Select
-                        name="cost_centre_id"
-                        defaultValue={filters.cost_centre_id ? String(filters.cost_centre_id) : ''}
-                        className="w-auto min-w-[12rem]"
-                        options={costCentreOptions}
-                    />
+                    <AdminFormField label={t('pages.accounting.costCentres.title')} id="cost_centre_id" className="min-w-[12rem]">
+                        <Select
+                            id="cost_centre_id"
+                            name="cost_centre_id"
+                            defaultValue={filters.cost_centre_id ? String(filters.cost_centre_id) : ''}
+                            options={costCentreOptions}
+                        />
+                    </AdminFormField>
+                )}
+                {reportKey === 'audit_trail' && (
+                    <>
+                        <AdminFormField label={t('pages.accounting.reports.columns.entityType')} id="auditable_type" className="min-w-[12rem]">
+                            <Select
+                                id="auditable_type"
+                                name="auditable_type"
+                                defaultValue={filters.auditable_type ?? ''}
+                                options={entityTypeOptions}
+                            />
+                        </AdminFormField>
+                        <AdminFormField label={t('pages.accounting.reports.columns.event')} id="event" className="min-w-[10rem]">
+                            <Select
+                                id="event"
+                                name="event"
+                                defaultValue={filters.event ?? ''}
+                                options={eventOptions}
+                            />
+                        </AdminFormField>
+                    </>
                 )}
                 <Button type="submit" variant="outline">
                     {t('common.apply')}
@@ -212,9 +336,7 @@ function Show({
                 <div className="mb-4 flex flex-wrap gap-4 rounded-lg border bg-muted/30 p-4 text-sm">
                     {Object.entries(totals).map(([key, value]) => (
                         <div key={key}>
-                            <span className="text-muted-foreground capitalize">
-                                {key.replace(/_/g, ' ')}:{' '}
-                            </span>
+                            <span className="text-muted-foreground">{reportTotalLabel(t, key)}: </span>
                             <span className="font-semibold">
                                 {typeof value === 'number'
                                     ? value.toLocaleString(undefined, {
@@ -228,14 +350,12 @@ function Show({
                 </div>
             )}
 
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="overflow-x-auto rounded-lg border bg-card">
                 <Table>
                     <TableHeader>
                         <TableRow>
                             {columns.map((col) => (
-                                <TableHead key={col} className="capitalize">
-                                    {col.replace(/_/g, ' ')}
-                                </TableHead>
+                                <TableHead key={col}>{reportColumnLabel(t, col)}</TableHead>
                             ))}
                         </TableRow>
                     </TableHeader>
@@ -244,7 +364,7 @@ function Show({
                             rows.map((row, idx) => (
                                 <TableRow key={row.id ?? idx}>
                                     {columns.map((col) => (
-                                        <TableCell key={col}>
+                                        <TableCell key={col} className={col === 'changes_summary' ? 'max-w-md' : undefined}>
                                             {formatCell(col, row[col], row, reportKey, t)}
                                         </TableCell>
                                     ))}

@@ -18,6 +18,7 @@ use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Support\AccountingAuditTypes;
 use Illuminate\Database\Eloquent\Model;
 
 final class AuditObserver
@@ -43,25 +44,32 @@ final class AuditObserver
 
     private function record(string $event, Model $model, ?array $old, ?array $new): void
     {
-        if (
-            ! $model instanceof User
-            && ! $model instanceof Role
-            && ! $model instanceof Permission
-            && ! $model instanceof Branch
-            && ! $model instanceof Category
-            && ! $model instanceof Brand
-            && ! $model instanceof Product
-            && ! $model instanceof LoyaltyProgram
-            && ! $model instanceof LoyaltyRule
-            && ! $model instanceof LoyaltyProgramTier
-            && ! $model instanceof LoyaltyApprovalPolicy
-            && ! $model instanceof LoyaltyExpiryRule
-            && ! $model instanceof LoyaltyCampaign
-        ) {
+        if (! $this->shouldAudit($model)) {
             return;
         }
 
         $this->audit->log($event, $model, $old, $new);
+    }
+
+    private function shouldAudit(Model $model): bool
+    {
+        if (AccountingAuditTypes::includes($model)) {
+            return true;
+        }
+
+        return $model instanceof User
+            || $model instanceof Role
+            || $model instanceof Permission
+            || $model instanceof Branch
+            || $model instanceof Category
+            || $model instanceof Brand
+            || $model instanceof Product
+            || $model instanceof LoyaltyProgram
+            || $model instanceof LoyaltyRule
+            || $model instanceof LoyaltyProgramTier
+            || $model instanceof LoyaltyApprovalPolicy
+            || $model instanceof LoyaltyExpiryRule
+            || $model instanceof LoyaltyCampaign;
     }
 
     /**

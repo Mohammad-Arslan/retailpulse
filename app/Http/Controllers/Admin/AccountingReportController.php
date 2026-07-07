@@ -9,6 +9,7 @@ use App\Services\Accounting\AccountingReportPageService;
 use App\Services\Accounting\FinancialReportingService;
 use App\Support\BranchContext;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -194,6 +195,7 @@ final class AccountingReportController extends Controller
 
         return Inertia::render('Admin/Accounting/Reports/Show', [
             'reportKey' => str_replace('-', '_', $reportKey),
+            'reportCardKey' => Str::camel(str_replace('-', '_', $reportKey)),
             'reportSlug' => $reportKey,
             'title' => $config['title'],
             'filters' => $filters,
@@ -219,6 +221,8 @@ final class AccountingReportController extends Controller
             'cost_centre_id',
             'account_id',
             'warehouse_id',
+            'auditable_type',
+            'event',
         ]);
 
         if ($context->branchId !== null && empty($filters['branch_id'])) {

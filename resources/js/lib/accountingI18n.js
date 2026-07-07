@@ -135,3 +135,43 @@ export function eventStatusBadgeClass(status) {
 
     return map[status] ?? 'bg-muted text-muted-foreground';
 }
+
+function snakeToCamel(value) {
+    return String(value).replace(/_([a-z])/g, (_, char) => char.toUpperCase());
+}
+
+export function reportColumnLabel(t, column) {
+    const key = `pages.accounting.reports.columns.${snakeToCamel(column)}`;
+    const label = t(key);
+
+    return label === key ? titleCaseEnum(column) : label;
+}
+
+export function reportTotalLabel(t, key) {
+    const i18nKey = `pages.accounting.reports.totals.${snakeToCamel(key)}`;
+    const label = t(i18nKey);
+
+    return label === i18nKey ? titleCaseEnum(key) : label;
+}
+
+export function auditEventLabel(t, event) {
+    if (!event) {
+        return '';
+    }
+
+    const key = `pages.accounting.reports.auditEvents.${event}`;
+    const label = t(key);
+
+    return label === key ? titleCaseEnum(event) : label;
+}
+
+export function auditEntityTypeLabel(t, type) {
+    if (!type) {
+        return '';
+    }
+
+    const key = `pages.accounting.reports.auditEntities.${type}`;
+    const label = t(key);
+
+    return label === key ? titleCaseEnum(type) : label;
+}

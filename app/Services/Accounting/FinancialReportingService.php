@@ -15,6 +15,8 @@ use App\Models\JournalEntry;
 use App\Models\JournalTransaction;
 use App\Models\Sale;
 use App\Models\SupplierInvoice;
+use App\Support\AccountingAuditPresenter;
+use App\Support\AccountingAuditTypes;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -630,6 +632,8 @@ final class FinancialReportingService
         $dateTo = $this->dateTo($filters);
 
         $query = AuditLog::query()
+            ->with('user:id,name,email')
+            ->whereIn('auditable_type', AccountingAuditTypes::classNames())
             ->whereDate('created_at', '>=', $dateFrom)
             ->whereDate('created_at', '<=', $dateTo)
             ->orderByDesc('created_at');
@@ -638,16 +642,34 @@ final class FinancialReportingService
             $query->where('auditable_type', $filters['auditable_type']);
         }
 
-        $logs = $query->limit(500)->get();
+        if (! empty($filters['event'])) {
+            $query->where('event', $filters['event']);
+        }
 
-        $rows = $logs->map(fn (AuditLog $log) => [
-            'id' => $log->id,
-            'event' => $log->event,
-            'auditable_type' => class_basename((string) $log->auditable_type),
-            'auditable_id' => $log->auditable_id,
-            'user_id' => $log->user_id,
-            'created_at' => $log->created_at?->toIso8601String(),
-        ])->all();
+        $logs = $query->limit(500)->get();
+        $entityLabels = AccountingAuditPresenter::entityLabels($logs);
+
+        $rows = $logs->map(function (AuditLog $log) use ($entityLabels) {
+            $type = (string) $log->auditable_type;
+            $id = (int) $log->auditable_id;
+            $entityLabel = $entityLabels[$type][$id] ?? ($id ? '#'.$id : '—');
+            $journalEntryId = $type === JournalEntry::class ? $id : null;
+
+            return [
+                'id' => $log->id,
+                'occurred_at' => $log->created_at?->toDateTimeString(),
+                'event' => $log->event,
+                'entity_type' => AccountingAuditTypes::shortName($type),
+                'entity_label' => $entityLabel,
+                'journal_entry_id' => $journalEntryId,
+                'user_name' => $log->user?->name ?? 'System',
+                'changes_summary' => AccountingAuditPresenter::changesSummary(
+                    $log->event,
+                    $log->old_values,
+                    $log->new_values,
+                ),
+            ];
+        })->all();
 
         return ['rows' => $rows, 'filters' => $this->normalizeFilters($filters, $dateFrom, $dateTo)];
     }
