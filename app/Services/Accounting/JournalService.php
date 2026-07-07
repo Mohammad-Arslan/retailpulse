@@ -99,11 +99,15 @@ final class JournalService
         return $entry->fresh(['transactions.account']);
     }
 
-    public function reverse(JournalEntry $entry, int $userId, ?string $description = null): JournalEntry
-    {
+    public function reverse(
+        JournalEntry $entry,
+        int $userId,
+        ?string $description = null,
+        ?CarbonInterface $reversalDate = null,
+    ): JournalEntry {
         $this->validation->assertCanReverse($entry);
 
-        return DB::transaction(function () use ($entry, $userId, $description) {
+        return DB::transaction(function () use ($entry, $userId, $description, $reversalDate) {
             $entry->load('transactions');
 
             $reversalLines = $entry->transactions->map(fn (JournalTransaction $line) => [
@@ -127,7 +131,7 @@ final class JournalService
             ])->all();
 
             $reversal = $this->createDraft([
-                'journal_date' => now()->toDateString(),
+                'journal_date' => ($reversalDate ?? now())->toDateString(),
                 'branch_id' => $entry->branch_id,
                 'legal_entity_id' => $entry->legal_entity_id,
                 'fiscal_year_id' => $entry->fiscal_year_id,

@@ -582,7 +582,7 @@ final class FinancialReportingService
             ->where('journal_transactions.currency_code', '!=', $this->settings()->functional_currency_code)
             ->whereDate('journal_entries.journal_date', '>=', $dateFrom)
             ->whereDate('journal_entries.journal_date', '<=', $dateTo)
-            ->with(['account:id,code,name', 'journalEntry:id,journal_number,journal_date'])
+            ->with(['account:id,code,name', 'journalEntry:id,journal_number,journal_date,source_event'])
             ->get();
 
         $rows = $lines->map(fn (JournalTransaction $line) => [
@@ -594,6 +594,7 @@ final class FinancialReportingService
             'transaction_amount' => round((float) ($line->transaction_currency_amount ?? 0), 2),
             'functional_amount' => round((float) $line->functional_currency_amount, 2),
             'exchange_rate' => $line->exchange_rate,
+            'source_event' => $line->journalEntry?->source_event,
         ])->all();
 
         return ['rows' => $rows, 'filters' => $this->normalizeFilters($filters, $dateFrom, $dateTo)];

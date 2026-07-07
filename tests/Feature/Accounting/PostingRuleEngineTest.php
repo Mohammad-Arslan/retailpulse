@@ -8,7 +8,9 @@ use App\Enums\AccountResolutionType;
 use App\Enums\AmountSource;
 use App\Enums\PostingRuleEntrySide;
 use App\Models\AccountMapping;
+use App\Models\AssetCategory;
 use App\Models\ChartOfAccount;
+use App\Models\FixedAsset;
 use App\Models\PostingRuleSet;
 use App\Services\Accounting\PostingRuleEngine;
 use DomainException;
@@ -248,6 +250,99 @@ final class PostingRuleEngineTest extends TestCase
 
         $this->assertSame($this->cash->id, $lines[0]['account_id']);
         $this->assertSame($this->revenue->id, $lines[1]['account_id']);
+    }
+
+    private function createFixedAsset(AssetCategory $category, array $overrides = []): FixedAsset
+    {
+        return FixedAsset::query()->create([
+            'asset_code' => 'FA-'.random_int(10000, 99999),
+            'name' => 'Delivery Van',
+            'category_id' => $category->id,
+            'acquisition_cost' => 12000,
+            'acquisition_date' => '2026-01-01',
+            'useful_life_months' => 60,
+            ...$overrides,
+        ]);
+    }
+
+    public function test_asset_account_resolution_uses_the_assets_own_account_columns(): void
+    {
+        $category = AssetCategory::query()->create(['name' => 'Vehicles', 'code' => 'VEH']);
+        $assetAccount = ChartOfAccount::query()->create(['code' => '1500', 'name' => 'Fixed Assets', 'type' => 'asset']);
+        $accumDepAccount = ChartOfAccount::query()->create(['code' => '1510', 'name' => 'Accumulated Depreciation', 'type' => 'asset']);
+        $depExpenseAccount = ChartOfAccount::query()->create(['code' => '5500', 'name' => 'Depreciation Expense', 'type' => 'expense']);
+
+        $asset = $this->createFixedAsset($category, [
+            'asset_account_id' => $assetAccount->id,
+            'accumulated_depreciation_account_id' => $accumDepAccount->id,
+            'depreciation_expense_account_id' => $depExpenseAccount->id,
+        ]);
+
+        $ruleSet = $this->createRuleSet('test.asset_depreciation');
+        $this->addLine($ruleSet, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AssetAccount, AmountSource::DepreciationAmount, mappingKey: 'depreciation_expense_account');
+        $this->addLine($ruleSet, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AssetAccount, AmountSource::DepreciationAmount, mappingKey: 'accumulated_depreciation_account');
+
+        $lines = app(PostingRuleEngine::class)->buildJournalLines('test.asset_depreciation', [
+            'date' => '2026-06-15',
+            'fixed_asset_id' => $asset->id,
+            'depreciation_amount' => 100,
+        ]);
+
+        $this->assertSame($depExpenseAccount->id, $lines[0]['account_id']);
+        $this->assertSame($accumDepAccount->id, $lines[1]['account_id']);
+    }
+
+    public function test_asset_account_resolution_falls_back_to_category_account_when_asset_column_is_null(): void
+    {
+        $categoryAssetAccount = ChartOfAccount::query()->create(['code' => '1501', 'name' => 'Category Fixed Assets', 'type' => 'asset']);
+        $category = AssetCategory::query()->create([
+            'name' => 'Vehicles',
+            'code' => 'VEH2',
+            'asset_account_id' => $categoryAssetAccount->id,
+        ]);
+
+        $asset = $this->createFixedAsset($category);
+
+        $ruleSet = $this->createRuleSet('test.asset_fallback');
+        $this->addLine($ruleSet, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AssetAccount, AmountSource::GrossAmount, mappingKey: 'asset_account');
+        $this->addLine($ruleSet, 2, PostingRuleEntrySide::Credit, AccountResolutionType::FixedAccount, AmountSource::GrossAmount, $this->cash->id);
+
+        $lines = app(PostingRuleEngine::class)->buildJournalLines('test.asset_fallback', [
+            'date' => '2026-06-15',
+            'fixed_asset_id' => $asset->id,
+            'gross_amount' => 200,
+        ]);
+
+        $this->assertSame($categoryAssetAccount->id, $lines[0]['account_id']);
+    }
+
+    public function test_asset_account_resolution_throws_for_required_line_when_fixed_asset_id_missing(): void
+    {
+        $ruleSet = $this->createRuleSet('test.asset_missing_id');
+        $this->addLine($ruleSet, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AssetAccount, AmountSource::GrossAmount, mappingKey: 'asset_account');
+        $this->addLine($ruleSet, 2, PostingRuleEntrySide::Credit, AccountResolutionType::FixedAccount, AmountSource::GrossAmount, $this->cash->id);
+
+        $this->expectException(DomainException::class);
+
+        app(PostingRuleEngine::class)->buildJournalLines('test.asset_missing_id', ['date' => '2026-06-15', 'gross_amount' => 50]);
+    }
+
+    public function test_asset_account_resolution_throws_for_invalid_mapping_key_role(): void
+    {
+        $category = AssetCategory::query()->create(['name' => 'Vehicles', 'code' => 'VEH3']);
+        $asset = $this->createFixedAsset($category);
+
+        $ruleSet = $this->createRuleSet('test.asset_invalid_role');
+        $this->addLine($ruleSet, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AssetAccount, AmountSource::GrossAmount, mappingKey: 'not_a_real_role');
+        $this->addLine($ruleSet, 2, PostingRuleEntrySide::Credit, AccountResolutionType::FixedAccount, AmountSource::GrossAmount, $this->cash->id);
+
+        $this->expectException(DomainException::class);
+
+        app(PostingRuleEngine::class)->buildJournalLines('test.asset_invalid_role', [
+            'date' => '2026-06-15',
+            'fixed_asset_id' => $asset->id,
+            'gross_amount' => 50,
+        ]);
     }
 
     public function test_unresolvable_account_mapping_throws_for_required_line(): void

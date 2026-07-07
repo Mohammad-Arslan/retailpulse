@@ -8,6 +8,7 @@ use App\Enums\AccountResolutionType;
 use App\Enums\AmountSource;
 use App\Enums\PostingRuleEntrySide;
 use App\Models\ChartOfAccount;
+use App\Models\FixedAsset;
 use App\Models\PostingRuleLine;
 use App\Models\PostingRuleSet;
 use Carbon\Carbon;
@@ -157,8 +158,40 @@ final class PostingRuleEngine
                 ($payload['tax_direction'] ?? 'sales') === 'purchase' ? 'input_tax' : 'output_tax',
                 $context,
             ),
+            AccountResolutionType::AssetAccount => $this->resolveAssetAccount($line, $payload),
             default => $line->account,
         };
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function resolveAssetAccount(PostingRuleLine $line, array $payload): ?ChartOfAccount
+    {
+        $assetId = $payload['fixed_asset_id'] ?? null;
+
+        if ($assetId === null) {
+            return null;
+        }
+
+        $asset = FixedAsset::query()->with('category')->find($assetId);
+
+        if ($asset === null) {
+            return null;
+        }
+
+        $column = match ($line->account_mapping_key) {
+            'asset_account' => 'asset_account_id',
+            'accumulated_depreciation_account' => 'accumulated_depreciation_account_id',
+            'depreciation_expense_account' => 'depreciation_expense_account_id',
+            default => throw new DomainException(
+                "Invalid account_mapping_key '{$line->account_mapping_key}' for asset_account resolution on rule line {$line->id}",
+            ),
+        };
+
+        $accountId = $asset->{$column} ?? $asset->category?->{$column};
+
+        return $accountId ? ChartOfAccount::find($accountId) : null;
     }
 
     /**

@@ -72,6 +72,7 @@ final class AssetDepreciationService
                     [
                         'date' => $asOfDate ?? now()->toDateString(),
                         'branch_id' => $asset->branch_id,
+                        'fixed_asset_id' => $asset->id,
                         'depreciation_amount' => $amount,
                         'settlement_amount' => $amount,
                         'description' => "Depreciation — {$asset->asset_code}",
