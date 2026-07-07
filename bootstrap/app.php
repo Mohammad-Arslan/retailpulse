@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountingModuleEnabled;
 use App\Http\Middleware\EnsureAdminAccess;
 use App\Http\Middleware\EnsurePosAccess;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -43,6 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureAdminAccess::class,
             'branch.context' => SetBranchContext::class,
             'pos.access' => EnsurePosAccess::class,
+            'accounting-module' => EnsureAccountingModuleEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -59,4 +61,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->job(SupplierPerformanceScoringJob::class)->monthlyOn(1, '04:00');
         $schedule->job(PoApprovalEscalationJob::class)->hourly();
         $schedule->job(PriceListExpiryAlertJob::class)->dailyAt('07:00');
+        $schedule->command('accounting:process-depreciation')->monthlyOn(1, '05:00');
     })->create();

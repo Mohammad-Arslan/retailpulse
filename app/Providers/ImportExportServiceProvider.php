@@ -8,12 +8,16 @@ use App\Services\ImportExport\Handlers\BrandExportHandler;
 use App\Services\ImportExport\Handlers\BrandImportHandler;
 use App\Services\ImportExport\Handlers\CategoryExportHandler;
 use App\Services\ImportExport\Handlers\CategoryImportHandler;
+use App\Services\ImportExport\Handlers\CoaExportHandler;
+use App\Services\ImportExport\Handlers\CoaImportHandler;
 use App\Services\ImportExport\Handlers\CustomerExportHandler;
 use App\Services\ImportExport\Handlers\CustomerImportHandler;
 use App\Services\ImportExport\Handlers\InventoryAdjustmentExportHandler;
 use App\Services\ImportExport\Handlers\InventoryAdjustmentImportHandler;
 use App\Services\ImportExport\Handlers\InventoryExportHandler;
 use App\Services\ImportExport\Handlers\InventoryImportHandler;
+use App\Services\ImportExport\Handlers\OpeningBalanceExportHandler;
+use App\Services\ImportExport\Handlers\OpeningBalanceImportHandler;
 use App\Services\ImportExport\Handlers\ProductExportHandler;
 use App\Services\ImportExport\Handlers\ProductImportHandler;
 use App\Services\ImportExport\Handlers\SupplierExportHandler;
@@ -54,6 +58,12 @@ final class ImportExportServiceProvider extends ServiceProvider
             'inventory-adjustments',
             InventoryAdjustmentImportHandler::class,
             InventoryAdjustmentExportHandler::class,
+        );
+        ImportExportRegistry::register('coa', CoaImportHandler::class, CoaExportHandler::class);
+        ImportExportRegistry::register(
+            'opening-balances',
+            OpeningBalanceImportHandler::class,
+            OpeningBalanceExportHandler::class,
         );
     }
 }

@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Route;
 /**
  * Shared import/export routes. Included from admin (session) and api (legacy/cached clients).
  *
+ * Entity permissions for accounting imports:
+ * - coa → accounting.import-coa
+ * - opening-balances → accounting.import-opening-balances
+ *
  * @param  string  $namePrefix  Route name prefix, e.g. "admin.import-export." or "import-export."
  */
 return function (string $namePrefix): void {

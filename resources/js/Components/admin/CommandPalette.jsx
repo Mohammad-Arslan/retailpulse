@@ -2,7 +2,7 @@ import ScrollArea from '@/Components/common/ScrollArea';
 import { ADMIN_NAV_SECTIONS } from '@/config/adminNav';
 import { useCan } from '@/Hooks/useCan';
 import { cn } from '@/lib/utils';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,17 +12,18 @@ export default function CommandPalette({ open, onClose }) {
     const { t } = useTranslation();
     const [query, setQuery] = useState('');
     const inputRef = useRef(null);
+    const enabledAccountingModules = usePage().props.enabledAccountingModules ?? [];
 
     const items = useMemo(() => {
         return ADMIN_NAV_SECTIONS.flatMap((section) =>
             section.items
-                .filter((item) => can(item.permission))
+                .filter((item) => can(item.permission) && (!item.module || enabledAccountingModules.includes(item.module)))
                 .map((item) => ({
                     ...item,
                     sectionKey: section.labelKey,
                 })),
         );
-    }, [can]);
+    }, [can, enabledAccountingModules]);
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();

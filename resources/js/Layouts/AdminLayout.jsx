@@ -21,16 +21,19 @@ import { useTranslation } from 'react-i18next';
 function SidebarNav({ collapsed, onNavigate }) {
     const can = useCan();
     const { t } = useTranslation();
+    const enabledAccountingModules = usePage().props.enabledAccountingModules ?? [];
 
     return (
         <>
             {ADMIN_NAV_SECTIONS.map((section) => {
                 const items = section.items.filter((item) => {
-                    if (item.permissionsAny?.length) {
-                        return item.permissionsAny.some((p) => can(p));
-                    }
+                    const permissionOk = item.permissionsAny?.length
+                        ? item.permissionsAny.some((p) => can(p))
+                        : can(item.permission);
 
-                    return can(item.permission);
+                    const moduleOk = !item.module || enabledAccountingModules.includes(item.module);
+
+                    return permissionOk && moduleOk;
                 });
 
                 if (items.length === 0) {

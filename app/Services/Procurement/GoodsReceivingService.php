@@ -16,6 +16,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\PurchaseOrderRepositoryInterface;
+use App\Services\Accounting\CostService;
 use App\Services\InventoryService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -29,6 +30,7 @@ final class GoodsReceivingService
         private readonly DropShipService $dropShip,
         private readonly PurchaseOrderRepositoryInterface $orders,
         private readonly SupplierInvoiceService $invoices,
+        private readonly CostService $costService,
     ) {}
 
     public function receive(PurchaseOrder $order, ReceiveGrnData $data): GoodsReceivingNote
@@ -165,6 +167,13 @@ final class GoodsReceivingService
             );
 
             $this->inventory->receive($receiveData);
+
+            $this->costService->createLayerFromGrnItem(
+                $grnItem,
+                $grn,
+                $poItem,
+                $line->batchNo,
+            );
         }
     }
 

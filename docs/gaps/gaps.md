@@ -1,7 +1,7 @@
 # RetailPulse — Phase Gaps Register
 
 Tracked gaps between **phase specifications** (`docs/phases/`) and the **current codebase**.  
-Last reviewed: 2026-07-06.
+Last reviewed: 2026-07-08 (Phase 11 section corrected and expanded — see below).
 
 ## Severity legend
 
@@ -197,16 +197,29 @@ Last reviewed: 2026-07-06.
 
 ## Phase 11 — Accounting & Finance
 
-**Phase doc status:** Planned  
-**Overall gap level:** Critical (module not started)
+**Phase doc status:** Substantially built (this section was stale — previously said "module not started"; corrected below)  
+**Overall gap level:** Medium — core GL, sub-module gating, and test coverage are now in place; COGS/financial-statement integration is the largest remaining gap
 
 | ID | Gap | Severity | Notes |
 | :--- | :--- | :---: | :--- |
-| P11-01 | **Double-entry GL stack** — COA, journals, posting rules | **Critical** | No `chart_of_accounts` / `journal_entries` migrations. |
-| P11-02 | **Auto-post on sale complete** — `SaleCompleted` has loyalty listener only | **Critical** | |
-| P11-03 | **`inventory_cost_layers` + COGS** | **High** | Spec in phase doc; not built. |
-| P11-04 | **Financial statements** (Trial Balance, P&L, Balance Sheet) | **High** | |
-| P11-05 | **COA / opening balance import (X-06)** | **Medium** | |
+| P11-01 | **Double-entry GL stack** — COA, journals, posting rules | — | **Resolved** — `chart_of_accounts`, `journal_entries`, `journal_transactions`, `posting_rule_sets`/`posting_rule_lines` migrations and services exist (`JournalService`, `PostingRuleEngine`, `AccountResolverService`). |
+| P11-02 | **Auto-post on sale complete** — `SaleCompleted` has loyalty listener only | — | **Resolved** — `ProcessAccountingOnSaleCompleted` listener registered in `AppServiceProvider`, routes through `AccountingEventService`. |
+| P11-03 | **`inventory_cost_layers` + COGS** | **High** | Spec in phase doc; not built — inventory valuation is still FIFO-only via `InventoryService`; no dedicated cost-layer table feeds COGS journals. Largest remaining Phase 11 gap. |
+| P11-04 | **Financial statements** (Trial Balance, P&L, Balance Sheet) | — | **Resolved** — `FinancialReportingService` + `AccountingReportController` implement all core reports. |
+| P11-05 | **COA / opening balance import (X-06)** | — | **Resolved** — `CoaImportService`, `OpeningBalanceImportService`. |
+| P11-06 | **Float-equality bug in journal balance validation** — `JournalValidationService::assertCanPost()` compared debit/credit totals via `round((float)$a,2) !== round((float)$b,2)` | — | **Resolved 2026-07-08** — replaced with `bccomp()` on decimal strings (never cast through float); regression test covers the classic `0.10+0.10+0.10` vs `0.30` float-imprecision trap. |
+| P11-07 | **Same float-equality bug in fiscal-year-close validation** — `FiscalCloseService::validate()` had the identical anti-pattern | — | **Resolved 2026-07-08** — same `bccomp()` fix applied. |
+| P11-08 | **Uncaught race in `AccountingEventService::process()`** — two concurrent calls with the same idempotency key could both pass the initial existence check and the second `create()` would throw an uncaught `UniqueConstraintViolationException` instead of reusing the existing event | — | **Resolved 2026-07-08** — `create()` now runs through a helper that catches the violation and re-fetches the existing row. |
+| P11-09 | **`PostingRuleEngine` silently dropped required lines that resolved to a zero amount** — a required line (e.g. a mandatory tax line) resolving to `<= 0` was skipped exactly like an optional line, inconsistent with the null-account case which correctly threw | — | **Resolved 2026-07-08** — a required line resolving to `<= 0` now throws `DomainException`, matching the null-account behavior. Found during the Phase 1 audit, same class of bug as P11-06/07/08. |
+| P11-10 | **`AccountResolverService::resolveByMappingKey()` called `CarbonInterface::parse()`** — an abstract interface method that cannot be invoked statically. Since `PostingRuleEngine` always passes a `date` context key, this broke every non-`FixedAccount` resolution type (`AccountMapping`/`ConfigurableMapping`, `CustomerReceivableAccount`, `SupplierPayableAccount`, `PaymentMethodAccount`, `WarehouseInventoryAccount`, `TaxAccount`) in production | — | **Critical, Resolved 2026-07-08** — fixed by importing `Carbon` instead. Found while writing Phase 2 test coverage, not one of the originally-scoped bugs; fixed rather than deferred because it silently broke most of the posting-rule engine and blocked the requested tests outright. |
+| P11-11 | **Missing `asset_account` resolution type** — spec lists 13 resolution types; only 10 existed | — | **Resolved 2026-07-08** — `AccountResolutionType::AssetAccount` added; `PostingRuleEngine::resolveAccount()` resolves per-asset or per-category account columns via a repurposed `account_mapping_key` acting as a role selector (`asset_account`/`accumulated_depreciation_account`/`depreciation_expense_account`). `employee_payable_account` (no payroll module — Phase 12) and `intercompany_account` (config-gated behind `multi_currency`, deferred) remain **deliberately absent**, documented via a doc-comment on the enum, not an oversight. |
+| P11-12 | **FX Revaluation was a read-only stub** — `AccountingReportController::fxRevaluation()` only listed already-booked foreign-currency lines at their booked rate; no unrealized gain/loss calculation or posting existed despite `fx_gain_account_id`/`fx_loss_account_id` already being configurable in `financial_settings` | — | **Resolved 2026-07-08** — new `FxRevaluationService::revalue()` computes unrealized gain/loss on open foreign-currency balance-sheet accounts (Asset/Liability only) at a period-end rate, posts one journal entry tagged `source_event = fx_revaluation`, and immediately posts an offsetting reversal dated the day after (standard unrealized-FX practice; no fiscal-periods table exists to hang a scheduled reversal off of). Guards against double-revaluation for the same as-of date. |
+| P11-13 | **Sub-module decomposition (interim gate)** — accounting was monolithic; every sub-module (Cost Centres, Tax, Multi-Currency, Bank Reconciliation, Petty Cash, Cheques, Fixed Assets, Credit/Debit Notes) was reachable by any tenant with accounting enabled at all, but the business wants to sell these independently | — | **Resolved 2026-07-08** — `config/accounting_modules.php` (dependency graph) + `AccountingModuleGate` interface / `BranchAccountingModuleGate` implementation (branch-scoped, extends the existing `branch_accounting_profiles` table rather than a new one) + `EnsureAccountingModuleEnabled` middleware gate the relevant route groups, plus a new `enabledAccountingModules` Inertia prop drives nav visibility. **Explicitly an interim mechanism** pending the full Module Registry (`modules`/`module_features`/`tenant_modules`/`CheckModuleEnabled`) planned for **Phase 23** (see `docs/phases/phase-23-module-config-engine.md`) — swapping in the real registry should only require replacing the `AccountingModuleGate` binding in `AppServiceProvider`, not touching controllers/routes/nav. |
+| P11-14 | **Zero test coverage on the accounting module** despite being the most correctness-critical part of the app | — | **Resolved 2026-07-08** — 88 tests added under `tests/Feature/Accounting/` covering `JournalValidationService`, `PostingRuleEngine` (all resolution types + all amount sources), `AccountResolverService`, `AccountingEventService`, `JournalService`, `FiscalCloseService`, `JournalEntryPolicy` (first policy-authorization tests in this codebase — 34 policy classes existed with none tested), the accounting module gate (unit + HTTP-level route gating), and `FxRevaluationService`. |
+| P11-15 | **`BankAccount`/`ProductCategoryAccount` resolution types fall through to `FixedAccount` behavior** — `PostingRuleEngine::resolveAccount()`'s `default` arm silently catches both enum cases, so no bank- or category-specific resolution logic actually exists despite the cases existing | **Medium** | Found during the Phase 1 audit; explicitly out of scope for this pass (not requested, not blocking). Pinned by a regression test documenting today's fallthrough behavior so a future fix doesn't silently change it. |
+| P11-16 | **Duplicate unique constraints on `accounting_events`** — both `idempotency_key` (unique) and the composite `(event_type, source_type, source_id)` encode the same uniqueness rule | **Low** | Redundant, not incorrect. A future migration could drop one without a behavior change. |
+| P11-17 | **`AccountingEventService` can leave an event stuck in `Processing`** — status flips to `Processing` before the posting transaction runs; if the process crashes after a successful post but before the final `Completed` update, the event row never reflects success, and `retry()` only re-processes from `Failed` so it silently no-ops | **Medium** | Operational visibility gap, not a duplicate-posting risk — the idempotency key still blocks re-creation. No stale-lock/timeout recovery exists. |
+| P11-18 | **`JournalService::reverse()` reuses the original entry's `fiscal_year_id`** instead of resolving the fiscal year for the new reversal date | **Low** | Only matters when a reversal date crosses a fiscal-year boundary — e.g. an `FxRevaluationService` reversal for a 31 Dec revaluation, dated 1 Jan, would still be attributed to the closed year. Routine (non-year-end) revaluations are unaffected. |
 
 ---
 
@@ -294,7 +307,7 @@ flowchart LR
 3. **P8-04** / Phase 17 — Shift/register before production checkout.  
 4. **P7-02**, **P7-03** — Discount approval PIN and stock override.  
 5. **P6-05**, **P6-06** — Dashboard permissions and branch-scoped widgets.  
-6. **P11-01**, **P10-01** — Accounting module + procurement GL hooks.  
+6. **P11-03**, **P10-01** — COGS/inventory-cost-layer integration + procurement GL hooks (core GL/journals/posting-rules/sub-module gating are now built; this is the remaining Phase 11 gap).  
 7. **P14-01** — Customer returns workflow.  
 8. **P4-02** — Serial capture on receive.  
 9. **P8-01** — Live payment gateways when required.
@@ -305,9 +318,9 @@ flowchart LR
 
 | Severity | Count (approx.) |
 | :--- | :---: |
-| Critical | 3 |
-| High | 24 |
-| Medium | 22 |
-| Low | 10 |
+| Critical | 1 |
+| High | 23 |
+| Medium | 23 |
+| Low | 12 |
 
-*Counts exclude resolved rows (P1-05–P1-08, P3-02, P5-01/P5-03/P5-05, X-01–X-03/X-05) and “not a gap” / implemented subsections.*
+*Counts exclude resolved rows (P1-05–P1-08, P3-02, P5-01/P5-03/P5-05, P11-01/02/04-14, X-01–X-03/X-05) and “not a gap” / implemented subsections.*

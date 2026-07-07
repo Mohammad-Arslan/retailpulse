@@ -1,0 +1,110 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Accounting;
+
+use App\Enums\AccountingEventStatus;
+use App\Enums\AccountResolutionType;
+use App\Enums\AmountSource;
+use App\Enums\PostingRuleEntrySide;
+use App\Models\AccountingEvent;
+use App\Models\ChartOfAccount;
+use App\Models\JournalEntry;
+use App\Models\PostingRuleSet;
+use App\Models\User;
+use App\Services\Accounting\AccountingEventService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+final class AccountingEventServiceTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private const EVENT_TYPE = 'test.sale_completed';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $cash = ChartOfAccount::query()->create([
+            'code' => '1000',
+            'name' => 'Cash',
+            'type' => 'asset',
+        ]);
+
+        $revenue = ChartOfAccount::query()->create([
+            'code' => '4000',
+            'name' => 'Revenue',
+            'type' => 'revenue',
+        ]);
+
+        $ruleSet = PostingRuleSet::query()->create([
+            'code' => 'TEST-SALE',
+            'name' => 'Test Sale',
+            'event_type' => self::EVENT_TYPE,
+            'effective_from' => '2020-01-01',
+        ]);
+
+        $ruleSet->lines()->create([
+            'sequence' => 1,
+            'entry_side' => PostingRuleEntrySide::Debit,
+            'account_resolution_type' => AccountResolutionType::FixedAccount,
+            'account_id' => $cash->id,
+            'amount_source' => AmountSource::GrossAmount,
+            'required' => true,
+        ]);
+
+        $ruleSet->lines()->create([
+            'sequence' => 2,
+            'entry_side' => PostingRuleEntrySide::Credit,
+            'account_resolution_type' => AccountResolutionType::FixedAccount,
+            'account_id' => $revenue->id,
+            'amount_source' => AmountSource::GrossAmount,
+            'required' => true,
+        ]);
+    }
+
+    public function test_process_is_idempotent_for_the_same_event(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+        $service = app(AccountingEventService::class);
+
+        $payload = ['gross_amount' => 100, 'date' => '2026-06-15', 'description' => 'Sale #1'];
+
+        $service->process(self::EVENT_TYPE, 'App\\Models\\Sale', 1, $payload, $user->id);
+        $service->process(self::EVENT_TYPE, 'App\\Models\\Sale', 1, $payload, $user->id);
+
+        $this->assertSame(1, AccountingEvent::query()->count());
+        $this->assertSame(1, JournalEntry::query()->count());
+    }
+
+    public function test_create_or_fetch_existing_recovers_when_another_process_already_inserted_the_event(): void
+    {
+        $idempotencyKey = self::EVENT_TYPE.':App\\Models\\Sale:2';
+
+        $racingEvent = AccountingEvent::query()->create([
+            'event_type' => self::EVENT_TYPE,
+            'source_type' => 'App\\Models\\Sale',
+            'source_id' => 2,
+            'idempotency_key' => $idempotencyKey,
+            'processing_status' => AccountingEventStatus::Pending,
+            'payload' => ['gross_amount' => 50],
+        ]);
+
+        $service = app(AccountingEventService::class);
+        $method = new \ReflectionMethod($service, 'createOrFetchExisting');
+
+        $result = $method->invoke(
+            $service,
+            self::EVENT_TYPE,
+            'App\\Models\\Sale',
+            2,
+            $idempotencyKey,
+            ['gross_amount' => 50],
+        );
+
+        $this->assertSame($racingEvent->id, $result->id);
+        $this->assertSame(1, AccountingEvent::query()->where('idempotency_key', $idempotencyKey)->count());
+    }
+}

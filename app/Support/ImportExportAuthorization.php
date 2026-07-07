@@ -39,6 +39,14 @@ final class ImportExportAuthorization
                 'import' => 'supplier-price-lists.import',
                 'export' => 'supplier-price-lists.export',
             ],
+            'coa' => [
+                'import' => 'accounting.import-coa',
+                'export' => 'accounting.export-reports',
+            ],
+            'opening-balances' => [
+                'import' => 'accounting.import-opening-balances',
+                'export' => 'accounting.export-reports',
+            ],
             default => [
                 'import' => 'products.import',
                 'export' => 'products.export',

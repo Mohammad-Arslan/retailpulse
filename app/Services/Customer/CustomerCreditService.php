@@ -10,15 +10,18 @@ use App\Models\CustomerArLedger;
 use App\Models\CustomerWriteOff;
 use App\Models\Sale;
 use App\Models\User;
+use App\Services\Accounting\AccountingEventService;
 use App\Services\PosPinService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 final class CustomerCreditService
 {
     public function __construct(
         private readonly PosPinService $posPin,
+        private readonly AccountingEventService $accountingEvents,
     ) {}
 
     public function getOutstandingBalance(int $customerId, ?int $branchId = null): float
@@ -203,7 +206,7 @@ final class CustomerCreditService
                 'created_at' => now(),
             ]);
 
-            return CustomerWriteOff::query()->create([
+            $writeOff = CustomerWriteOff::query()->create([
                 'customer_id' => $customerId,
                 'branch_id' => $branchId,
                 'amount' => $amount,
@@ -212,6 +215,29 @@ final class CustomerCreditService
                 'approved_at' => now(),
                 'notes' => $notes,
             ]);
+
+            try {
+                $this->accountingEvents->process(
+                    'ar.write_off',
+                    CustomerWriteOff::class,
+                    $writeOff->id,
+                    [
+                        'date' => now()->toDateString(),
+                        'branch_id' => $branchId,
+                        'settlement_amount' => $amount,
+                        'net_amount' => $amount,
+                        'party_type' => Customer::class,
+                        'party_id' => $customerId,
+                        'description' => "AR write-off — {$reasonCode}",
+                        'user_id' => $approver->id,
+                    ],
+                    $approver->id,
+                );
+            } catch (Throwable) {
+                // Accounting module may not be configured yet.
+            }
+
+            return $writeOff;
         });
     }
 }
