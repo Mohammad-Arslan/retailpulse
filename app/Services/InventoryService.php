@@ -770,7 +770,7 @@ final class InventoryService
 
             $inventory->update(['quantity_on_hand' => $newOnHand]);
 
-            $this->movements->create([
+            $movement = $this->movements->create([
                 'warehouse_id' => $warehouseId,
                 'product_variant_id' => $variantId,
                 'batch_id' => $batchId,
@@ -785,7 +785,7 @@ final class InventoryService
 
             $inventory = $inventory->fresh() ?? $inventory;
 
-            $this->dispatchStockChanged($inventory, $previousOnHand, $previousReserved, $reason);
+            $this->dispatchStockChanged($inventory, $previousOnHand, $previousReserved, $reason, $movement->id);
 
             $this->checkLowStockAlert($inventory);
 
@@ -940,12 +940,14 @@ final class InventoryService
         int $previousOnHand,
         int $previousReserved,
         StockMovementReason $reason,
+        ?int $stockMovementId = null,
     ): void {
         event(new InventoryStockChanged(
             inventory: $inventory,
             previousOnHand: $previousOnHand,
             previousReserved: $previousReserved,
             reason: $reason,
+            stockMovementId: $stockMovementId,
         ));
     }
 

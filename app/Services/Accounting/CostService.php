@@ -315,6 +315,11 @@ final class CostService
         return $totalCost;
     }
 
+    public function averageUnitCost(int $productVariantId, int $warehouseId): float
+    {
+        return $this->weightedAverageUnitCost($productVariantId, $warehouseId);
+    }
+
     private function weightedAverageUnitCost(int $variantId, int $warehouseId): float
     {
         $layers = InventoryCostLayer::query()

@@ -27,6 +27,8 @@ final class AccountMappingsSeeder extends Seeder
             ['mapping_key' => 'accounts_payable', 'account_code' => '2100'],
             ['mapping_key' => 'inventory_asset', 'account_code' => '1400'],
             ['mapping_key' => 'cogs', 'account_code' => '5100'],
+            ['mapping_key' => 'inventory_adjustment', 'account_code' => '5910'],
+            ['mapping_key' => 'inventory_write_off', 'account_code' => '5910'],
             ['mapping_key' => 'output_tax', 'account_code' => '2200'],
             ['mapping_key' => 'input_tax', 'account_code' => '1350'],
             ['mapping_key' => 'opening_balance_equity', 'account_code' => '3400'],

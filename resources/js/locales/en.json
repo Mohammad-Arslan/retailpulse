@@ -1971,11 +1971,18 @@
                 "fiscalYearStatuses": {
                     "open": "Open",
                     "closing": "Closing",
-                    "closed": "Closed"
+                    "closed": "Closed",
+                    "reopening": "Reopening"
                 },
                 "numbering": {
                     "branchFiscal": "Branch + Fiscal Year",
                     "global": "Global Sequence"
+                },
+                "taxTitle": "Tax Settings",
+                "taxReturnFrequencies": {
+                    "monthly": "Monthly",
+                    "quarterly": "Quarterly",
+                    "annual": "Annual"
                 },
                 "fields": {
                     "functionalCurrency": "Functional Currency",
@@ -1989,7 +1996,12 @@
                     "fxGain": "FX Gain Account",
                     "fxLoss": "FX Loss Account",
                     "allowManualPosting": "Allow Manual Journal Posting",
-                    "approvalLimit": "Manual Journal Approval Limit"
+                    "approvalLimit": "Manual Journal Approval Limit",
+                    "fiscalYearReopenWindowHours": "Fiscal Year Reopen Window (Hours)",
+                    "defaultSalesTaxType": "Default Sales Tax Type",
+                    "defaultPurchaseTaxType": "Default Purchase Tax Type",
+                    "taxReportingEnabled": "Enable Tax Reporting",
+                    "taxReturnFrequency": "Tax Return Frequency"
                 },
                 "closeYear": "Close Year",
                 "requestReopen": "Request Reopen",
@@ -2001,7 +2013,8 @@
                 "requestedBy": "Requested By {{name}}",
                 "firstApproval": "First Approval: {{name}}",
                 "firstApprovalAction": "First Approval",
-                "secondApproval": "Second Approval"
+                "secondApproval": "Second Approval",
+                "rejectReopen": "Reject Reopen"
             },
             "costCentres": {
                 "title": "Cost Centres",

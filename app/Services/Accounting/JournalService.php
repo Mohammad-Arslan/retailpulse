@@ -134,7 +134,6 @@ final class JournalService
                 'journal_date' => ($reversalDate ?? now())->toDateString(),
                 'branch_id' => $entry->branch_id,
                 'legal_entity_id' => $entry->legal_entity_id,
-                'fiscal_year_id' => $entry->fiscal_year_id,
                 'description' => $description ?? 'Reversal of '.$entry->journal_number,
                 'source_module' => $entry->source_module,
                 'source_event' => 'journal.reversed',
@@ -194,7 +193,7 @@ final class JournalService
         $parsed = $date instanceof CarbonInterface ? $date : Carbon::parse($date);
 
         return FiscalYear::query()
-            ->where('status', FiscalYearStatus::Open)
+            ->whereIn('status', [FiscalYearStatus::Open, FiscalYearStatus::Reopening])
             ->whereDate('start_date', '<=', $parsed)
             ->whereDate('end_date', '>=', $parsed)
             ->value('id');

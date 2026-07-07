@@ -30,7 +30,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'period_lock_mode',
     'journal_numbering_mode',
     'default_tax_type_id',
+    'default_sales_tax_type_id',
+    'default_purchase_tax_type_id',
+    'tax_reporting_enabled',
+    'tax_return_frequency',
     'accounting_cutover_date',
+    'fiscal_year_reopen_window_hours',
 ])]
 class FinancialSetting extends Model
 {
@@ -43,7 +48,9 @@ class FinancialSetting extends Model
             'manual_journal_approval_limit' => 'decimal:2',
             'backdated_entry_approval_required' => 'boolean',
             'fiscal_year_close_approval_required' => 'boolean',
+            'tax_reporting_enabled' => 'boolean',
             'accounting_cutover_date' => 'date',
+            'fiscal_year_reopen_window_hours' => 'integer',
         ];
     }
 

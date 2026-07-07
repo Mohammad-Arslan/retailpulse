@@ -184,9 +184,104 @@ final class FiscalCloseServiceTest extends TestCase
         $this->assertSame('approved', $request->status);
 
         $fiscalYear->refresh();
-        $this->assertSame(FiscalYearStatus::Open, $fiscalYear->status);
-        $this->assertNull($fiscalYear->closed_at);
+        $this->assertSame(FiscalYearStatus::Reopening, $fiscalYear->status);
+        $this->assertNotNull($fiscalYear->reopen_expires_at);
+        $this->assertNotNull($fiscalYear->closed_at);
         $this->assertNull($entry->fresh()->locked_at);
+    }
+
+    public function test_reopen_allows_posting_until_window_expires(): void
+    {
+        $this->configureFinancialSettings();
+        FinancialSetting::query()->first()?->update(['fiscal_year_reopen_window_hours' => 2]);
+
+        $fiscalYear = $this->createOpenFiscalYear();
+        $this->postSaleJournal($fiscalYear, 100);
+
+        $service = app(FiscalCloseService::class);
+        $service->close($fiscalYear, $this->user->id);
+
+        $requester = User::factory()->create(['is_active' => true]);
+        $firstApprover = User::factory()->create(['is_active' => true]);
+        $secondApprover = User::factory()->create(['is_active' => true]);
+
+        $request = $service->requestReopen($fiscalYear->fresh(), $requester->id, 'Correcting a mispost');
+        $request = $service->approveReopen($request, $firstApprover->id);
+        $request = $service->approveReopen($request, $secondApprover->id);
+
+        $journalService = app(JournalService::class);
+        $entry = $journalService->createDraft(
+            ['journal_date' => '2026-08-01', 'fiscal_year_id' => $fiscalYear->fresh()->id],
+            [
+                ['account_id' => $this->cash->id, 'debit' => 10, 'credit' => 0],
+                ['account_id' => $this->revenue->id, 'debit' => 0, 'credit' => 10],
+            ],
+            $this->user->id,
+        );
+
+        $journalService->post($entry, $this->user->id);
+        $this->assertSame(JournalEntryStatus::Posted, $entry->fresh()->status);
+
+        $this->travel(3)->hours();
+
+        $expiredEntry = $journalService->createDraft(
+            ['journal_date' => '2026-08-02', 'fiscal_year_id' => $fiscalYear->fresh()->id],
+            [
+                ['account_id' => $this->cash->id, 'debit' => 5, 'credit' => 0],
+                ['account_id' => $this->revenue->id, 'debit' => 0, 'credit' => 5],
+            ],
+            $this->user->id,
+        );
+
+        $this->expectException(DomainException::class);
+        $journalService->post($expiredEntry, $this->user->id);
+    }
+
+    public function test_expire_reopened_fiscal_years_relocks_journals(): void
+    {
+        $this->configureFinancialSettings();
+        FinancialSetting::query()->first()?->update(['fiscal_year_reopen_window_hours' => 1]);
+
+        $fiscalYear = $this->createOpenFiscalYear();
+        $entry = $this->postSaleJournal($fiscalYear, 100);
+
+        $service = app(FiscalCloseService::class);
+        $service->close($fiscalYear, $this->user->id);
+
+        $requester = User::factory()->create(['is_active' => true]);
+        $firstApprover = User::factory()->create(['is_active' => true]);
+        $secondApprover = User::factory()->create(['is_active' => true]);
+
+        $request = $service->requestReopen($fiscalYear->fresh(), $requester->id, 'Correcting a mispost');
+        $request = $service->approveReopen($request, $firstApprover->id);
+        $service->approveReopen($request, $secondApprover->id);
+
+        $this->travel(2)->hours();
+
+        $expiredIds = $service->expireReopenedFiscalYears();
+
+        $this->assertContains($fiscalYear->id, $expiredIds);
+        $this->assertSame(FiscalYearStatus::Closed, $fiscalYear->fresh()->status);
+        $this->assertNotNull($entry->fresh()->locked_at);
+    }
+
+    public function test_reject_reopen_marks_request_rejected(): void
+    {
+        $this->configureFinancialSettings();
+        $fiscalYear = $this->createOpenFiscalYear();
+        $this->postSaleJournal($fiscalYear, 100);
+
+        $service = app(FiscalCloseService::class);
+        $service->close($fiscalYear, $this->user->id);
+
+        $requester = User::factory()->create(['is_active' => true]);
+        $rejector = User::factory()->create(['is_active' => true]);
+
+        $request = $service->requestReopen($fiscalYear->fresh(), $requester->id, 'Not needed');
+        $request = $service->rejectReopen($request, $rejector->id);
+
+        $this->assertSame('rejected', $request->status);
+        $this->assertSame(FiscalYearStatus::Closed, $fiscalYear->fresh()->status);
     }
 
     public function test_reopen_rejects_second_approval_from_the_same_user_as_the_first(): void

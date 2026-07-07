@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'closed_by',
     'reopened_at',
     'reopened_by',
+    'reopen_expires_at',
 ])]
 class FiscalYear extends Model
 {
@@ -31,7 +32,18 @@ class FiscalYear extends Model
             'end_date' => 'date',
             'closed_at' => 'datetime',
             'reopened_at' => 'datetime',
+            'reopen_expires_at' => 'datetime',
         ];
+    }
+
+    public function closedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'closed_by');
+    }
+
+    public function reopenedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reopened_by');
     }
 
     public function legalEntity(): BelongsTo

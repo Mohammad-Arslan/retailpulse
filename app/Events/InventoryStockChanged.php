@@ -23,6 +23,7 @@ final class InventoryStockChanged implements ShouldBroadcastNow
         public readonly int $previousOnHand,
         public readonly int $previousReserved,
         public readonly StockMovementReason $reason,
+        public readonly ?int $stockMovementId = null,
     ) {}
 
     public function broadcastWhen(): bool

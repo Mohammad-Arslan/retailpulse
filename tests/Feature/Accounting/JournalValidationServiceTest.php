@@ -115,8 +115,51 @@ final class JournalValidationServiceTest extends TestCase
         ]);
 
         $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('difference: 0.01');
 
         app(JournalValidationService::class)->assertCanPost($entry->fresh());
+    }
+
+    public function test_assert_journal_balanced_accepts_multi_line_net_zero_journal(): void
+    {
+        $entry = $this->createEntry();
+
+        foreach ([40.0, 35.0, 25.0] as $amount) {
+            JournalTransaction::query()->create([
+                'journal_entry_id' => $entry->id,
+                'account_id' => $this->cash->id,
+                'debit' => $amount,
+                'credit' => 0,
+            ]);
+        }
+
+        JournalTransaction::query()->create([
+            'journal_entry_id' => $entry->id,
+            'account_id' => $this->revenue->id,
+            'debit' => 0,
+            'credit' => 60.0,
+        ]);
+
+        JournalTransaction::query()->create([
+            'journal_entry_id' => $entry->id,
+            'account_id' => $this->revenue->id,
+            'debit' => 0,
+            'credit' => 40.0,
+        ]);
+
+        app(JournalValidationService::class)->assertJournalBalanced($entry->fresh());
+
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_assert_journal_balanced_rejects_empty_journal_before_balance_check(): void
+    {
+        $entry = $this->createEntry();
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('has no lines');
+
+        app(JournalValidationService::class)->assertJournalBalanced($entry->fresh());
     }
 
     public function test_assert_can_post_rejects_journal_with_no_lines(): void

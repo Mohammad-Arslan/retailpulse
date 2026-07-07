@@ -8,6 +8,7 @@ use App\Enums\AccountingImportBatchStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'file_name',
@@ -37,5 +38,10 @@ class CoaImportBatch extends Model
     public function approvedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function lines(): HasMany
+    {
+        return $this->hasMany(CoaImportLine::class, 'coa_import_batch_id');
     }
 }

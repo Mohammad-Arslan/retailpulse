@@ -30,8 +30,8 @@ final class FiscalCloseService
     {
         $errors = [];
 
-        if ($fiscalYear->status === FiscalYearStatus::Closed) {
-            $errors[] = 'Fiscal year is already closed.';
+        if (in_array($fiscalYear->status, [FiscalYearStatus::Closed, FiscalYearStatus::Reopening], true)) {
+            $errors[] = 'Fiscal year is already closed or in a reopening window.';
         }
 
         $unposted = JournalEntry::query()
@@ -153,6 +153,10 @@ final class FiscalCloseService
                 throw new DomainException('This reopen request already has dual approval.');
             }
 
+            $settings = $this->settings->get();
+            $windowHours = max(1, (int) ($settings->fiscal_year_reopen_window_hours ?? 48));
+            $expiresAt = now()->addHours($windowHours);
+
             $request->update([
                 'second_approved_by' => $userId,
                 'status' => 'approved',
@@ -160,11 +164,10 @@ final class FiscalCloseService
 
             $fiscalYear = $request->fiscalYear;
             $fiscalYear->update([
-                'status' => FiscalYearStatus::Open,
+                'status' => FiscalYearStatus::Reopening,
                 'reopened_at' => now(),
                 'reopened_by' => $userId,
-                'closed_at' => null,
-                'closed_by' => null,
+                'reopen_expires_at' => $expiresAt,
             ]);
 
             JournalEntry::query()
@@ -174,6 +177,52 @@ final class FiscalCloseService
 
             return $request->fresh(['fiscalYear']);
         });
+    }
+
+    public function rejectReopen(FiscalYearReopenRequest $request, int $userId): FiscalYearReopenRequest
+    {
+        if ($request->status !== 'pending') {
+            throw new DomainException('This reopen request is no longer pending.');
+        }
+
+        if ($request->requested_by === $userId) {
+            throw new DomainException('Requester cannot reject their own reopen request.');
+        }
+
+        $request->update(['status' => 'rejected']);
+
+        return $request->fresh(['fiscalYear']);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function expireReopenedFiscalYears(): array
+    {
+        $expiredIds = FiscalYear::query()
+            ->where('status', FiscalYearStatus::Reopening)
+            ->whereNotNull('reopen_expires_at')
+            ->where('reopen_expires_at', '<', now())
+            ->pluck('id')
+            ->all();
+
+        foreach ($expiredIds as $fiscalYearId) {
+            DB::transaction(function () use ($fiscalYearId) {
+                $fiscalYear = FiscalYear::query()->findOrFail($fiscalYearId);
+
+                $fiscalYear->update([
+                    'status' => FiscalYearStatus::Closed,
+                    'reopen_expires_at' => null,
+                ]);
+
+                JournalEntry::query()
+                    ->where('fiscal_year_id', $fiscalYear->id)
+                    ->whereNull('locked_at')
+                    ->update(['locked_at' => now()]);
+            });
+        }
+
+        return $expiredIds;
     }
 
     private function calculateNetIncome(FiscalYear $fiscalYear): float

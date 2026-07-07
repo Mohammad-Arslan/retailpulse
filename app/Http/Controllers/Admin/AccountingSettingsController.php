@@ -109,4 +109,17 @@ final class AccountingSettingsController extends Controller
 
         return back()->with('success', __('Reopen approval recorded.'));
     }
+
+    public function rejectReopen(Request $request, FiscalYearReopenRequestModel $fiscalYearReopenRequest): RedirectResponse
+    {
+        abort_unless($request->user()?->can('accounting.reopen-fiscal-year'), 403);
+
+        try {
+            $this->fiscalCloseService->rejectReopen($fiscalYearReopenRequest, (int) $request->user()->id);
+        } catch (DomainException $e) {
+            return back()->withErrors(['fiscal_year' => $e->getMessage()]);
+        }
+
+        return back()->with('success', __('Reopen request rejected.'));
+    }
 }
