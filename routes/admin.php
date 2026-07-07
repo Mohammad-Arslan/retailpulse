@@ -2,26 +2,42 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\AccountingEventController;
+use App\Http\Controllers\Admin\AccountingReportController;
+use App\Http\Controllers\Admin\AccountingSettingsController;
+use App\Http\Controllers\Admin\AccountMappingController;
 use App\Http\Controllers\Admin\ArAgingController;
+use App\Http\Controllers\Admin\BankAccountController;
+use App\Http\Controllers\Admin\BankReconciliationController;
 use App\Http\Controllers\Admin\BranchContextController;
 use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CatalogBulkController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ChartOfAccountController;
+use App\Http\Controllers\Admin\ChequeController;
+use App\Http\Controllers\Admin\CostCentreController;
 use App\Http\Controllers\Admin\CountScheduleRuleController;
 use App\Http\Controllers\Admin\CountSessionController;
+use App\Http\Controllers\Admin\CreditNoteController;
+use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\CustomerGroupController;
 use App\Http\Controllers\Admin\CustomerWalletController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\FixedAssetController;
 use App\Http\Controllers\Admin\GoodsReceivingNoteController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\JournalEntryController;
+use App\Http\Controllers\Admin\LandedCostController;
 use App\Http\Controllers\Admin\LoyaltyProgramConfigController;
 use App\Http\Controllers\Admin\LoyaltyProgramController;
 use App\Http\Controllers\Admin\LoyaltyReportController;
 use App\Http\Controllers\Admin\LoyaltyTransactionController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\PettyCashController;
 use App\Http\Controllers\Admin\PoMatchController;
+use App\Http\Controllers\Admin\PostingRuleController;
 use App\Http\Controllers\Admin\ProcurementReportController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
@@ -36,6 +52,7 @@ use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\SupplierInvoiceController;
 use App\Http\Controllers\Admin\SupplierPaymentController;
 use App\Http\Controllers\Admin\SupplierPriceListController;
+use App\Http\Controllers\Admin\TaxTypeController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WarehouseBinController;
@@ -279,6 +296,164 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::get('settings/{group}', [SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('settings/{group}', [SettingsController::class, 'update'])->name('settings.update');
+
+        Route::prefix('accounting')->name('accounting.')->group(function () {
+            Route::get('chart-of-accounts', [ChartOfAccountController::class, 'index'])
+                ->name('chart-of-accounts.index');
+            Route::post('chart-of-accounts', [ChartOfAccountController::class, 'store'])
+                ->name('chart-of-accounts.store');
+            Route::put('chart-of-accounts/{chart_of_account}', [ChartOfAccountController::class, 'update'])
+                ->name('chart-of-accounts.update');
+
+            Route::get('account-mappings', [AccountMappingController::class, 'index'])
+                ->name('account-mappings.index');
+            Route::post('account-mappings', [AccountMappingController::class, 'store'])
+                ->name('account-mappings.store');
+            Route::put('account-mappings/{account_mapping}', [AccountMappingController::class, 'update'])
+                ->name('account-mappings.update');
+            Route::delete('account-mappings/{account_mapping}', [AccountMappingController::class, 'destroy'])
+                ->name('account-mappings.destroy');
+
+            Route::get('posting-rules', [PostingRuleController::class, 'index'])
+                ->name('posting-rules.index');
+            Route::get('posting-rules/{posting_rule_set}/edit', [PostingRuleController::class, 'edit'])
+                ->name('posting-rules.edit');
+            Route::put('posting-rules/{posting_rule_set}', [PostingRuleController::class, 'update'])
+                ->name('posting-rules.update');
+
+            Route::get('journal-entries', [JournalEntryController::class, 'index'])
+                ->name('journal-entries.index');
+            Route::get('journal-entries/create', [JournalEntryController::class, 'create'])
+                ->name('journal-entries.create');
+            Route::post('journal-entries', [JournalEntryController::class, 'store'])
+                ->name('journal-entries.store');
+            Route::get('journal-entries/{journal_entry}', [JournalEntryController::class, 'show'])
+                ->name('journal-entries.show');
+            Route::post('journal-entries/{journal_entry}/approve', [JournalEntryController::class, 'approve'])
+                ->name('journal-entries.approve');
+            Route::post('journal-entries/{journal_entry}/post', [JournalEntryController::class, 'post'])
+                ->name('journal-entries.post');
+            Route::post('journal-entries/{journal_entry}/reverse', [JournalEntryController::class, 'reverse'])
+                ->name('journal-entries.reverse');
+
+            Route::get('settings', [AccountingSettingsController::class, 'index'])
+                ->name('settings.index');
+            Route::put('settings', [AccountingSettingsController::class, 'update'])
+                ->name('settings.update');
+            Route::post('fiscal-years', [AccountingSettingsController::class, 'storeFiscalYear'])
+                ->name('fiscal-years.store');
+            Route::put('fiscal-years/{fiscal_year}', [AccountingSettingsController::class, 'updateFiscalYear'])
+                ->name('fiscal-years.update');
+            Route::post('fiscal-years/{fiscal_year}/close', [AccountingSettingsController::class, 'closeFiscalYear'])
+                ->name('fiscal-years.close');
+            Route::post('fiscal-years/{fiscal_year}/reopen-request', [AccountingSettingsController::class, 'requestReopen'])
+                ->name('fiscal-years.reopen-request');
+            Route::post('fiscal-year-reopen-requests/{fiscal_year_reopen_request}/approve', [AccountingSettingsController::class, 'approveReopen'])
+                ->name('fiscal-year-reopen-requests.approve');
+
+            Route::get('cost-centres', [CostCentreController::class, 'index'])
+                ->name('cost-centres.index');
+            Route::post('cost-centres', [CostCentreController::class, 'store'])
+                ->name('cost-centres.store');
+            Route::put('cost-centres/{cost_centre}', [CostCentreController::class, 'update'])
+                ->name('cost-centres.update');
+            Route::delete('cost-centres/{cost_centre}', [CostCentreController::class, 'destroy'])
+                ->name('cost-centres.destroy');
+
+            Route::get('reports', [AccountingReportController::class, 'index'])
+                ->name('reports.index');
+            Route::get('reports/trial-balance', [AccountingReportController::class, 'trialBalance'])
+                ->name('reports.trial-balance');
+            Route::get('reports/profit-and-loss', [AccountingReportController::class, 'profitAndLoss'])
+                ->name('reports.profit-and-loss');
+            Route::get('reports/balance-sheet', [AccountingReportController::class, 'balanceSheet'])
+                ->name('reports.balance-sheet');
+            Route::get('reports/general-ledger', [AccountingReportController::class, 'generalLedger'])
+                ->name('reports.general-ledger');
+            Route::get('reports/cost-centre-pl', [AccountingReportController::class, 'costCentrePl'])
+                ->name('reports.cost-centre-pl');
+            Route::get('reports/cash-flow', [AccountingReportController::class, 'cashFlow'])
+                ->name('reports.cash-flow');
+            Route::get('reports/ar-aging', [AccountingReportController::class, 'arAging'])
+                ->name('reports.ar-aging');
+            Route::get('reports/ap-aging', [AccountingReportController::class, 'apAging'])
+                ->name('reports.ap-aging');
+            Route::get('reports/bank-book', [AccountingReportController::class, 'bankBook'])
+                ->name('reports.bank-book');
+            Route::get('reports/inventory-valuation', [AccountingReportController::class, 'inventoryValuation'])
+                ->name('reports.inventory-valuation');
+            Route::get('reports/asset-register', [AccountingReportController::class, 'assetRegister'])
+                ->name('reports.asset-register');
+            Route::get('reports/fx-revaluation', [AccountingReportController::class, 'fxRevaluation'])
+                ->name('reports.fx-revaluation');
+            Route::get('reports/petty-cash', [AccountingReportController::class, 'pettyCash'])
+                ->name('reports.petty-cash');
+            Route::get('reports/cheque-status', [AccountingReportController::class, 'chequeStatus'])
+                ->name('reports.cheque-status');
+            Route::get('reports/audit-trail', [AccountingReportController::class, 'auditTrail'])
+                ->name('reports.audit-trail');
+            Route::get('reports/unposted-journals', [AccountingReportController::class, 'unpostedJournals'])
+                ->name('reports.unposted-journals');
+            Route::get('reports/journal-register', [AccountingReportController::class, 'journalRegister'])
+                ->name('reports.journal-register');
+            Route::get('reports/{reportKey}/export', [AccountingReportController::class, 'export'])
+                ->name('reports.export');
+
+            Route::get('events', [AccountingEventController::class, 'index'])
+                ->name('events.index');
+            Route::post('events/{accounting_event}/retry', [AccountingEventController::class, 'retry'])
+                ->name('events.retry');
+
+            Route::get('credit-notes', [CreditNoteController::class, 'index'])
+                ->name('credit-notes.index');
+            Route::get('credit-notes/create', [CreditNoteController::class, 'create'])
+                ->name('credit-notes.create');
+            Route::post('credit-notes', [CreditNoteController::class, 'store'])
+                ->name('credit-notes.store');
+
+            Route::get('tax-types', [TaxTypeController::class, 'index'])
+                ->name('tax-types.index');
+            Route::post('tax-types', [TaxTypeController::class, 'store'])
+                ->name('tax-types.store');
+
+            Route::get('bank-accounts', [BankAccountController::class, 'index'])
+                ->name('bank-accounts.index');
+            Route::post('bank-accounts', [BankAccountController::class, 'store'])
+                ->name('bank-accounts.store');
+
+            Route::get('reconciliation', [BankReconciliationController::class, 'index'])
+                ->name('reconciliation.index');
+            Route::post('reconciliation/bank-accounts/{bank_account}/import', [BankReconciliationController::class, 'import'])
+                ->name('reconciliation.import');
+            Route::post('reconciliation/lines/{bank_statement_line}/match', [BankReconciliationController::class, 'match'])
+                ->name('reconciliation.match');
+
+            Route::get('currencies', [CurrencyController::class, 'index'])
+                ->name('currencies.index');
+            Route::post('currencies', [CurrencyController::class, 'store'])
+                ->name('currencies.store');
+            Route::post('currencies/rates', [CurrencyController::class, 'storeRate'])
+                ->name('currencies.rates.store');
+
+            Route::get('petty-cash', [PettyCashController::class, 'index'])
+                ->name('petty-cash.index');
+            Route::post('petty-cash/registers', [PettyCashController::class, 'storeRegister'])
+                ->name('petty-cash.registers.store');
+
+            Route::get('cheques', [ChequeController::class, 'index'])
+                ->name('cheques.index');
+            Route::post('cheques', [ChequeController::class, 'store'])
+                ->name('cheques.store');
+            Route::patch('cheques/{cheque}/status', [ChequeController::class, 'updateStatus'])
+                ->name('cheques.status.update');
+
+            Route::get('fixed-assets', [FixedAssetController::class, 'index'])
+                ->name('fixed-assets.index');
+            Route::post('fixed-assets', [FixedAssetController::class, 'store'])
+                ->name('fixed-assets.store');
+            Route::post('fixed-assets/categories', [FixedAssetController::class, 'storeCategory'])
+                ->name('fixed-assets.categories.store');
+        });
 
         $registerImportExport = require __DIR__.'/import-export.php';
         $registerImportExport('import-export.');

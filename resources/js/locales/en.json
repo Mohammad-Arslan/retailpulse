@@ -36,11 +36,29 @@
         "countSchedules": "Count Schedules",
         "overview": "Overview",
         "organization": "Organization",
+        "accountingSection": "Accounting",
+        "chartOfAccounts": "Chart of Accounts",
+        "accountMappings": "Account Mappings",
+        "postingRules": "Posting Rules",
+        "journalEntries": "Journal Entries",
+        "accountingSettings": "Financial Settings",
+        "costCentres": "Cost Centres",
+        "accountingReports": "Financial Reports",
+        "accountingEvents": "Accounting Events",
+        "creditNotes": "Credit Notes",
+        "taxTypes": "Tax Types",
+        "bankAccounts": "Bank Accounts",
+        "bankReconciliation": "Bank Reconciliation",
+        "currencies": "Currencies",
+        "pettyCash": "Petty Cash",
+        "cheques": "Cheques",
+        "fixedAssets": "Fixed Assets",
         "admin": "Admin",
         "settings": "Settings"
     },
     "common": {
         "search": "Search",
+        "apply": "Apply",
         "searchPlaceholder": "Search by name or email...",
         "addUser": "Add User",
         "addRole": "Add Role",
@@ -104,7 +122,18 @@
         "back": "Back",
         "clear": "Clear",
         "download": "Download",
-        "status": "Status"
+        "status": "Status",
+        "customer": "Customer",
+        "amount": "Amount",
+        "date": "Date",
+        "name": "Name",
+        "code": "Code",
+        "currency": "Currency",
+        "reference": "Reference",
+        "description": "Description",
+        "type": "Type",
+        "number": "Number",
+        "category": "Category"
     },
     "bulk": {
         "selectionBar": "Bulk actions",
@@ -1079,8 +1108,9 @@
             },
             "actions": {
                 "add": "Add",
-                "save": "Save",
-                "cancel": "Cancel",
+        "save": "Save",
+        "submit": "Submit",
+        "cancel": "Cancel",
                 "delete": "Delete",
                 "edit": "Edit",
                 "activate": "Activate",
@@ -1737,6 +1767,577 @@
             "back": "All settings",
             "save": "Save settings",
             "saving": "Saving…"
+        },
+        "accounting": {
+            "chartOfAccounts": {
+                "title": "Chart of Accounts",
+                "description": "Manage GL account hierarchy, types, and posting flags.",
+                "empty": "No accounts found.",
+                "searchPlaceholder": "Search code or name…",
+                "createTitle": "New Account",
+                "editTitle": "Edit {{code}}",
+                "formDescription": "Configure account code, type, parent, and posting behaviour.",
+                "createSubmit": "Save Account",
+                "updateSubmit": "Update Account",
+                "noParent": "No Parent",
+                "allTypes": "All Types",
+                "allBranches": "All Branches",
+                "columns": {
+                    "code": "Code",
+                    "type": "Type",
+                    "group": "Group",
+                    "postable": "Postable"
+                },
+                "fields": {
+                    "code": "Code",
+                    "name": "Name",
+                    "type": "Type",
+                    "parent": "Parent Account",
+                    "currency": "Currency",
+                    "isGroup": "Group Account",
+                    "isPostable": "Allow Posting"
+                },
+                "types": {
+                    "asset": "Asset",
+                    "liability": "Liability",
+                    "equity": "Equity",
+                    "revenue": "Revenue",
+                    "expense": "Expense"
+                }
+            },
+            "accountMappings": {
+                "title": "Account Mappings",
+                "description": "Resolve operational keys to GL accounts by branch and priority.",
+                "empty": "No mappings found.",
+                "searchPlaceholder": "Search mapping key or account…",
+                "createTitle": "New Mapping",
+                "editTitle": "Edit Mapping",
+                "allKeys": "All Keys",
+                "selectKey": "Select Mapping Key…",
+                "selectAccount": "Select Account…",
+                "columns": {
+                    "key": "Mapping Key",
+                    "account": "Account",
+                    "priority": "Priority"
+                },
+                "fields": {
+                    "key": "Mapping Key",
+                    "account": "GL Account",
+                    "priority": "Priority"
+                },
+                "keys": {
+                    "sales_revenue": "Sales Revenue",
+                    "cash_on_hand": "Cash on Hand",
+                    "bank_account": "Bank Account",
+                    "accounts_receivable": "Accounts Receivable",
+                    "accounts_payable": "Accounts Payable",
+                    "inventory_asset": "Inventory Asset",
+                    "cogs": "Cost of Goods Sold",
+                    "output_tax": "Output Tax",
+                    "input_tax": "Input Tax",
+                    "tax_payable": "Tax Payable",
+                    "retained_earnings": "Retained Earnings",
+                    "opening_balance_equity": "Opening Balance Equity",
+                    "suspense_account": "Suspense Account",
+                    "rounding_difference": "Rounding Difference"
+                }
+            },
+            "postingRules": {
+                "title": "Posting Rules",
+                "description": "Configure auto-posting rule sets and debit/credit lines per event.",
+                "empty": "No posting rule sets found.",
+                "searchPlaceholder": "Search code, name, or event…",
+                "createTitle": "New Rule Set",
+                "editTitle": "Edit {{code}}",
+                "updateSubmit": "Save Rule Set",
+                "linesTitle": "Posting Lines",
+                "addLine": "Add Line",
+                "columns": {
+                    "code": "Code",
+                    "eventType": "Event Type",
+                    "lines": "Lines",
+                    "priority": "Priority",
+                    "effectiveFrom": "Effective From"
+                },
+                "fields": {
+                    "name": "Name",
+                    "eventType": "Event Type",
+                    "priority": "Priority",
+                    "effectiveFrom": "Effective From",
+                    "effectiveTo": "Effective To"
+                },
+                "lineFields": {
+                    "side": "Side",
+                    "resolution": "Account Resolution",
+                    "account": "Fixed Account",
+                    "mappingKey": "Mapping Key",
+                    "amountSource": "Amount Source"
+                },
+                "entrySides": {
+                    "debit": "Debit",
+                    "credit": "Credit"
+                },
+                "resolutionTypes": {
+                    "fixed_account": "Fixed Account",
+                    "account_mapping": "Account Mapping",
+                    "customer_receivable_account": "Customer Receivable Account",
+                    "supplier_payable_account": "Supplier Payable Account",
+                    "payment_method_account": "Payment Method Account",
+                    "bank_account": "Bank Account",
+                    "warehouse_inventory_account": "Warehouse Inventory Account",
+                    "product_category_account": "Product Category Account",
+                    "tax_account": "Tax Account",
+                    "configurable_mapping": "Configurable Mapping"
+                },
+                "amountSources": {
+                    "gross_amount": "Gross Amount",
+                    "net_amount": "Net Amount",
+                    "tax_amount": "Tax Amount",
+                    "discount_amount": "Discount Amount",
+                    "shipping_amount": "Shipping Amount",
+                    "inventory_cost": "Inventory Cost",
+                    "landed_cost": "Landed Cost",
+                    "settlement_amount": "Settlement Amount",
+                    "exchange_difference": "Exchange Difference",
+                    "depreciation_amount": "Depreciation Amount",
+                    "custom_formula": "Custom Formula"
+                }
+            },
+            "journalEntries": {
+                "title": "Journal Entries",
+                "description": "Review, create, post, and reverse general ledger journals.",
+                "empty": "No journal entries found.",
+                "searchPlaceholder": "Search number, reference, or description…",
+                "createTitle": "Manual Journal Entry",
+                "createDescription": "Create a balanced manual journal with debit and credit lines.",
+                "saveDraft": "Save Draft",
+                "post": "Post Journal",
+                "approve": "Approve Journal",
+                "reverse": "Reverse Journal",
+                "confirmPost": "Post this journal entry? Posted journals cannot be edited.",
+                "confirmReverse": "Create a reversal journal for this entry?",
+                "linesTitle": "Journal Lines",
+                "addLine": "Add Line",
+                "totals": "Totals",
+                "balanced": "Debits and credits are balanced.",
+                "unbalanced": "Out of balance by {{difference}}.",
+                "selectAccount": "Select Account…",
+                "sourceEvent": "Source Event",
+                "reversalOf": "Reversal Of",
+                "postedAt": "Posted {{date}} by {{user}}",
+                "filters": {
+                    "dateFrom": "From",
+                    "dateTo": "To"
+                },
+                "columns": {
+                    "number": "Journal No.",
+                    "description": "Description",
+                    "debit": "Debit",
+                    "credit": "Credit"
+                },
+                "fields": {
+                    "journalDate": "Journal Date",
+                    "reference": "Reference",
+                    "description": "Description"
+                },
+                "lineFields": {
+                    "account": "Account",
+                    "debit": "Debit",
+                    "credit": "Credit",
+                    "narration": "Narration"
+                },
+                "statuses": {
+                    "draft": "Draft",
+                    "pending_approval": "Pending Approval",
+                    "approved": "Approved",
+                    "posted": "Posted",
+                    "reversed": "Reversed"
+                }
+            },
+            "settings": {
+                "title": "Financial Settings",
+                "description": "Configure fiscal calendar, default GL accounts, and journal policies.",
+                "generalTitle": "General",
+                "accountsTitle": "Default Accounts",
+                "journalTitle": "Journal Policies",
+                "fiscalYearsTitle": "Fiscal Years",
+                "fiscalYearsEmpty": "No fiscal years configured.",
+                "fiscalYearColumns": {
+                    "name": "Name",
+                    "period": "Period",
+                    "closedAt": "Closed At"
+                },
+                "fiscalYearStatuses": {
+                    "open": "Open",
+                    "closing": "Closing",
+                    "closed": "Closed"
+                },
+                "numbering": {
+                    "branchFiscal": "Branch + Fiscal Year",
+                    "global": "Global Sequence"
+                },
+                "fields": {
+                    "functionalCurrency": "Functional Currency",
+                    "fiscalYearStartMonth": "Fiscal Year Start Month",
+                    "cutoverDate": "Accounting Cutover Date",
+                    "journalNumbering": "Journal Numbering",
+                    "retainedEarnings": "Retained Earnings Account",
+                    "openingBalanceEquity": "Opening Balance Equity Account",
+                    "suspense": "Suspense Account",
+                    "rounding": "Rounding Account",
+                    "fxGain": "FX Gain Account",
+                    "fxLoss": "FX Loss Account",
+                    "allowManualPosting": "Allow Manual Journal Posting",
+                    "approvalLimit": "Manual Journal Approval Limit"
+                },
+                "closeYear": "Close Year",
+                "requestReopen": "Request Reopen",
+                "requestReopenTitle": "Reopen {{name}}",
+                "reopenReasonLabel": "Reason",
+                "reopenReasonPlaceholder": "Reason for reopening this fiscal year…",
+                "confirmClose": "Close fiscal year \"{{name}}\"? This will lock journals and post retained earnings.",
+                "reopenRequestsTitle": "Pending Reopen Requests",
+                "requestedBy": "Requested By {{name}}",
+                "firstApproval": "First Approval: {{name}}",
+                "firstApprovalAction": "First Approval",
+                "secondApproval": "Second Approval"
+            },
+            "costCentres": {
+                "title": "Cost Centres",
+                "description": "Manage cost centre hierarchy for departmental P&L reporting.",
+                "empty": "No cost centres found.",
+                "createTitle": "New Cost Centre",
+                "editTitle": "Edit {{code}}",
+                "confirmDelete": "Delete this cost centre?",
+                "noParent": "No Parent",
+                "columns": {
+                    "code": "Code",
+                    "name": "Name",
+                    "branch": "Branch"
+                },
+                "fields": {
+                    "code": "Code",
+                    "name": "Name",
+                    "parent": "Parent Centre",
+                    "branch": "Branch"
+                }
+            },
+            "reports": {
+                "title": "Financial Reports",
+                "description": "Trial Balance, P&L, Balance Sheet, and Ledger Reports.",
+                "comingSoon": "Coming Soon",
+                "backToReports": "Back To Reports",
+                "empty": "No Data For The Selected Filters.",
+                "selectAccount": "Select Account…",
+                "selectAccountPrompt": "Select An Account And Date Range To View The Ledger.",
+                "openingBalance": "Opening Balance",
+                "closingBalance": "Closing Balance",
+                "columns": {
+                    "openingDebit": "Opening Debit",
+                    "openingCredit": "Opening Credit",
+                    "periodDebit": "Period Debit",
+                    "periodCredit": "Period Credit",
+                    "closingDebit": "Closing Debit",
+                    "closingCredit": "Closing Credit",
+                    "balance": "Balance",
+                    "amount": "Amount"
+                },
+                "trialBalance": {
+                    "title": "Trial Balance",
+                    "description": "Opening, Movement, and Closing Balances By Account."
+                },
+                "profitAndLoss": {
+                    "title": "Profit and Loss",
+                    "description": "Revenue and Expense Summary For A Date Range.",
+                    "revenueSection": "Revenue",
+                    "expenseSection": "Expenses",
+                    "totalRevenue": "Total Revenue",
+                    "totalExpenses": "Total Expenses",
+                    "netIncome": "Net Income"
+                },
+                "balanceSheet": {
+                    "title": "Balance Sheet",
+                    "description": "Assets, Liabilities, and Equity As Of A Date.",
+                    "asOfDate": "As Of Date",
+                    "assetsSection": "Assets",
+                    "liabilitiesSection": "Liabilities",
+                    "equitySection": "Equity",
+                    "totalAssets": "Total Assets",
+                    "totalLiabilitiesAndEquity": "Total Liabilities and Equity"
+                },
+                "generalLedger": {
+                    "title": "General Ledger",
+                    "description": "Posted Journal Lines For A Selected Account."
+                },
+                "journalRegister": {
+                    "title": "Journal Register",
+                    "description": "Posted Journals With Debit and Credit Totals."
+                },
+                "cards": {
+                    "trialBalance": {
+                        "title": "Trial Balance",
+                        "description": "Opening, movement, and closing balances by account."
+                    },
+                    "profitAndLoss": {
+                        "title": "Profit and Loss",
+                        "description": "Revenue and expense summary for a date range."
+                    },
+                    "balanceSheet": {
+                        "title": "Balance Sheet",
+                        "description": "Assets, liabilities, and equity as of a date."
+                    },
+                    "generalLedger": {
+                        "title": "General Ledger",
+                        "description": "All Posted Journal Lines By Account."
+                    },
+                    "journalRegister": {
+                        "title": "Journal Register",
+                        "description": "Posted Journals With Filters and Totals."
+                    },
+                    "accountLedger": {
+                        "title": "Account Ledger",
+                        "description": "Drill-down ledger for a single account."
+                    },
+                    "cashFlow": {
+                        "title": "Cash Flow Statement",
+                        "description": "Operating, investing, and financing cash flows."
+                    },
+                    "costCentrePl": {
+                        "title": "Cost Centre P&L",
+                        "description": "Revenue and expense by cost centre."
+                    },
+                    "arAging": {
+                        "title": "AR Aging",
+                        "description": "Customer receivable aging buckets."
+                    },
+                    "apAging": {
+                        "title": "AP Aging",
+                        "description": "Supplier payable aging buckets."
+                    },
+                    "bankBook": {
+                        "title": "Bank Book",
+                        "description": "Bank account journal movements."
+                    },
+                    "inventoryValuation": {
+                        "title": "Inventory Valuation",
+                        "description": "Stock on hand valued by cost layers."
+                    },
+                    "assetRegister": {
+                        "title": "Asset Register",
+                        "description": "Fixed asset register and net book value."
+                    },
+                    "fxRevaluation": {
+                        "title": "FX Revaluation",
+                        "description": "Foreign currency journal lines and rates."
+                    },
+                    "pettyCash": {
+                        "title": "Petty Cash",
+                        "description": "Petty cash register balances and vouchers."
+                    },
+                    "chequeStatus": {
+                        "title": "Cheque Status",
+                        "description": "Received and issued cheque status report."
+                    },
+                    "auditTrail": {
+                        "title": "Audit Trail",
+                        "description": "System audit log for accounting actions."
+                    },
+                    "unpostedJournals": {
+                        "title": "Unposted Journals",
+                        "description": "Draft and pending journals not yet posted."
+                    }
+                }
+            },
+            "events": {
+                "title": "Accounting Events",
+                "description": "Failed and pending auto-posting events with retry support.",
+                "empty": "No accounting events found.",
+                "searchPlaceholder": "Search event type or source…",
+                "retry": "Retry",
+                "confirmRetry": "Retry processing this accounting event?",
+                "columns": {
+                    "eventType": "Event Type",
+                    "retries": "Retries",
+                    "journal": "Journal",
+                    "error": "Error",
+                    "processedAt": "Processed At"
+                },
+                "statuses": {
+                    "pending": "Pending",
+                    "processing": "Processing",
+                    "completed": "Completed",
+                    "failed": "Failed",
+                    "skipped": "Skipped"
+                }
+            },
+            "creditNotes": {
+                "title": "Credit Notes",
+                "description": "Issue customer credit notes that reduce accounts receivable.",
+                "empty": "No credit notes found.",
+                "createTitle": "New Credit Note",
+                "createDescription": "Create a credit note against a customer's outstanding balance.",
+                "createSubmit": "Issue Credit Note",
+                "selectCustomer": "Select Customer…",
+                "noTax": "No Tax",
+                "columns": {
+                    "number": "Credit Note No.",
+                    "tax": "Tax",
+                    "reason": "Reason"
+                },
+                "fields": {
+                    "taxType": "Tax Type",
+                    "reason": "Reason"
+                }
+            },
+            "taxTypes": {
+                "title": "Tax Types",
+                "description": "Configure tax rates, directions, and GL account mappings.",
+                "empty": "No tax types configured.",
+                "createTitle": "New Tax Type",
+                "createSubmit": "Save Tax Type",
+                "columns": {
+                    "rate": "Rate",
+                    "direction": "Direction",
+                    "method": "Calculation Method"
+                },
+                "fields": {
+                    "code": "Tax Code",
+                    "rate": "Rate (%)",
+                    "direction": "Tax Direction",
+                    "method": "Calculation Method",
+                    "effectiveFrom": "Effective From"
+                },
+                "directions": {
+                    "sales": "Sales",
+                    "purchase": "Purchase",
+                    "both": "Both"
+                },
+                "methods": {
+                    "inclusive": "Inclusive",
+                    "exclusive": "Exclusive"
+                }
+            },
+            "bankAccounts": {
+                "title": "Bank Accounts",
+                "description": "Manage bank accounts linked to GL posting accounts.",
+                "empty": "No bank accounts configured.",
+                "createTitle": "New Bank Account",
+                "createSubmit": "Save Bank Account",
+                "selectGlAccount": "Select GL Account…",
+                "columns": {
+                    "bank": "Bank",
+                    "glAccount": "GL Account"
+                },
+                "fields": {
+                    "bankName": "Bank Name",
+                    "accountTitle": "Account Title",
+                    "accountNumber": "Account Number (Masked)"
+                }
+            },
+            "reconciliation": {
+                "title": "Bank Reconciliation",
+                "description": "Import statement lines and match them to journal transactions.",
+                "selectBankAccount": "Select Bank Account…",
+                "emptyLines": "No statement lines for this account.",
+                "importTitle": "Import Statement",
+                "importSubmit": "Import CSV",
+                "suggestionsTitle": "Suggested Matches",
+                "match": "Match"
+            },
+            "currencies": {
+                "title": "Currencies",
+                "description": "Manage currencies and exchange rates. Functional currency: {{currency}}.",
+                "empty": "No currencies configured.",
+                "emptyRates": "No exchange rates recorded.",
+                "createTitle": "New Currency",
+                "createSubmit": "Save Currency",
+                "addRateTitle": "Add Exchange Rate",
+                "addRateSubmit": "Save Rate",
+                "columns": {
+                    "code": "Code",
+                    "symbol": "Symbol",
+                    "rateType": "Rate Type",
+                    "rate": "Rate"
+                },
+                "fields": {
+                    "code": "Currency Code",
+                    "symbol": "Symbol",
+                    "rate": "Exchange Rate"
+                },
+                "selectCurrency": "Select Currency…",
+                "rateTypes": {
+                    "spot": "Spot",
+                    "average": "Average",
+                    "closing": "Closing",
+                    "custom": "Custom"
+                }
+            },
+            "pettyCash": {
+                "title": "Petty Cash",
+                "description": "Petty cash registers and recent vouchers.",
+                "emptyRegisters": "No petty cash registers.",
+                "emptyVouchers": "No vouchers recorded.",
+                "createTitle": "New Register",
+                "createSubmit": "Save Register",
+                "selectGlAccount": "Select GL Account…",
+                "columns": {
+                    "balance": "Current Balance",
+                    "mode": "Register Mode",
+                    "register": "Register"
+                },
+                "fields": {
+                    "name": "Register Name",
+                    "openingBalance": "Opening Balance"
+                },
+                "modes": {
+                    "imprest": "Imprest",
+                    "running_balance": "Running Balance"
+                }
+            },
+            "cheques": {
+                "title": "Cheque Register",
+                "description": "Track received and issued cheques through clearance.",
+                "empty": "No cheques recorded.",
+                "createTitle": "Record Cheque",
+                "createSubmit": "Save Cheque",
+                "selectCustomer": "Select Customer…",
+                "columns": {
+                    "chequeNo": "Cheque No.",
+                    "bank": "Bank",
+                    "dueDate": "Due Date"
+                },
+                "fields": {
+                    "type": "Cheque Type",
+                    "chequeNo": "Cheque Number",
+                    "bank": "Bank",
+                    "dueDate": "Due Date"
+                },
+                "types": {
+                    "issued": "Issued",
+                    "received": "Received"
+                }
+            },
+            "fixedAssets": {
+                "title": "Fixed Assets",
+                "description": "Asset register with acquisition cost and net book value.",
+                "empty": "No fixed assets recorded.",
+                "createTitle": "New Fixed Asset",
+                "createSubmit": "Save Asset",
+                "selectCategory": "Select Category…",
+                "columns": {
+                    "code": "Asset Code",
+                    "acquisitionCost": "Acquisition Cost",
+                    "netBookValue": "Net Book Value"
+                },
+                "fields": {
+                    "assetCode": "Asset Code",
+                    "acquisitionCost": "Acquisition Cost",
+                    "acquisitionDate": "Acquisition Date",
+                    "usefulLifeMonths": "Useful Life (Months)",
+                    "salvageValue": "Salvage Value",
+                    "location": "Location"
+                }
+            }
         }
     },
     "auth": {
@@ -1786,7 +2387,23 @@
         "bins": "Bins",
         "adjust": "Adjust Stock",
         "receive": "Receive Stock",
-        "settings": "Settings"
+        "settings": "Settings",
+        "chartOfAccounts": "Chart of Accounts",
+        "accountMappings": "Account Mappings",
+        "postingRules": "Posting Rules",
+        "journalEntries": "Journal Entries",
+        "costCentres": "Cost Centres",
+        "accountingSettings": "Accounting Settings",
+        "accountingReports": "Financial Reports",
+        "accountingEvents": "Accounting Events",
+        "creditNotes": "Credit Notes",
+        "taxTypes": "Tax Types",
+        "bankAccounts": "Bank Accounts",
+        "bankReconciliation": "Bank Reconciliation",
+        "currencies": "Currencies",
+        "pettyCash": "Petty Cash",
+        "cheques": "Cheques",
+        "fixedAssets": "Fixed Assets"
     },
     "checkout": {
         "title": "Checkout",

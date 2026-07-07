@@ -11,6 +11,35 @@ use Illuminate\Database\Seeder;
 final class RoleSeeder extends Seeder
 {
     /**
+     * @var list<string>
+     */
+    private const ACCOUNTING_PERMISSIONS = [
+        'accounting.view',
+        'accounting.manage-coa',
+        'accounting.manage-mappings',
+        'accounting.manage-posting-rules',
+        'accounting.create-journal',
+        'accounting.approve-journal',
+        'accounting.post-journal',
+        'accounting.reverse-journal',
+        'accounting.import-coa',
+        'accounting.import-opening-balances',
+        'accounting.manage-cost-centres',
+        'accounting.manage-fiscal-years',
+        'accounting.close-fiscal-year',
+        'accounting.reopen-fiscal-year',
+        'accounting.manage-bank-accounts',
+        'accounting.import-bank-statements',
+        'accounting.reconcile-bank',
+        'accounting.manage-petty-cash',
+        'accounting.manage-cheques',
+        'accounting.manage-assets',
+        'accounting.manage-tax-settings',
+        'accounting.view-reports',
+        'accounting.export-reports',
+    ];
+
+    /**
      * @var array<string, array{description: string, is_system: bool, permissions: list<string>}>
      */
     private const ROLES = [
@@ -109,6 +138,7 @@ final class RoleSeeder extends Seeder
                 'supplier-price-lists.import',
                 'supplier-price-lists.export',
                 'settings.procurement.update',
+                ...self::ACCOUNTING_PERMISSIONS,
             ],
         ],
         'branch-manager' => [
@@ -178,6 +208,7 @@ final class RoleSeeder extends Seeder
                 'sales.export',
                 'procurement.view',
                 'procurement.process-payments',
+                ...self::ACCOUNTING_PERMISSIONS,
             ],
         ],
         'cashier' => [

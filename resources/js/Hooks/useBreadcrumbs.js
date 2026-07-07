@@ -81,6 +81,27 @@ const ROUTE_CRUMBS = {
     'Admin/Sales/Show': ['home', 'sales', 'view'],
     'Admin/Settings/Index': ['home', 'settings'],
     'Admin/Settings/Edit': ['home', 'settings', 'edit'],
+    'Admin/Accounting/ChartOfAccounts/Index': ['home', 'chartOfAccounts'],
+    'Admin/Accounting/AccountMappings/Index': ['home', 'accountMappings'],
+    'Admin/Accounting/PostingRules/Index': ['home', 'postingRules'],
+    'Admin/Accounting/PostingRules/Edit': ['home', 'postingRules', 'edit'],
+    'Admin/Accounting/JournalEntries/Index': ['home', 'journalEntries'],
+    'Admin/Accounting/JournalEntries/Create': ['home', 'journalEntries', 'create'],
+    'Admin/Accounting/JournalEntries/Show': ['home', 'journalEntries', 'view'],
+    'Admin/Accounting/CostCentres/Index': ['home', 'costCentres'],
+    'Admin/Accounting/Settings/Index': ['home', 'accountingSettings'],
+    'Admin/Accounting/Reports/Index': ['home', 'accountingReports'],
+    'Admin/Accounting/Reports/Show': ['home', 'accountingReports', 'view'],
+    'Admin/Accounting/Events/Index': ['home', 'accountingEvents'],
+    'Admin/Accounting/CreditNotes/Index': ['home', 'creditNotes'],
+    'Admin/Accounting/CreditNotes/Create': ['home', 'creditNotes', 'create'],
+    'Admin/Accounting/TaxTypes/Index': ['home', 'taxTypes'],
+    'Admin/Accounting/BankAccounts/Index': ['home', 'bankAccounts'],
+    'Admin/Accounting/Reconciliation/Index': ['home', 'bankReconciliation'],
+    'Admin/Accounting/Currencies/Index': ['home', 'currencies'],
+    'Admin/Accounting/PettyCash/Index': ['home', 'pettyCash'],
+    'Admin/Accounting/Cheques/Index': ['home', 'cheques'],
+    'Admin/Accounting/FixedAssets/Index': ['home', 'fixedAssets'],
 };
 
 const CRUMB_HREFS = {
@@ -115,6 +136,22 @@ const CRUMB_HREFS = {
     loyaltyReports: 'admin.loyalty.reports.index',
     sales: 'admin.sales.index',
     settings: 'admin.settings.index',
+    chartOfAccounts: 'admin.accounting.chart-of-accounts.index',
+    accountMappings: 'admin.accounting.account-mappings.index',
+    postingRules: 'admin.accounting.posting-rules.index',
+    journalEntries: 'admin.accounting.journal-entries.index',
+    costCentres: 'admin.accounting.cost-centres.index',
+    accountingSettings: 'admin.accounting.settings.index',
+    accountingReports: 'admin.accounting.reports.index',
+    accountingEvents: 'admin.accounting.events.index',
+    creditNotes: 'admin.accounting.credit-notes.index',
+    taxTypes: 'admin.accounting.tax-types.index',
+    bankAccounts: 'admin.accounting.bank-accounts.index',
+    bankReconciliation: 'admin.accounting.reconciliation.index',
+    currencies: 'admin.accounting.currencies.index',
+    pettyCash: 'admin.accounting.petty-cash.index',
+    cheques: 'admin.accounting.cheques.index',
+    fixedAssets: 'admin.accounting.fixed-assets.index',
 };
 
 export function useBreadcrumbs() {
@@ -146,6 +183,30 @@ export function useBreadcrumbs() {
             ];
         }
 
+        if (component === 'Admin/Accounting/JournalEntries/Show' && props.journalEntry?.journal_number) {
+            return [
+                { label: t('breadcrumbs.home'), href: route(CRUMB_HREFS.home) },
+                { label: t('breadcrumbs.journalEntries'), href: route(CRUMB_HREFS.journalEntries) },
+                { label: props.journalEntry.journal_number },
+            ];
+        }
+
+        if (component === 'Admin/Accounting/PostingRules/Edit' && props.ruleSet?.name) {
+            return [
+                { label: t('breadcrumbs.home'), href: route(CRUMB_HREFS.home) },
+                { label: t('breadcrumbs.postingRules'), href: route(CRUMB_HREFS.postingRules) },
+                { label: props.ruleSet.name },
+            ];
+        }
+
+        if (component === 'Admin/Accounting/Reports/Show' && props.title) {
+            return [
+                { label: t('breadcrumbs.home'), href: route(CRUMB_HREFS.home) },
+                { label: t('breadcrumbs.accountingReports'), href: route(CRUMB_HREFS.accountingReports) },
+                { label: props.title },
+            ];
+        }
+
         const keys = ROUTE_CRUMBS[component] ?? ['home'];
 
         return keys.map((key, index) => ({
@@ -155,5 +216,5 @@ export function useBreadcrumbs() {
                     ? route(CRUMB_HREFS[key])
                     : undefined,
         }));
-    }, [component, props.breadcrumbs, props.program, t]);
+    }, [component, props.breadcrumbs, props.program, props.journalEntry, props.ruleSet, props.title, t]);
 }

@@ -59,4 +59,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->job(SupplierPerformanceScoringJob::class)->monthlyOn(1, '04:00');
         $schedule->job(PoApprovalEscalationJob::class)->hourly();
         $schedule->job(PriceListExpiryAlertJob::class)->dailyAt('07:00');
+        $schedule->command('accounting:process-depreciation')->monthlyOn(1, '05:00');
     })->create();

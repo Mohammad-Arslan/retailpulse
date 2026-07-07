@@ -17,6 +17,13 @@ class DatabaseSeeder extends Seeder
             UnitSeeder::class,
             SupplierSeeder::class,
             IdentifierSequenceSeeder::class,
+            OrganizationEntitySeeder::class,
+            ChartOfAccountsSeeder::class,
+            AccountMappingsSeeder::class,
+            PostingRulesSeeder::class,
+            FiscalYearSeeder::class,
+            FinancialSettingsSeeder::class,
+            CurrenciesSeeder::class,
             SuperAdminSeeder::class,
         ]);
     }
