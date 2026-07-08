@@ -19,11 +19,12 @@ final class HelpSupportAiService
      */
     public function streamGuideAnswer(string $guide, string $message, ?array $history = null): StreamableAgentResponse
     {
-        $ctx = $this->guideContext->get($guide);
+        $ctx = $this->guideContext->get($guide, $message);
 
         $prompt = $this->buildPrompt(
             question: $message,
             history: $history ?? [],
+            guideTitle: $ctx['title'],
         );
 
         $provider = (string) config('ai.default', 'ollama');
@@ -60,11 +61,15 @@ final class HelpSupportAiService
     /**
      * @param  array<int, array{role: string, content: string}>  $history
      */
-    private function buildPrompt(string $question, array $history): string
+    private function buildPrompt(string $question, array $history, string $guideTitle): string
     {
         $question = trim($question);
 
-        $lines = [];
+        $lines = [
+            'Use ONLY the GUIDE CONTEXT in your system instructions for the RetailPulse guide "'.$guideTitle.'".',
+            'If the answer is not in that guide context, say so. Do not invent RetailPulse features.',
+            '',
+        ];
 
         $history = array_slice($history, -8);
         foreach ($history as $turn) {
@@ -77,6 +82,7 @@ final class HelpSupportAiService
         }
 
         $lines[] = 'USER: '.$question;
+        $lines[] = 'ASSISTANT:';
 
         return implode("\n", $lines);
     }
