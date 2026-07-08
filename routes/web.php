@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\HelpSupport\HelpSupportController;
 use App\Http\Controllers\InvoicePrintController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PublicInvoiceController;
@@ -33,17 +34,18 @@ Route::redirect('/dashboard', '/admin/dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::prefix('help-support')->name('help-support.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'index'])
+        Route::get('/', [HelpSupportController::class, 'index'])
             ->name('index');
-        Route::get('/guides/accounting', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'accountingGuide'])
+        Route::get('/guides/accounting', [HelpSupportController::class, 'accountingGuide'])
             ->name('guides.accounting');
-        Route::get('/guides/customers-loyalty', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'customersLoyaltyGuide'])
+        Route::get('/guides/customers-loyalty', [HelpSupportController::class, 'customersLoyaltyGuide'])
             ->name('guides.customers-loyalty');
-        Route::get('/guides/inventory-catalogue', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'inventoryCatalogueGuide'])
+        Route::get('/guides/inventory-catalogue', [HelpSupportController::class, 'inventoryCatalogueGuide'])
             ->name('guides.inventory-catalogue');
-        Route::get('/guides/put-product-in-stock', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'putProductInStockGuide'])
+        Route::get('/guides/put-product-in-stock', [HelpSupportController::class, 'putProductInStockGuide'])
             ->name('guides.put-product-in-stock');
-        Route::post('/guides/{guide}/ask', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'ask'])
+        Route::post('/guides/{guide}/ask', [HelpSupportController::class, 'ask'])
+            ->middleware('throttle:ai-guide-ask')
             ->name('guides.ask');
     });
 

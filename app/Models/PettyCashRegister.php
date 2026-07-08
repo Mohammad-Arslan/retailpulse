@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'current_balance',
     'register_mode',
     'variance_tolerance_amount',
+    'approval_threshold_amount',
     'status',
 ])]
 class PettyCashRegister extends Model
@@ -30,6 +31,7 @@ class PettyCashRegister extends Model
             'opening_balance' => 'decimal:2',
             'current_balance' => 'decimal:2',
             'variance_tolerance_amount' => 'decimal:2',
+            'approval_threshold_amount' => 'decimal:2',
             'register_mode' => PettyCashRegisterMode::class,
         ];
     }

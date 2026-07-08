@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\HelpSupport;
 
+use App\Exceptions\HelpSupport\UnknownGuideException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\HelpSupport\AskGuideQuestionRequest;
 use App\Services\HelpSupport\HelpSupportAiService;
@@ -61,6 +62,10 @@ final class HelpSupportController extends Controller
             return response()->json([
                 'message' => 'AI request failed'.($status ? " (HTTP {$status})" : '').'.',
             ], $status >= 400 && $status < 600 ? $status : 502);
+        } catch (UnknownGuideException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 404);
         } catch (Throwable $e) {
             return response()->json([
                 'message' => 'AI request failed: '.$e->getMessage(),

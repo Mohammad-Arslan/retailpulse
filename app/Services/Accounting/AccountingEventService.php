@@ -26,8 +26,13 @@ final class AccountingEventService
         int $sourceId,
         array $payload,
         int $userId = 0,
+        ?string $idempotencySuffix = null,
     ): AccountingEvent {
         $idempotencyKey = "{$eventType}:{$sourceType}:{$sourceId}";
+
+        if ($idempotencySuffix !== null && $idempotencySuffix !== '') {
+            $idempotencyKey .= ':'.$idempotencySuffix;
+        }
 
         $existing = AccountingEvent::query()
             ->where('idempotency_key', $idempotencyKey)

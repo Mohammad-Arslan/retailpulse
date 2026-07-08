@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
     'due_date',
     'status',
     'related_journal_entry_id',
+    'dishonour_charge_amount',
     'branch_id',
     'created_by',
 ])]
@@ -37,6 +38,7 @@ class Cheque extends Model
             'exchange_rate' => 'decimal:6',
             'due_date' => 'date',
             'status' => ChequeStatus::class,
+            'dishonour_charge_amount' => 'decimal:2',
         ];
     }
 

@@ -262,6 +262,12 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by(strtolower($email).'|'.$request->ip());
         });
 
+        RateLimiter::for('ai-guide-ask', function (Request $request) {
+            $userId = $request->user()?->id;
+
+            return Limit::perMinute(15)->by($userId !== null ? 'user:'.$userId : $request->ip());
+        });
+
         Event::listen(DropShipGrnConfirmed::class, LogDropShipGrnConfirmed::class);
         Event::listen(GoodsReceived::class, LogGoodsReceived::class);
         Event::listen(GoodsReceived::class, ProcessAccountingOnGoodsReceived::class);

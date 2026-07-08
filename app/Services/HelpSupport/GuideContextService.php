@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\HelpSupport;
 
+use App\Exceptions\HelpSupport\UnknownGuideException;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
 
@@ -39,7 +40,7 @@ final class GuideContextService
                 base_path('docs/user-manual-accounting-and-finance.md'),
                 title: 'Accounting & Financial Management',
             ),
-            default => throw new \InvalidArgumentException('Unknown guide.'),
+            default => throw new UnknownGuideException,
         };
 
         $ctx['excerpt'] = $this->prioritizeExcerpt($ctx['excerpt'], $question);

@@ -6,6 +6,7 @@ namespace App\Listeners\Accounting;
 
 use App\Enums\StockMovementReason;
 use App\Events\InventoryStockChanged;
+use App\Models\SaleItem;
 use App\Models\StockMovement;
 use App\Services\Accounting\AccountingEventService;
 use App\Services\Accounting\CostService;
@@ -42,6 +43,24 @@ final class ProcessAccountingOnInventoryMovement
             (int) $inventory->product_variant_id,
             (int) $inventory->warehouse_id,
         );
+
+        if (in_array($event->reason, [StockMovementReason::SaleReturn, StockMovementReason::ReturnCustomer], true)
+            && $movement->reference_type === SaleItem::class
+            && $movement->reference_id !== null
+        ) {
+            $saleItem = SaleItem::query()->find($movement->reference_id);
+
+            if ($saleItem !== null) {
+                $this->costService->restoreOnReturn(
+                    $saleItem,
+                    $qtyDelta,
+                    $saleItem->cost_consumed !== null ? (float) $saleItem->cost_consumed / max(1, (int) $saleItem->quantity) : null,
+                );
+                $unitCost = $saleItem->cost_consumed !== null
+                    ? (float) $saleItem->cost_consumed / max(1, (int) $saleItem->quantity)
+                    : $unitCost;
+            }
+        }
 
         $inventoryCost = round($qtyDelta * $unitCost, 2);
 
