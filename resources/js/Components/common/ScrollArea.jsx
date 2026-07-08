@@ -1,12 +1,18 @@
+import { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
  * Scrollable region with the RetailPulse-themed scrollbar (matches the admin sidebar).
  */
-export default function ScrollArea({ as: Component = 'div', className, children, ...props }) {
+const ScrollArea = forwardRef(function ScrollArea(
+    { as: Component = 'div', className, children, ...props },
+    ref,
+) {
     return (
-        <Component className={cn('rp-scroll', className)} {...props}>
+        <Component ref={ref} className={cn('rp-scroll', className)} {...props}>
             {children}
         </Component>
     );
-}
+});
+
+export default ScrollArea;

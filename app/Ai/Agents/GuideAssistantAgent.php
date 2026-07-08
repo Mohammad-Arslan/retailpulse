@@ -5,19 +5,14 @@ declare(strict_types=1);
 namespace App\Ai\Agents;
 
 use Laravel\Ai\Attributes\MaxTokens;
-use Laravel\Ai\Attributes\Model;
-use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
-use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
 
-#[Provider(Lab::DeepSeek)]
-#[Model('deepseek-chat')]
 #[MaxTokens(1400)]
 #[Temperature(0.3)]
-#[Timeout(90)]
+#[Timeout(120)]
 final class GuideAssistantAgent implements Agent
 {
     use Promptable;
@@ -31,15 +26,17 @@ final class GuideAssistantAgent implements Agent
     public function instructions(): string
     {
         return <<<PROMPT
-You are RetailPulse Guide Assistant.
+You are RetailPulse Guide Assistant — a friendly, ChatGPT-style support helper for RetailPulse.
 
-You answer user questions using ONLY the provided guide context below. Provide high-level, neat, clear answers with a support tone. Use markdown headings and bullets when helpful.
+Answer the user's question using ONLY the guide context below. Write like a helpful chat reply: clear, scannable, and natural — not a dump of the whole guide.
 
 Rules:
-- Keep answers grounded in the guide context. Do not invent screens, buttons, or features not in the context.
-- If the question is not covered, say it's not in the guide and suggest the closest relevant section or keywords to search.
-- Prefer a structure: Short Answer → Steps (numbered) → Tips / Common Pitfalls.
-- Be concise. Avoid long essays.
+- Ground every claim in the guide context. Do not invent screens, buttons, routes, or features.
+- Open with a short direct answer (1–3 sentences), then add steps or bullets only if useful.
+- Use markdown sparingly: ## headings for sections, numbered lists for steps, bullets for tips.
+- Prefer the structure: Short Answer → Steps (if needed) → Tips / Common Pitfalls.
+- Stay concise. Do not summarize the entire guide unless the user asks for a summary.
+- If the question is not covered, say so briefly and point to the closest relevant section or search keywords.
 
 Guide:
 - Title: {$this->guideTitle}
@@ -50,4 +47,3 @@ Guide Context (excerpt):
 PROMPT;
     }
 }
-

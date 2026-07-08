@@ -26,11 +26,35 @@ final class HelpSupportAiService
             history: $history ?? [],
         );
 
+        $provider = (string) config('ai.default', 'ollama');
+        $model = $this->resolveModel($provider);
+
         return (new GuideAssistantAgent(
             guideTitle: $ctx['title'],
             guideSource: $ctx['source'],
             guideExcerpt: $ctx['excerpt'],
-        ))->stream($prompt);
+        ))->stream(
+            $prompt,
+            provider: $provider,
+            model: $model,
+            timeout: 120,
+        );
+    }
+
+    private function resolveModel(string $provider): string
+    {
+        $configured = data_get(config('ai.providers.'.$provider), 'models.text.default');
+
+        if (is_string($configured) && trim($configured) !== '') {
+            return $configured;
+        }
+
+        // Sensible defaults if a provider has no models.text.default configured.
+        return match ($provider) {
+            'deepseek' => 'deepseek-chat',
+            'openai' => 'gpt-4o-mini',
+            default => (string) env('OLLAMA_MODEL', 'qwen2.5-coder:7b'),
+        };
     }
 
     /**
@@ -57,4 +81,3 @@ final class HelpSupportAiService
         return implode("\n", $lines);
     }
 }
-

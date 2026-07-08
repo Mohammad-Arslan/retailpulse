@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Contracts\AI\LocalAiClient;
 use App\Events\Accounting\CreditNoteIssued;
 use App\Events\InventoryStockChanged;
 use App\Events\Procurement\DebitNoteIssued;
@@ -148,6 +149,7 @@ use App\Repositories\Eloquent\WarehouseRepository;
 use App\Services\Accounting\BranchAccountingModuleGate;
 use App\Services\Accounting\Contracts\AccountingModuleGate;
 use App\Services\Accounting\ProcurementAccountingHook;
+use App\Services\AI\LocalAiService;
 use App\Services\Procurement\Contracts\ProcurementPostingHook;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -160,6 +162,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(LocalAiClient::class, LocalAiService::class);
         $this->app->bind(AccountingEventRepositoryInterface::class, AccountingEventRepository::class);
         $this->app->bind(AccountMappingRepositoryInterface::class, AccountMappingRepository::class);
         $this->app->bind(BankAccountRepositoryInterface::class, BankAccountRepository::class);

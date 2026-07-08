@@ -127,7 +127,13 @@ export default function GuideLayout({
                 </main>
             </div>
 
-            <GuideAskAiPanel guideKey={guideKey} />
+            <GuideAskAiPanel
+                guideKey={guideKey}
+                sections={sections.map((s) => ({
+                    title: s.title,
+                    menu: s.menu ?? null,
+                }))}
+            />
         </div>
     );
 }

@@ -56,3 +56,73 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Local AI (Ollama)
+
+RetailPulse can call a **local** Ollama model through the Laravel AI SDK (`laravel/ai`). The browser never talks to Ollama directly — only the Laravel backend does.
+
+### Prerequisites
+
+1. Install [Ollama](https://ollama.com/) for Windows.
+2. Pull and run the model:
+
+```bash
+ollama pull qwen2.5-coder:7b
+ollama run qwen2.5-coder:7b
+```
+
+3. Confirm Ollama is reachable at `http://127.0.0.1:11434`.
+
+### Configure Laravel
+
+In `.env` (do **not** commit secrets):
+
+```ini
+APP_ENV=local
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen2.5-coder:7b
+```
+
+Start the app as usual (Laragon / `composer dev` / `php artisan serve`).
+
+### Test endpoint (local only)
+
+`POST /api/dev/ai/ask` is registered with middleware that returns **404** unless `APP_ENV=local`.
+
+**PowerShell:**
+
+```powershell
+Invoke-RestMethod -Method Post -Uri "http://retailpulse.test/api/dev/ai/ask" `
+  -ContentType "application/json" `
+  -Body '{"prompt":"Explain Laravel service container in simple words"}'
+```
+
+**curl:**
+
+```bash
+curl -X POST http://retailpulse.test/api/dev/ai/ask \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d "{\"prompt\":\"Explain Laravel service container in simple words\"}"
+```
+
+Expected shape:
+
+```json
+{
+  "success": true,
+  "answer": "..."
+}
+```
+
+### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|--------|--------------|-----|
+| Connection refused / “Could not connect…” | Ollama not running | Start Ollama; verify `http://127.0.0.1:11434` |
+| Model not found | Model not pulled | `ollama pull qwen2.5-coder:7b` then match `OLLAMA_MODEL` |
+| 404 on `/api/dev/ai/ask` | Not local | Set `APP_ENV=local` (endpoint is blocked in staging/production) |
+| Timeouts on first request | Cold model load | Retry; first generate can be slow on CPU |
+
+Switch providers later by changing `AI_PROVIDER` (and provider credentials) in `.env` — no code change required for the default text provider used by `LocalAiService`.
