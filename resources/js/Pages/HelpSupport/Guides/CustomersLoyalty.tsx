@@ -12,6 +12,7 @@ export default function CustomersLoyalty() {
         <>
             <Head title="Sales & Customers Guide" />
             <GuideLayout
+                guideKey="customers-loyalty"
                 guideTitle={docTitle}
                 guideSubtitle="Customers & Loyalty Guide"
                 hero={{

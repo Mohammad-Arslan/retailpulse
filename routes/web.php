@@ -43,6 +43,8 @@ Route::middleware('auth')->group(function () {
             ->name('guides.inventory-catalogue');
         Route::get('/guides/put-product-in-stock', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'putProductInStockGuide'])
             ->name('guides.put-product-in-stock');
+        Route::post('/guides/{guide}/ask', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'ask'])
+            ->name('guides.ask');
     });
 
     require __DIR__.'/admin.php';

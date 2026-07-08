@@ -12,6 +12,7 @@ export default function Accounting() {
             <Head title="Accounting & Financial Management Guide" />
 
             <GuideLayout
+                guideKey="accounting"
                 guideTitle={accountingGuide.guideTitle}
                 guideSubtitle={accountingGuide.guideSubtitle}
                 hero={accountingGuide.hero}

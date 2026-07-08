@@ -12,6 +12,7 @@ export default function InventoryCatalogue() {
         <>
             <Head title="Inventory Management Guide" />
             <GuideLayout
+                guideKey="inventory-catalogue"
                 guideTitle={docTitle}
                 guideSubtitle="Catalogue & Inventory Guide"
                 hero={{

@@ -1,4 +1,5 @@
 import BackToTopButton from '@/Components/help-support/BackToTopButton';
+import GuideAskAiPanel from '@/Components/help-support/GuideAskAiPanel';
 import GuideSidebar from '@/Components/help-support/GuideSidebar';
 import GuideTopbar from '@/Components/help-support/GuideTopbar';
 import type { AccountingGuideSection } from '@/data/accountingGuide';
@@ -6,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import styles from './GuideLayout.module.css';
 
 type Props = {
+    guideKey: 'accounting' | 'customers-loyalty' | 'inventory-catalogue' | 'put-product-in-stock';
     guideTitle: string;
     guideSubtitle: string;
     hero: {
@@ -20,6 +22,7 @@ type Props = {
 };
 
 export default function GuideLayout({
+    guideKey,
     guideTitle,
     guideSubtitle,
     hero,
@@ -123,6 +126,8 @@ export default function GuideLayout({
                     <BackToTopButton />
                 </main>
             </div>
+
+            <GuideAskAiPanel guideKey={guideKey} />
         </div>
     );
 }

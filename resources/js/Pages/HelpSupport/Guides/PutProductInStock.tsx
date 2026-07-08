@@ -12,6 +12,7 @@ export default function PutProductInStock() {
         <>
             <Head title="Put a Product in Stock Guide" />
             <GuideLayout
+                guideKey="put-product-in-stock"
                 guideTitle={docTitle}
                 guideSubtitle="Put a Product in Stock"
                 hero={{
