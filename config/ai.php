@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => 'deepseek',
+    'default' => env('AI_PROVIDER', 'ollama'),
     'default_for_images' => 'gemini',
     'default_for_audio' => 'openai',
     'default_for_transcription' => 'openai',
@@ -116,7 +116,13 @@ return [
         'ollama' => [
             'driver' => 'ollama',
             'key' => env('OLLAMA_API_KEY', ''),
-            'url' => env('OLLAMA_URL', 'http://localhost:11434'),
+            // Prefer OLLAMA_BASE_URL; fall back to SDK's OLLAMA_URL for compatibility.
+            'url' => env('OLLAMA_BASE_URL', env('OLLAMA_URL', 'http://127.0.0.1:11434')),
+            'models' => [
+                'text' => [
+                    'default' => env('OLLAMA_MODEL', 'qwen2.5-coder:7b'),
+                ],
+            ],
         ],
 
         'openai' => [

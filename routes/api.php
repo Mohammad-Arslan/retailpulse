@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\Dev\LocalAiController;
 use App\Http\Controllers\Api\V1\Checkout\CheckoutController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomerWalletController;
@@ -18,6 +19,13 @@ use App\Http\Controllers\Api\V1\Sales\HistoricalSaleImportController;
 use App\Http\Controllers\Api\V1\Sales\SaleController;
 use App\Http\Controllers\Api\V1\Sales\SaleExportController;
 use Illuminate\Support\Facades\Route;
+
+/*
+| Local-only AI smoke endpoint. Returns 404 unless APP_ENV=local.
+*/
+Route::post('dev/ai/ask', [LocalAiController::class, 'ask'])
+    ->middleware(['local'])
+    ->name('api.dev.ai.ask');
 
 Route::prefix('v1/pos')
     ->middleware(['web', 'auth'])

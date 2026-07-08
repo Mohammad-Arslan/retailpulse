@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAccountingModuleEnabled;
 use App\Http\Middleware\EnsureAdminAccess;
+use App\Http\Middleware\EnsureLocalEnvironment;
 use App\Http\Middleware\EnsurePosAccess;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetBranchContext;
@@ -18,6 +19,8 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Laravel\Ai\Exceptions\InsufficientCreditsException;
 
@@ -46,17 +49,64 @@ return Application::configure(basePath: dirname(__DIR__))
             'branch.context' => SetBranchContext::class,
             'pos.access' => EnsurePosAccess::class,
             'accounting-module' => EnsureAccountingModuleEnabled::class,
+            'local' => EnsureLocalEnvironment::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->renderable(function (InsufficientCreditsException $e, $request) {
-            if ($request->expectsJson() || $request->ajax()) {
+        $wantsJson = static fn ($request): bool => $request->expectsJson()
+            || $request->ajax()
+            || str_contains((string) $request->header('Accept'), 'text/event-stream');
+
+        $exceptions->renderable(function (InsufficientCreditsException $e, $request) use ($wantsJson) {
+            if ($wantsJson($request)) {
                 return response()->json([
                     'message' => $e->getMessage(),
                 ], 402);
             }
 
             return null;
+        });
+
+        $exceptions->renderable(function (ConnectionException $e, $request) use ($wantsJson) {
+            if (! $wantsJson($request)) {
+                return null;
+            }
+
+            $url = (string) data_get(config('ai.providers.'.config('ai.default')), 'url', 'http://127.0.0.1:11434');
+
+            return response()->json([
+                'message' => 'Could not connect to the AI provider. Ensure Ollama is running at '.$url.'.',
+            ], 503);
+        });
+
+        $exceptions->renderable(function (RequestException $e, $request) use ($wantsJson) {
+            if (! $wantsJson($request)) {
+                return null;
+            }
+
+            $status = $e->response?->status() ?? 502;
+            $body = strtolower((string) ($e->response?->body() ?? ''));
+            $model = (string) data_get(
+                config('ai.providers.'.config('ai.default')),
+                'models.text.default',
+                env('OLLAMA_MODEL', 'qwen2.5-coder:7b'),
+            );
+
+            if ($status === 401) {
+                return response()->json([
+                    'message' => 'AI provider authentication failed. Check API key / credentials in .env.',
+                ], 401);
+            }
+
+            if ($status === 404 || str_contains($body, 'not found') || str_contains($body, 'model')) {
+                return response()->json([
+                    'message' => "AI model [{$model}] was not found. Run: ollama pull {$model}",
+                ], 404);
+            }
+
+            return response()->json([
+                'message' => 'AI request failed'.($status ? " (HTTP {$status})" : '').'.',
+            ], $status >= 400 && $status < 600 ? $status : 502);
         });
     })
     ->withSchedule(function (Schedule $schedule): void {

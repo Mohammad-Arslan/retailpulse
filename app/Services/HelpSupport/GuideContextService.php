@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Services\HelpSupport;
 
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 final class GuideContextService
 {
+    private const MAX_EXCERPT_CHARS = 32000;
+
     public function __construct(
         private readonly Filesystem $files,
     ) {}
@@ -16,11 +18,11 @@ final class GuideContextService
     /**
      * @return array{title: string, source: string, excerpt: string}
      */
-    public function get(string $guide): array
+    public function get(string $guide, ?string $question = null): array
     {
         $guide = trim($guide);
 
-        return match ($guide) {
+        $ctx = match ($guide) {
             'put-product-in-stock' => $this->fromMarkdownDoc(
                 base_path('docs/user-manual-put-product-in-stock.md'),
                 title: 'Put a Product in Stock (Any Branch)',
@@ -33,9 +35,16 @@ final class GuideContextService
                 base_path('docs/user-manual-customers-and-loyalty.md'),
                 title: 'Customers & Loyalty',
             ),
-            'accounting' => $this->fromAccountingGuide(),
+            'accounting' => $this->fromMarkdownDoc(
+                base_path('docs/user-manual-accounting-and-finance.md'),
+                title: 'Accounting & Financial Management',
+            ),
             default => throw new \InvalidArgumentException('Unknown guide.'),
         };
+
+        $ctx['excerpt'] = $this->prioritizeExcerpt($ctx['excerpt'], $question);
+
+        return $ctx;
     }
 
     /**
@@ -48,123 +57,118 @@ final class GuideContextService
         return [
             'title' => $title,
             'source' => str_replace('\\', '/', $this->relativeToBase($path)),
-            'excerpt' => $this->makeExcerptFromMarkdown($markdown),
+            'excerpt' => $this->normalizeGuideText($markdown),
         ];
     }
 
-    /**
-     * @return array{title: string, source: string, excerpt: string}
-     */
-    private function fromAccountingGuide(): array
-    {
-        $jsonPath = base_path('resources/js/data/accountingGuide.sections.json');
-        $sections = json_decode($this->files->get($jsonPath), true);
-
-        if (! is_array($sections)) {
-            throw new \RuntimeException('Accounting guide sections JSON is invalid.');
-        }
-
-        $lines = [];
-        foreach ($sections as $section) {
-            if (! is_array($section)) {
-                continue;
-            }
-
-            $title = (string) Arr::get($section, 'title', '');
-            $intro = (string) Arr::get($section, 'intro', '');
-
-            if ($title !== '') {
-                $lines[] = '## '.$title;
-            }
-
-            if ($intro !== '') {
-                $lines[] = $this->stripHtmlToText($intro);
-            }
-
-            $blocks = Arr::get($section, 'blocks', []);
-            if (! is_array($blocks)) {
-                continue;
-            }
-
-            foreach ($blocks as $block) {
-                if (! is_array($block)) {
-                    continue;
-                }
-
-                $blockTitle = (string) Arr::get($block, 'title', '');
-                if ($blockTitle !== '') {
-                    $lines[] = '### '.$blockTitle;
-                }
-
-                $type = (string) Arr::get($block, 'type', '');
-
-                if ($type === 'note') {
-                    $text = (string) Arr::get($block, 'text', '');
-                    if ($text !== '') {
-                        $lines[] = $this->stripHtmlToText($text);
-                    }
-                }
-
-                if ($type === 'steps') {
-                    $items = Arr::get($block, 'items', []);
-                    if (is_array($items)) {
-                        foreach ($items as $item) {
-                            if (! is_string($item) || $item === '') {
-                                continue;
-                            }
-                            $lines[] = '- '.$this->stripHtmlToText($item);
-                        }
-                    }
-                }
-
-                if ($type === 'table') {
-                    $rows = Arr::get($block, 'rows', []);
-                    if (is_array($rows)) {
-                        foreach ($rows as $row) {
-                            if (! is_array($row) || $row === []) {
-                                continue;
-                            }
-                            $cells = array_values(array_filter($row, fn ($v) => is_string($v) && $v !== ''));
-                            if ($cells !== []) {
-                                $lines[] = '- '.implode(' — ', array_map([$this, 'stripHtmlToText'], $cells));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        $text = implode("\n\n", array_values(array_filter($lines, fn ($l) => trim((string) $l) !== '')));
-
-        return [
-            'title' => 'Accounting & Financial Management',
-            'source' => 'resources/js/data/accountingGuide.sections.json',
-            'excerpt' => $this->makeExcerptFromMarkdown($text),
-        ];
-    }
-
-    private function makeExcerptFromMarkdown(string $markdown): string
+    private function normalizeGuideText(string $markdown): string
     {
         $markdown = str_replace("\r\n", "\n", $markdown);
-        $markdown = preg_replace('/^```[\\s\\S]*?^```/m', '', $markdown) ?? $markdown;
-        $markdown = preg_replace('/^\\|.*\\|\\s*\\n^\\|[-:|\\s]+\\|\\s*\\n(?:^\\|.*\\|\\s*\\n)*/m', '', $markdown) ?? $markdown;
+        // Keep fenced examples out of the prompt (code fences are noisy for Q&A).
+        $markdown = preg_replace('/^```[\s\S]*?^```/m', '', $markdown) ?? $markdown;
         $markdown = trim($markdown);
-
-        // Keep context token-safe for prompts.
-        $maxChars = 18000;
-        if (mb_strlen($markdown) > $maxChars) {
-            $markdown = mb_substr($markdown, 0, $maxChars - 200).'...';
-        }
 
         return $markdown;
     }
 
-    private function stripHtmlToText(string $html): string
+    /**
+     * Keep the excerpt token-safe. When a question is present, keep the most
+     * relevant sections first so the model reads matching RetailPulse guide text.
+     */
+    private function prioritizeExcerpt(string $markdown, ?string $question): string
     {
-        $text = html_entity_decode(strip_tags($html));
-        $text = preg_replace('/\\s+/', ' ', $text) ?? $text;
+        $markdown = trim($markdown);
+        if ($markdown === '') {
+            return '';
+        }
 
-        return trim($text);
+        if (mb_strlen($markdown) <= self::MAX_EXCERPT_CHARS) {
+            return $markdown;
+        }
+
+        $terms = $this->questionTerms($question);
+        if ($terms === []) {
+            return mb_substr($markdown, 0, self::MAX_EXCERPT_CHARS - 200).'...';
+        }
+
+        $chunks = preg_split('/\n(?=##\s+)/', $markdown) ?: [$markdown];
+        $scored = [];
+
+        foreach ($chunks as $index => $chunk) {
+            $lower = Str::lower($chunk);
+            $score = 0;
+            foreach ($terms as $term) {
+                $score += substr_count($lower, $term) * max(1, mb_strlen($term));
+            }
+            $scored[] = ['index' => $index, 'score' => $score, 'chunk' => $chunk];
+        }
+
+        usort($scored, function (array $a, array $b): int {
+            return $b['score'] <=> $a['score'] ?: $a['index'] <=> $b['index'];
+        });
+
+        $selected = [];
+        $used = 0;
+        foreach ($scored as $item) {
+            $chunk = trim((string) $item['chunk']);
+            if ($chunk === '') {
+                continue;
+            }
+            $len = mb_strlen($chunk) + 2;
+            if ($used > 0 && $used + $len > self::MAX_EXCERPT_CHARS) {
+                continue;
+            }
+            $selected[] = $chunk;
+            $used += $len;
+            if ($used >= self::MAX_EXCERPT_CHARS) {
+                break;
+            }
+        }
+
+        if ($selected === []) {
+            return mb_substr($markdown, 0, self::MAX_EXCERPT_CHARS - 200).'...';
+        }
+
+        usort($selected, function (string $a, string $b) use ($chunks): int {
+            return array_search($a, $chunks, true) <=> array_search($b, $chunks, true);
+        });
+
+        $excerpt = implode("\n\n", $selected);
+        if (mb_strlen($excerpt) > self::MAX_EXCERPT_CHARS) {
+            $excerpt = mb_substr($excerpt, 0, self::MAX_EXCERPT_CHARS - 200).'...';
+        }
+
+        return $excerpt;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function questionTerms(?string $question): array
+    {
+        $question = Str::lower(trim((string) $question));
+        if ($question === '') {
+            return [];
+        }
+
+        $stop = [
+            'a', 'an', 'the', 'and', 'or', 'to', 'of', 'in', 'on', 'for', 'with', 'from', 'how', 'what',
+            'when', 'where', 'why', 'is', 'are', 'do', 'does', 'can', 'i', 'we', 'my', 'our', 'this',
+            'that', 'should', 'about', 'please', 'me', 'you', 'it', 'be', 'if', 'not', 'into',
+        ];
+
+        $parts = preg_split('/[^a-z0-9]+/i', $question) ?: [];
+        $terms = [];
+
+        foreach ($parts as $part) {
+            $part = Str::lower(trim($part));
+            if ($part === '' || mb_strlen($part) < 3 || in_array($part, $stop, true)) {
+                continue;
+            }
+            $terms[] = $part;
+        }
+
+        return array_values(array_unique($terms));
     }
 
     private function relativeToBase(string $path): string
@@ -175,4 +179,3 @@ final class GuideContextService
         return str_starts_with($path, $base) ? substr($path, strlen($base)) : $path;
     }
 }
-
