@@ -31,6 +31,7 @@ import {
     UsersRound,
     Wallet,
     Warehouse,
+    LifeBuoy,
 } from 'lucide-react';
 
 export const ADMIN_NAV_SECTIONS = [
@@ -528,6 +529,15 @@ export const ADMIN_NAV_SECTIONS = [
                 ],
                 icon: Settings2,
                 keywords: ['configuration', 'preferences', 'global'],
+            },
+            {
+                label: 'Help & Support',
+                labelKey: 'helpSupport',
+                href: 'help-support.index',
+                routeName: 'help-support.*',
+                permission: null,
+                icon: LifeBuoy,
+                keywords: ['help', 'support', 'docs', 'guides', 'knowledge base'],
             },
         ],
     },

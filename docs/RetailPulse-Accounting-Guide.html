@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RetailPulse — Accounting Guide</title>
+<style>
+  :root{
+    --bg:#0B1220;
+    --panel:#111B2E;
+    --panel-2:#0E1626;
+    --border:#22304A;
+    --border-soft:#1A2439;
+    --text:#E9EDF6;
+    --text-dim:#9AA6C0;
+    --text-faint:#5E6B87;
+    --teal:#2FD8A8;
+    --teal-dim:#1B8F70;
+    --teal-wash:rgba(47,216,168,.10);
+    --amber:#F0B429;
+    --amber-wash:rgba(240,180,41,.10);
+    --red:#F1786B;
+    --red-wash:rgba(241,120,107,.10);
+    --serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--teal);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  /* ===== Layout shell ===== */
+  .shell{display:flex;min-height:100vh;}
+
+  /* ===== Sidebar ===== */
+  .sidebar{
+    width:296px;
+    flex:0 0 296px;
+    background:var(--panel-2);
+    border-right:1px solid var(--border-soft);
+    position:sticky;
+    top:0;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    z-index:40;
+  }
+  .brand{
+    padding:22px 20px 16px;
+    border-bottom:1px solid var(--border-soft);
+    flex:0 0 auto;
+  }
+  .brand-mark{
+    display:flex;align-items:center;gap:10px;
+  }
+  .brand-badge{
+    width:34px;height:34px;border-radius:9px;
+    background:linear-gradient(155deg,var(--teal),var(--teal-dim));
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--serif);font-weight:700;color:#04231a;font-size:16px;
+    flex:0 0 auto;
+  }
+  .brand-name{font-family:var(--serif);font-size:19px;letter-spacing:.2px;}
+  .brand-name b{color:var(--teal);font-weight:600;}
+  .brand-sub{margin-top:6px;font-size:11.5px;color:var(--text-faint);letter-spacing:.4px;text-transform:uppercase;}
+
+  .search-wrap{padding:14px 16px;border-bottom:1px solid var(--border-soft);flex:0 0 auto;}
+  .search-box{
+    position:relative;
+  }
+  .search-box input{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:9px 12px 9px 32px;
+    border-radius:8px;
+    font-size:13px;
+    font-family:var(--sans);
+    outline:none;
+    transition:border-color .15s;
+  }
+  .search-box input:focus{border-color:var(--teal-dim);}
+  .search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.5;}
+  .search-hint{margin-top:6px;font-size:11px;color:var(--text-faint);padding-left:2px;}
+
+  .nav-scroll{
+    flex:1 1 auto;
+    overflow-y:auto;
+    padding:10px 10px 24px;
+  }
+  .nav-scroll::-webkit-scrollbar{width:8px;}
+  .nav-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+  .nav-group-label{
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.7px;
+    color:var(--text-faint);
+    padding:14px 10px 6px;
+  }
+  .nav-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    border-radius:7px;
+    color:var(--text-dim);
+    font-size:13.4px;
+    cursor:pointer;
+    transition:background .12s,color .12s;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .nav-item:hover{background:var(--panel);color:var(--text);text-decoration:none;}
+  .nav-item.active{background:var(--teal-wash);color:var(--teal);}
+  .nav-num{
+    flex:0 0 20px;
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-faint);
+  }
+  .nav-item.active .nav-num{color:var(--teal);}
+  .nav-item.hidden{display:none;}
+
+  /* ===== Main ===== */
+  .main{
+    flex:1 1 auto;
+    min-width:0;
+    max-width:920px;
+    padding:0 56px 120px;
+  }
+  .topbar{
+    position:sticky;top:0;z-index:30;
+    background:linear-gradient(var(--bg) 78%, transparent);
+    padding:22px 0 8px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .crumbs{font-size:12px;color:var(--text-faint);font-family:var(--mono);}
+  .crumbs b{color:var(--text-dim);font-weight:500;}
+  .mobile-toggle{display:none;}
+
+  /* ===== Hero ===== */
+  .hero{
+    padding:64px 0 40px;
+    border-bottom:1px solid var(--border-soft);
+    margin-bottom:44px;
+  }
+  .hero-eyebrow{
+    font-size:12px;letter-spacing:1.2px;text-transform:uppercase;
+    color:var(--teal);font-weight:600;margin-bottom:14px;
+  }
+  .hero h1{
+    font-family:var(--serif);
+    font-size:44px;
+    line-height:1.1;
+    margin:0 0 16px;
+    font-weight:500;
+  }
+  .hero p{
+    font-size:16px;color:var(--text-dim);max-width:56ch;margin:0 0 28px;
+  }
+  .hero-meta{display:flex;gap:22px;flex-wrap:wrap;font-size:12.5px;color:var(--text-faint);}
+  .hero-meta span b{color:var(--text-dim);font-weight:500;}
+
+  /* Pipeline diagram (signature element) */
+  .pipeline{
+    margin-top:40px;
+    display:flex;
+    align-items:stretch;
+    gap:0;
+    flex-wrap:wrap;
+  }
+  .pipe-stage{
+    flex:1 1 200px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px 18px 16px;
+    position:relative;
+  }
+  .pipe-stage.hi{border-color:var(--teal-dim);background:var(--teal-wash);}
+  .pipe-stage .k{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;}
+  .pipe-stage .t{font-size:14px;font-weight:600;margin-bottom:6px;}
+  .pipe-stage .d{font-size:12.5px;color:var(--text-dim);line-height:1.5;}
+  .pipe-arrow{
+    flex:0 0 44px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--teal);
+  }
+  .pipe-arrow svg{width:26px;height:26px;}
+  @media (max-width:820px){
+    .pipe-arrow{flex:0 0 100%;transform:rotate(90deg);height:30px;}
+  }
+
+  /* ===== Section ===== */
+  .section{
+    padding-top:60px;
+    scroll-margin-top:90px;
+  }
+  .section-head{
+    display:flex;align-items:baseline;gap:14px;margin-bottom:6px;
+  }
+  .section-num{
+    font-family:var(--mono);
+    font-size:13px;color:var(--teal);
+    border:1px solid var(--teal-dim);
+    background:var(--teal-wash);
+    border-radius:6px;
+    padding:2px 8px;
+    flex:0 0 auto;
+  }
+  .section h2{
+    font-family:var(--serif);
+    font-size:28px;
+    font-weight:500;
+    margin:0;
+  }
+  .section-intro{
+    color:var(--text-dim);
+    font-size:15px;
+    margin:14px 0 26px;
+    max-width:68ch;
+  }
+  .section-intro b{color:var(--text);font-weight:600;}
+  .section-intro code, p code, li code, td code{
+    font-family:var(--mono);
+    background:var(--panel);
+    border:1px solid var(--border);
+    padding:1px 6px;
+    border-radius:5px;
+    font-size:.88em;
+    color:var(--teal);
+  }
+
+  .menu-pill{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:12px;color:var(--text-dim);
+    background:var(--panel);border:1px solid var(--border);
+    padding:5px 10px;border-radius:20px;margin-bottom:22px;
+  }
+  .menu-pill svg{width:13px;height:13px;opacity:.7;}
+
+  /* Blocks */
+  .block{margin:22px 0;}
+  .block-title{
+    font-size:13px;font-weight:700;color:var(--text);
+    display:flex;align-items:center;gap:8px;margin-bottom:12px;
+  }
+  .block-title .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);}
+
+  table{width:100%;border-collapse:collapse;font-size:13.2px;}
+  .tbl-wrap{
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+    background:var(--panel);
+  }
+  caption{
+    text-align:left;padding:10px 14px;font-size:12px;color:var(--text-faint);
+    background:var(--panel-2);border-bottom:1px solid var(--border);
+    caption-side:top;
+  }
+  th{
+    text-align:left;
+    background:var(--panel-2);
+    color:var(--text-faint);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+    font-weight:600;
+  }
+  td{
+    padding:10px 14px;
+    border-bottom:1px solid var(--border-soft);
+    color:var(--text-dim);
+    vertical-align:top;
+  }
+  td:first-child{color:var(--text);font-weight:500;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(255,255,255,.015);}
+
+  /* What-if accordion */
+  .whatif-list{display:flex;flex-direction:column;gap:8px;}
+  .whatif{
+    border:1px solid var(--border);
+    border-radius:9px;
+    background:var(--panel);
+    overflow:hidden;
+  }
+  .whatif summary{
+    list-style:none;cursor:pointer;
+    display:flex;align-items:center;gap:12px;
+    padding:12px 14px;
+    font-size:13.4px;
+  }
+  .whatif summary::-webkit-details-marker{display:none;}
+  .whatif summary .caret{
+    flex:0 0 16px;color:var(--text-faint);
+    transition:transform .15s;
+  }
+  .whatif[open] summary .caret{transform:rotate(90deg);color:var(--teal);}
+  .whatif summary .cause{color:var(--text);font-weight:500;flex:1;}
+  .whatif-body{
+    padding:0 14px 14px 42px;
+    display:flex;align-items:flex-start;gap:10px;
+  }
+  .whatif-body svg{flex:0 0 15px;margin-top:3px;color:var(--teal);}
+  .whatif-body .effect{color:var(--text-dim);font-size:13px;line-height:1.55;}
+
+  /* Steps (numbered flow) */
+  .steps{display:flex;flex-direction:column;}
+  .step{
+    display:flex;gap:16px;position:relative;padding-bottom:22px;
+  }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:"";position:absolute;left:13px;top:28px;bottom:0;width:1px;
+    background:var(--border);
+  }
+  .step:last-child::before{display:none;}
+  .step-num{
+    flex:0 0 28px;height:28px;border-radius:50%;
+    background:var(--teal-wash);border:1px solid var(--teal-dim);
+    color:var(--teal);font-family:var(--mono);font-size:12px;
+    display:flex;align-items:center;justify-content:center;
+    z-index:1;
+  }
+  .step-text{padding-top:3px;color:var(--text-dim);font-size:13.6px;line-height:1.6;}
+  .step-text b{color:var(--text);}
+
+  /* Note / callout */
+  .note{
+    display:flex;gap:12px;
+    border:1px solid var(--border);
+    border-left:3px solid var(--teal-dim);
+    background:var(--teal-wash);
+    border-radius:8px;
+    padding:13px 16px;
+    font-size:13.3px;
+    color:var(--text-dim);
+  }
+  .note.warn{border-left-color:var(--amber);background:var(--amber-wash);}
+  .note.danger{border-left-color:var(--red);background:var(--red-wash);}
+  .note svg{flex:0 0 17px;margin-top:2px;}
+  .note b{color:var(--text);}
+
+  /* Flow chips (event -> journal) */
+  .flow-row{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:12px 14px;border:1px solid var(--border);border-radius:8px;
+    background:var(--panel);margin-bottom:8px;font-size:12.8px;
+  }
+  .chip{
+    padding:4px 10px;border-radius:6px;font-family:var(--mono);font-size:11.5px;
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);
+  }
+  .chip.ev{color:var(--teal);border-color:var(--teal-dim);}
+  .flow-arrow{color:var(--text-faint);flex:0 0 auto;}
+  .flow-arrow svg{width:15px;height:15px;display:block;}
+  .flow-impact{color:var(--text-dim);flex:1 1 200px;}
+
+  /* Glossary */
+  .glossary-grid{display:grid;grid-template-columns:1fr;gap:0;}
+  .gterm{
+    display:grid;grid-template-columns:200px 1fr;gap:18px;
+    padding:12px 0;border-bottom:1px solid var(--border-soft);
+  }
+  .gterm:last-child{border-bottom:none;}
+  .gterm dt{font-weight:600;color:var(--text);font-size:13.4px;}
+  .gterm dd{margin:0;color:var(--text-dim);font-size:13.2px;line-height:1.55;}
+  @media(max-width:640px){.gterm{grid-template-columns:1fr;gap:4px;}}
+
+  /* Prev/Next footer nav */
+  .section-nav{
+    display:flex;justify-content:space-between;gap:16px;
+    margin-top:48px;padding-top:24px;border-top:1px solid var(--border-soft);
+  }
+  .pn-link{
+    flex:1 1 0;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px 16px;
+    background:var(--panel);
+    color:var(--text-dim);
+    transition:border-color .15s,transform .15s;
+    display:flex;flex-direction:column;gap:6px;
+  }
+  .pn-link:hover{border-color:var(--teal-dim);text-decoration:none;transform:translateY(-1px);}
+  .pn-link.next{align-items:flex-end;text-align:right;margin-left:auto;}
+  .pn-dir{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-faint);display:flex;align-items:center;gap:6px;}
+  .pn-title{font-size:14px;color:var(--text);font-weight:600;}
+
+  /* Back to top */
+  .totop{
+    position:fixed;right:28px;bottom:28px;
+    width:44px;height:44px;border-radius:50%;
+    background:var(--teal);color:#04231a;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 18px rgba(0,0,0,.35);
+    cursor:pointer;opacity:0;pointer-events:none;
+    transition:opacity .2s,transform .2s;
+    z-index:50;border:none;
+  }
+  .totop.show{opacity:1;pointer-events:auto;}
+  .totop:hover{transform:translateY(-3px);}
+
+  footer.doc-end{
+    margin-top:60px;padding-top:24px;border-top:1px solid var(--border-soft);
+    color:var(--text-faint);font-size:12px;
+  }
+
+  /* mobile */
+  @media(max-width:960px){
+    .sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 40px rgba(0,0,0,.5);}
+    .sidebar.open{transform:translateX(0);}
+    .main{max-width:100%;padding:0 20px 100px;}
+    .mobile-toggle{
+      display:flex;align-items:center;justify-content:center;
+      width:36px;height:36px;border-radius:8px;
+      background:var(--panel);border:1px solid var(--border);color:var(--text);
+      cursor:pointer;
+    }
+    .hero h1{font-size:32px;}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:35;}
+    .backdrop.show{display:block;}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <div class="brand-badge">R</div>
+        <div class="brand-name">Retail<b>Pulse</b></div>
+      </div>
+      <div class="brand-sub">Accounting &amp; Finance Guide</div>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="navSearch" type="text" placeholder="Search this guide…" autocomplete="off">
+      </div>
+      <div class="search-hint" id="searchHint">21 sections</div>
+    </div>
+    <nav class="nav-scroll" id="navScroll"></nav>
+  </aside>
+
+  <div class="backdrop" id="backdrop"></div>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <div class="topbar">
+      <button class="mobile-toggle" id="mobileToggle">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">RetailPulse Docs <span id="crumbCurrent"></span></div>
+      <div></div>
+    </div>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-eyebrow">Phase 11 · General Ledger &amp; Auto-Posting</div>
+      <h1>How money moves through RetailPulse</h1>
+      <p>A plain-language guide to the accounting module — where to click, how a sale turns into a journal entry, and what to do when something looks wrong.</p>
+      <div class="hero-meta">
+        <span><b>Version</b> 1.1 · July 2026</span>
+        <span><b>Audience</b> Accountants, finance managers, support staff</span>
+        <span><b>Reading time</b> ~25 min, or jump to any section</span>
+      </div>
+
+      <div class="pipeline">
+        <div class="pipe-stage">
+          <div class="k">Step 1</div>
+          <div class="t">Something happens in the store</div>
+          <div class="d">A cashier completes a sale, a warehouse receives goods, or a supplier gets paid.</div>
+        </div>
+        <div class="pipe-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+        <div class="pipe-stage hi">
+          <div class="k">Step 2</div>
+          <div class="t">RetailPulse figures out the accounting</div>
+          <div class="d">It looks up your rules and your chart of accounts to decide which accounts to debit and credit.</div>
+        </div>
+        <div class="pipe-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+        <div class="pipe-stage">
+          <div class="k">Step 3</div>
+          <div class="t">A balanced journal is posted</div>
+          <div class="d">The result lands in your General Ledger and shows up on your reports — automatically.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTIONS injected by JS -->
+    <div id="sections"></div>
+
+    <footer class="doc-end">
+      RetailPulse Accounting Guide · v1.1, July 2026 — restructured for on-screen navigation from the original written manual.
+    </footer>
+  </main>
+</div>
+
+<button class="totop" id="totop" aria-label="Back to top">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+/* ============================================================
+   ICONS
+   ============================================================ */
+const ICO = {
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>',
+  menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>',
+};
+
+/* ============================================================
+   CONTENT DATA — every section of the manual, in plain language
+   ============================================================ */
+const SECTIONS = [
+{
+  id:"s1", num:"1", title:"Before you start", menu:null,
+  intro:"Three things determine what you can see and do in Accounting: which <b>branch</b> you've selected, which <b>sub-modules</b> are turned on for that branch, and your <b>permissions</b>. Get these three right before troubleshooting anything else.",
+  blocks:[
+    {type:"steps", title:"The three gates you pass through", items:[
+      "<b>Branch context.</b> Accounting is branch-aware. If you're logged in as super-admin with <b>All Branches</b> selected, you only see the core screens — sub-modules like Tax Types or Bank stay hidden because they're switched on per branch, not globally.",
+      "<b>Sub-module enabled.</b> Beyond permissions, a menu item like Cost Centres or Petty Cash only appears if that module is switched on for the active branch. New branches start with only <b>Core</b> enabled — everything else is opt-in.",
+      "<b>Permission granted.</b> Even with the branch and module right, your role needs the matching permission (see the full list in Section 20)."
+    ]},
+    {type:"table", title:"What each sub-module unlocks", headers:["Module key","Unlocks"], rows:[
+      ["core","Always on — Chart of Accounts, Mappings, Rules, Journals, Settings, Reports, Events"],
+      ["ar_ap","Required before Credit Notes can be enabled"],
+      ["tax","Tax Types"],
+      ["cost_centres","Cost Centres"],
+      ["multi_currency","Currencies"],
+      ["bank_reconciliation","Bank Accounts, Bank Reconciliation"],
+      ["petty_cash","Petty Cash"],
+      ["cheques","Cheques"],
+      ["fixed_assets","Fixed Assets"],
+      ["credit_notes","Credit Notes (also needs ar_ap)"],
+      ["intercompany","Intercompany (also needs multi_currency)"],
+    ]},
+    {type:"note", tone:"info", text:"<b>Turning modules on today:</b> there's no toggle screen yet — an admin enables modules per branch directly on the <code>BranchAccountingProfile</code> record (see the tinker snippet in Section 21.7). A proper on-screen toggle is planned for a later phase."},
+    {type:"whatif", title:"If a sub-module isn't enabled…", items:[
+      {cause:"You visit its page anyway", effect:"You get a plain 403 Forbidden — the menu item is hidden, and the direct link is blocked too."},
+      {cause:"An event for that area still fires (e.g. a cheque status changes)", effect:"Auto-posting can still run behind the scenes even if the admin screen is locked — the data pipeline and the UI gate are separate."},
+    ]},
+    {type:"table", title:"The six principles the system always enforces", headers:["Principle","What it means for you"], rows:[
+      ["Double-entry","Every posted journal has equal debits and credits — the system won't let an unbalanced one through."],
+      ["Immutability","Once posted, a journal can't be edited. Mistakes are fixed with a reversal, not a rewrite."],
+      ["Idempotency","The same sale or payment can never accidentally create two journal entries, even if the system retries."],
+      ["Configuration, not hardcoding","Account numbers live in your Chart of Accounts and rules — never hardcoded into POS or procurement code."],
+      ["Period lock","A closed fiscal year blocks new postings unless someone has opened an approved reopen window."],
+      ["Audit trail","Every meaningful accounting action is logged — who did what, and when."],
+    ]},
+  ]
+},
+{
+  id:"s2", num:"2", title:"Glossary", menu:null,
+  intro:"Plain-English definitions for every term used in this guide. Search the sidebar for a word if you just need one definition.",
+  blocks:[
+    {type:"glossary", title:"General ledger", terms:[
+      ["GL / General Ledger","The complete record of every account and every posted journal line in the system."],
+      ["Chart of Accounts (COA)","Your master list of accounts — codes, names, types, and hierarchy."],
+      ["Account code","A unique ID for an account, e.g. 1100 for Cash or 4100 for Sales Revenue."],
+      ["Account type","Asset, Liability, Equity, Revenue, or Expense — decides whether it shows on the Balance Sheet or the P&amp;L."],
+      ["Group account","A header account used for organizing the hierarchy. Can't receive postings directly."],
+      ["Postable account","A real, leaf-level account that journal lines can actually be posted to."],
+      ["Journal entry / voucher (JV)","A header — date, description, status — plus one or more journal lines."],
+      ["Journal line / transaction","One row inside a journal: an account, a debit or a credit, and optional extra detail."],
+      ["Debit","Increases assets and expenses; decreases liabilities, equity, and revenue."],
+      ["Credit","The opposite of debit. Total debits must always equal total credits."],
+      ["Draft journal","Created but not yet posted — still editable."],
+      ["Posted journal","Locked into the GL. Can't be changed — only reversed."],
+      ["Reversal","A system-made journal that exactly cancels out a posted one."],
+      ["Opening balance","Your starting GL balances at go-live."],
+      ["Closing entry","The year-end journal that moves net income into retained earnings."],
+      ["Functional currency","Your business's main reporting currency, set once in Financial Settings."],
+    ]},
+    {type:"glossary", title:"Configuration layer", terms:[
+      ["Account mapping","A rule that says 'whenever the system needs account X, use this real GL account' — can vary by branch, warehouse, payment method, or currency."],
+      ["Mapping key","The named thing being looked up, e.g. sales_revenue or accounts_receivable."],
+      ["Posting rule set","A versioned recipe that turns one type of business event into journal lines."],
+      ["Posting rule line","One line inside that recipe: debit or credit, where the amount comes from, and which account to use."],
+      ["Amount source","Which number from the event to use — gross amount, tax amount, inventory cost, and so on."],
+      ["Account resolution type","How the system finds the account — a fixed ID, a mapping lookup, the payment method used, a tax account, etc."],
+      ["Accounting event","A record of something that happened in the business, waiting to become (or already turned into) a journal."],
+      ["Idempotency key","A unique fingerprint that stops the same event from ever creating two journals."],
+    ]},
+    {type:"glossary", title:"Fiscal &amp; control", terms:[
+      ["Fiscal year (FY)","A defined date range, e.g. 1 Jan – 31 Dec 2026, used for reporting and locking periods."],
+      ["Fiscal year status","open, closing, closed, or reopening — controls whether posting is allowed."],
+      ["Cutover date","The earliest date live, automatic posting is allowed."],
+      ["Reopen window","A temporary window after a dual-approved reopen where posting to a closed year is allowed again — 48 hours by default."],
+      ["Retained earnings","The equity account that receives the year's profit or loss at close. Required before you can close a year."],
+    ]},
+    {type:"glossary", title:"Tax", terms:[
+      ["Tax type","A configured rate and method, e.g. GST 5%, linked to its own GL accounts."],
+      ["Output tax","Tax you collect on sales — a liability."],
+      ["Input tax","Tax you pay on purchases — an asset, or partly recoverable."],
+      ["Recoverable percentage","On purchases, how much of the input tax you can actually claim back."],
+      ["Exclusive tax","Tax added on top of the price (100 + 5% = 105)."],
+      ["Inclusive tax","Tax already baked into the price (105 inclusive of 5% tax = 100 net)."],
+    ]},
+    {type:"glossary", title:"Sub-ledgers &amp; sub-modules", terms:[
+      ["AR / Accounts Receivable","Money customers owe you."],
+      ["AP / Accounts Payable","Money you owe suppliers."],
+      ["Cost centre","An optional tag on a journal line for department or project-level profit and loss."],
+      ["Bank reconciliation","Matching your bank statement lines to what's actually posted in the GL."],
+      ["Petty cash","A small-cash register with top-ups and disbursements."],
+      ["Cheque register","Tracks a cheque's life from received/issued through cleared or bounced."],
+      ["Fixed asset","A capitalized item that depreciates over time."],
+      ["Credit note","Reduces what a customer owes you. Fires the credit_note.issued event."],
+      ["Debit note","Reduces what you owe a supplier. Issued from Procurement, not from Accounting."],
+    ]},
+    {type:"table", title:"Abbreviations", headers:["Short form","Means"], rows:[
+      ["COA","Chart of Accounts"],["GL","General Ledger"],["JV","Journal Voucher / Journal Entry"],
+      ["FY","Fiscal Year"],["P&L","Profit and Loss (Income Statement)"],["TB","Trial Balance"],
+      ["GRN","Goods Receiving Note"],["COGS","Cost of Goods Sold"],["WAC","Weighted Average Cost"],
+      ["FIFO","First In, First Out"],["AR","Accounts Receivable"],["AP","Accounts Payable"],["FX","Foreign Exchange"],
+    ]},
+  ]
+},
+{
+  id:"s3", num:"3", title:"The big picture", menu:null,
+  intro:"Nothing in the point-of-sale screen hardcodes an account number. Instead, a business event flows through three layers before it ever touches your books.",
+  blocks:[
+    {type:"flowdiagram"},
+    {type:"steps", title:"How a sale actually becomes a journal", items:[
+      "The POS finishes a sale and quietly announces <b>sale.completed</b>, carrying the amounts involved.",
+      "A <b>posting rule</b> for that event type says what to do: debit the payment account, credit sales revenue, credit output tax, debit COGS, credit inventory — whatever you've configured.",
+      "<b>Account mappings</b> translate those generic ideas into real account numbers — sales_revenue becomes 4100, output_tax becomes 2200, and so on.",
+      "The <b>Journal Service</b> checks the entry balances and the fiscal period is open, then posts it."
+    ]},
+    {type:"table", title:"The configuration stack, bottom to top", headers:["Layer","You configure","Effect"], rows:[
+      ["1. Chart of Accounts","Account codes, types, hierarchy","Defines what accounts exist"],
+      ["2. Account Mappings","Keys → accounts, with optional scoping","Defines which account gets picked for each idea"],
+      ["3. Posting Rules","Event type → debit/credit lines","Defines how an event becomes a journal"],
+      ["4. Financial Settings","Currency, retained earnings, tax defaults, cutover","Sets the global defaults"],
+      ["5. Tax Types","Rates and their GL accounts","Stamps tax lines correctly"],
+      ["6. Fiscal Years","Open / close / reopen","Decides when posting is allowed at all"],
+    ]},
+    {type:"note", tone:"warn", text:"If layers 1–3 are incomplete, auto-posting either <b>fails</b> or is <b>skipped</b> — see Section 12 for exactly which."},
+    {type:"table", title:"What you do → what you'll see", headers:["You do this…","System records…","You'll find it in…"], rows:[
+      ["Complete a POS sale","sale.completed → revenue, tax, cash/card, COGS","Journal Entries, GL, P&L, Trial Balance"],
+      ["Receive goods (GRN)","purchase.received → inventory + clearing","Journal Entries, Inventory Valuation"],
+      ["Match a supplier invoice","purchase.invoice_posted → AP, input tax","AP Aging, Journal Entries"],
+      ["Pay a supplier","payment.made → bank + AP","Bank Book, AP Aging"],
+      ["Issue a credit note","credit_note.issued → reduces AR","Credit Notes list, AR Aging"],
+      ["Adjust inventory","inventory.adjusted / stock.scrapped","Journal Entries, Inventory Valuation"],
+      ["Receive a stock transfer","transfer.confirmed","Inter-warehouse inventory GL (if configured)"],
+      ["Close a fiscal year","Closing journal → retained earnings","Fiscal year status flips to Closed"],
+      ["Import opening balances","Opening journal, after approval","Trial Balance, Balance Sheet at cutover"],
+    ]},
+    {type:"note", tone:"info", text:"<b>Posting happens in real time.</b> There's no overnight batch — auto-posting runs in the same moment as the sale or payment. If it fails, the sale itself still completes; you'll just see a Failed row on the Accounting Events screen to fix and retry."},
+  ]
+},
+{
+  id:"s4", num:"4", title:"Where things live in the menu", menu:"Admin → Accounting",
+  intro:"A map of every screen, grouped by whether it's always available (Core) or needs a sub-module switched on.",
+  blocks:[
+    {type:"table", title:"Core — visible with permission, on any branch", headers:["Screen","Typical permission needed"], rows:[
+      ["Chart of Accounts","accounting.view or accounting.manage-coa"],
+      ["Account Mappings","accounting.manage-mappings"],
+      ["Posting Rules","accounting.manage-posting-rules"],
+      ["Journal Entries","accounting.view"],
+      ["Financial Settings","accounting.manage-fiscal-years or accounting.view"],
+      ["Financial Reports","accounting.view-reports"],
+      ["Accounting Events","accounting.view"],
+    ]},
+    {type:"table", title:"Sub-modules — need the branch module ON, plus permission", headers:["Screen","Needs module","Permission"], rows:[
+      ["Cost Centres","cost_centres","accounting.manage-cost-centres"],
+      ["Credit Notes","credit_notes + ar_ap","accounting.view"],
+      ["Tax Types","tax","accounting.manage-tax-settings"],
+      ["Bank Accounts","bank_reconciliation","accounting.manage-bank-accounts"],
+      ["Bank Reconciliation","bank_reconciliation","accounting.reconcile-bank"],
+      ["Currencies","multi_currency","accounting.view"],
+      ["Petty Cash","petty_cash","accounting.manage-petty-cash"],
+      ["Cheques","cheques","accounting.manage-cheques"],
+      ["Fixed Assets","fixed_assets","accounting.manage-assets"],
+    ]},
+    {type:"note", tone:"info", text:"<b>Imports have no dedicated menu item.</b> COA and opening balance <i>uploads</i> happen in the general Import/Export area; only <i>approving</i> the staged batch happens on an accounting route."},
+  ]
+},
+{
+  id:"s5", num:"5", title:"Setting up a new branch", menu:null,
+  intro:"Follow this order for a clean go-live — each step depends on the one before it.",
+  blocks:[
+    {type:"steps", title:"Recommended setup sequence", items:[
+      "<b>Enable the sub-modules</b> this branch actually needs — this unlocks the relevant menu items and routes.",
+      "<b>Configure Financial Settings</b> — currency, retained earnings account, cutover date, tax defaults. Everything downstream depends on this.",
+      "<b>Create or import the Chart of Accounts</b> — accounts must exist before anything can point to them.",
+      "<b>Review Account Mappings</b> — either the seeded defaults or your own custom setup.",
+      "<b>Review Posting Rules</b> — this is what actually turns events into journals.",
+      "<b>Create a Fiscal Year</b> that covers your go-live date — posting needs an open year to land in.",
+      "<b>Import opening balances</b>, then validate and approve — this loads your starting Trial Balance without double-counting anything already happening operationally.",
+      "<b>Configure Tax Types</b>, if you're using the tax module.",
+      "<b>Optional extras:</b> bank accounts, cost centres, petty cash, and so on.",
+      "<b>Run one test sale or GRN</b> in a sandbox and confirm it shows up as Completed with the right numbers."
+    ]},
+    {type:"table", title:"If you skip a step, here's what breaks", headers:["Skipped step","What you'll see"], rows:[
+      ["Fiscal year","Posting fails: “fiscal period closed” or no fiscal year covers the date"],
+      ["Mappings","Posting fails: “could not resolve account for mapping key …”"],
+      ["Posting rules","The event is marked Skipped — no journal, no error"],
+      ["Retained earnings account","Year-end close fails outright"],
+      ["Cutover date","Journals dated before cutover may be blocked"],
+      ["Opening balance approval","No starting balances appear — only new operational postings"],
+    ]},
+  ]
+},
+{
+  id:"s6", num:"6", title:"Chart of Accounts", menu:"Accounting → Chart of Accounts",
+  intro:"The backbone of the whole system. Every single journal line points to exactly one account here.",
+  blocks:[
+    {type:"table", title:"What each field means", headers:["Field","Meaning"], rows:[
+      ["Code","A unique account ID, used in imports and reports."],
+      ["Name","What shows on journals and reports."],
+      ["Type","Asset / Liability / Equity / Revenue / Expense — decides which statement it lands on."],
+      ["Parent","Optional — should point to a group (header) account."],
+      ["Is group","Yes = header only, can't receive postings."],
+      ["Is postable","Yes = journal lines can actually use it."],
+      ["Branch","Optional — scopes the account to one branch."],
+      ["Status","Inactive accounts are hidden from pickers but keep their history."],
+    ]},
+    {type:"table", title:"A typical seeded structure", headers:["Code range","Type","Examples"], rows:[
+      ["1xxx","Asset","Cash 1100 · Bank 1210 · AR 1300 · Inventory 1400"],
+      ["2xxx","Liability","AP 2100 · Output tax 2200"],
+      ["3xxx","Equity","Opening balance equity 3400 · Retained earnings"],
+      ["4xxx","Revenue","Sales 4100 · Sales returns 4150"],
+      ["5xxx","Expense","COGS 5100 · Adjustments 5910"],
+    ]},
+    {type:"whatif", title:"What if…", items:[
+      {cause:"An account code doesn't exist", effect:"Any import, mapping, or posting that references it fails with a validation error."},
+      {cause:"You try to post to a group account", effect:"Blocked — group accounts are headers only, never postable."},
+      {cause:"A duplicate code exists in the same branch", effect:"Import validation fails; manual creation may also error."},
+      {cause:"An account has the wrong type", effect:"Reports get misclassified. Fix it with a reversal and remapping — never by editing posted lines."},
+      {cause:"There's no Chart of Accounts at all", effect:"No journals can be created, and auto-posting fails the moment it tries to resolve an account."},
+    ]},
+  ]
+},
+{
+  id:"s7", num:"7", title:"Account Mappings", menu:"Accounting → Account Mappings",
+  intro:"Mappings are the translation layer — they connect a logical idea, like “sales revenue,” to a real account number, and can get more specific by branch, warehouse, or payment method.",
+  blocks:[
+    {type:"table", title:"Common mapping keys (seeded)", headers:["Mapping key","Used for","Example account"], rows:[
+      ["sales_revenue","Sales credit","4100"],
+      ["sales_return","Returns","4150"],
+      ["accounts_receivable","Customer AR","1300"],
+      ["accounts_payable","Supplier AP","2100"],
+      ["cash_on_hand","Cash payments","1100"],
+      ["bank_account","Generic bank","1210"],
+      ["payment_method_account","Per POS payment method","Scoped by cash / card / bank_transfer"],
+      ["inventory_asset","Stock asset","1400"],
+      ["cogs","Cost of sales","5100"],
+      ["output_tax","Sales tax liability","2200"],
+      ["input_tax","Purchase tax asset","1350"],
+      ["opening_balance_equity","Opening balance offset","3400"],
+      ["inventory_adjustment","Stock adjustments","5910"],
+      ["inventory_write_off","Scrap / write-off","5910"],
+      ["bad_debt_expense","AR write-off","5910"],
+    ]},
+    {type:"steps", title:"How the system picks which mapping to use", items:[
+      "It loads every active mapping for that key.",
+      "It filters down by branch, warehouse, payment method, or currency — whatever's present in the event.",
+      "It respects each mapping's effective date range.",
+      "It picks the <b>most specific</b> match — a branch-plus-warehouse mapping beats a global one."
+    ]},
+    {type:"whatif", title:"What if…", items:[
+      {cause:"No mapping exists for a key", effect:"Auto-posting fails, and you'll see the error on the Accounting Events screen."},
+      {cause:"A mapping points to an inactive account", effect:"It's skipped during resolution — and may fail entirely if there's no fallback."},
+      {cause:"Two mappings are equally specific", effect:"The one with the lower priority number wins."},
+      {cause:"The wrong mapping was used", effect:"Journals post to the wrong account. Reverse the journal and fix the mapping before reprocessing."},
+    ]},
+  ]
+},
+{
+  id:"s8", num:"8", title:"Posting Rules", menu:"Accounting → Posting Rules",
+  intro:"A posting rule is the recipe: one event type in, a set of debit and credit lines out.",
+  blocks:[
+    {type:"table", title:"Rule set fields", headers:["Field","Meaning"], rows:[
+      ["Code / Name","How you identify it internally"],
+      ["Event type","Which business event triggers this rule"],
+      ["Effective from / to","The date range this rule applies"],
+      ["Branch","Optional branch-specific override"],
+      ["Priority","When several rules could match, the higher priority wins"],
+      ["Status","Inactive rules are simply ignored"],
+    ]},
+    {type:"table", title:"What each line inside a rule defines", headers:["Concept","Examples"], rows:[
+      ["Side","Debit or Credit"],
+      ["Amount source","settlement_amount, net_amount, tax_amount, inventory_cost, gross_amount…"],
+      ["Account resolution","Payment method account, mapping key, tax account, bank account, fixed account…"],
+      ["Required","If false, the line is simply skipped when its amount is zero"],
+    ]},
+    {type:"table", title:"Event types that come pre-configured", headers:["Event","Where it comes from"], rows:[
+      ["sale.completed","POS checkout confirmed"],
+      ["sale.returned","A return or void"],
+      ["purchase.received","Goods receiving note posted"],
+      ["purchase.invoice_posted","Supplier invoice matched"],
+      ["purchase.returned","Purchase return"],
+      ["payment.made","Supplier payment recorded"],
+      ["credit_note.issued","Customer credit note"],
+      ["debit_note.issued","Supplier debit note"],
+      ["ar.write_off","Customer bad debt write-off"],
+      ["inventory.adjusted","Manual stock adjustment"],
+      ["stock.scrapped","Scrap / write-off movement"],
+      ["transfer.confirmed","Stock transfer fully received"],
+    ]},
+    {type:"table", title:"Worked example: sale.completed", headers:["Line","Side","Amount","Account"], rows:[
+      ["1","Debit","Settlement (cash/card split)","Payment method account"],
+      ["2","Credit","Net sales","sales_revenue mapping"],
+      ["3","Credit","Tax","output_tax mapping (skipped if zero tax)"],
+      ["4","Debit","Inventory cost","cogs mapping (optional)"],
+      ["5","Credit","Inventory cost","inventory_asset mapping (optional)"],
+    ]},
+    {type:"note", tone:"info", text:"<b>Net effect:</b> cash goes up, revenue and tax get credited, cost of goods sold gets debited, and inventory gets credited down — all in one balanced journal, automatically."},
+    {type:"whatif", title:"What if…", items:[
+      {cause:"No rule exists for an event type", effect:"The event is marked Skipped — this is expected behavior, not an error."},
+      {cause:"A required line can't find an account", effect:"The event fails, with a resolution error explaining why."},
+      {cause:"A line's amount is zero and it's marked optional", effect:"It's simply left out — the journal can still balance fine."},
+      {cause:"Several active rules could match", effect:"The highest-priority match for that date and branch wins."},
+      {cause:"You edit a rule", effect:"Only future events use the new version — already-posted journals never change."},
+    ]},
+  ]
+},
+{
+  id:"s9", num:"9", title:"Financial Settings", menu:"Accounting → Financial Settings",
+  intro:"The global defaults everything else builds on — currency, control accounts, journal behavior, and tax defaults, all on one page.",
+  blocks:[
+    {type:"table", title:"General", headers:["Setting","Meaning"], rows:[
+      ["Functional currency","Your reporting currency for every GL amount"],
+      ["Fiscal year start month","Used to suggest new fiscal years"],
+      ["Accounting cutover date","Earliest date live posting is allowed"],
+      ["Fiscal year reopen window (hours)","How long an approved reopen stays open — 48 hours by default"],
+      ["Journal numbering mode","branch_fiscal or global voucher numbering"],
+    ]},
+    {type:"table", title:"GL control accounts", headers:["Setting","Meaning"], rows:[
+      ["Retained earnings account","Required before you can close a year"],
+      ["Opening balance equity","Offsets your opening balance import"],
+      ["Suspense account","A temporary holding spot when a rule can't resolve an account cleanly"],
+      ["Rounding account","Absorbs penny differences on multi-line journals"],
+      ["FX gain / FX loss","Used by multi-currency revaluation"],
+    ]},
+    {type:"note", tone:"danger", text:"<b>Retained earnings not set?</b> Fiscal year close will abort with a clear error the moment you try."},
+    {type:"table", title:"Journal &amp; tax controls", headers:["Setting","Meaning"], rows:[
+      ["Allow manual journal posting","If off, only system-generated journals can post at all"],
+      ["Manual journal approval limit","Amounts above this need approval before posting"],
+      ["Default sales tax type","Used when a sale doesn't specify one"],
+      ["Default purchase tax type","Used when a purchase event doesn't specify one"],
+      ["Tax reporting enabled","Toggles the tax report features"],
+      ["Tax return frequency","Monthly / Quarterly / Annual — for reporting cadence"],
+    ]},
+    {type:"note", tone:"info", text:"Fiscal years are managed on this same page — list, close, request-reopen, and approve/reject reopen requests all live here."},
+  ]
+},
+{
+  id:"s10", num:"10", title:"Fiscal years", menu:null,
+  intro:"Fiscal years control when posting is allowed at all — every journal date has to fall inside an open one.",
+  blocks:[
+    {type:"table", title:"Statuses", headers:["Status","Posting allowed?","What it means"], rows:[
+      ["Open","Yes","Normal day-to-day operation"],
+      ["Closing","Only for the close journal","A brief transitional state during year-end"],
+      ["Closed","No","Every journal in that year is locked"],
+      ["Reopening","Yes, until it expires","A temporary window after dual approval"],
+    ]},
+    {type:"steps", title:"What happens when you close a year", items:[
+      "The system checks the year is open, has no unposted drafts, no unbalanced posted journals, and that retained earnings is configured.",
+      "Status flips to <b>Closing</b>.",
+      "Every journal in the year gets locked.",
+      "Net income — revenue minus expenses — is calculated from posted, non-closing entries.",
+      "If it's material, a <b>closing journal</b> transfers that net income into retained earnings.",
+      "Status flips to <b>Closed</b>, and who closed it plus when is recorded."
+    ]},
+    {type:"note", tone:"warn", text:"<b>If close fails</b>, the year stays open (or reverts from Closing) and the error tells you exactly why — most often an unposted draft sitting in that year."},
+    {type:"steps", title:"Reopening a closed year", items:[
+      "Someone submits a <b>reopen request</b> with a reason.",
+      "A <b>first approver</b> — a different user — signs off.",
+      "A <b>second approver</b> signs off — status flips to <b>Reopening</b> and journals unlock.",
+      "A countdown starts, based on your configured reopen window.",
+      "When it expires, the year automatically locks itself back to <b>Closed</b>."
+    ]},
+    {type:"whatif", title:"What if…", items:[
+      {cause:"A reopen request is rejected", effect:"It's marked rejected, and the year stays closed."},
+      {cause:"You try to post after the reopen window expires", effect:"Blocked, with an error naming the fiscal year and its status."},
+    ]},
+    {type:"table", title:"How other features respect the fiscal year", headers:["Feature","Fiscal interaction"], rows:[
+      ["Manual journals","journal_date must fall inside an open year (or a valid reopen window)"],
+      ["Auto-posting","Same rule — uses the event or sale date"],
+      ["Opening balance import","Cutover date and fiscal year must both allow the import date"],
+      ["Reversals","The reversal date itself must land in an open period"],
+    ]},
+  ]
+},
+{
+  id:"s11", num:"11", title:"Journal entries (manual)", menu:"Accounting → Journal Entries",
+  intro:"For anything that isn't auto-posted — corrections, one-off adjustments, or entries with no operational trigger.",
+  blocks:[
+    {type:"table", title:"Status lifecycle", headers:["Status","Editable?","In the GL?"], rows:[
+      ["Draft","Yes","No"],
+      ["Pending approval","Limited","No"],
+      ["Approved","No — except posting it","No"],
+      ["Posted","No — reverse only","Yes"],
+      ["Reversed","N/A — original is marked reversed","Original + reversal both appear"],
+    ]},
+    {type:"steps", title:"Creating one", items:[
+      "Journal Entries → <b>New</b>.",
+      "Enter the date, description, and branch.",
+      "Add lines — account, and either a debit or a credit, not both, per line.",
+      "Save as <b>Draft</b>.",
+      "Submit for approval if the amount is over your configured limit.",
+      "<b>Post</b> once it's approved and balanced."
+    ]},
+    {type:"note", tone:"info", text:"Before posting, the system always checks: at least one line exists, debits equal credits to two decimal places, the fiscal period is open, and every account used is postable and active."},
+    {type:"steps", title:"Reversing a posted journal", items:[
+      "Open the posted journal → <b>Reverse</b>.",
+      "The system creates a new draft with the opposite debits and credits, dated whenever you choose.",
+      "That reversal posts through the same checks as any other journal.",
+      "The original is marked <b>Reversed</b>."
+    ]},
+    {type:"note", tone:"warn", text:"The reversal's fiscal year is worked out from the <b>reversal date you pick</b> — not copied from the original entry's year."},
+    {type:"whatif", title:"What if…", items:[
+      {cause:"A draft doesn't balance", effect:"Posting is blocked, and the error shows both totals and the exact difference."},
+      {cause:"You try to post into a closed fiscal year", effect:"Blocked — with a detailed error naming the year and its status."},
+      {cause:"You try to edit a posted journal", effect:"Not allowed at all — reverse it instead."},
+      {cause:"Manual posting is switched off in Settings", effect:"Manual entries can't post, even if they're balanced and approved."},
+    ]},
+  ]
+},
+{
+  id:"s12", num:"12", title:"Accounting events (automatic posting)", menu:"Accounting → Accounting Events",
+  intro:"Every attempt to auto-post something leaves a trace here — a complete audit trail of operational activity turning into (or failing to turn into) the General Ledger.",
+  blocks:[
+    {type:"table", title:"Event statuses", headers:["Status","Meaning","What to do"], rows:[
+      ["Pending","Recorded, not processed yet","Usually clears itself within moments"],
+      ["Processing","The pipeline is running","If stuck past ~5 minutes, the system auto-recovers it for retry"],
+      ["Completed","Journal posted successfully","Nothing — click through to the linked journal if you like"],
+      ["Failed","Something went wrong building or posting it","Read the error, fix the config, then Retry"],
+      ["Skipped","No active posting rule matched this event type","Add a rule, or ignore it if that's intentional"],
+    ]},
+    {type:"steps", title:"The pipeline, step by step", items:[
+      "An operational module fires an event — a sale completes, for example.",
+      "A listener hands it to the Accounting Event pipeline.",
+      "An <b>idempotency check</b> runs first — if this exact event already completed, the existing journal is returned and nothing new is created.",
+      "If no posting rule matches, the event is marked <b>Skipped</b>.",
+      "Otherwise the <b>Posting Rule Engine</b> builds the journal lines.",
+      "A draft journal is created and posted in a single database transaction.",
+      "The event is marked <b>Completed</b>, linked to the journal it produced."
+    ]},
+    {type:"note", tone:"info", text:"<b>Retry</b> is available on any Failed event, once you've fixed whatever caused it — a missing mapping, a closed fiscal year, whatever the error pointed to."},
+    {type:"whatif", title:"What if…", items:[
+      {cause:"The same sale fires twice (double-click, retried webhook)", effect:"The second attempt finds the already-Completed event and returns it — no second journal is ever created."},
+      {cause:"A mapping is missing", effect:"Failed, with a “could not resolve account…” error."},
+      {cause:"The fiscal year for that date is closed", effect:"Failed, with a period-lock message."},
+      {cause:"Tax amount is positive but no tax type is set", effect:"The default from Financial Settings may be used — or the tax line may fail if the tax accounts themselves are missing."},
+      {cause:"Inventory cost comes out to zero", effect:"Optional COGS lines are simply skipped if they're marked not required."},
+    ]},
+  ]
+},
+{
+  id:"s13", num:"13", title:"Tax configuration &amp; posting", menu:"Accounting → Tax Types (needs the tax module)",
+  intro:"How a tax rate turns into a properly separated liability or asset line on your journals.",
+  blocks:[
+    {type:"table", title:"Tax type fields", headers:["Field","Meaning"], rows:[
+      ["Code / Name","Identifier, e.g. GST5 — GST 5%"],
+      ["Rate","The percentage"],
+      ["Calculation method","Exclusive (added on top) or Inclusive (baked in)"],
+      ["Direction","Sales (output), Purchase (input), or Both"],
+      ["Output tax account","The liability account for tax you've collected"],
+      ["Input tax account","The asset account for tax you've paid"],
+      ["Recoverable %","On purchases, how much input tax can actually be claimed back"],
+    ]},
+    {type:"steps", title:"How tax actually reaches the GL", items:[
+      "An operational event includes a tax amount and, optionally, a tax type in its payload.",
+      "A posting rule line with amount source <b>Tax amount</b> and resolution <b>Tax account</b> stamps that tax type onto the journal line.",
+      "For purchases, only the recoverable portion of input tax posts to the input tax asset account."
+    ]},
+    {type:"whatif", title:"What if…", items:[
+      {cause:"The tax module is disabled for this branch", effect:"The Tax Types menu is hidden — but tax lines may still post fine if the rules and mappings already exist."},
+      {cause:"No tax type is configured at all", effect:"Tax lines may fail, or post without a tax type, depending on how the rule is written."},
+      {cause:"Tax was disabled at POS checkout", effect:"The tax amount comes through as zero, so any optional tax lines get skipped automatically."},
+      {cause:"The output tax account is wrong", effect:"Your tax liability is misstated — fix the tax type, then reverse and reprocess if needed."},
+    ]},
+  ]
+},
+{
+  id:"s14", num:"14", title:"Cost centres", menu:"Accounting → Cost Centres (needs the cost_centres module)",
+  intro:"An optional tag you can put on a journal line to see profit and loss by department, project, or store — not a replacement for the account itself, just an extra dimension.",
+  blocks:[
+    {type:"steps", title:"Setting one up", items:[
+      "Create your cost centre hierarchy — code, name, optional parent, optional branch.",
+      "Configure your posting rules (or manual journals) to actually tag lines with a cost_centre_id where it's relevant."
+    ]},
+    {type:"note", tone:"info", text:"The <b>Cost Centre P&amp;L</b> report, under Financial Reports, rolls up revenue and expense by cost centre."},
+    {type:"whatif", title:"What if…", items:[
+      {cause:"The module is disabled", effect:"The menu is hidden, but lines still post normally — just without a cost centre attached."},
+      {cause:"A line has no cost centre", effect:"It only shows up in the consolidated P&L, not any per-centre breakdown."},
+    ]},
+  ]
+},
+{
+  id:"s15", num:"15", title:"Imports — COA &amp; opening balances", menu:null,
+  intro:"Both import types follow the same shape: upload, validate, then explicitly approve. Nothing hits your live books just from uploading a file.",
+  blocks:[
+    {type:"flow", title:"Two-phase import", steps:["Upload CSV","Validate rows","Batch: Validated / Failed","Approve","Committed to GL / COA"]},
+    {type:"table", title:"Chart of Accounts import", headers:["Step","What happens"], rows:[
+      ["1. Upload","CSV parsed row by row"],
+      ["2. Stage","Each row validated — code, type, parent, branch"],
+      ["3. Finalize","Batch marked Validated or Failed"],
+      ["4. Approve","Valid rows are written into the Chart of Accounts"],
+    ]},
+    {type:"note", tone:"info", text:"<b>Typical CSV columns:</b> code, name, type, parent_code, is_group, is_postable, branch_code, currency_code, status. A row that fails validation is flagged with a message — the batch can stay Failed until you fix and re-import it."},
+    {type:"table", title:"Opening balance import", headers:["Step","What happens"], rows:[
+      ["Upload","Entity type: opening-balances"],
+      ["Validate","Each line checked: postable account, debit XOR credit, header balances"],
+      ["Reconcile","For AR/AP batches, party-level totals are compared against the control account"],
+      ["Approve","A single balanced opening journal is created, flagged as an opening balance, and posted"],
+    ]},
+    {type:"note", tone:"warn", text:"<b>Variance tolerance:</b> if your AR or AP sub-ledger total doesn't match the control account within about a cent, the batch stays <i>unreconciled</i> until an authorized user explicitly approves the variance."},
+    {type:"whatif", title:"What if…", items:[
+      {cause:"Debits and credits don't balance", effect:"The batch fails outright — no journal is created."},
+      {cause:"Someone without permission tries to approve", effect:"403 Forbidden."},
+      {cause:"The cutover date is after the journal date", effect:"Posting is blocked at approval time."},
+      {cause:"An account in the file doesn't exist in the COA", effect:"That line fails validation."},
+      {cause:"You approve the same COA batch twice", effect:"Safe — it upserts by code, so nothing duplicates."},
+    ]},
+  ]
+},
+{
+  id:"s16", num:"16", title:"Sub-modules", menu:null,
+  intro:"Each of these is opt-in per branch. Here's what each one actually does and where to find it.",
+  blocks:[
+    {type:"table", title:"16.1 Credit notes (needs credit_notes + ar_ap)", headers:["","Detail"], rows:[
+      ["Menu","Accounting → Credit Notes"],
+      ["What it does","Issue a credit note against a customer, which reduces what they owe"],
+      ["Fires","credit_note.issued → credits AR, debits revenue or a dedicated account per your rule"],
+    ]},
+    {type:"note", tone:"warn", text:"If credit_notes is enabled but ar_ap isn't, the Credit Notes module stays off — both are required together."},
+    {type:"table", title:"16.2 Debit notes — no standalone Accounting page", headers:["","Detail"], rows:[
+      ["Where to find it","Procurement → Purchase Returns → issue a debit note on an approved return"],
+      ["Fires","debit_note.issued"],
+      ["GL impact","Reduces AP / adjusts the purchase accrual, per the seeded posting rule"],
+      ["PDF","Available directly from the purchase return / debit note route"],
+    ]},
+    {type:"note", tone:"info", text:"<b>Looking for “Debit Notes” in Accounting and can't find it?</b> That's by design — it lives under Procurement, not Accounting. If posting fails, check Accounting Events for a Failed debit_note.issued row and troubleshoot it the same way as any other event."},
+    {type:"table", title:"16.3 Bank accounts &amp; reconciliation (needs bank_reconciliation)", headers:["","Detail"], rows:[
+      ["Bank Accounts","Link a real bank account to a COA account"],
+      ["Reconciliation","Import a statement, then match unmatched lines to journal transactions or create adjustments"],
+    ]},
+    {type:"note", tone:"warn", text:"A bank account that isn't linked to a COA account can't be reconciled — that link is required."},
+    {type:"table", title:"16.4 Multi-currency (needs multi_currency)", headers:["","Detail"], rows:[
+      ["Currencies","Maintain currency codes and exchange rates"],
+      ["Storage","Journals can hold both the transaction currency and the converted functional-currency amount"],
+      ["FX revaluation","A service can post unrealized gain/loss journals at period end"],
+    ]},
+    {type:"note", tone:"danger", text:"If an exchange rate is missing for a currency, conversion simply fails for any event in that currency."},
+    {type:"table", title:"16.5 Petty cash (needs petty_cash)", headers:["","Detail"], rows:[
+      ["What it does","One register per branch or imprest holder, tracking top-ups, disbursements, and adjustments"],
+      ["Optional GL events","petty_cash.* events, if you've wired up rules for them"],
+    ]},
+    {type:"table", title:"16.6 Cheques (needs cheques)", headers:["","Detail"], rows:[
+      ["What it does","Registers cheques received or issued"],
+      ["Lifecycle","received → deposited → cleared, or bounced"],
+      ["GL","Each status change can fire an accounting event, if a rule is configured for it"],
+    ]},
+    {type:"table", title:"16.7 Fixed assets (needs fixed_assets)", headers:["","Detail"], rows:[
+      ["What it does","Asset categories define depreciation accounts; assets get capitalized"],
+      ["Depreciation","A periodic batch posts asset.depreciation_due"],
+    ]},
+    {type:"note", tone:"danger", text:"If the depreciation accounts aren't configured, the depreciation post simply fails."},
+  ]
+},
+{
+  id:"s17", num:"17", title:"Financial reports", menu:"Accounting → Financial Reports",
+  intro:"Everything here is built from what's actually posted — drafts never appear until they're finalized.",
+  blocks:[
+    {type:"table", title:"What's available", headers:["Report","What it's for"], rows:[
+      ["Trial Balance","Every account's debits and credits — must always net to zero"],
+      ["Profit and Loss","Revenue and expenses over a period"],
+      ["Balance Sheet","Assets, liabilities, and equity as of a date"],
+      ["General Ledger","Line-by-line detail per account, with a running balance"],
+      ["Cost Centre P&L","Departmental profit and loss"],
+      ["Cash Flow Statement","Cash movement by category"],
+      ["AR Aging","Customer receivables by age bucket"],
+      ["AP Aging","Supplier payables by age bucket"],
+      ["Bank Book","Bank account movements"],
+      ["Inventory Valuation","Stock value from cost layers"],
+      ["Asset Register","Fixed asset listing"],
+      ["FX Revaluation","Foreign-currency exposure summary"],
+      ["Petty Cash","Register activity"],
+      ["Cheque Status","Outstanding cheques"],
+      ["Audit Trail","Accounting-related audit log entries"],
+      ["Unposted Journals","Drafts not yet reflected in the Trial Balance"],
+      ["Journal Register","Every journal in the selected period"],
+    ]},
+    {type:"note", tone:"info", text:"<b>Common filters:</b> date range, fiscal year, branch, account or account range, and cost centre where relevant. CSV export needs the accounting.export-reports permission."},
+    {type:"note", tone:"warn", text:"<b>Draft journals never appear</b> in the Trial Balance or P&L until they're posted."},
+  ]
+},
+{
+  id:"s18", num:"18", title:"How operational modules connect", menu:null,
+  intro:"A module-by-module map of exactly which action triggers which accounting event, and what it typically does to your books.",
+  blocks:[
+    {type:"table", title:"18.1 Sales / POS", headers:["Action","Event","Typical GL impact"], rows:[
+      ["Checkout confirmed","sale.completed","Dr Cash/Card · Cr Revenue · Cr Output tax · Dr COGS · Cr Inventory"],
+      ["Sale return","sale.returned","Reverses the revenue/AR/tax/inventory components per your rule"],
+    ]},
+    {type:"note", tone:"info", text:"If tax is switched off at checkout, tax rule lines simply skip (the amount is zero). Payment-method settlement lines use the payment_method_account mapping for whichever method was used."},
+    {type:"table", title:"18.2 Procurement", headers:["Action","Event","Typical GL impact"], rows:[
+      ["GRN posted","purchase.received","Dr Inventory · Cr GRNI/clearing or AP"],
+      ["Invoice matched","purchase.invoice_posted","Dr Expense/Inventory · Dr Input tax · Cr AP"],
+      ["Supplier payment","payment.made","Dr AP · Cr Bank"],
+      ["Purchase return","purchase.returned","Reverses the purchase accrual"],
+      ["Debit note issued","debit_note.issued","Reduces AP / adjusts the supplier balance — issued from Purchase Returns, see §16.2"],
+    ]},
+    {type:"table", title:"18.3 Inventory", headers:["Action","Event","Typical GL impact"], rows:[
+      ["Manual adjustment","inventory.adjusted","Dr/Cr Inventory vs. an adjustment expense"],
+      ["Scrap / damaged","stock.scrapped","Cr Inventory · Dr write-off expense"],
+      ["Transfer received","transfer.confirmed","Inter-warehouse inventory move, if rules exist"],
+    ]},
+    {type:"note", tone:"info", text:"<b>Where COGS comes from:</b> on a sale, the inventory cost comes straight from your cost layers — FIFO or WAC, resolved by the Cost Service."},
+    {type:"table", title:"18.4 Customers / AR", headers:["Action","Event","Typical GL impact"], rows:[
+      ["Credit sale","Part of sale.completed's settlement","Dr AR · Cr Revenue"],
+      ["Credit note issued","credit_note.issued","Reduces AR / revenue"],
+      ["Bad debt write-off","ar.write_off","Dr Bad debt expense · Cr AR"],
+    ]},
+    {type:"note", tone:"warn", text:"AR Aging is an operational, sub-ledger report — the GL's AR control account should reconcile against it once opening balances and all AR events are in."},
+  ]
+},
+{
+  id:"s19", num:"19", title:"End-to-end examples", menu:null,
+  intro:"Four common real-world walkthroughs, start to finish.",
+  blocks:[
+    {type:"steps", title:"19.1 Bringing a new tenant live", items:[
+      "Enable the modules this branch needs on its branch profile.",
+      "Set Financial Settings — currency USD, retained earnings account 3200, cutover date 2026-07-01.",
+      "Import the Chart of Accounts CSV and approve the batch.",
+      "Import opening balances as of 2026-06-30, validate, and approve.",
+      "Create FY2026 (Jan–Dec) as an open year.",
+      "Post a test sale on 2026-07-02 and confirm the event shows Completed with the right numbers on the Trial Balance."
+    ]},
+    {type:"steps", title:"19.2 A normal retail day", items:[
+      "Every cashier sale fires its own sale.completed event, all day.",
+      "Next morning, the accountant filters Accounting Events for anything Failed.",
+      "Weekly, someone pulls the Trial Balance for the week.",
+      "Monthly: P&L review, bank reconciliation, and the AP payment run."
+    ]},
+    {type:"steps", title:"19.3 Closing the year", items:[
+      "Post every remaining adjusting journal.",
+      "Run the Unposted Journals report — it needs to come back empty.",
+      "Financial Settings → Close fiscal year.",
+      "Verify the closing journal actually landed in retained earnings.",
+      "The new fiscal year is already open, ready for next period's postings."
+    ]},
+    {type:"steps", title:"19.4 Fixing a mis-posted sale", items:[
+      "Find the journal — either through Journal Entries or the link from the original sale / event.",
+      "Reverse it, dated today.",
+      "If the cause is systemic, fix the underlying mapping or rule too.",
+      "Add a manual adjusting journal only if this was a genuine one-off.",
+      "Never edit the original posted journal directly."
+    ]},
+    {type:"note", tone:"info", text:"<b>Example 19.5 — a failed event after go-live:</b> open the failed row in Accounting Events, read the error (e.g. “could not resolve account for mapping key output_tax”), add the missing mapping, click Retry, and confirm it comes back Completed and balanced."},
+  ]
+},
+{
+  id:"s20", num:"20", title:"Permissions reference", menu:null,
+  intro:"For support staff diagnosing “I can't see / can't do X” tickets.",
+  blocks:[
+    {type:"table", title:"Full permission list", headers:["Permission","Grants"], rows:[
+      ["accounting.view","View Chart of Accounts, journals, and events"],
+      ["accounting.manage-coa","Create and edit the Chart of Accounts"],
+      ["accounting.manage-mappings","Account mappings CRUD"],
+      ["accounting.manage-posting-rules","Edit posting rule sets"],
+      ["accounting.create-journal","Create manual journals"],
+      ["accounting.approve-journal","Approve manual journals"],
+      ["accounting.post-journal","Post journals"],
+      ["accounting.reverse-journal","Reverse posted journals"],
+      ["accounting.import-coa","Upload a COA CSV"],
+      ["accounting.import-opening-balances","Upload an opening balance CSV"],
+      ["accounting.manage-cost-centres","Cost centre CRUD"],
+      ["accounting.manage-fiscal-years","Financial Settings and fiscal year CRUD"],
+      ["accounting.close-fiscal-year","Close a fiscal year"],
+      ["accounting.reopen-fiscal-year","Approve or reject reopen requests"],
+      ["accounting.manage-bank-accounts","Bank account setup"],
+      ["accounting.import-bank-statements","Import a bank statement CSV"],
+      ["accounting.reconcile-bank","Match reconciliation lines"],
+      ["accounting.manage-petty-cash","Petty cash registers and vouchers"],
+      ["accounting.manage-cheques","Cheque register"],
+      ["accounting.manage-assets","Fixed assets"],
+      ["accounting.manage-tax-settings","Tax types"],
+      ["accounting.view-reports","Financial reports"],
+      ["accounting.export-reports","CSV export"],
+    ]},
+    {type:"note", tone:"info", text:"The seeded <b>Accountant</b> role typically holds most of these. <b>Cashier</b> doesn't see the Accounting section at all."},
+  ]
+},
+{
+  id:"s21", num:"21", title:"Troubleshooting &amp; FAQ", menu:null,
+  intro:"The fastest way to diagnose the most common support tickets.",
+  blocks:[
+    {type:"table", title:"Navigation problems", headers:["Problem","Likely cause","Fix"], rows:[
+      ["Only 7 accounting items visible","Super-admin in All Branches mode","Select a specific branch"],
+      ["Tax Types missing","tax module off for this branch","Enable it on the branch accounting profile"],
+      ["Credit Notes missing","credit_notes or ar_ap off","Enable both together"],
+      ["The whole Accounting section is gone","No accounting.view permission","Update the user's role"],
+    ]},
+    {type:"table", title:"Posting &amp; events", headers:["Problem","Likely cause","Fix"], rows:[
+      ["Event Skipped","No posting rule for that event type","Create or activate a rule set"],
+      ["Event Failed — unbalanced","Rule lines misconfigured","Fix the amounts or sides in the posting rule"],
+      ["Event Failed — period","Fiscal year closed, or before cutover","Reopen the year, or adjust the date"],
+      ["Event Failed — account","Missing mapping, or an inactive account","Fix the mapping, or reactivate the account"],
+      ["Duplicate journals","Rare — would indicate an idempotency bug","Check whether two events actually had different source IDs"],
+      ["Stuck on Processing","An interrupted request","Wait ~5 minutes, or retry — stale recovery resets it automatically"],
+    ]},
+    {type:"table", title:"Journals", headers:["Problem","Likely cause","Fix"], rows:[
+      ["Can't post a manual journal","Debits ≠ credits","Adjust the lines until balanced"],
+      ["Post button disabled","Approval still required","The approver needs to approve it first"],
+      ["Can't post to a certain date","That fiscal year is closed","Request a reopen, or use the current year"],
+    ]},
+    {type:"table", title:"Imports", headers:["Problem","Likely cause","Fix"], rows:[
+      ["COA import failed","Invalid type, parent, or duplicate code","Fix the flagged rows shown in the batch"],
+      ["Opening balance import failed","Unbalanced","Fix the debit/credit totals"],
+      ["Opening balance approve blocked","AR/AP variance","Approve the variance, or fix the party-level lines"],
+      ["No journal after upload","Normal — approval is a separate step","Run the approve action on the batch"],
+    ]},
+    {type:"table", title:"Reports", headers:["Problem","Likely cause","Fix"], rows:[
+      ["Trial Balance doesn't net to zero","A data issue, or unposted drafts included","Run it on posted entries only, then check for corrupted lines"],
+      ["P&L is empty","No postings in that range, or wrong branch","Widen the date range, check the branch filter"],
+      ["General Ledger is empty for an account","No posted lines in that range","Post journals, or expand the date range"],
+    ]},
+    {type:"table", title:"Fiscal year", headers:["Problem","Likely cause","Fix"], rows:[
+      ["Close fails — unposted journals","Draft journals still sitting in that year","Post or delete them"],
+      ["Close fails — retained earnings","Not configured","Set the account in Financial Settings"],
+      ["Reopen isn't available","Year isn't closed yet, or a request is already pending","Finish closing it first"],
+      ["Posting blocked after a reopen","The reopen window expired","Submit a new reopen request, or post in the current year instead"],
+    ]},
+    {type:"note", tone:"warn", text:"<b>Enabling sub-modules today (interim):</b> there's no on-screen toggle yet — an admin sets <code>BranchAccountingProfile.accounting_enabled_modules</code> directly (e.g. via <code>php artisan tinker</code>), then the user selects that branch and refreshes."},
+    {type:"glossary", title:"Frequently asked questions", terms:[
+      ["Does a sale fail if accounting posting fails?","No — the sale still completes. Check Accounting Events for a Failed status and retry once the config issue is fixed."],
+      ["Can I delete a posted journal?","No. Use Reverse."],
+      ["Where's the opening balance journal?","In Journal Entries — filter by the opening balance flag, or the description left by the import batch."],
+      ["Why is COGS showing as zero on a sale?","Either there are no cost layers yet (no prior GRN/receive history), or the optional COGS line was skipped because cost came out to zero."],
+      ["Are payroll journals covered here?","No — that's a separate, later module."],
+      ["Where are debit notes in Accounting?","There isn't a Debit Notes menu — they're issued from Procurement → Purchase Returns. The GL effect still shows up via debit_note.issued in Accounting Events and Journal Entries."],
+      ["Can a customer pay on account without a new sale?","A standalone “payment received” event is still on the roadmap — today it's partially covered through the sale's own settlement lines."],
+    ]},
+  ]
+},
+];
+
+/* ============================================================
+   RENDERING
+   ============================================================ */
+function esc(s){ return s; } // content is already hand-authored HTML-safe
+
+function renderBlock(b){
+  if(b.type==="table"){
+    let head = b.headers.map(h=>`<th>${h}</th>`).join("");
+    let rows = b.rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("");
+    return `<div class="block">
+      ${b.title?`<div class="block-title"><span class="dot"></span>${b.title}</div>`:""}
+      <div class="tbl-wrap"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+    </div>`;
+  }
+  if(b.type==="whatif"){
+    let items = b.items.map(i=>`
+      <details class="whatif">
+        <summary><svg class="caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 6 6 6-6 6"/></svg>
+          <span class="cause">${i.cause}</span></summary>
+        <div class="whatif-body">${ICO.arrow}<div class="effect">${i.effect}</div></div>
+      </details>`).join("");
+    return `<div class="block">
+      ${b.title?`<div class="block-title"><span class="dot"></span>${b.title}</div>`:""}
+      <div class="whatif-list">${items}</div>
+    </div>`;
+  }
+  if(b.type==="steps"){
+    let items = b.items.map((t,i)=>`
+      <div class="step">
+        <div class="step-num">${i+1}</div>
+        <div class="step-text">${t}</div>
+      </div>`).join("");
+    return `<div class="block">
+      ${b.title?`<div class="block-title"><span class="dot"></span>${b.title}</div>`:""}
+      <div class="steps">${items}</div>
+    </div>`;
+  }
+  if(b.type==="note"){
+    const icon = b.tone==="warn"||b.tone==="danger" ? ICO.warn : ICO.info;
+    return `<div class="block"><div class="note ${b.tone||''}">${icon}<div>${b.text}</div></div></div>`;
+  }
+  if(b.type==="glossary"){
+    let terms = b.terms.map(t=>`<div class="gterm"><dt>${t[0]}</dt><dd>${t[1]}</dd></div>`).join("");
+    return `<div class="block">
+      ${b.title?`<div class="block-title"><span class="dot"></span>${b.title}</div>`:""}
+      <dl class="glossary-grid">${terms}</dl>
+    </div>`;
+  }
+  if(b.type==="flow"){
+    let chain = b.steps.map((s,i)=>{
+      const arrow = i < b.steps.length-1 ? `<span class="pipe-arrow" style="flex:0 0 auto;">${ICO.arrow}</span>` : "";
+      return `<span class="chip">${s}</span>${arrow}`;
+    }).join("");
+    return `<div class="block">
+      ${b.title?`<div class="block-title"><span class="dot"></span>${b.title}</div>`:""}
+      <div class="flow-row" style="flex-wrap:wrap;">${chain}</div>
+    </div>`;
+  }
+  if(b.type==="flowdiagram"){
+    const rows = [
+      ["sale.completed","Dr Cash/Card · Cr Revenue · Cr Output tax · Dr COGS · Cr Inventory"],
+      ["purchase.received","Dr Inventory · Cr Clearing/AP"],
+      ["payment.made","Dr AP · Cr Bank"],
+      ["inventory.adjusted","Dr/Cr Inventory vs. adjustment expense"],
+    ];
+    let items = rows.map(r=>`<div class="flow-row">
+        <span class="chip ev">${r[0]}</span>
+        <span class="flow-arrow">${ICO.arrow}</span>
+        <span class="chip">Posting Rules</span>
+        <span class="flow-arrow">${ICO.arrow}</span>
+        <span class="chip">Account Mappings</span>
+        <span class="flow-arrow">${ICO.arrow}</span>
+        <span class="chip">Chart of Accounts</span>
+        <span class="flow-arrow">${ICO.arrow}</span>
+        <span class="flow-impact">${r[1]}</span>
+      </div>`).join("");
+    return `<div class="block">
+      <div class="block-title"><span class="dot"></span>A few real events, traced end to end</div>
+      ${items}
+    </div>`;
+  }
+  return "";
+}
+
+function renderSection(s, idx){
+  const menu = s.menu ? `<div class="menu-pill">${ICO.arrow.replace('width="24" height="24"','width="12" height="12"')}${s.menu}</div>` : "";
+  const blocks = s.blocks.map(renderBlock).join("");
+  const prev = SECTIONS[idx-1];
+  const next = SECTIONS[idx+1];
+  const nav = `<div class="section-nav">
+    ${prev?`<a class="pn-link prev" href="#${prev.id}">
+      <span class="pn-dir">${ICO.arrow.replace('<path d="M5 12h14M13 6l6 6-6 6"/>','<path d="M19 12H5M11 18l-6-6 6-6"/>')} Previous</span>
+      <span class="pn-title">${prev.num}. ${prev.title.replace(/<[^>]+>/g,'')}</span>
+    </a>`:'<span></span>'}
+    ${next?`<a class="pn-link next" href="#${next.id}">
+      <span class="pn-dir">Next ${ICO.arrow}</span>
+      <span class="pn-title">${next.num}. ${next.title.replace(/<[^>]+>/g,'')}</span>
+    </a>`:''}
+  </div>`;
+  return `<section class="section" id="${s.id}" data-title="${s.title.replace(/<[^>]+>/g,'')}">
+    <div class="section-head"><span class="section-num">${s.num}</span><h2>${s.title}</h2></div>
+    <p class="section-intro">${s.intro}</p>
+    ${menu}
+    ${blocks}
+    ${nav}
+  </section>`;
+}
+
+document.getElementById("sections").innerHTML = SECTIONS.map(renderSection).join("");
+
+/* ============================================================
+   SIDEBAR NAV
+   ============================================================ */
+const navScroll = document.getElementById("navScroll");
+navScroll.innerHTML = `<div class="nav-group-label">Contents</div>` + SECTIONS.map(s=>`
+  <a class="nav-item" data-id="${s.id}" data-title="${s.title.replace(/<[^>]+>/g,'').toLowerCase()}" href="#${s.id}">
+    <span class="nav-num">${s.num}</span><span>${s.title.replace(/<[^>]+>/g,'')}</span>
+  </a>`).join("");
+
+const navItems = Array.from(document.querySelectorAll(".nav-item"));
+
+/* scrollspy */
+const sectionEls = SECTIONS.map(s=>document.getElementById(s.id));
+const crumbEl = document.getElementById("crumbCurrent");
+function setActive(id){
+  navItems.forEach(n=>n.classList.toggle("active", n.dataset.id===id));
+  const active = navItems.find(n=>n.dataset.id===id);
+  if(active){
+    crumbEl.textContent = " › " + active.textContent.trim();
+    // keep active item in view within the scrollable nav
+    const rect = active.getBoundingClientRect();
+    const parentRect = navScroll.getBoundingClientRect();
+    if(rect.top < parentRect.top || rect.bottom > parentRect.bottom){
+      active.scrollIntoView({block:"nearest"});
+    }
+  }
+}
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ setActive(e.target.id); }
+  });
+},{ rootMargin: "-15% 0px -70% 0px", threshold: 0 });
+sectionEls.forEach(el=>el && io.observe(el));
+setActive(SECTIONS[0].id);
+
+/* search filter */
+const searchInput = document.getElementById("navSearch");
+const searchHint = document.getElementById("searchHint");
+searchInput.addEventListener("input", ()=>{
+  const q = searchInput.value.trim().toLowerCase();
+  let visible = 0;
+  navItems.forEach(n=>{
+    const match = !q || n.dataset.title.includes(q);
+    n.classList.toggle("hidden", !match);
+    if(match) visible++;
+  });
+  searchHint.textContent = q ? `${visible} match${visible===1?'':'es'}` : `${SECTIONS.length} sections`;
+});
+
+/* back to top */
+const totop = document.getElementById("totop");
+window.addEventListener("scroll", ()=>{
+  totop.classList.toggle("show", window.scrollY > 600);
+});
+totop.addEventListener("click", ()=>window.scrollTo({top:0, behavior:"smooth"}));
+
+/* mobile sidebar */
+const sidebar = document.getElementById("sidebar");
+const backdrop = document.getElementById("backdrop");
+document.getElementById("mobileToggle").addEventListener("click", ()=>{
+  sidebar.classList.add("open"); backdrop.classList.add("show");
+});
+backdrop.addEventListener("click", ()=>{
+  sidebar.classList.remove("open"); backdrop.classList.remove("show");
+});
+navItems.forEach(n=>n.addEventListener("click", ()=>{
+  sidebar.classList.remove("open"); backdrop.classList.remove("show");
+}));
+</script>
+</body>
+</html>

@@ -54,7 +54,8 @@
         "cheques": "Cheques",
         "fixedAssets": "Fixed Assets",
         "admin": "Admin",
-        "settings": "Settings"
+        "settings": "Settings",
+        "helpSupport": "Help & Support"
     },
     "common": {
         "search": "Search",
