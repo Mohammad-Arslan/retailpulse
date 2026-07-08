@@ -43,7 +43,7 @@ final class AssetDepreciationService
         return $processed;
     }
 
-    public function depreciateAsset(FixedAsset $asset, ?string $asOfDate = null): float
+    public function depreciateAsset(FixedAsset $asset, ?string $asOfDate = null, ?string $idempotencyPeriod = null): float
     {
         if ($asset->status !== FixedAssetStatus::Active) {
             return 0.0;
@@ -57,32 +57,31 @@ final class AssetDepreciationService
         }
 
         $amount = min($monthly, $remaining);
+        $effectiveDate = $asOfDate ?? now()->toDateString();
+        $periodKey = $idempotencyPeriod ?? date('Y-m', strtotime($effectiveDate));
 
-        return DB::transaction(function () use ($asset, $amount, $asOfDate) {
+        return DB::transaction(function () use ($asset, $amount, $effectiveDate, $periodKey) {
             $asset->update([
                 'accumulated_depreciation' => (float) $asset->accumulated_depreciation + $amount,
-                'last_depreciation_date' => $asOfDate ?? now()->toDateString(),
+                'last_depreciation_date' => $effectiveDate,
             ]);
 
-            try {
-                $this->accountingEvents->process(
-                    'asset.depreciation_due',
-                    FixedAsset::class,
-                    $asset->id,
-                    [
-                        'date' => $asOfDate ?? now()->toDateString(),
-                        'branch_id' => $asset->branch_id,
-                        'fixed_asset_id' => $asset->id,
-                        'depreciation_amount' => $amount,
-                        'settlement_amount' => $amount,
-                        'description' => "Depreciation — {$asset->asset_code}",
-                        'source_number' => $asset->asset_code,
-                    ],
-                    1,
-                );
-            } catch (\Throwable) {
-                // GL posting optional until rules configured.
-            }
+            $this->accountingEvents->process(
+                'asset.depreciation_due',
+                FixedAsset::class,
+                $asset->id,
+                [
+                    'date' => $effectiveDate,
+                    'branch_id' => $asset->branch_id,
+                    'fixed_asset_id' => $asset->id,
+                    'depreciation_amount' => $amount,
+                    'settlement_amount' => $amount,
+                    'description' => "Depreciation — {$asset->asset_code}",
+                    'source_number' => $asset->asset_code,
+                ],
+                (int) ($asset->custodian_user_id ?? 1),
+                $periodKey,
+            );
 
             return $amount;
         });

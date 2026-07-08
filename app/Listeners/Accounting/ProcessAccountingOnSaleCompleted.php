@@ -78,13 +78,24 @@ final class ProcessAccountingOnSaleCompleted
                 'user_id' => $sale->cashier_id,
             ];
 
-            $this->accountingEvents->process(
+            $accountingEvent = $this->accountingEvents->process(
                 'sale.completed',
                 Sale::class,
                 (int) $sale->id,
                 $payload,
                 (int) ($sale->cashier_id ?? 0),
             );
+
+            $journalEntryId = $accountingEvent->journal_entry_id;
+
+            foreach ($sale->items as $index => $item) {
+                $lineCost = $itemCosts[$index]['inventory_cost'] ?? 0.0;
+
+                $item->update([
+                    'cost_consumed' => $lineCost > 0 ? $lineCost : null,
+                    'cogs_journal_entry_id' => $journalEntryId,
+                ]);
+            }
         });
     }
 }

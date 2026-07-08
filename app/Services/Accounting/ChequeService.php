@@ -9,6 +9,7 @@ use App\DTOs\Accounting\UpdateChequeStatusData;
 use App\Enums\ChequeStatus;
 use App\Enums\ChequeType;
 use App\Models\Cheque;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -83,8 +84,10 @@ final class ChequeService
         return $this->applyStatus($cheque, $data->status, $userId);
     }
 
-    public function applyStatus(Cheque $cheque, ChequeStatus $status, int $userId): Cheque
+    public function applyStatus(Cheque $cheque, ChequeStatus $status, int $userId, ?float $dishonourChargeAmount = null): Cheque
     {
+        $this->assertValidTransition($cheque->status, $status);
+
         $eventType = match ($status) {
             ChequeStatus::Deposited => 'cheque.deposited',
             ChequeStatus::Cleared => 'cheque.cleared',
@@ -92,37 +95,63 @@ final class ChequeService
             default => null,
         };
 
-        return DB::transaction(function () use ($cheque, $status, $userId, $eventType) {
-            $cheque->update(['status' => $status]);
+        return DB::transaction(function () use ($cheque, $status, $userId, $eventType, $dishonourChargeAmount) {
+            $updates = ['status' => $status];
+
+            if ($status === ChequeStatus::Bounced && $dishonourChargeAmount !== null) {
+                $updates['dishonour_charge_amount'] = $dishonourChargeAmount;
+            }
+
+            $cheque->update($updates);
 
             if ($eventType !== null) {
-                try {
-                    $event = $this->accountingEvents->process(
-                        $eventType,
-                        Cheque::class,
-                        $cheque->id,
-                        [
-                            'date' => now()->toDateString(),
-                            'branch_id' => $cheque->branch_id,
-                            'amount' => (float) $cheque->amount,
-                            'settlement_amount' => (float) $cheque->amount,
-                            'currency_code' => $cheque->currency_code,
-                            'exchange_rate' => $cheque->exchange_rate,
-                            'party_type' => $cheque->party_type,
-                            'party_id' => $cheque->party_id,
-                            'description' => "Cheque {$cheque->cheque_no} — {$status->value}",
-                            'user_id' => $userId,
-                        ],
-                        $userId,
-                    );
+                $payload = [
+                    'date' => now()->toDateString(),
+                    'branch_id' => $cheque->branch_id,
+                    'amount' => (float) $cheque->amount,
+                    'settlement_amount' => (float) $cheque->amount,
+                    'currency_code' => $cheque->currency_code,
+                    'exchange_rate' => $cheque->exchange_rate,
+                    'party_type' => $cheque->party_type,
+                    'party_id' => $cheque->party_id,
+                    'description' => "Cheque {$cheque->cheque_no} — {$status->value}",
+                    'user_id' => $userId,
+                ];
 
-                    $cheque->update(['related_journal_entry_id' => $event->journal_entry_id]);
-                } catch (\Throwable) {
-                    // Optional until posting rules exist.
+                if ($status === ChequeStatus::Bounced && $dishonourChargeAmount !== null && $dishonourChargeAmount > 0) {
+                    $payload['custom_amount'] = $dishonourChargeAmount;
                 }
+
+                $event = $this->accountingEvents->process(
+                    $eventType,
+                    Cheque::class,
+                    $cheque->id,
+                    $payload,
+                    $userId,
+                );
+
+                $cheque->update(['related_journal_entry_id' => $event->journal_entry_id]);
             }
 
             return $cheque->fresh();
         });
+    }
+
+    private function assertValidTransition(ChequeStatus $from, ChequeStatus $to): void
+    {
+        $allowed = match ($from) {
+            ChequeStatus::Pending => [ChequeStatus::Deposited, ChequeStatus::Cancelled],
+            ChequeStatus::Deposited => [ChequeStatus::Cleared, ChequeStatus::Bounced],
+            default => [],
+        };
+
+        if (! in_array($to, $allowed, true) && $from !== $to) {
+            throw new DomainException(
+                __('Invalid cheque status transition from :from to :to.', [
+                    'from' => $from->value,
+                    'to' => $to->value,
+                ]),
+            );
+        }
     }
 }

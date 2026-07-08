@@ -14,7 +14,8 @@ final class AccountMappingsSeeder extends Seeder
     {
         $accounts = ChartOfAccount::query()
             ->whereIn('code', [
-                '1100', '1210', '1300', '1350', '1400', '2100', '2200', '3400', '4100', '4150', '5100', '5910',
+                '1100', '1110', '1210', '1300', '1350', '1400', '1500', '1510', '1610', '1620',
+                '2100', '2200', '2300', '3400', '4100', '4150', '4200', '5100', '5500', '5600', '5900', '5910',
             ])
             ->pluck('id', 'code');
 
@@ -36,6 +37,16 @@ final class AccountMappingsSeeder extends Seeder
             ['mapping_key' => 'payment_method_account', 'account_code' => '1100', 'payment_method' => 'cash'],
             ['mapping_key' => 'payment_method_account', 'account_code' => '1210', 'payment_method' => 'card'],
             ['mapping_key' => 'payment_method_account', 'account_code' => '1210', 'payment_method' => 'bank_transfer'],
+            ['mapping_key' => 'petty_cash', 'account_code' => '1110'],
+            ['mapping_key' => 'cheques_in_hand', 'account_code' => '1500'],
+            ['mapping_key' => 'cheques_deposited', 'account_code' => '1510'],
+            ['mapping_key' => 'cheques_payable', 'account_code' => '2300'],
+            ['mapping_key' => 'fixed_asset', 'account_code' => '1610'],
+            ['mapping_key' => 'accumulated_depreciation', 'account_code' => '1620'],
+            ['mapping_key' => 'depreciation_expense', 'account_code' => '5500'],
+            ['mapping_key' => 'dishonour_expense', 'account_code' => '5900'],
+            ['mapping_key' => 'gain_on_disposal', 'account_code' => '4200'],
+            ['mapping_key' => 'loss_on_disposal', 'account_code' => '5600'],
         ];
 
         foreach ($mappings as $mapping) {

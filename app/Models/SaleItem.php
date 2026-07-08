@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'tax_rate',
     'tax_amount',
     'line_total_inc_tax',
+    'cost_consumed',
+    'cogs_journal_entry_id',
 ])]
 class SaleItem extends Model
 {
@@ -34,6 +36,7 @@ class SaleItem extends Model
             'tax_rate' => 'decimal:4',
             'tax_amount' => 'decimal:2',
             'line_total_inc_tax' => 'decimal:2',
+            'cost_consumed' => 'decimal:2',
             'quantity' => 'integer',
         ];
     }
@@ -51,5 +54,10 @@ class SaleItem extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function cogsJournalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class, 'cogs_journal_entry_id');
     }
 }

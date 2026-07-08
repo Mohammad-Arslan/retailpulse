@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
+use App\Enums\PettyCashApprovalStatus;
 use App\Enums\PettyCashVoucherType;
 use App\Models\PettyCashRegister;
 use App\Models\PettyCashVoucher;
@@ -15,6 +16,7 @@ final class PettyCashService
     public function __construct(
         private readonly DocumentNumberService $documentNumbers,
         private readonly AccountingEventService $accountingEvents,
+        private readonly PettyCashApprovalService $approvalService,
     ) {}
 
     /**
@@ -46,9 +48,21 @@ final class PettyCashService
                 'amount' => $amount,
                 'expense_account_id' => $data['expense_account_id'] ?? null,
                 'description' => $data['description'] ?? null,
-                'approval_status' => 'approved',
+                'approval_required' => false,
+                'approval_status' => PettyCashApprovalStatus::Approved,
                 'created_by' => $userId,
             ]);
+
+            $needsApproval = $this->approvalService->requiresApproval($voucher);
+
+            if ($needsApproval) {
+                $voucher->update([
+                    'approval_required' => true,
+                    'approval_status' => PettyCashApprovalStatus::Pending,
+                ]);
+
+                return $voucher->fresh(['register']);
+            }
 
             $balanceDelta = match ($type) {
                 PettyCashVoucherType::TopUp => $amount,

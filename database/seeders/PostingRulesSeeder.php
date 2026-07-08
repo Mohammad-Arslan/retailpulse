@@ -29,6 +29,10 @@ final class PostingRulesSeeder extends Seeder
         $this->seedInventoryAdjustedRule($effectiveFrom);
         $this->seedStockScrappedRule($effectiveFrom);
         $this->seedTransferConfirmedRule($effectiveFrom);
+        $this->seedChequeRules($effectiveFrom);
+        $this->seedPettyCashRules($effectiveFrom);
+        $this->seedAssetDepreciationRule($effectiveFrom);
+        $this->seedAssetDisposalRule($effectiveFrom);
     }
 
     private function seedSaleCompletedRule(string $effectiveFrom): void
@@ -190,6 +194,75 @@ final class PostingRulesSeeder extends Seeder
 
         $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false);
         $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false);
+    }
+
+    private function seedChequeRules(string $effectiveFrom): void
+    {
+        $received = $this->createRuleSet('cheque_received_default', 'Cheque Received — Default', 'cheque.received', $effectiveFrom);
+        $this->createLine($received->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'cheques_in_hand');
+        $this->createLine($received->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'accounts_receivable', required: false);
+
+        $deposited = $this->createRuleSet('cheque_deposited_default', 'Cheque Deposited — Default', 'cheque.deposited', $effectiveFrom);
+        $this->createLine($deposited->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'cheques_deposited');
+        $this->createLine($deposited->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'cheques_in_hand');
+
+        $cleared = $this->createRuleSet('cheque_cleared_default', 'Cheque Cleared — Default', 'cheque.cleared', $effectiveFrom);
+        $this->createLine($cleared->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'bank_account');
+        $this->createLine($cleared->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'cheques_deposited');
+
+        $bounced = $this->createRuleSet('cheque_bounced_default', 'Cheque Bounced — Default', 'cheque.bounced', $effectiveFrom);
+        $this->createLine($bounced->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'accounts_payable', required: false);
+        $this->createLine($bounced->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'bank_account', required: false);
+        $this->createLine($bounced->id, 3, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::CustomFormula, 'dishonour_expense', required: false);
+        $this->createLine($bounced->id, 4, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::CustomFormula, 'accounts_payable', required: false);
+    }
+
+    private function seedPettyCashRules(string $effectiveFrom): void
+    {
+        foreach (['petty_cash.topped_up' => PostingRuleEntrySide::Debit, 'petty_cash.disbursed' => PostingRuleEntrySide::Credit] as $event => $pettySide) {
+            $ruleSet = $this->createRuleSet(
+                str_replace('.', '_', $event).'_default',
+                ucfirst(str_replace(['.', '_'], ' ', $event)),
+                $event,
+                $effectiveFrom,
+            );
+            $opposite = $pettySide === PostingRuleEntrySide::Debit ? PostingRuleEntrySide::Credit : PostingRuleEntrySide::Debit;
+
+            $this->createLine($ruleSet->id, 1, $pettySide, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'petty_cash');
+            $this->createLine($ruleSet->id, 2, $opposite, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'cash_on_hand', required: false);
+        }
+
+        $adjusted = $this->createRuleSet('petty_cash_adjusted_default', 'Petty Cash Adjusted', 'petty_cash.adjusted', $effectiveFrom);
+        $this->createLine($adjusted->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'petty_cash', required: false);
+        $this->createLine($adjusted->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'inventory_adjustment', required: false);
+    }
+
+    private function seedAssetDepreciationRule(string $effectiveFrom): void
+    {
+        $ruleSet = $this->createRuleSet(
+            'asset_depreciation_due_default',
+            'Asset Depreciation Due',
+            'asset.depreciation_due',
+            $effectiveFrom,
+        );
+
+        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AssetAccount, AmountSource::DepreciationAmount, 'depreciation_expense_account');
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AssetAccount, AmountSource::DepreciationAmount, 'accumulated_depreciation_account');
+    }
+
+    private function seedAssetDisposalRule(string $effectiveFrom): void
+    {
+        $ruleSet = $this->createRuleSet(
+            'asset_disposed_default',
+            'Asset Disposed',
+            'asset.disposed',
+            $effectiveFrom,
+        );
+
+        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'bank_account', required: false);
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AssetAccount, AmountSource::GrossAmount, 'asset_account');
+        $this->createLine($ruleSet->id, 3, PostingRuleEntrySide::Debit, AccountResolutionType::AssetAccount, AmountSource::DepreciationAmount, 'accumulated_depreciation_account', required: false);
+        $this->createLine($ruleSet->id, 4, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::CustomFormula, 'gain_on_disposal', required: false);
     }
 
     private function createRuleSet(
