@@ -1,0 +1,52 @@
+.root {
+    /* Light mode defaults (follow app theme) */
+    --g-bg: var(--rp-page-bg);
+    --g-panel: var(--rp-surface);
+    --g-panel-2: var(--rp-surface-subtle);
+    --g-border: var(--rp-border);
+    --g-border-soft: var(--rp-border-subtle);
+    --g-text: var(--rp-text);
+    --g-text-dim: var(--rp-text-secondary);
+    --g-text-faint: var(--rp-text-muted);
+
+    /* Accent palette */
+    --g-teal: var(--color-teal-300);
+    --g-teal-dim: var(--color-teal-500);
+    --g-teal-wash: rgba(42, 124, 111, 0.10);
+    --g-amber: var(--color-amber-500);
+    --g-amber-wash: rgba(200, 118, 42, 0.10);
+    --g-red: var(--color-rose-500);
+    --g-red-wash: rgba(200, 74, 74, 0.10);
+
+    color: var(--g-text);
+    background: var(--g-bg);
+    font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+}
+
+:global(.dark) .root {
+    /* Dark mode overrides (match reference guide feel, but still theme-aware) */
+    --g-bg: #0b1220;
+    --g-panel: #111b2e;
+    --g-panel-2: #0e1626;
+    --g-border: #22304a;
+    --g-border-soft: #1a2439;
+    --g-text: #e9edf6;
+    --g-text-dim: #9aa6c0;
+    --g-text-faint: #5e6b87;
+    --g-teal: #2fd8a8;
+    --g-teal-dim: #1b8f70;
+    --g-teal-wash: rgba(47, 216, 168, 0.1);
+    --g-amber: #f0b429;
+    --g-amber-wash: rgba(240, 180, 41, 0.1);
+    --g-red: #f1786b;
+    --g-red-wash: rgba(241, 120, 107, 0.1);
+}
+
+.scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+.scrollbar::-webkit-scrollbar-thumb {
+    background: var(--g-border);
+    border-radius: 8px;
+}
+

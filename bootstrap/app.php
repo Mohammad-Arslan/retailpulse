@@ -19,6 +19,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Laravel\Ai\Exceptions\InsufficientCreditsException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -48,7 +49,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->renderable(function (InsufficientCreditsException $e, $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 402);
+            }
+
+            return null;
+        });
     })
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('import-export:prune')->dailyAt('02:00');

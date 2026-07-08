@@ -54,7 +54,8 @@
         "cheques": "Cheques",
         "fixedAssets": "Fixed Assets",
         "admin": "Admin",
-        "settings": "Settings"
+        "settings": "Settings",
+        "helpSupport": "Help & Support"
     },
     "common": {
         "search": "Search",
@@ -320,6 +321,30 @@
         "cancel": "Cancel"
     },
     "pages": {
+        "helpSupport": {
+            "askAi": {
+                "button": "Ask AI",
+                "title": "Guide Assistant",
+                "subtitle": "Answers Are Based On This Guide",
+                "placeholder": "Ask a question about this guide…",
+                "send": "Send",
+                "close": "Close",
+                "clear": "Clear",
+                "streaming": "Thinking…",
+                "emptyTitle": "Ask Anything About This Guide",
+                "emptyBody": "Get a short answer, steps, and common pitfalls — grounded in the guide you’re reading.",
+                "suggestions": {
+                    "summarize": "Summarize This Guide",
+                    "howToAddProducts": "How Do I Add Products And Make Them In Hand?",
+                    "troubleshoot": "What Should I Check If Something Is Not Working?"
+                },
+                "errors": {
+                    "generic": "Something Went Wrong. Please Try Again.",
+                    "http": "Request Failed",
+                    "sessionExpired": "Your Session Expired. Please Refresh The Page And Try Again."
+                }
+            }
+        },
         "dashboard": {
             "title": "Dashboard",
             "description": "Overview of your RetailPulse workspace.",

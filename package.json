@@ -17,8 +17,10 @@
         "next-themes": "^0.4.6",
         "pusher-js": "^8.5.0",
         "radix-ui": "^1.4.3",
+        "react-markdown": "^10.1.0",
         "react-i18next": "^17.0.8",
         "react-select": "^5.10.2",
+        "remark-gfm": "^4.0.1",
         "recharts": "^3.8.1",
         "sonner": "^2.0.7",
         "tailwind-merge": "^3.3.0"
@@ -28,12 +30,15 @@
         "@inertiajs/react": "^2.0.0",
         "@tailwindcss/vite": "^4.0.0",
         "@vitejs/plugin-react": "^5.2.0",
+        "@types/react": "^18.2.79",
+        "@types/react-dom": "^18.2.25",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^3.1",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "tailwindcss": "^4.0.0",
         "tailwindcss-animate": "^1.0.7",
+        "typescript": "^5.6.3",
         "vite": "^8.0.0"
     }
 }

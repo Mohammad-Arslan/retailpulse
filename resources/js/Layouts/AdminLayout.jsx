@@ -29,7 +29,9 @@ function SidebarNav({ collapsed, onNavigate }) {
                 const items = section.items.filter((item) => {
                     const permissionOk = item.permissionsAny?.length
                         ? item.permissionsAny.some((p) => can(p))
-                        : can(item.permission);
+                        : item.permission
+                            ? can(item.permission)
+                            : true;
 
                     const moduleOk = !item.module || enabledAccountingModules.includes(item.module);
 

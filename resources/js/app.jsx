@@ -7,11 +7,12 @@ import FlashToasts from '@/Components/common/FlashToasts';
 import LocaleSync from '@/Components/common/LocaleSync';
 import { syncCsrfToken } from '@/lib/csrf';
 import { createInertiaApp, router } from '@inertiajs/react';
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+const pages = import.meta.glob('./Pages/**/*.{jsx,tsx}');
 
 router.on('success', (event) => {
     syncCsrfToken(event.detail.page.props?.csrf_token);
@@ -19,11 +20,18 @@ router.on('success', (event) => {
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
-    resolve: (name) =>
-        resolvePageComponent(
-            `./Pages/${name}.jsx`,
-            import.meta.glob('./Pages/**/*.jsx'),
-        ),
+    resolve: async (name) => {
+        const page =
+            pages[`./Pages/${name}.tsx`]
+            || pages[`./Pages/${name}.jsx`];
+
+        if (!page) {
+            throw new Error(`Page not found: ${name}`);
+        }
+
+        const mod = await page();
+        return mod.default;
+    },
     setup({ el, App, props }) {
         syncCsrfToken(props.initialPage?.props?.csrf_token);
 

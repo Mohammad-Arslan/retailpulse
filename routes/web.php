@@ -32,6 +32,21 @@ Route::redirect('/home', '/admin/dashboard');
 Route::redirect('/dashboard', '/admin/dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::prefix('help-support')->name('help-support.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'index'])
+            ->name('index');
+        Route::get('/guides/accounting', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'accountingGuide'])
+            ->name('guides.accounting');
+        Route::get('/guides/customers-loyalty', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'customersLoyaltyGuide'])
+            ->name('guides.customers-loyalty');
+        Route::get('/guides/inventory-catalogue', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'inventoryCatalogueGuide'])
+            ->name('guides.inventory-catalogue');
+        Route::get('/guides/put-product-in-stock', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'putProductInStockGuide'])
+            ->name('guides.put-product-in-stock');
+        Route::post('/guides/{guide}/ask', [\App\Http\Controllers\HelpSupport\HelpSupportController::class, 'ask'])
+            ->name('guides.ask');
+    });
+
     require __DIR__.'/admin.php';
 });
 
