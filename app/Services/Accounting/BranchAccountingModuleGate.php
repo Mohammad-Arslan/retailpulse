@@ -33,7 +33,7 @@ final class BranchAccountingModuleGate implements AccountingModuleGate
     private function computeEnabledModules(?int $branchId): array
     {
         $definitions = config('accounting_modules', []);
-        $stored = $branchId === null ? [] : $this->storedModules($branchId);
+        $stored = $branchId === null ? $this->allStoredModules() : $this->storedModules($branchId);
 
         $enabled = [];
 
@@ -86,5 +86,25 @@ final class BranchAccountingModuleGate implements AccountingModuleGate
         $stored = $profile?->accounting_enabled_modules;
 
         return is_array($stored) && $stored !== [] ? $stored : ['core'];
+    }
+
+    /**
+     * Union of every branch's stored modules. Used for the head-office / all-branches
+     * view (branchId null), which unrestricted users (e.g. super-admin) see by default —
+     * otherwise every branch-scoped module would be hidden from them.
+     *
+     * @return list<string>
+     */
+    private function allStoredModules(): array
+    {
+        $modules = BranchAccountingProfile::query()
+            ->pluck('accounting_enabled_modules')
+            ->flatMap(fn ($value) => is_array($value) ? $value : [])
+            ->push('core')
+            ->unique()
+            ->values()
+            ->all();
+
+        return $modules;
     }
 }
