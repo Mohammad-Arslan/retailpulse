@@ -28,6 +28,8 @@ final class JournalEntryPresenter
             ] : null,
             'is_system_generated' => $entry->is_system_generated,
             'posted_at' => $entry->posted_at?->toIso8601String(),
+            'total_debit' => number_format((float) $entry->getAttribute('total_debit'), 2, '.', ''),
+            'total_credit' => number_format((float) $entry->getAttribute('total_credit'), 2, '.', ''),
         ];
     }
 
