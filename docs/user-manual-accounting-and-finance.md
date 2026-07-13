@@ -1,7 +1,7 @@
 # RetailPulse User Manual — Accounting & Finance
 
 **Audience:** Accountants, finance managers, implementation consultants, and customer support  
-**Version:** 1.2 (July 2026)  
+**Version:** 1.3 (July 2026)  
 **Scope:** Phase 11 — General Ledger (GL), auto-posting, fiscal control, tax, imports, sub-ledgers, inventory costing, and financial reports
 
 This manual explains **where to click**, **what each screen does**, **how money flows through the system**, **what every term means**, and **what happens when something is missing or misconfigured**.
@@ -75,8 +75,9 @@ If Sales or Procurement is not in use, you can still run accounting with **manua
 RetailPulse accounting is **branch-aware**:
 
 - **Select a specific branch** in the header branch switcher before working in Accounting.
-- If you are logged in as **super-admin** with **All Branches** selected, the sidebar shows only **core** accounting items (Chart of Accounts, Mappings, Posting Rules, Journals, Settings, Reports, Events). Sub-modules (Tax Types, Bank, Cost Centres, etc.) are hidden because module enablement is resolved per branch.
-- **Fix:** Switch to **Head Office** or the target store branch, then refresh.
+- When a **specific branch** is active, the sidebar shows only the sub-modules that branch has enabled in its accounting profile.
+- When **All Branches** (head-office view — the default for super-admin) is active, the sidebar shows the **union** of every branch's enabled sub-modules, so an unrestricted user can reach any configured accounting area. If a sub-module is enabled on at least one branch, it appears here.
+- **If a sub-module is still missing:** confirm it is enabled on at least one `BranchAccountingProfile`, then refresh.
 
 Journal lines, bank accounts, and many reports filter by the active branch unless the user has head-office (all-branches) access.
 
@@ -109,9 +110,8 @@ Beyond permissions, some menu items require the branch to have the sub-module **
 
 Menu items appear only when the user has the required permission **and** (where applicable) the branch module is enabled. If a user says “I don’t see Tax Types”, check:
 
-1. Active branch selected (not All Branches).
-2. `tax` module enabled for that branch.
-3. Role has `accounting.manage-tax-settings` (or super-admin).
+1. `tax` module enabled for the active branch — or, in the All Branches view, on at least one branch.
+2. Role has `accounting.manage-tax-settings` (or super-admin).
 
 See [Section 20](#20-permissions-reference-for-support).
 
@@ -1276,6 +1276,7 @@ A: Distinct `payment.received` event is deferred; partial coverage via sale sett
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.3 | July 2026 | All Branches (head-office) view now shows the union of every branch's enabled accounting sub-modules, so super-admin no longer loses Cost Centres/Tax/etc. from the sidebar |
 | 1.2 | July 2026 | Inventory & Costing settings; opening stock `unit_cost` + cost layers; Create Cost Layer backfill; TB gross period columns; Cash Flow cash/bank scope; Accounting Events default all statuses |
 | 1.1 | July 2026 | Added §16.2 debit notes (procurement flow); cross-ref §18.2 |
 | 1.0 | July 2026 | Initial manual — Phase 11 accounting module, sub-module gating, fiscal reopen, imports, tax stamping |

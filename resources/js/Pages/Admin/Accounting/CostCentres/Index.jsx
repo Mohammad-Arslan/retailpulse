@@ -159,15 +159,14 @@ function Index({ costCentres = [], parentOptions = [], branches = [] }) {
             <PageHeader
                 title={t('pages.accounting.costCentres.title')}
                 description={t('pages.accounting.costCentres.description')}
-                actions={
-                    can('accounting.manage-cost-centres') ? (
-                        <Button variant="brand" onClick={openCreate}>
-                            <Plus className="h-4 w-4" />
-                            {t('pages.accounting.costCentres.createTitle')}
-                        </Button>
-                    ) : null
-                }
-            />
+            >
+                {can('accounting.manage-cost-centres') && (
+                    <Button variant="brand" onClick={openCreate}>
+                        <Plus className="h-4 w-4" />
+                        {t('pages.accounting.costCentres.createTitle')}
+                    </Button>
+                )}
+            </PageHeader>
 
             <DataTable
                 columns={columns}
