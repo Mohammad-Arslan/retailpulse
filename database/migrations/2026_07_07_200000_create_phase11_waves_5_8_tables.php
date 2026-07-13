@@ -140,8 +140,20 @@ return new class extends Migration
             $table->string('settlement_status', 16)->default('open');
             $table->timestamp('settled_at')->nullable();
             $table->timestamps();
-            $table->index(['transfer_reference_type', 'transfer_reference_id']);
+            $table->index(['transfer_reference_type', 'transfer_reference_id'], 'ict_transfer_ref_type_id_idx');
         });
+
+        if (Schema::hasTable('intercompany_transactions')) {
+            $transferRefIndexExists = collect(Schema::getIndexes('intercompany_transactions'))
+                ->pluck('name')
+                ->contains('ict_transfer_ref_type_id_idx');
+
+            if (! $transferRefIndexExists) {
+                Schema::table('intercompany_transactions', function (Blueprint $table) {
+                    $table->index(['transfer_reference_type', 'transfer_reference_id'], 'ict_transfer_ref_type_id_idx');
+                });
+            }
+        }
 
         $create('asset_categories', function (Blueprint $table) {
             $table->id();
