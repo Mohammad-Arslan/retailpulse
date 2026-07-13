@@ -138,6 +138,13 @@ final class InventoryImportSupport
                 'default_transforms' => ['cast_int'],
             ],
             [
+                'key' => 'unit_cost',
+                'label' => 'Unit Cost',
+                'required' => true,
+                'default_rules' => [['rule' => 'required'], ['rule' => 'numeric'], ['rule' => 'min:0']],
+                'default_transforms' => ['cast_float'],
+            ],
+            [
                 'key' => 'batch_no',
                 'label' => 'Batch Number',
                 'required' => false,

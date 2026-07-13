@@ -200,13 +200,16 @@ Use when loading **many SKUs** at once for a new branch or initial balances.
    | `warehouse_code` | Yes | `MAIN` |
    | `sku` | Yes | `TEA-TAP-900` |
    | `qty` | Yes | `200` |
+   | `unit_cost` | Yes | `12.50` |
    | `batch_no` | If batch-tracked | `LOT-2026-01` |
    | `expiry_date` | If batch-tracked | `2027-06-30` |
    | `bin_code` | Optional | `A-01-001` |
 
 6. Upload the file in the import wizard and complete mapping/validation.
 7. Run the import (non-strict mode allows partial success with an error report).
-8. Verify quantities on **Stock levels**.
+8. Verify quantities on **Stock levels** and cost layers (via **Accounting → Financial Reports → Inventory Valuation** or sales COGS behaviour).
+
+> **Important:** `unit_cost` is required. Each successful row creates both stock quantity and an **inventory cost layer** used for COGS on sales. Rows without a valid unit cost are rejected.
 
 > **Tip:** `warehouse_code` must match the code on **Organization → Warehouses** exactly.
 

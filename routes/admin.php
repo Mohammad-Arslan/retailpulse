@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ChartOfAccountController;
 use App\Http\Controllers\Admin\ChequeController;
 use App\Http\Controllers\Admin\CostCentreController;
+use App\Http\Controllers\Admin\CostLayerController;
 use App\Http\Controllers\Admin\CountScheduleRuleController;
 use App\Http\Controllers\Admin\CountSessionController;
 use App\Http\Controllers\Admin\CreditNoteController;
@@ -341,6 +342,10 @@ Route::middleware(['auth', 'admin', 'branch.context'])
                 ->name('settings.index');
             Route::put('settings', [AccountingSettingsController::class, 'update'])
                 ->name('settings.update');
+            Route::get('cost-layers/create', [CostLayerController::class, 'create'])
+                ->name('cost-layers.create');
+            Route::post('cost-layers', [CostLayerController::class, 'store'])
+                ->name('cost-layers.store');
             Route::post('fiscal-years', [AccountingSettingsController::class, 'storeFiscalYear'])
                 ->name('fiscal-years.store');
             Route::put('fiscal-years/{fiscal_year}', [AccountingSettingsController::class, 'updateFiscalYear'])

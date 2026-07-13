@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Repositories\Eloquent;
 
-use App\Enums\AccountingEventStatus;
 use App\Models\AccountingEvent;
 use App\Repositories\Contracts\AccountingEventRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -16,8 +15,8 @@ final class AccountingEventRepository implements AccountingEventRepositoryInterf
         $query = AccountingEvent::query()
             ->with(['journalEntry:id,journal_number,status']);
 
-        $status = $filters['status'] ?? AccountingEventStatus::Failed->value;
-        if ($status !== 'all') {
+        $status = $filters['status'] ?? null;
+        if ($status !== null && $status !== '' && $status !== 'all') {
             $query->where('processing_status', $status);
         }
 

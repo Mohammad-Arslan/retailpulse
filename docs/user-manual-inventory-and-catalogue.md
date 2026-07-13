@@ -612,7 +612,7 @@ Edit or deactivate schedules from the list.
 | 4 | Import categories/brands/units (optional) | Import wizard / manual |
 | 5 | Import or create products | Products / product import |
 | 6 | Set branch cutover date (future POS block until open) | Branches → Edit |
-| 7 | Import opening stock CSV (`warehouse_code`, `sku`, `qty`, optional `bin_code`, batch) | Stock levels → Opening stock |
+| 7 | Import opening stock CSV (`warehouse_code`, `sku`, `qty`, `unit_cost`, optional `bin_code`, batch) | Stock levels → Opening stock |
 | 8 | Verify quantities | Stock levels |
 | 9 | Set reorder points | Branch stock settings |
 | 10 | Open store — cutover date passes — POS sells | POS |
