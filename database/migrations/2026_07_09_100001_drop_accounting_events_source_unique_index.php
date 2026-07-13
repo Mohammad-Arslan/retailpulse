@@ -8,24 +8,37 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    private string $indexName = 'accounting_events_event_type_source_type_source_id_unique';
+
+    private function indexExists(): bool
+    {
+        return collect(Schema::getIndexes('accounting_events'))
+            ->pluck('name')
+            ->contains($this->indexName);
+    }
+
     public function up(): void
     {
         if (! Schema::hasTable('accounting_events')) {
             return;
         }
 
+        if (! $this->indexExists()) {
+            return;
+        }
+
         Schema::table('accounting_events', function (Blueprint $table) {
-            try {
-                $table->dropUnique(['event_type', 'source_type', 'source_id']);
-            } catch (Throwable) {
-                // Index may already be removed.
-            }
+            $table->dropUnique($this->indexName);
         });
     }
 
     public function down(): void
     {
         if (! Schema::hasTable('accounting_events')) {
+            return;
+        }
+
+        if ($this->indexExists()) {
             return;
         }
 
