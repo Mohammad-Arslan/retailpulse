@@ -45,14 +45,21 @@ final class FinancialReportingService
 
         foreach ($accounts as $account) {
             $opening = $this->accountBalance($account->id, null, Carbon::parse($dateFrom)->subDay()->toDateString(), $filters);
-            $period = $this->accountMovement($account->id, $dateFrom, $dateTo, $filters);
+            $periodGross = $this->accountGrossMovement($account->id, $dateFrom, $dateTo, $filters);
+            $period = $periodGross['debit'] - $periodGross['credit'];
             $closing = $opening + $period;
 
             if ($this->isZeroBalanceRow($opening, $period, $closing)) {
                 continue;
             }
 
-            $row = $this->formatBalanceRow($account, $opening, $period, $closing);
+            $row = $this->formatBalanceRow(
+                $account,
+                $opening,
+                $periodGross['debit'],
+                $periodGross['credit'],
+                $closing,
+            );
             $rows[] = $row;
 
             foreach (['opening_debit', 'opening_credit', 'period_debit', 'period_credit', 'closing_debit', 'closing_credit'] as $key) {
@@ -307,7 +314,7 @@ final class FinancialReportingService
         $dateFrom = $this->dateFrom($filters);
         $dateTo = $this->dateTo($filters);
 
-        $cashAccountIds = $this->resolveCashAccountIds();
+        $cashAccountIds = $this->resolveCashAccountIds($filters);
         $rows = ['operating' => 0.0, 'investing' => 0.0, 'financing' => 0.0];
         $detail = [];
 
@@ -827,10 +834,39 @@ final class FinancialReportingService
     }
 
     /**
+     * @param  array<string, mixed>  $filters
+     * @return array{debit: float, credit: float}
+     */
+    private function accountGrossMovement(int $accountId, string $dateFrom, string $dateTo, array $filters): array
+    {
+        $query = $this->postedLinesQuery($filters)
+            ->where('journal_transactions.account_id', $accountId)
+            ->whereDate('journal_entries.journal_date', '>=', $dateFrom)
+            ->whereDate('journal_entries.journal_date', '<=', $dateTo);
+
+        $sums = $query
+            ->select([
+                DB::raw('COALESCE(SUM(journal_transactions.debit), 0) as total_debit'),
+                DB::raw('COALESCE(SUM(journal_transactions.credit), 0) as total_credit'),
+            ])
+            ->first();
+
+        return [
+            'debit' => (float) ($sums->total_debit ?? 0),
+            'credit' => (float) ($sums->total_credit ?? 0),
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
-    private function formatBalanceRow(ChartOfAccount $account, float $opening, float $period, float $closing): array
-    {
+    private function formatBalanceRow(
+        ChartOfAccount $account,
+        float $opening,
+        float $periodDebit,
+        float $periodCredit,
+        float $closing,
+    ): array {
         return [
             'account_id' => $account->id,
             'account_code' => $account->code,
@@ -838,8 +874,8 @@ final class FinancialReportingService
             'type' => $account->type->value,
             'opening_debit' => $opening > 0 ? round($opening, 2) : 0.0,
             'opening_credit' => $opening < 0 ? round(abs($opening), 2) : 0.0,
-            'period_debit' => $period > 0 ? round($period, 2) : 0.0,
-            'period_credit' => $period < 0 ? round(abs($period), 2) : 0.0,
+            'period_debit' => round($periodDebit, 2),
+            'period_credit' => round($periodCredit, 2),
             'closing_debit' => $closing > 0 ? round($closing, 2) : 0.0,
             'closing_credit' => $closing < 0 ? round(abs($closing), 2) : 0.0,
         ];
@@ -885,21 +921,38 @@ final class FinancialReportingService
     }
 
     /**
+     * @param  array<string, mixed>  $filters
      * @return Collection<int, int>
      */
-    private function resolveCashAccountIds(): Collection
+    private function resolveCashAccountIds(array $filters = []): Collection
     {
-        $mapped = AccountMapping::query()
+        $mappingQuery = AccountMapping::query()
             ->whereIn('mapping_key', ['cash_on_hand', 'bank_account', 'petty_cash'])
-            ->where('status', 'active')
-            ->pluck('account_id');
+            ->where('status', 'active');
+
+        if (! empty($filters['branch_id'])) {
+            $branchId = (int) $filters['branch_id'];
+            $mappingQuery->where(function (Builder $q) use ($branchId) {
+                $q->where('branch_id', $branchId)
+                    ->orWhereNull('branch_id');
+            });
+        }
+
+        if (! empty($filters['legal_entity_id'])) {
+            $legalEntityId = (int) $filters['legal_entity_id'];
+            $mappingQuery->where(function (Builder $q) use ($legalEntityId) {
+                $q->where('legal_entity_id', $legalEntityId)
+                    ->orWhereNull('legal_entity_id');
+            });
+        }
+
+        $mapped = $mappingQuery->pluck('account_id');
 
         $typed = ChartOfAccount::query()
             ->where('type', ChartOfAccountType::Asset)
             ->where('status', 'active')
             ->where(function (Builder $q) {
-                $q->where('code', 'like', '1%')
-                    ->orWhere('name', 'like', '%cash%')
+                $q->where('name', 'like', '%cash%')
                     ->orWhere('name', 'like', '%bank%');
             })
             ->pluck('id');

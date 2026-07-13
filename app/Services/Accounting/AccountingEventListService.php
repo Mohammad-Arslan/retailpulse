@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
-use App\Enums\AccountingEventStatus;
 use App\Models\AccountingEvent;
 use App\Repositories\Contracts\AccountingEventRepositoryInterface;
 use App\Support\AccountingEventPresenter;
@@ -22,8 +21,13 @@ final class AccountingEventListService
      */
     public function paginateIndex(array $filters, int $perPage): array
     {
-        $status = $filters['status'] ?? AccountingEventStatus::Failed->value;
-        $filters['status'] = $status;
+        $status = $filters['status'] ?? null;
+
+        if ($status === null || $status === '') {
+            unset($filters['status']);
+        } else {
+            $filters['status'] = $status;
+        }
 
         $paginator = $this->accountingEventRepository
             ->paginate($filters, $perPage)

@@ -42,6 +42,7 @@
         "postingRules": "Posting Rules",
         "journalEntries": "Journal Entries",
         "accountingSettings": "Financial Settings",
+        "costLayers": "Create Cost Layer",
         "costCentres": "Cost Centres",
         "accountingReports": "Financial Reports",
         "accountingEvents": "Accounting Events",
@@ -1989,6 +1990,12 @@
                 "generalTitle": "General",
                 "accountsTitle": "Default Accounts",
                 "journalTitle": "Journal Policies",
+                "inventoryTitle": "Inventory & Costing",
+                "valuationMethods": {
+                    "fifo": "FIFO",
+                    "wac": "Weighted Average"
+                },
+                "negativeInventoryWarning": "Warning: Enabling this allows sales to complete with $0 COGS when no cost layers exist. This understates expenses and overstates profit — use only when you accept that financial risk.",
                 "fiscalYearsTitle": "Fiscal Years",
                 "fiscalYearsEmpty": "No fiscal years configured.",
                 "fiscalYearColumns": {
@@ -2024,6 +2031,8 @@
                     "fxGain": "FX Gain Account",
                     "fxLoss": "FX Loss Account",
                     "allowManualPosting": "Allow Manual Journal Posting",
+                    "allowNegativeInventory": "Allow Negative Inventory",
+                    "defaultValuationMethod": "Default Inventory Valuation Method",
                     "approvalLimit": "Manual Journal Approval Limit",
                     "fiscalYearReopenWindowHours": "Fiscal Year Reopen Window (Hours)",
                     "defaultSalesTaxType": "Default Sales Tax Type",
@@ -2043,6 +2052,22 @@
                 "firstApprovalAction": "First Approval",
                 "secondApproval": "Second Approval",
                 "rejectReopen": "Reject Reopen"
+            },
+            "costLayers": {
+                "title": "Create Cost Layer",
+                "description": "Manually backfill an inventory cost layer for stock that predates proper receiving.",
+                "warning": "This bypasses the normal PO → GRN receiving flow. Use only to backfill or correct stock that existed before proper receiving was in place.",
+                "fields": {
+                    "productVariant": "Product Variant",
+                    "warehouse": "Warehouse",
+                    "qty": "Quantity",
+                    "unitCost": "Unit Cost",
+                    "batchNo": "Batch Number",
+                    "receivedAt": "Received Date",
+                    "reason": "Reason"
+                },
+                "reasonPlaceholder": "Explain why this cost layer is needed (minimum 10 characters)…",
+                "submit": "Create Cost Layer"
             },
             "costCentres": {
                 "title": "Cost Centres",
@@ -2285,6 +2310,7 @@
                 "title": "Accounting Events",
                 "description": "Failed and pending auto-posting events with retry support.",
                 "empty": "No accounting events found.",
+                "emptyFiltered": "No {{status}} events found.",
                 "searchPlaceholder": "Search event type or source…",
                 "retry": "Retry",
                 "confirmRetry": "Retry processing this accounting event?",
@@ -2527,6 +2553,7 @@
         "journalEntries": "Journal Entries",
         "costCentres": "Cost Centres",
         "accountingSettings": "Accounting Settings",
+        "costLayers": "Create Cost Layer",
         "accountingReports": "Financial Reports",
         "accountingEvents": "Accounting Events",
         "creditNotes": "Credit Notes",

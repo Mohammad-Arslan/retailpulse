@@ -384,6 +384,15 @@ export const ADMIN_NAV_SECTIONS = [
                 keywords: ['fiscal year', 'cutover', 'retained earnings'],
             },
             {
+                label: 'Create Cost Layer',
+                labelKey: 'costLayers',
+                href: 'admin.accounting.cost-layers.create',
+                routeName: 'admin.accounting.cost-layers.*',
+                permission: 'accounting.manage-fiscal-years',
+                icon: Layers,
+                keywords: ['cost layer', 'backfill', 'inventory cost', 'cogs'],
+            },
+            {
                 label: 'Financial Reports',
                 labelKey: 'accountingReports',
                 href: 'admin.accounting.reports.index',

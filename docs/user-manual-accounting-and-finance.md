@@ -1,8 +1,8 @@
 # RetailPulse User Manual — Accounting & Finance
 
 **Audience:** Accountants, finance managers, implementation consultants, and customer support  
-**Version:** 1.0 (July 2026)  
-**Scope:** Phase 11 — General Ledger (GL), auto-posting, fiscal control, tax, imports, sub-ledgers, and financial reports
+**Version:** 1.2 (July 2026)  
+**Scope:** Phase 11 — General Ledger (GL), auto-posting, fiscal control, tax, imports, sub-ledgers, inventory costing, and financial reports
 
 This manual explains **where to click**, **what each screen does**, **how money flows through the system**, **what every term means**, and **what happens when something is missing or misconfigured**.
 
@@ -51,6 +51,7 @@ This manual explains **where to click**, **what each screen does**, **how money 
 | **Fiscal control** | Fiscal years, period lock, year-end close, approved reopen windows |
 | **Tax** | Tax types, default sales/purchase tax, tax lines on journals |
 | **Imports** | Staged COA import, opening balance import with AR/AP reconciliation |
+| **Inventory costing** | Default valuation method, cost layers, opening stock unit cost, manual cost-layer backfill |
 | **Sub-modules** | Cost centres, credit notes, bank accounts & reconciliation, multi-currency, petty cash, cheques, fixed assets |
 | **Reports** | Trial balance, P&L, balance sheet, GL, AR/AP aging, and more |
 
@@ -212,6 +213,7 @@ See [Section 20](#20-permissions-reference-for-support).
 | **COGS** | Cost of Goods Sold |
 | **WAC** | Weighted Average Cost |
 | **FIFO** | First In, First Out |
+| **Cost layer** | A quantity/cost record for received stock used to compute COGS on sales (FIFO or WAC). |
 | **AR** | Accounts Receivable |
 | **AP** | Accounts Payable |
 | **FX** | Foreign Exchange |
@@ -294,6 +296,7 @@ Auto-posting runs **synchronously** in the same request as the business operatio
 | Posting Rules | Accounting → Posting Rules | `accounting.manage-posting-rules` |
 | Journal Entries | Accounting → Journal Entries | `accounting.view` |
 | Financial Settings | Accounting → Financial Settings | `accounting.manage-fiscal-years` or `accounting.view` |
+| Create Cost Layer | Accounting → Create Cost Layer | `accounting.manage-fiscal-years` |
 | Financial Reports | Accounting → Financial Reports | `accounting.view-reports` |
 | Accounting Events | Accounting → Accounting Events | `accounting.view` |
 
@@ -324,7 +327,7 @@ Use this order for a new tenant go-live:
 | Step | Action | Why |
 |------|--------|-----|
 | 1 | Enable required accounting sub-modules for each branch | Unlocks sidebar and routes |
-| 2 | Configure **Financial Settings** (currency, retained earnings, cutover date, tax defaults) | Required for close, tax, and posting validation |
+| 2 | Configure **Financial Settings** (currency, retained earnings, cutover date, tax defaults, **inventory valuation**, **cash/bank mappings**) | Required for close, tax, COGS, and cash-flow reports |
 | 3 | Create or import **Chart of Accounts** | Accounts must exist before mappings |
 | 4 | Review **Account Mappings** (seeded defaults or custom) | Posting rules resolve accounts through mappings |
 | 5 | Review **Posting Rules** (seeded defaults or custom) | Defines auto-journal structure per event |
@@ -421,6 +424,7 @@ Mappings connect **logical keys** used by posting rules to **concrete GL account
 | `accounts_payable` | Supplier AP | 2100 |
 | `cash_on_hand` | Cash payments | 1100 |
 | `bank_account` | Generic bank | 1210 |
+| `petty_cash` | Petty cash register | (per setup) |
 | `payment_method_account` | Per POS payment method | Scoped by `cash`, `card`, `bank_transfer` |
 | `inventory_asset` | Stock asset | 1400 |
 | `cogs` | Cost of sales | 5100 |
@@ -448,6 +452,7 @@ When a posting rule line uses **Account Mapping** resolution:
 | Mapping points to inactive account | Skipped in resolution; may fail if no alternative |
 | Multiple mappings same specificity | Lower **priority** number wins |
 | Wrong mapping | Journals post to wrong account — **reverse** and fix mapping before reprocessing (if event retry allowed) |
+| Missing `cash_on_hand` mapping | Cash Flow Statement may omit real cash accounts; only name-based fallback matches accounts with “cash” or “bank” in the name | Add active `cash_on_hand` (and `bank_account` if needed) mapping for the branch/entity |
 
 ---
 
@@ -571,6 +576,40 @@ Each line defines:
 - **Request reopen** — starts dual-approval workflow on closed years.
 - **Pending reopen requests** — first approval, second approval, or **reject**.
 
+### 9.6 Inventory & Costing
+
+On the same **Financial Settings** page, below **Journal Policies**:
+
+| Setting | Meaning |
+|---------|---------|
+| **Default Inventory Valuation Method** | **FIFO** (first-in, first-out) or **Weighted Average** — used when creating new cost layers and consuming stock on sales |
+| **Allow Negative Inventory** | When enabled, sales can complete even when quantity or cost layers are insufficient; COGS may be **$0** or use fallback average cost |
+
+**Warning shown in UI:** Enabling negative inventory is financially risky — it understates expenses and overstates profit when no cost layers exist.
+
+**Who can edit:** Users with `accounting.manage-fiscal-years`. Others see the fields read-only.
+
+### 9.7 Manual cost layer backfill
+
+**Menu:** Accounting → **Create Cost Layer**  
+**Permission:** `accounting.manage-fiscal-years`
+
+Use this **only** to backfill or correct inventory cost for stock that existed **before** proper PO → GRN receiving. It does **not** replace normal receiving.
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| Product variant | Yes | SKU from catalogue |
+| Warehouse | Yes | Active warehouse |
+| Quantity | Yes | Must be &gt; 0 |
+| Unit cost | Yes | Cost per unit for the layer |
+| Batch number | Optional | If batch-tracked |
+| Received date | Optional | Defaults to today |
+| Reason | Yes | Minimum 10 characters — logged for audit (not stored on the cost layer row) |
+
+**What the system records:** A cost layer with `source_reference_type = manual_admin_entry` and the acting admin’s user ID. Normal GRN-sourced layers use different source markers.
+
+**What if you use this instead of GRN?** Inventory quantity is **not** increased — only cost. Use **Receive stock** or **opening stock import** for quantity; use this screen when quantity exists but cost layers are missing.
+
 ---
 
 ## 10. Fiscal years — open, close, and reopen
@@ -682,6 +721,8 @@ System validates:
 ### 12.1 What it is
 
 Every auto-post attempt creates or updates an **accounting event** row — an audit trail of operational → GL conversion.
+
+**Default view:** All statuses (most recent first). Use the **Status** filter to narrow to Failed, Completed, etc. An empty list with **Failed** selected means there are no failures (often good news), not that the pipeline is inactive.
 
 ### 12.2 Event statuses
 
@@ -834,6 +875,21 @@ Upload CSV → Validate rows → Batch status Validated/Failed → Approve → C
 | COA account missing in OB file | Line validation error |
 | Approve COA batch twice | Idempotent upsert by code — safe |
 
+### 15.5 Opening stock import and cost layers
+
+Operational **opening stock** import (Inventory → Stock levels → Opening stock) is separate from GL **opening balance** import above, but both matter for accounting:
+
+| Aspect | Behaviour |
+|--------|-----------|
+| **Required column** | `unit_cost` — every row must have a unit cost &gt; 0 |
+| **On successful row** | System sets warehouse quantity **and** creates a matching **inventory cost layer** in one transaction |
+| **If import fails mid-row** | Neither quantity nor cost layer is left half-applied for that row |
+| **Sample file** | [`opening_stock_import.csv`](opening_stock_import.csv) |
+
+Without `unit_cost`, validation fails per row. Without cost layers, sales may post **$0 COGS** (especially if **Allow Negative Inventory** is enabled).
+
+See also [`user-manual-put-product-in-stock.md`](user-manual-put-product-in-stock.md) §7 for the full opening-stock workflow.
+
 ---
 
 ## 16. Sub-modules
@@ -911,12 +967,12 @@ Unlike credit notes, **debit notes are not a separate item under Accounting → 
 
 | Report | Purpose |
 |--------|---------|
-| **Trial Balance** | All account debits/credits; must net to zero |
+| **Trial Balance** | Per-account opening, **gross period debits and credits**, and closing balances; period debit and credit totals across all rows must match |
 | **Profit and Loss** | Revenue and expenses for period |
 | **Balance Sheet** | Assets, liabilities, equity at a date |
 | **General Ledger** | Transaction detail per account with running balance |
 | **Cost Centre P&L** | Departmental profit and loss |
-| **Cash Flow Statement** | Cash movement by category |
+| **Cash Flow Statement** | Cash and bank account movements (from **Account Mappings** and name-based cash/bank fallback — not all asset accounts) |
 | **AR Aging** | Customer receivables by age bucket |
 | **AP Aging** | Supplier payables by age bucket |
 | **Bank Book** | Bank account movements |
@@ -945,13 +1001,23 @@ CSV export requires `accounting.export-reports`.
 
 | Report | Driven by |
 |--------|-----------|
-| Trial Balance | Posted journal lines only |
+| Trial Balance | Posted journal lines; **period** columns show **gross** debit and credit per account (not netted to one side) |
 | P&L | Posted revenue/expense accounts |
 | Balance Sheet | Posted asset/liability/equity |
+| Cash Flow Statement | Posted lines on accounts resolved as cash/bank via mappings (`cash_on_hand`, `bank_account`, `petty_cash`) plus name fallback — **Inventory and other 1xxx assets are excluded** |
 | AR Aging | Customer sub-ledger + sales/credit notes (operational data) |
 | GL | Posted lines for selected account |
+| Inventory Valuation | Active **inventory cost layers** (qty × unit cost) |
 
 **Draft journals do not appear** in Trial Balance or P&L until posted.
+
+### 17.5 Reconciling reports
+
+| Check | What to compare |
+|-------|-----------------|
+| Trial Balance period totals | Sum of **Period Debit** column = sum of **Period Credit** column |
+| Cash Flow net change | Should align with period movement on cash/bank accounts in Balance Sheet / GL for the same filters |
+| Inventory GL vs valuation | Inventory asset account movement should be explainable from GRN, opening stock (with unit cost), adjustments, and COGS |
 
 ---
 
@@ -987,8 +1053,11 @@ CSV export requires `accounting.export-reports`.
 | Manual adjustment | `inventory.adjusted` | Dr/Cr Inventory vs adjustment expense |
 | Scrap / damaged | `stock.scrapped` | Cr Inventory, Dr write-off expense |
 | Transfer received | `transfer.confirmed` | Inter-warehouse inventory move (if rules exist) |
+| Opening stock import (with `unit_cost`) | (no GL event by default) | Creates **cost layers** for COGS; quantity only in inventory sub-ledger unless separate OB journal exists |
 
-**COGS:** On sale, `inventory_cost` in payload comes from cost layers (FIFO/WAC via `CostService`).
+**COGS:** On sale, `inventory_cost` in payload comes from cost layers (FIFO/WAC per Financial Settings). Layers are created by GRN receive, **opening stock import** (requires unit cost), sale returns, and **manual cost layer backfill** (Accounting → Create Cost Layer).
+
+**What if stock has quantity but no cost layers?** Sales may fail COGS consumption, or post $0 COGS if **Allow Negative Inventory** is on. Fix by receiving via GRN, re-importing opening stock with unit cost, or admin **Create Cost Layer** backfill.
 
 ### 18.4 Customers / AR (Phase 9)
 
@@ -1031,7 +1100,7 @@ flowchart LR
 ### 19.2 Daily retail store
 
 1. Cashier completes sales → each generates `sale.completed`.
-2. Accountant reviews Accounting Events (filter Failed) next morning.
+2. Accountant reviews Accounting Events — filter **Failed** if investigating errors; default view shows all statuses.
 3. Weekly: Financial Reports → Trial Balance for the week.
 4. Monthly: P&L, Bank Reconciliation, AP payment run.
 
@@ -1075,7 +1144,7 @@ flowchart LR
 | `accounting.import-coa` | Upload COA CSV |
 | `accounting.import-opening-balances` | Upload opening balance CSV |
 | `accounting.manage-cost-centres` | Cost centre CRUD |
-| `accounting.manage-fiscal-years` | Financial settings, FY CRUD |
+| `accounting.manage-fiscal-years` | Financial settings, FY CRUD, **Create Cost Layer** |
 | `accounting.close-fiscal-year` | Close fiscal year |
 | `accounting.reopen-fiscal-year` | Approve/reject reopen requests |
 | `accounting.manage-bank-accounts` | Bank account setup |
@@ -1136,6 +1205,10 @@ flowchart LR
 | Problem | Likely cause | Fix |
 |---------|--------------|-----|
 | TB does not balance | Data issue or unposted drafts | Run TB on posted only; check for corrupted lines |
+| TB period debits ≠ credits (totals row) | Unposted or corrupt journal data | Find unbalanced posted journal; support escalation |
+| Account shows only one-sided period movement | (Fixed) Period columns now show gross debits and credits per account | Re-run report after upgrade; compare to GL detail |
+| Cash Flow includes Inventory or wrong accounts | Missing cash mappings; old broad asset matching | Ensure `cash_on_hand` / `bank_account` mappings; Cash Flow uses mappings + cash/bank **names** only |
+| Cash Flow net change ≠ cash on BS | Date/branch filter mismatch or non-cash lines in old data | Align filters; re-run after mapping fix |
 | P&L empty | No postings in date range / wrong branch | Widen dates; check branch filter |
 | GL empty for account | No posted lines in range | Post journals or expand dates |
 
@@ -1180,7 +1253,13 @@ A: No. Use **Reverse**.
 A: Journal Entries — filter by opening balance flag / description from import batch.
 
 **Q: Why is COGS zero on sales?**  
-A: No cost layers (no GRN/receive history) or optional COGS rule lines skipped when cost is zero.
+A: No cost layers (no GRN receive, opening stock without `unit_cost`, or missing manual backfill) or optional COGS rule lines skipped when cost is zero. Check **Inventory Valuation** report and **Create Cost Layer** / opening stock import.
+
+**Q: Accounting Events shows no rows — is posting broken?**  
+A: Default view shows **all** statuses. If you filtered to **Failed** and see an empty list, there may simply be no failures. Clear the status filter to see Completed events.
+
+**Q: Inventory GL debits don’t match Accounts Payable credits on Trial Balance?**  
+A: May indicate mis-posted GRN journals (e.g. offset to GRNI/clearing instead of AP, or duplicate/missing AP line). **Do not auto-correct** — export journal lines for the vouchers involved and reconcile with procurement before posting adjusting entries.
 
 **Q: Are payroll journals included?**  
 A: Phase 12 — not in this manual.
@@ -1197,6 +1276,7 @@ A: Distinct `payment.received` event is deferred; partial coverage via sale sett
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.2 | July 2026 | Inventory & Costing settings; opening stock `unit_cost` + cost layers; Create Cost Layer backfill; TB gross period columns; Cash Flow cash/bank scope; Accounting Events default all statuses |
 | 1.1 | July 2026 | Added §16.2 debit notes (procurement flow); cross-ref §18.2 |
 | 1.0 | July 2026 | Initial manual — Phase 11 accounting module, sub-module gating, fiscal reopen, imports, tax stamping |
 

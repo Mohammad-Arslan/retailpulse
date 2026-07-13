@@ -31,7 +31,8 @@
         "overview": "جائزہ",
         "organization": "تنظیم",
         "admin": "ایڈمن",
-        "settings": "ترتیبات"
+        "settings": "ترتیبات",
+        "costLayers": "لاگت کی تہ بنائیں"
     },
     "common": {
         "search": "تلاش",
@@ -391,6 +392,39 @@
                 "debit_note": "ڈیبٹ نوٹ",
                 "adjustment": "ایڈجسٹمنٹ",
                 "advance": "ایڈوانس"
+            }
+        },
+        "accounting": {
+            "settings": {
+                "inventoryTitle": "انوینٹری اور لاگت",
+                "valuationMethods": {
+                    "fifo": "FIFO",
+                    "wac": "وزنی اوسط"
+                },
+                "negativeInventoryWarning": "انتباہ: اسے فعال کرنے سے فروخت بغیر لاگت کی تہوں کے $0 COGS کے ساتھ مکمل ہو سکتی ہے۔ اس سے اخراجات کم اور منافع زیادہ دکھائی دیتا ہے — صرف اس مالی خطرے کو قبول کرنے پر استعمال کریں۔",
+                "fields": {
+                    "allowNegativeInventory": "منفی انوینٹری کی اجازت دیں",
+                    "defaultValuationMethod": "ڈیفالٹ انوینٹری ویلیوایشن طریقہ"
+                }
+            },
+            "events": {
+                "emptyFiltered": "کوئی {{status}} ایونٹ نہیں ملا۔"
+            },
+            "costLayers": {
+                "title": "لاگت کی تہ بنائیں",
+                "description": "پرانے اسٹاک کے لیے دستی لاگت کی تہ بھریں۔",
+                "warning": "یہ PO → GRN وصولی کو نظرانداز کرتا ہے۔ صرف اس اسٹاک کے لیے استعمال کریں جو مناسب وصولی سے پہلے کا ہو۔",
+                "fields": {
+                    "productVariant": "پروڈکٹ ویرینٹ",
+                    "warehouse": "گودام",
+                    "qty": "مقدار",
+                    "unitCost": "یونٹ لاگت",
+                    "batchNo": "بیچ نمبر",
+                    "receivedAt": "وصولی کی تاریخ",
+                    "reason": "وجہ"
+                },
+                "reasonPlaceholder": "اس لاگت کی تہ کی ضرورت کی وضاحت کریں (کم از کم 10 حروف)…",
+                "submit": "لاگت کی تہ بنائیں"
             }
         }
     }

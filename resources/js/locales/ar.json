@@ -31,7 +31,8 @@
         "overview": "نظرة عامة",
         "organization": "المؤسسة",
         "admin": "الإدارة",
-        "settings": "الإعدادات"
+        "settings": "الإعدادات",
+        "costLayers": "إنشاء طبقة تكلفة"
     },
     "common": {
         "search": "بحث",
@@ -130,6 +131,39 @@
             "back": "كل الإعدادات",
             "save": "حفظ الإعدادات",
             "saving": "جارٍ الحفظ…"
+        },
+        "accounting": {
+            "settings": {
+                "inventoryTitle": "المخزون والتكلفة",
+                "valuationMethods": {
+                    "fifo": "FIFO",
+                    "wac": "المتوسط المرجح"
+                },
+                "negativeInventoryWarning": "تحذير: تفعيل هذا يسمح بإتمام المبيعات بتكلفة بضاعة مباعة $0 عند عدم وجود طبقات تكلفة. هذا يقلل المصروفات ويزيد الأرباح الظاهرة — استخدمه فقط إذا قبلت هذا الخطر المالي.",
+                "fields": {
+                    "allowNegativeInventory": "السماح بمخزون سالب",
+                    "defaultValuationMethod": "طريقة تقييم المخزون الافتراضية"
+                }
+            },
+            "events": {
+                "emptyFiltered": "لم يتم العثور على أحداث {{status}}."
+            },
+            "costLayers": {
+                "title": "إنشاء طبقة تكلفة",
+                "description": "تعبئة طبقة تكلفة يدوية للمخزون القديم.",
+                "warning": "يتجاوز هذا مسار PO → GRN. استخدمه فقط للمخزون الذي سبق الاستلام الصحيح.",
+                "fields": {
+                    "productVariant": "متغير المنتج",
+                    "warehouse": "المستودع",
+                    "qty": "الكمية",
+                    "unitCost": "تكلفة الوحدة",
+                    "batchNo": "رقم الدفعة",
+                    "receivedAt": "تاريخ الاستلام",
+                    "reason": "السبب"
+                },
+                "reasonPlaceholder": "اشرح سبب الحاجة إلى طبقة التكلفة هذه (10 أحرف على الأقل)…",
+                "submit": "إنشاء طبقة تكلفة"
+            }
         }
     }
 }

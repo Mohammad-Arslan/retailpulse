@@ -49,6 +49,16 @@ function Index({ events, filters, statuses = [] }) {
         }
     };
 
+    const emptyMessage = useMemo(() => {
+        if (filters.status) {
+            return t('pages.accounting.events.emptyFiltered', {
+                status: accountingEventStatusLabel(t, filters.status),
+            });
+        }
+
+        return t('pages.accounting.events.empty');
+    }, [filters.status, t]);
+
     const columns = useMemo(
         () => [
             {
@@ -159,7 +169,7 @@ function Index({ events, filters, statuses = [] }) {
                 </div>
                 <Select
                     name="status"
-                    defaultValue={filters.status ?? 'failed'}
+                    defaultValue={filters.status ?? ''}
                     className="w-auto min-w-[12rem]"
                     options={statusOptions}
                 />
@@ -175,7 +185,7 @@ function Index({ events, filters, statuses = [] }) {
                 filters={filters}
                 indexRoute="admin.accounting.events.index"
                 rowActions={rowActions}
-                emptyMessage={t('pages.accounting.events.empty')}
+                emptyMessage={emptyMessage}
             />
         </>
     );
