@@ -12,7 +12,10 @@ final class JournalEntryRepository implements JournalEntryRepositoryInterface
 {
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = JournalEntry::query()->with(['branch:id,name']);
+        $query = JournalEntry::query()
+            ->with(['branch:id,name'])
+            ->withSum('transactions as total_debit', 'debit')
+            ->withSum('transactions as total_credit', 'credit');
 
         if (! empty($filters['search'])) {
             $search = (string) $filters['search'];
