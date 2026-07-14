@@ -644,6 +644,10 @@ final class CheckoutService
 
     private function finalizeSale(Sale $sale, int $cashierId): Sale
     {
+        if ($sale->status === SaleStatus::Completed) {
+            return $sale->fresh(['items', 'payments', 'invoice']);
+        }
+
         $settings = $this->config->resolve($sale->branch_id);
         $fbrEnabled = (bool) $settings['fbr_enabled'];
         $failureMode = (string) SystemSetting::get('fbr', 'failure_mode', 'queue');

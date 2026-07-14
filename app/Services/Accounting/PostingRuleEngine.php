@@ -133,6 +133,8 @@ final class PostingRuleEngine
             'warehouse_id' => $payload['warehouse_id'] ?? null,
             'payment_method' => $payload['payment_method'] ?? null,
             'currency_code' => $payload['currency_code'] ?? null,
+            'legal_entity_id' => $payload['legal_entity_id'] ?? null,
+            'product_category_id' => $payload['product_category_id'] ?? null,
             'date' => $payload['date'] ?? now()->toDateString(),
         ];
 

@@ -122,4 +122,29 @@ final class AccountingEventServiceTest extends TestCase
 
         $this->assertSame(AccountingEventStatus::Skipped, $event->processing_status);
     }
+
+    public function test_retry_of_in_flight_processing_event_does_not_create_a_second_journal(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+
+        $event = AccountingEvent::query()->create([
+            'event_type' => self::EVENT_TYPE,
+            'source_type' => 'App\\Models\\Sale',
+            'source_id' => 777,
+            'idempotency_key' => self::EVENT_TYPE.':App\\Models\\Sale:777',
+            'processing_status' => AccountingEventStatus::Processing,
+            'payload' => [
+                'gross_amount' => 40,
+                'date' => '2026-06-15',
+                'user_id' => $user->id,
+            ],
+            'updated_at' => now(),
+        ]);
+
+        $retried = app(AccountingEventService::class)->retry($event->fresh(), $user->id);
+
+        $this->assertSame(AccountingEventStatus::Processing, $retried->processing_status);
+        $this->assertNull($retried->journal_entry_id);
+        $this->assertSame(0, JournalEntry::query()->count());
+    }
 }

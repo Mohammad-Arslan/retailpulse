@@ -47,6 +47,22 @@ final class AccountResolverService
             });
         }
 
+        $legalEntityId = $context['legal_entity_id'] ?? null;
+        $query->where(function ($q) use ($legalEntityId) {
+            $q->whereNull('legal_entity_id');
+            if ($legalEntityId !== null) {
+                $q->orWhere('legal_entity_id', $legalEntityId);
+            }
+        });
+
+        $productCategoryId = $context['product_category_id'] ?? null;
+        $query->where(function ($q) use ($productCategoryId) {
+            $q->whereNull('product_category_id');
+            if ($productCategoryId !== null) {
+                $q->orWhere('product_category_id', $productCategoryId);
+            }
+        });
+
         $mappings = $query->get();
 
         $best = $mappings
@@ -70,6 +86,9 @@ final class AccountResolverService
     {
         $score = 1000 - $mapping->priority;
 
+        if ($mapping->legal_entity_id) {
+            $score += 150;
+        }
         if ($mapping->branch_id) {
             $score += 100;
         }

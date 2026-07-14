@@ -95,6 +95,12 @@ final class FiscalCloseService
                 $this->postClosingJournal($fiscalYear, $netIncome, $settings, $userId);
             }
 
+            // Lock the closing journal (created after the first lock pass) and any other unlocked rows.
+            JournalEntry::query()
+                ->where('fiscal_year_id', $fiscalYear->id)
+                ->whereNull('locked_at')
+                ->update(['locked_at' => now()]);
+
             $fiscalYear->update([
                 'status' => FiscalYearStatus::Closed,
                 'closed_at' => now(),
