@@ -16,7 +16,6 @@ use App\Services\Attendance\AttendanceService;
 use App\Services\Attendance\Contracts\AttendanceSourceProvider;
 use App\Services\Hr\BranchHrPayrollModuleGate;
 use App\Services\Hr\Contracts\HrPayrollModuleGate;
-use App\Services\Hr\Contracts\HrPayrollModuleGate;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
