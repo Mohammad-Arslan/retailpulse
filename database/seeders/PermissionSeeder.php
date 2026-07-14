@@ -137,6 +137,7 @@ final class PermissionSeeder extends Seeder
             ['name' => 'accounting.import-opening-balances', 'description' => 'Import opening balances'],
             ['name' => 'accounting.manage-cost-centres', 'description' => 'Manage cost centres'],
             ['name' => 'accounting.manage-fiscal-years', 'description' => 'Manage fiscal years'],
+            ['name' => 'accounting.manage-modules', 'description' => 'Enable or disable accounting sub-modules per branch'],
             ['name' => 'accounting.close-fiscal-year', 'description' => 'Close fiscal years'],
             ['name' => 'accounting.reopen-fiscal-year', 'description' => 'Reopen closed fiscal years'],
             ['name' => 'accounting.manage-bank-accounts', 'description' => 'Manage bank accounts'],

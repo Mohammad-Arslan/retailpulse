@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Admin\AccountingEventController;
 use App\Http\Controllers\Admin\AccountingImportController;
+use App\Http\Controllers\Admin\AccountingModulesController;
 use App\Http\Controllers\Admin\AccountingReportController;
 use App\Http\Controllers\Admin\AccountingSettingsController;
 use App\Http\Controllers\Admin\AccountMappingController;
@@ -352,6 +353,10 @@ Route::middleware(['auth', 'admin', 'branch.context'])
                 ->name('settings.index');
             Route::put('settings', [AccountingSettingsController::class, 'update'])
                 ->name('settings.update');
+            Route::get('modules', [AccountingModulesController::class, 'index'])
+                ->name('modules.index');
+            Route::put('modules', [AccountingModulesController::class, 'update'])
+                ->name('modules.update');
             Route::get('cost-layers/create', [CostLayerController::class, 'create'])
                 ->name('cost-layers.create');
             Route::post('cost-layers', [CostLayerController::class, 'store'])

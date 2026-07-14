@@ -26,6 +26,7 @@ final class RoleSeeder extends Seeder
         'accounting.import-opening-balances',
         'accounting.manage-cost-centres',
         'accounting.manage-fiscal-years',
+        'accounting.manage-modules',
         'accounting.close-fiscal-year',
         'accounting.reopen-fiscal-year',
         'accounting.manage-bank-accounts',

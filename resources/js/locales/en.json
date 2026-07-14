@@ -42,6 +42,7 @@
         "postingRules": "Posting Rules",
         "journalEntries": "Journal Entries",
         "accountingSettings": "Financial Settings",
+        "accountingModules": "Accounting Modules",
         "costLayers": "Create Cost Layer",
         "costCentres": "Cost Centres",
         "accountingReports": "Financial Reports",
@@ -88,6 +89,19 @@
         },
         "selectCurrency": "Select Currency…",
         "selectBranch": "Select Branch…",
+        "accountingModules": {
+            "core": "Core",
+            "ar_ap": "AR / AP",
+            "tax": "Tax",
+            "cost_centres": "Cost Centres",
+            "multi_currency": "Multi-Currency",
+            "bank_reconciliation": "Bank Reconciliation",
+            "petty_cash": "Petty Cash",
+            "cheques": "Cheques",
+            "fixed_assets": "Fixed Assets",
+            "intercompany": "Intercompany",
+            "credit_notes": "Credit Notes"
+        },
         "allStatuses": "All Statuses",
         "allSuppliers": "All Suppliers",
         "language": "Language",
@@ -2026,6 +2040,16 @@
                     "reversed": "Reversed"
                 }
             },
+            "modules": {
+                "title": "Accounting Modules",
+                "description": "Enable or disable accounting sub-modules for each branch. Core is always on.",
+                "selectBranchHint": "Select a branch to manage its modules. All Branches view cannot save module settings.",
+                "modulesTitle": "Enabled Modules",
+                "modulesHint": "Turning a module on also enables its dependencies. Turning one off disables modules that depend on it.",
+                "alwaysOn": "Always On",
+                "requires": "Requires {{modules}}",
+                "save": "Save Modules"
+            },
             "settings": {
                 "title": "Financial Settings",
                 "description": "Configure fiscal calendar, default GL accounts, and journal policies.",
@@ -2658,6 +2682,7 @@
         "journalEntries": "Journal Entries",
         "costCentres": "Cost Centres",
         "accountingSettings": "Accounting Settings",
+        "accountingModules": "Accounting Modules",
         "costLayers": "Create Cost Layer",
         "accountingReports": "Financial Reports",
         "accountingEvents": "Accounting Events",

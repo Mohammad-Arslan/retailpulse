@@ -384,6 +384,15 @@ export const ADMIN_NAV_SECTIONS = [
                 keywords: ['fiscal year', 'cutover', 'retained earnings'],
             },
             {
+                label: 'Accounting Modules',
+                labelKey: 'accountingModules',
+                href: 'admin.accounting.modules.index',
+                routeName: 'admin.accounting.modules.*',
+                permission: 'accounting.manage-modules',
+                icon: Boxes,
+                keywords: ['modules', 'sub-module', 'enable', 'branch accounting'],
+            },
+            {
                 label: 'Create Cost Layer',
                 labelKey: 'costLayers',
                 href: 'admin.accounting.cost-layers.create',
