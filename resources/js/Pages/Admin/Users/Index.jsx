@@ -52,6 +52,7 @@ function Index({ users, filters }) {
                                 <RolePill
                                     key={role.id ?? role.name}
                                     name={role.name}
+                                    displayName={role.display_name}
                                 />
                             ))
                         ) : (

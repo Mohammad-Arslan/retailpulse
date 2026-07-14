@@ -13,6 +13,7 @@ final readonly class CreateRoleData
      */
     public function __construct(
         public string $name,
+        public string $displayName,
         public ?string $description,
         public array $permissionNames,
     ) {}
@@ -21,6 +22,7 @@ final readonly class CreateRoleData
     {
         return new self(
             name: $request->validated('name'),
+            displayName: $request->validated('display_name'),
             description: $request->validated('description'),
             permissionNames: $request->validated('permissions', []),
         );

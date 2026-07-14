@@ -14,6 +14,7 @@ use App\Models\Role;
 use App\Repositories\Contracts\PermissionRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Services\RoleService;
+use App\Support\AccessControlLabels;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -76,6 +77,7 @@ final class RoleController extends Controller
             'role' => [
                 'id' => $role->id,
                 'name' => $role->name,
+                'display_name' => $role->display_name ?: AccessControlLabels::forRole($role->name),
                 'description' => $role->description,
                 'is_system' => $role->is_system,
                 'permissions' => $role->permissions->pluck('name'),
@@ -118,6 +120,7 @@ final class RoleController extends Controller
             'role' => [
                 'id' => $role->id,
                 'name' => $role->name,
+                'display_name' => $role->display_name ?: AccessControlLabels::forRole($role->name),
             ],
         ]);
     }
@@ -134,7 +137,7 @@ final class RoleController extends Controller
     }
 
     /**
-     * @return array<string, list<array{id: int, name: string, description: string|null}>>
+     * @return array<string, list<array{id: int, name: string, display_name: string, description: string|null}>>
      */
     private function formatPermissionGroups(): array
     {
@@ -142,6 +145,7 @@ final class RoleController extends Controller
             ->map(fn ($group) => $group->map(fn ($p) => [
                 'id' => $p->id,
                 'name' => $p->name,
+                'display_name' => $p->display_name ?: AccessControlLabels::forPermission($p->name, $p->description),
                 'description' => $p->description,
             ])->values()->all())
             ->all();

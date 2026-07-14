@@ -12,6 +12,7 @@ use App\Http\Requests\Admin\UpdatePermissionRequest;
 use App\Models\Permission;
 use App\Repositories\Contracts\PermissionRepositoryInterface;
 use App\Services\PermissionService;
+use App\Support\AccessControlLabels;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -32,9 +33,11 @@ final class PermissionController extends Controller
         return Inertia::render('Admin/Permissions/Index', [
             'permissionGroups' => $grouped->map(fn ($group, $key) => [
                 'group' => $key,
+                'group_label' => AccessControlLabels::forGroup((string) $key),
                 'permissions' => $group->map(fn ($p) => [
                     'id' => $p->id,
                     'name' => $p->name,
+                    'display_name' => $p->display_name ?: AccessControlLabels::forPermission($p->name, $p->description),
                     'description' => $p->description,
                 ])->values(),
             ])->values(),
@@ -67,6 +70,8 @@ final class PermissionController extends Controller
             'permission' => [
                 'id' => $permission->id,
                 'name' => $permission->name,
+                'display_name' => $permission->display_name
+                    ?: AccessControlLabels::forPermission($permission->name, $permission->description),
                 'group' => $permission->group,
                 'description' => $permission->description,
             ],

@@ -16,6 +16,7 @@ use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Services\BranchContextService;
 use App\Services\PosPinService;
 use App\Services\UserService;
+use App\Support\AccessControlLabels;
 use App\Support\BranchContext;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
@@ -58,7 +59,7 @@ final class UserController extends Controller
         $this->authorize('create', User::class);
 
         return Inertia::render('Admin/Users/Create', [
-            'roles' => $this->roles->allWithPermissions()->pluck('name'),
+            'roles' => $this->roleOptions(),
             'availableBranches' => $this->branches->allActive(
                 $this->branchContext->accessibleBranchIds($request->user()),
             ),
@@ -97,7 +98,7 @@ final class UserController extends Controller
                 'has_pos_pin' => $this->posPin->hasPin($user),
                 'pos_pin_lockout' => $this->posPin->getLockoutStatus($user),
             ],
-            'roles' => $this->roles->allWithPermissions()->pluck('name'),
+            'roles' => $this->roleOptions(),
             'availableBranches' => $this->branches->allActive(
                 $this->branchContext->accessibleBranchIds(request()->user()),
             ),
@@ -133,6 +134,20 @@ final class UserController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('success', __('User deactivated successfully.'));
+    }
+
+    /**
+     * @return list<array{name: string, display_name: string}>
+     */
+    private function roleOptions(): array
+    {
+        return $this->roles->allWithPermissions()
+            ->map(fn ($role) => [
+                'name' => $role->name,
+                'display_name' => $role->display_name ?: AccessControlLabels::forRole($role->name),
+            ])
+            ->values()
+            ->all();
     }
 
     /**

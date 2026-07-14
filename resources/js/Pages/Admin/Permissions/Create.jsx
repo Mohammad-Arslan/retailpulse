@@ -3,9 +3,12 @@ import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 export default function Create() {
+    const { t } = useTranslation();
     const { data, setData, post, processing, errors } = useForm({
+        display_name: '',
         name: '',
         group: '',
         description: '',
@@ -18,36 +21,52 @@ export default function Create() {
 
     return (
         <AdminLayout>
-            <Head title="Create permission" />
+            <Head title={t('pages.permissions.createTitle')} />
 
             <PageHeader
-                title="Create Permission"
-                description="Add a new granular capability to the system."
+                title={t('pages.permissions.createTitle')}
+                description={t('pages.permissions.createDescription')}
             >
-                <Link
-                    href={route('admin.permissions.index')}
-                    className="rp-btn-outline"
-                >
-                    Cancel
+                <Link href={route('admin.permissions.index')} className="rp-btn-outline">
+                    {t('common.cancel')}
                 </Link>
             </PageHeader>
 
             <form onSubmit={submit}>
                 <FormCard>
                     <AdminFormField
-                        label="Name (e.g. users.create)"
+                        label={t('pages.permissions.fields.displayName')}
+                        id="display_name"
+                        error={errors.display_name}
+                    >
+                        <input
+                            id="display_name"
+                            value={data.display_name}
+                            className="rp-form-input"
+                            onChange={(e) => setData('display_name', e.target.value)}
+                            required
+                        />
+                    </AdminFormField>
+                    <AdminFormField
+                        label={t('pages.permissions.fields.slug')}
                         id="name"
                         error={errors.name}
+                        hint={t('pages.permissions.fields.slugHint')}
                     >
                         <input
                             id="name"
                             value={data.name}
-                            className="rp-form-input"
+                            className="rp-form-input font-mono text-sm"
                             onChange={(e) => setData('name', e.target.value)}
                             required
+                            placeholder="users.create"
                         />
                     </AdminFormField>
-                    <AdminFormField label="Group" id="group">
+                    <AdminFormField
+                        label={t('pages.permissions.fields.group')}
+                        id="group"
+                        error={errors.group}
+                    >
                         <input
                             id="group"
                             value={data.group}
@@ -55,22 +74,20 @@ export default function Create() {
                             onChange={(e) => setData('group', e.target.value)}
                         />
                     </AdminFormField>
-                    <AdminFormField label="Description" id="description">
+                    <AdminFormField
+                        label={t('pages.permissions.fields.description')}
+                        id="description"
+                        error={errors.description}
+                    >
                         <input
                             id="description"
                             value={data.description}
                             className="rp-form-input"
-                            onChange={(e) =>
-                                setData('description', e.target.value)
-                            }
+                            onChange={(e) => setData('description', e.target.value)}
                         />
                     </AdminFormField>
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className="rp-btn-primary"
-                    >
-                        Create permission
+                    <button type="submit" disabled={processing} className="rp-btn-primary">
+                        {t('pages.permissions.createSubmit')}
                     </button>
                 </FormCard>
             </form>

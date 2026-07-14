@@ -22,24 +22,29 @@ function Index({ roles, filters }) {
     const columns = useMemo(
         () => [
             {
-                id: 'name',
-                accessorKey: 'name',
-                header: 'Name',
+                id: 'display_name',
+                accessorKey: 'display_name',
+                header: t('pages.roles.columns.displayName'),
                 cell: ({ row }) => (
-                    <span className="text-sm font-semibold text-rp-text">
-                        {row.original.name}
-                        {row.original.is_system && (
-                            <span className="ms-2 text-[11px] text-rp-text-muted">
-                                (system)
-                            </span>
-                        )}
-                    </span>
+                    <div>
+                        <span className="text-sm font-semibold text-rp-text">
+                            {row.original.display_name || row.original.name}
+                            {row.original.is_system && (
+                                <span className="ms-2 text-[11px] text-rp-text-muted">
+                                    ({t('pages.roles.systemBadge')})
+                                </span>
+                            )}
+                        </span>
+                        <div className="mt-0.5 font-mono text-[11px] text-rp-text-muted">
+                            {row.original.name}
+                        </div>
+                    </div>
                 ),
             },
             {
                 id: 'description',
                 accessorKey: 'description',
-                header: 'Description',
+                header: t('pages.roles.columns.description'),
                 cell: ({ row }) => (
                     <span className="text-sm text-rp-text-secondary">
                         {row.original.description || '—'}
@@ -49,7 +54,7 @@ function Index({ roles, filters }) {
             {
                 id: 'permissions_count',
                 accessorKey: 'permissions_count',
-                header: 'Permissions',
+                header: t('pages.roles.columns.permissions'),
                 cell: ({ row }) => (
                     <span className="inline-flex rounded-full bg-teal-100 px-2.5 py-0.5 text-xs font-semibold text-teal-500">
                         {row.original.permissions_count}
@@ -57,7 +62,7 @@ function Index({ roles, filters }) {
                 ),
             },
         ],
-        [],
+        [t],
     );
 
     const rowActions = (role) => {
