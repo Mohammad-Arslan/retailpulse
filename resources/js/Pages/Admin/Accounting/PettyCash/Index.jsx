@@ -309,7 +309,8 @@ function Index({
                                         description: data.description || null,
                                         adjustment_delta:
                                             data.voucher_type === 'adjustment' ? data.adjustment_delta : null,
-                                    })).post(
+                                    }));
+                                    voucherForm.post(
                                         route(
                                             'admin.accounting.petty-cash.vouchers.store',
                                             voucherForm.data.register_id,

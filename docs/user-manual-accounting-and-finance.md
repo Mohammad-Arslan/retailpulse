@@ -866,13 +866,26 @@ Optional **dimension** on journal lines for departmental P&L (e.g. Store, Wareho
 **Permission:** `accounting.manage-cost-centres`
 
 1. Open **Accounting → Cost Centres**.
-2. Click **Allocate Expense**.
-3. Choose a posted expense journal line, an allocation method (Equal Split, Percentage, Headcount, Floor Area, Revenue Share, Manual), and one or more target centres.
-4. Run Allocation — RetailPulse stores `cost_centre_allocations` rows and posts a balanced reclass journal (`cost_centre.allocated`) so Cost Centre P&L reflects the split without mutating the original posted line.
+2. Click **Allocate Expense** (top right, next to **New Cost Centre**).
+3. In **Allocate Shared Expense**:
+   - **Source Expense Line** — pick a posted expense journal line (recent expense lines appear in the list).
+   - **Allocation Method** — typically **Equal Split** (or Headcount / Floor Area / Revenue Share / Percentage / Manual when you have the required inputs).
+   - **Target Centres** — tick **two or more** centres that should receive the shared cost.
+4. Click **Run Allocation**. RetailPulse stores `cost_centre_allocations` rows and posts a balanced reclass journal (`source_event = cost_centre.allocated`) so **Cost Centre P&L** reflects the split **without changing** the original posted expense line.
+
+**Methods quick reference**
+
+| Method | Requires |
+|--------|----------|
+| Equal Split | Two or more targets — amount divided evenly |
+| Percentage / Manual | Percentages on each target that sum to **100** (configure via API/advanced use; Equal Split is the primary UI path) |
+| Headcount | Positive **Headcount** on each target centre (edit the cost centre) |
+| Floor Area | Positive **Floor Area** on each target centre |
+| Revenue Share | **Period From** / **Period To**, and revenue already tagged to those centres in the period |
 
 ### 14.4 Reports
 
-**Cost Centre P&L** under Financial Reports aggregates revenue and expense by cost centre.
+**Cost Centre P&L** under Financial Reports aggregates revenue and expense by cost centre (including allocation reclass lines).
 
 ### 14.5 What if…
 
@@ -880,7 +893,10 @@ Optional **dimension** on journal lines for departmental P&L (e.g. Store, Wareho
 |-----------|----------------|
 | Module disabled | Menu hidden; lines post without cost centre |
 | No cost centre on line | Line appears in consolidated P&L only |
-| Headcount / floor area missing | Those methods reject until drivers are set on each target centre |
+| Headcount / Floor Area missing | Those methods reject until drivers are set on each target centre |
+| Only one target centre ticked | Allocation can still run for Equal Split (100% to that centre); prefer two or more for a true shared split |
+| Source list empty | Post an expense journal first (or ensure the line uses an expense-type GL account) |
+| Validation / flash error after Run Allocation | Read the message under the form (e.g. percents must sum to 100, missing drivers) — original journal is unchanged until success |
 
 ---
 
@@ -1330,6 +1346,7 @@ A: Distinct `payment.received` event is deferred; partial coverage via sale sett
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.9 | July 2026 | Cost Centre Allocate Shared Expense: clarified Run Allocation steps, methods table, troubleshooting; fixed allocate form submit (Inertia transform) |
 | 1.8 | July 2026 | Cost Centre Allocate Expense UI; headcount/floor area drivers; P11 correctness fixes (COGS idempotency, mapping scopes, FX closing rates, transfer warehouse scope, split-tender, asset.acquired) |
 | 1.7 | July 2026 | ERP home finance widgets (`dashboard.finance.view`); All Branches gated by `branches.access-all` (not role name) |
 | 1.6 | July 2026 | Accounting Modules admin UI (per-branch enable/disable); replaces tinker recipe |

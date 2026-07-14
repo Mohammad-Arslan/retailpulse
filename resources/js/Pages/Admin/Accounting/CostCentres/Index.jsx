@@ -92,18 +92,20 @@ function Index({
 
     const submitAllocate = (e) => {
         e.preventDefault();
-        allocateForm
-            .transform((data) => ({
-                ...data,
-                source_journal_transaction_id: Number(data.source_journal_transaction_id),
-                targets: (data.targets ?? []).map((id) => ({ cost_centre_id: Number(id) })),
-                period_from: data.period_from || null,
-                period_to: data.period_to || null,
-            }))
-            .post(route('admin.accounting.cost-centres.allocate'), {
-                preserveScroll: true,
-                onSuccess: () => setAllocateOpen(false),
-            });
+
+        // Inertia useForm.transform() does not return the form helper — call post separately.
+        allocateForm.transform((data) => ({
+            source_journal_transaction_id: Number(data.source_journal_transaction_id),
+            method: data.method,
+            targets: (data.targets ?? []).map((id) => ({ cost_centre_id: Number(id) })),
+            period_from: data.period_from || null,
+            period_to: data.period_to || null,
+        }));
+
+        allocateForm.post(route('admin.accounting.cost-centres.allocate'), {
+            preserveScroll: true,
+            onSuccess: () => setAllocateOpen(false),
+        });
     };
 
     const deleteCentre = async (centre) => {
