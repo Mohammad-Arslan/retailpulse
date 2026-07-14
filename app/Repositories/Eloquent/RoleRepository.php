@@ -27,10 +27,10 @@ final class RoleRepository implements RoleRepositoryInterface
 
         $sort = $filters['sort'] ?? 'name';
         $direction = strtolower((string) ($filters['direction'] ?? 'asc')) === 'desc' ? 'desc' : 'asc';
-        $allowedSorts = ['name', 'description', 'created_at'];
+        $allowedSorts = ['name', 'display_name', 'description', 'created_at'];
 
         if (! in_array($sort, $allowedSorts, true)) {
-            $sort = 'name';
+            $sort = 'display_name';
         }
 
         $query->orderBy($sort, $direction);
@@ -39,6 +39,7 @@ final class RoleRepository implements RoleRepositoryInterface
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('display_name', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
             });
         }
@@ -48,7 +49,7 @@ final class RoleRepository implements RoleRepositoryInterface
 
     public function allWithPermissions(): Collection
     {
-        return Role::query()->with('permissions')->orderBy('name')->get();
+        return Role::query()->with('permissions')->orderBy('display_name')->orderBy('name')->get();
     }
 
     public function create(array $attributes): Role

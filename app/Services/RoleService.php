@@ -8,6 +8,7 @@ use App\DTOs\Role\CreateRoleData;
 use App\DTOs\Role\UpdateRoleData;
 use App\Models\Role;
 use App\Repositories\Contracts\RoleRepositoryInterface;
+use App\Support\AccessControlLabels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -22,6 +23,7 @@ final class RoleService
         return DB::transaction(function () use ($data) {
             $role = $this->roles->create([
                 'name' => $data->name,
+                'display_name' => $data->displayName,
                 'guard_name' => 'web',
                 'description' => $data->description,
                 'is_system' => false,
@@ -38,6 +40,7 @@ final class RoleService
         return DB::transaction(function () use ($role, $data) {
             $role = $this->roles->update($role, [
                 'name' => $data->name,
+                'display_name' => $data->displayName,
                 'description' => $data->description,
             ]);
 
@@ -61,9 +64,12 @@ final class RoleService
         return DB::transaction(function () use ($source, $newName) {
             $role = $this->roles->create([
                 'name' => $newName,
+                'display_name' => $source->display_name
+                    ? $source->display_name.' (Copy)'
+                    : AccessControlLabels::forRole($newName),
                 'guard_name' => $source->guard_name,
                 'description' => $source->description
-                    ? __('roles.cloned_from', ['name' => $source->name])
+                    ? __('roles.cloned_from', ['name' => $source->display_name ?: $source->name])
                     : null,
                 'is_system' => false,
             ]);

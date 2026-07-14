@@ -392,11 +392,50 @@
         "roles": {
             "title": "Roles",
             "description": "Define access profiles and assign permissions to each role.",
-            "searchPlaceholder": "Search roles..."
+            "searchPlaceholder": "Search roles…",
+            "searchPermissionsPlaceholder": "Search permissions…",
+            "createTitle": "Create Role",
+            "createDescription": "Define a new access profile and assign permissions.",
+            "createSubmit": "Create Role",
+            "editTitle": "Edit {{name}}",
+            "cloneTitle": "Clone {{name}}",
+            "cloneDescription": "Create a copy of this role with a new slug.",
+            "cloneSubmit": "Clone Role",
+            "delete": "Delete Role",
+            "systemBadge": "System",
+            "permissionsTitle": "Permissions",
+            "columns": {
+                "displayName": "Display Name",
+                "description": "Description",
+                "permissions": "Permissions"
+            },
+            "fields": {
+                "displayName": "Display Name",
+                "slug": "Slug",
+                "slugHint": "Lowercase letters, numbers, and hyphens. Used in code — not shown as the primary label.",
+                "slugLocked": "System role slugs cannot be changed.",
+                "newSlug": "New Role Slug",
+                "description": "Description"
+            }
         },
         "permissions": {
             "title": "Permissions",
-            "description": "Granular capabilities assigned to roles across the system."
+            "description": "Granular capabilities assigned to roles across the system.",
+            "searchPlaceholder": "Search by name, slug, or group…",
+            "emptySearch": "No permissions match your search.",
+            "createTitle": "Create Permission",
+            "createDescription": "Add a new granular capability to the system.",
+            "createSubmit": "Create Permission",
+            "editTitle": "Edit {{name}}",
+            "delete": "Delete Permission",
+            "generalGroup": "General",
+            "fields": {
+                "displayName": "Display Name",
+                "slug": "Slug",
+                "slugHint": "Dotted technical key (e.g. users.create). Used by the authorization system.",
+                "group": "Group",
+                "description": "Description"
+            }
         },
         "branches": {
             "title": "Branches",

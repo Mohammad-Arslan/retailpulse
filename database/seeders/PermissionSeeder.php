@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Permission;
+use App\Support\AccessControlLabels;
 use Illuminate\Database\Seeder;
 
 final class PermissionSeeder extends Seeder
@@ -173,11 +174,17 @@ final class PermissionSeeder extends Seeder
     {
         foreach (self::PERMISSIONS as $group => $permissions) {
             foreach ($permissions as $permission) {
-                Permission::query()->firstOrCreate(
+                $displayName = AccessControlLabels::forPermission(
+                    $permission['name'],
+                    $permission['description'],
+                );
+
+                Permission::query()->updateOrCreate(
                     ['name' => $permission['name'], 'guard_name' => 'web'],
                     [
                         'group' => $group,
                         'description' => $permission['description'],
+                        'display_name' => $displayName,
                     ],
                 );
             }

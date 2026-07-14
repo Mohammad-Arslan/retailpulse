@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Support\AccessControlLabels;
 use Illuminate\Database\Seeder;
 
 final class RoleSeeder extends Seeder
@@ -231,9 +232,10 @@ final class RoleSeeder extends Seeder
         $allPermissions = Permission::query()->pluck('name')->all();
 
         foreach (self::ROLES as $name => $config) {
-            $role = Role::query()->firstOrCreate(
+            $role = Role::query()->updateOrCreate(
                 ['name' => $name, 'guard_name' => 'web'],
                 [
+                    'display_name' => AccessControlLabels::forRole($name),
                     'description' => $config['description'],
                     'is_system' => $config['is_system'],
                 ],

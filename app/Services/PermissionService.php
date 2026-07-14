@@ -20,6 +20,7 @@ final class PermissionService
     {
         return DB::transaction(fn () => $this->permissions->create([
             'name' => $data->name,
+            'display_name' => $data->displayName,
             'guard_name' => 'web',
             'group' => $data->group,
             'description' => $data->description,
@@ -30,6 +31,7 @@ final class PermissionService
     {
         return DB::transaction(fn () => $this->permissions->update($permission, [
             'name' => $data->name,
+            'display_name' => $data->displayName,
             'group' => $data->group,
             'description' => $data->description,
         ]));

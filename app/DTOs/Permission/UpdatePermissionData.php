@@ -10,6 +10,7 @@ final readonly class UpdatePermissionData
 {
     public function __construct(
         public string $name,
+        public string $displayName,
         public ?string $group,
         public ?string $description,
     ) {}
@@ -18,6 +19,7 @@ final readonly class UpdatePermissionData
     {
         return new self(
             name: $request->validated('name'),
+            displayName: $request->validated('display_name'),
             group: $request->validated('group'),
             description: $request->validated('description'),
         );

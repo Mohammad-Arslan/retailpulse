@@ -141,14 +141,21 @@ export default function Edit({ user, roles, availableBranches }) {
                         <AdminFormField label="Roles">
                             <div className="rp-checkbox-group">
                                 {roles.map((role) => (
-                                    <label key={role} className="rp-checkbox-label">
+                                    <label key={role.name} className="rp-checkbox-label">
                                         <input
                                             type="checkbox"
-                                            checked={data.roles.includes(role)}
-                                            onChange={() => toggleRole(role)}
+                                            checked={data.roles.includes(role.name)}
+                                            onChange={() => toggleRole(role.name)}
                                             className="accent-teal-500"
                                         />
-                                        {role}
+                                        <span>
+                                            <span className="font-medium">
+                                                {role.display_name || role.name}
+                                            </span>
+                                            <span className="ms-1 font-mono text-[11px] text-rp-text-muted">
+                                                ({role.name})
+                                            </span>
+                                        </span>
                                     </label>
                                 ))}
                             </div>
