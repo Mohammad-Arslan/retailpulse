@@ -32,6 +32,8 @@ use App\Http\Controllers\Admin\Expense\ExpenseCategoryController;
 use App\Http\Controllers\Admin\Expense\ExpenseController;
 use App\Http\Controllers\Admin\Attendance\AttendanceRecordController;
 use App\Http\Controllers\Admin\Attendance\AttendanceSourceController;
+use App\Http\Controllers\Admin\Leave\LeaveRequestController;
+use App\Http\Controllers\Admin\Leave\LeaveTypeController;
 use App\Http\Controllers\Admin\Expense\RecurringExpenseScheduleController;
 use App\Http\Controllers\Admin\FixedAssetController;
 use App\Http\Controllers\Admin\Hr\EmployeeController;
@@ -134,6 +136,14 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::get('records', [AttendanceRecordController::class, 'index'])->name('records.index');
             Route::get('records/manual', [AttendanceRecordController::class, 'create'])->name('records.create');
             Route::post('records/manual', [AttendanceRecordController::class, 'store'])->name('records.store');
+        });
+
+        Route::middleware(['hr-module:leave'])->prefix('leave')->name('leave.')->group(function () {
+            Route::get('types', [LeaveTypeController::class, 'index'])->name('types.index');
+            Route::get('requests', [LeaveRequestController::class, 'index'])->name('requests.index');
+            Route::get('requests/create', [LeaveRequestController::class, 'create'])->name('requests.create');
+            Route::post('requests', [LeaveRequestController::class, 'store'])->name('requests.store');
+            Route::post('requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('requests.approve');
         });
 
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');

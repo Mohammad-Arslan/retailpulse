@@ -12,6 +12,10 @@ use App\Models\Expense;
 use App\Models\ExpenseApprovalPolicy;
 use App\Models\ExpenseAttachment;
 use App\Models\ExpenseCategory;
+use App\Models\LeaveEntitlement;
+use App\Models\LeavePolicy;
+use App\Models\LeaveRequest;
+use App\Models\LeaveType;
 use App\Models\RecurringExpenseOccurrence;
 use App\Models\RecurringExpenseSchedule;
 use Illuminate\Database\Eloquent\Model;
@@ -32,6 +36,10 @@ final class HrPayrollAuditTypes
         RecurringExpenseOccurrence::class,
         AttendanceSource::class,
         AttendanceRecord::class,
+        LeaveType::class,
+        LeavePolicy::class,
+        LeaveEntitlement::class,
+        LeaveRequest::class,
     ];
 
     /**

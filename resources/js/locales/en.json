@@ -65,6 +65,8 @@
         "recurringExpenses": "Recurring Expenses",
         "attendanceRecords": "Attendance Records",
         "attendanceSources": "Attendance Sources",
+        "leaveTypes": "Leave Types",
+        "leaveRequests": "Leave Requests",
         "chartOfAccounts": "Chart of Accounts",
         "accountMappings": "Account Mappings",
         "postingRules": "Posting Rules",
@@ -602,6 +604,57 @@
                 "open": "Open",
                 "closed": "Closed",
                 "adjusted": "Adjusted"
+            }
+        },
+        "leaveTypes": {
+            "indexTitle": "Leave Types",
+            "indexDescription": "Configured Leave Categories Used For Entitlements And Requests.",
+            "searchPlaceholder": "Search By Name Or Code…",
+            "allStatuses": "All Statuses",
+            "paid": "Paid",
+            "unpaid": "Unpaid",
+            "columns": {
+                "name": "Leave Type",
+                "isPaid": "Paid",
+                "affectsPayroll": "Affects Payroll",
+                "deductionComponent": "Deduction Component",
+                "status": "Status"
+            },
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive"
+            }
+        },
+        "leaveRequests": {
+            "indexTitle": "Leave Requests",
+            "indexDescription": "Review And Approve Employee Leave Requests.",
+            "createTitle": "New Leave Request",
+            "createDescription": "Submit A Leave Request On Behalf Of An Employee.",
+            "searchPlaceholder": "Search By Employee Name Or Code…",
+            "allStatuses": "All Statuses",
+            "selectEmployee": "Select Employee…",
+            "selectLeaveType": "Select Leave Type…",
+            "submitRequest": "Submit Request",
+            "approve": "Approve",
+            "columns": {
+                "employee": "Employee",
+                "leaveType": "Leave Type",
+                "dates": "Dates",
+                "days": "Days",
+                "status": "Status"
+            },
+            "fields": {
+                "employee": "Employee",
+                "leaveType": "Leave Type",
+                "startDate": "Start Date",
+                "endDate": "End Date",
+                "reason": "Reason"
+            },
+            "statuses": {
+                "pending": "Pending",
+                "approved": "Approved",
+                "rejected": "Rejected",
+                "cancelled": "Cancelled"
             }
         },
         "expenseCategories": {

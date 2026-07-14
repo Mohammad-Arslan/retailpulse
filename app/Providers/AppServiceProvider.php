@@ -50,6 +50,10 @@ use App\Models\ExpenseAttachment;
 use App\Models\ExpenseCategory;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceSource;
+use App\Models\LeaveEntitlement;
+use App\Models\LeavePolicy;
+use App\Models\LeaveRequest;
+use App\Models\LeaveType;
 use App\Models\RecurringExpenseOccurrence;
 use App\Models\RecurringExpenseSchedule;
 use App\Models\FiscalYear;
@@ -296,6 +300,10 @@ class AppServiceProvider extends ServiceProvider
         RecurringExpenseOccurrence::observe(AuditObserver::class);
         AttendanceSource::observe(AuditObserver::class);
         AttendanceRecord::observe(AuditObserver::class);
+        LeaveType::observe(AuditObserver::class);
+        LeavePolicy::observe(AuditObserver::class);
+        LeaveEntitlement::observe(AuditObserver::class);
+        LeaveRequest::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email');

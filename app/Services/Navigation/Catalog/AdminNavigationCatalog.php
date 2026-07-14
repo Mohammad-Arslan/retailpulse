@@ -220,6 +220,20 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.attendance.sources.*',
                 'keywords' => ['attendance source', 'biometric', 'pos pin', 'driver'],
             ]),
+            self::item('leave-types', 'leaveTypes', 'admin.leave.types.index', 'calendar-days', 'leave', 70, [
+                'permission' => 'leave.manage-types',
+                'permissionsAny' => ['leave.manage-types', 'leave.view'],
+                'module' => 'leave',
+                'routePattern' => 'admin.leave.types.*',
+                'keywords' => ['leave type', 'annual', 'sick', 'unpaid'],
+            ]),
+            self::item('leave-requests', 'leaveRequests', 'admin.leave.requests.index', 'calendar-range', 'leave', 80, [
+                'permission' => 'leave.view',
+                'permissionsAny' => ['leave.view', 'leave.request', 'leave.approve'],
+                'module' => 'leave',
+                'routePattern' => 'admin.leave.requests.*',
+                'keywords' => ['leave request', 'time off', 'vacation', 'absence'],
+            ]),
         ]));
 
         $registry->registerSection(new NavigationSection('accounting', 'accountingSection', 60, [
