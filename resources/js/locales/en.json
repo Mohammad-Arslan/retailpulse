@@ -60,6 +60,8 @@
         "accountingSection": "Accounting",
         "hrSection": "HR & Payroll",
         "employees": "Employees",
+        "expenses": "Expenses",
+        "expenseCategories": "Expense Categories",
         "chartOfAccounts": "Chart of Accounts",
         "accountMappings": "Account Mappings",
         "postingRules": "Posting Rules",
@@ -413,6 +415,92 @@
                 "active": "Active",
                 "inactive": "Inactive",
                 "terminated": "Terminated"
+            }
+        },
+        "expenses": {
+            "indexTitle": "Expenses",
+            "indexDescription": "Track And Post Branch Expense Vouchers.",
+            "createTitle": "New Expense",
+            "createDescription": "Record A Draft Expense Voucher For Approval And Posting.",
+            "createSubmit": "Create Expense",
+            "searchPlaceholder": "Search By Number Or Description…",
+            "allStatuses": "All Statuses",
+            "selectCategory": "Select Category…",
+            "selectLegalEntity": "Select Legal Entity…",
+            "selectBranch": "Select Branch…",
+            "selectCostCentre": "Select Cost Centre…",
+            "selectTaxType": "Select Tax Type…",
+            "selectPaymentMethod": "Select Payment Method…",
+            "noPaymentMethod": "Unpaid (Accounts Payable)",
+            "approve": "Approve And Post",
+            "attachReceipt": "Attach Receipt",
+            "receiptLabel": "Receipt File",
+            "columns": {
+                "number": "Number",
+                "category": "Category",
+                "branch": "Branch",
+                "amount": "Amount",
+                "date": "Date",
+                "status": "Status"
+            },
+            "fields": {
+                "number": "Expense Number",
+                "category": "Category",
+                "branch": "Branch",
+                "legalEntity": "Legal Entity",
+                "costCentre": "Cost Centre",
+                "amount": "Amount",
+                "currency": "Currency",
+                "exchangeRate": "Exchange Rate",
+                "taxType": "Tax Type",
+                "taxAmount": "Tax Amount",
+                "functionalAmount": "Functional Amount",
+                "date": "Expense Date",
+                "paymentMethod": "Payment Method",
+                "description": "Description",
+                "status": "Status",
+                "approvalRequired": "Approval Required",
+                "approvedBy": "Approved By",
+                "approvedAt": "Approved At",
+                "journalEntry": "Journal Entry",
+                "attachments": "Attachments"
+            },
+            "statuses": {
+                "draft": "Draft",
+                "pending_approval": "Pending Approval",
+                "posted": "Posted"
+            },
+            "paymentMethods": {
+                "cash": "Cash",
+                "card": "Card",
+                "bank_transfer": "Bank Transfer"
+            }
+        },
+        "expenseCategories": {
+            "indexTitle": "Expense Categories",
+            "indexDescription": "Configure Expense Category Hierarchy And GL Mapping Keys.",
+            "createTitle": "New Category",
+            "createSubmit": "Add Category",
+            "searchPlaceholder": "Search By Name Or Code…",
+            "columns": {
+                "code": "Code",
+                "name": "Name",
+                "parent": "Parent Group",
+                "requiresReceipt": "Requires Receipt",
+                "status": "Status"
+            },
+            "fields": {
+                "code": "Code",
+                "name": "Name",
+                "parent": "Parent Group",
+                "accountMappingKey": "Account Mapping Key",
+                "isGroup": "Group Category",
+                "requiresReceipt": "Requires Receipt",
+                "status": "Status"
+            },
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive"
             }
         },
         "helpSupport": {

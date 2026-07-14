@@ -43,6 +43,10 @@ use App\Models\Customer;
 use App\Models\DebitNote;
 use App\Models\Employee;
 use App\Models\BranchHrProfile;
+use App\Models\Expense;
+use App\Models\ExpenseApprovalPolicy;
+use App\Models\ExpenseAttachment;
+use App\Models\ExpenseCategory;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
 use App\Models\GoodsReceivingNote;
@@ -261,6 +265,10 @@ class AppServiceProvider extends ServiceProvider
         Cheque::observe(AuditObserver::class);
         Employee::observe(AuditObserver::class);
         BranchHrProfile::observe(AuditObserver::class);
+        Expense::observe(AuditObserver::class);
+        ExpenseCategory::observe(AuditObserver::class);
+        ExpenseApprovalPolicy::observe(AuditObserver::class);
+        ExpenseAttachment::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email');

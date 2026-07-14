@@ -185,6 +185,20 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.hr.employees.*',
                 'keywords' => ['employees', 'staff', 'hr', 'payroll'],
             ]),
+            self::item('expenses', 'expenses', 'admin.expenses.expenses.index', 'receipt', 'expenses', 20, [
+                'permission' => 'expenses.view',
+                'permissionsAny' => ['expenses.view', 'expenses.create'],
+                'module' => 'expenses',
+                'routePattern' => 'admin.expenses.expenses.*',
+                'keywords' => ['expense', 'voucher', 'receipt'],
+            ]),
+            self::item('expense-categories', 'expenseCategories', 'admin.expenses.expense-categories.index', 'folder-tree', 'expenses', 30, [
+                'permission' => 'expenses.manage-categories',
+                'permissionsAny' => ['expenses.manage-categories', 'expenses.view'],
+                'module' => 'expenses',
+                'routePattern' => 'admin.expenses.expense-categories.*',
+                'keywords' => ['category', 'expense type'],
+            ]),
         ]));
 
         $registry->registerSection(new NavigationSection('accounting', 'accountingSection', 60, [

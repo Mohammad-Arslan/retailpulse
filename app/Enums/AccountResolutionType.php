@@ -23,6 +23,8 @@ enum AccountResolutionType: string
     case TaxAccount = 'tax_account';
     case ConfigurableMapping = 'configurable_mapping';
     case AssetAccount = 'asset_account';
+    /** Resolves via payload expense_account_mapping_key (or line mapping key), then AccountResolverService. */
+    case ExpenseCategoryAccount = 'expense_category_account';
 
     /**
      * @return list<string>

@@ -6,6 +6,10 @@ namespace App\Support;
 
 use App\Models\BranchHrProfile;
 use App\Models\Employee;
+use App\Models\Expense;
+use App\Models\ExpenseApprovalPolicy;
+use App\Models\ExpenseAttachment;
+use App\Models\ExpenseCategory;
 use Illuminate\Database\Eloquent\Model;
 
 final class HrPayrollAuditTypes
@@ -16,6 +20,10 @@ final class HrPayrollAuditTypes
     private const TYPES = [
         Employee::class,
         BranchHrProfile::class,
+        Expense::class,
+        ExpenseCategory::class,
+        ExpenseApprovalPolicy::class,
+        ExpenseAttachment::class,
     ];
 
     /**

@@ -35,6 +35,22 @@ final class PostingRulesSeeder extends Seeder
         $this->seedAssetDepreciationRule($effectiveFrom);
         $this->seedAssetDisposalRule($effectiveFrom);
         $this->seedAssetAcquiredRule($effectiveFrom);
+        $this->seedExpensePostedRule($effectiveFrom);
+    }
+
+    private function seedExpensePostedRule(string $effectiveFrom): void
+    {
+        $ruleSet = $this->createRuleSet(
+            code: 'expense_posted_default',
+            name: 'Expense Posted — Default',
+            eventType: 'expense.posted',
+            effectiveFrom: $effectiveFrom,
+        );
+
+        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::ExpenseCategoryAccount, AmountSource::NetAmount);
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Debit, AccountResolutionType::TaxAccount, AmountSource::TaxAmount, required: false);
+        $this->createLine($ruleSet->id, 3, PostingRuleEntrySide::Credit, AccountResolutionType::PaymentMethodAccount, AmountSource::SettlementAmount, required: false);
+        $this->createLine($ruleSet->id, 4, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::GrossAmount, 'accounts_payable', required: false);
     }
 
     private function seedSaleCompletedRule(string $effectiveFrom): void

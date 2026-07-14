@@ -264,6 +264,10 @@ final class PostingRuleEngine
             AccountResolutionType::BankAccount => $this->resolveBankAccount($payload, $line),
             AccountResolutionType::ProductCategoryAccount => $this->resolveProductCategoryAccount($line, $context, $payload),
             AccountResolutionType::AssetAccount => $this->resolveAssetAccount($line, $payload),
+            AccountResolutionType::ExpenseCategoryAccount => $this->resolver->resolveByMappingKey(
+                (string) ($payload['expense_account_mapping_key'] ?? $line->account_mapping_key ?? 'expense_default'),
+                $context,
+            ),
             default => $line->account,
         };
     }
