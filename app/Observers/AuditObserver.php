@@ -19,6 +19,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Support\AccountingAuditTypes;
+use App\Support\HrPayrollAuditTypes;
 use Illuminate\Database\Eloquent\Model;
 
 final class AuditObserver
@@ -54,6 +55,10 @@ final class AuditObserver
     private function shouldAudit(Model $model): bool
     {
         if (AccountingAuditTypes::includes($model)) {
+            return true;
+        }
+
+        if (HrPayrollAuditTypes::includes($model)) {
             return true;
         }
 

@@ -41,7 +41,8 @@ use App\Models\CreditNote;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\DebitNote;
-use App\Models\ExchangeRate;
+use App\Models\Employee;
+use App\Models\BranchHrProfile;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
 use App\Models\GoodsReceivingNote;
@@ -148,6 +149,8 @@ use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\WarehouseRepository;
 use App\Services\Accounting\BranchAccountingModuleGate;
 use App\Services\Accounting\Contracts\AccountingModuleGate;
+use App\Services\Hr\BranchHrPayrollModuleGate;
+use App\Services\Hr\Contracts\HrPayrollModuleGate;
 use App\Services\Accounting\ProcurementAccountingHook;
 use App\Services\AI\LocalAiService;
 use App\Services\Procurement\Contracts\ProcurementPostingHook;
@@ -200,6 +203,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SystemSettingRepositoryInterface::class, SystemSettingRepository::class);
         $this->app->singleton(ProcurementPostingHook::class, ProcurementAccountingHook::class);
         $this->app->singleton(AccountingModuleGate::class, BranchAccountingModuleGate::class);
+        $this->app->singleton(HrPayrollModuleGate::class, BranchHrPayrollModuleGate::class);
     }
 
     public function boot(): void
@@ -255,6 +259,8 @@ class AppServiceProvider extends ServiceProvider
         PettyCashRegister::observe(AuditObserver::class);
         PettyCashVoucher::observe(AuditObserver::class);
         Cheque::observe(AuditObserver::class);
+        Employee::observe(AuditObserver::class);
+        BranchHrProfile::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email');

@@ -29,7 +29,7 @@ use App\Http\Controllers\Admin\CustomerGroupController;
 use App\Http\Controllers\Admin\CustomerWalletController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FixedAssetController;
-use App\Http\Controllers\Admin\GoodsReceivingNoteController;
+use App\Http\Controllers\Admin\Hr\EmployeeController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\JournalEntryController;
 use App\Http\Controllers\Admin\LandedCostController;
@@ -111,6 +111,10 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::resource('products', ProductController::class);
         Route::post('products/{product}/images', [ProductImageController::class, 'sync'])
             ->name('products.images.sync');
+
+        Route::middleware(['hr-module:hr'])->prefix('hr')->name('hr.')->group(function () {
+            Route::resource('employees', EmployeeController::class)->except(['destroy']);
+        });
 
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
         Route::get('inventory/adjust', [InventoryController::class, 'adjustForm'])->name('inventory.adjust');

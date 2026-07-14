@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAccountingModuleEnabled;
 use App\Http\Middleware\EnsureAdminAccess;
+use App\Http\Middleware\EnsureHrModuleEnabled;
 use App\Http\Middleware\EnsureLocalEnvironment;
 use App\Http\Middleware\EnsurePosAccess;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -49,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'branch.context' => SetBranchContext::class,
             'pos.access' => EnsurePosAccess::class,
             'accounting-module' => EnsureAccountingModuleEnabled::class,
+            'hr-module' => EnsureHrModuleEnabled::class,
             'local' => EnsureLocalEnvironment::class,
         ]);
     })

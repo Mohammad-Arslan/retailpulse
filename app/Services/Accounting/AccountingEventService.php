@@ -28,15 +28,9 @@ final class AccountingEventService
         int $userId = 0,
         ?string $idempotencySuffix = null,
     ): AccountingEvent {
-        $idempotencyKey = "{$eventType}:{$sourceType}:{$sourceId}";
+        $idempotencyKey = $this->idempotencyKey($eventType, $sourceType, $sourceId, $idempotencySuffix);
 
-        if ($idempotencySuffix !== null && $idempotencySuffix !== '') {
-            $idempotencyKey .= ':'.$idempotencySuffix;
-        }
-
-        $existing = AccountingEvent::query()
-            ->where('idempotency_key', $idempotencyKey)
-            ->first();
+        $existing = $this->findForSource($eventType, $sourceType, $sourceId, $idempotencySuffix);
 
         if ($existing?->processing_status === AccountingEventStatus::Completed) {
             return $existing;
@@ -142,7 +136,58 @@ final class AccountingEventService
             (int) $event->source_id,
             $event->payload ?? [],
             $userId,
+            $this->suffixFromIdempotencyKey(
+                $event->idempotency_key,
+                $event->event_type,
+                $event->source_type,
+                (int) $event->source_id,
+            ),
         );
+    }
+
+    public function findForSource(
+        string $eventType,
+        string $sourceType,
+        int $sourceId,
+        ?string $idempotencySuffix = null,
+    ): ?AccountingEvent {
+        return AccountingEvent::query()
+            ->where('idempotency_key', $this->idempotencyKey($eventType, $sourceType, $sourceId, $idempotencySuffix))
+            ->first();
+    }
+
+    public function idempotencyKey(
+        string $eventType,
+        string $sourceType,
+        int $sourceId,
+        ?string $idempotencySuffix = null,
+    ): string {
+        $key = "{$eventType}:{$sourceType}:{$sourceId}";
+
+        if ($idempotencySuffix !== null && $idempotencySuffix !== '') {
+            $key .= ':'.$idempotencySuffix;
+        }
+
+        return $key;
+    }
+
+    private function suffixFromIdempotencyKey(
+        string $idempotencyKey,
+        string $eventType,
+        string $sourceType,
+        int $sourceId,
+    ): ?string {
+        $prefix = "{$eventType}:{$sourceType}:{$sourceId}";
+
+        if ($idempotencyKey === $prefix) {
+            return null;
+        }
+
+        if (! str_starts_with($idempotencyKey, $prefix.':')) {
+            return null;
+        }
+
+        return substr($idempotencyKey, strlen($prefix) + 1) ?: null;
     }
 
     /**

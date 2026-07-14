@@ -177,6 +177,16 @@ final class AdminNavigationCatalog
             ]),
         ]));
 
+        $registry->registerSection(new NavigationSection('hr', 'hrSection', 55, [
+            self::item('employees', 'employees', 'admin.hr.employees.index', 'users', 'hr', 10, [
+                'permission' => 'hr.view-employees',
+                'permissionsAny' => ['hr.view-employees', 'hr.manage-employees'],
+                'module' => 'hr',
+                'routePattern' => 'admin.hr.employees.*',
+                'keywords' => ['employees', 'staff', 'hr', 'payroll'],
+            ]),
+        ]));
+
         $registry->registerSection(new NavigationSection('accounting', 'accountingSection', 60, [
             self::item('chart-of-accounts', 'chartOfAccounts', 'admin.accounting.chart-of-accounts.index', 'book-open', 'accounting', 10, [
                 'permission' => 'accounting.view',

@@ -45,6 +45,15 @@ final class AccountMappingKeys
             'dishonour_expense',
             'gain_on_disposal',
             'loss_on_disposal',
+            // Phase 12 — expenses / payroll
+            'expense_default',
+            'payroll_expense',
+            'overtime_expense',
+            'employer_contribution_expense',
+            'net_salary_payable',
+            'tax_withheld_payable',
+            'employee_advance_receivable',
+            'reimbursement_payable',
         ];
     }
 }

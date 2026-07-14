@@ -7,6 +7,7 @@ namespace App\Http\Middleware;
 use App\Services\Accounting\Contracts\AccountingModuleGate;
 use App\Services\BranchContextService;
 use App\Services\Dashboard\HomeRouteResolver;
+use App\Services\Hr\Contracts\HrPayrollModuleGate;
 use App\Services\LocaleService;
 use App\Services\Navigation\NavigationComposer;
 use App\Support\BranchContext;
@@ -84,6 +85,9 @@ class HandleInertiaRequests extends Middleware
             'locale' => fn () => $this->shareLocale($request),
             'enabledAccountingModules' => fn () => $user
                 ? app(AccountingModuleGate::class)->enabledModules($branchContext?->branchId)
+                : [],
+            'enabledHrModules' => fn () => $user
+                ? app(HrPayrollModuleGate::class)->enabledModules($branchContext?->branchId)
                 : [],
             'navigation' => fn () => $user
                 ? app(NavigationComposer::class)->forUser($user, $branchContext?->branchId)

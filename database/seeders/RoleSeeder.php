@@ -43,6 +43,93 @@ final class RoleSeeder extends Seeder
     ];
 
     /**
+     * @var list<string>
+     */
+    private const EXPENSE_ACCOUNTANT_PERMISSIONS = [
+        'expenses.view',
+        'expenses.approve',
+        'expenses.post',
+        'expenses.reverse',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const HR_MANAGER_PERMISSIONS = [
+        'admin.access',
+        'admin.dashboard.view',
+        'hr.view-employees',
+        'hr.manage-employees',
+        'attendance.view',
+        'attendance.record',
+        'attendance.adjust',
+        'attendance.manage-sources',
+        'leave.view',
+        'leave.request',
+        'leave.approve',
+        'leave.manage-types',
+        'leave.manage-policies',
+        'overtime.view',
+        'overtime.approve',
+        'overtime.manage-policies',
+        'expenses.view',
+        'expenses.create',
+        'expenses.approve',
+        'expenses.manage-categories',
+        'expenses.manage-recurring',
+        'selfservice.view-own',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const PAYROLL_OFFICER_PERMISSIONS = [
+        'admin.access',
+        'admin.dashboard.view',
+        'hr.view-employees',
+        'payroll.view',
+        'payroll.process',
+        'payroll.approve',
+        'payroll.post',
+        'payroll.reverse',
+        'payroll.manage-components',
+        'payroll.manage-structures',
+        'payroll.manage-statutory',
+        'payroll.manage-tax-slabs',
+        'overtime.view',
+        'leave.view',
+        'attendance.view',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const LINE_MANAGER_PERMISSIONS = [
+        'admin.access',
+        'admin.dashboard.view',
+        'hr.view-employees',
+        'attendance.view',
+        'attendance.record',
+        'leave.view',
+        'leave.approve',
+        'overtime.view',
+        'overtime.approve',
+        'expenses.view',
+        'expenses.approve',
+        'selfservice.view-own',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const EMPLOYEE_ROLE_PERMISSIONS = [
+        'selfservice.view-own',
+        'leave.view',
+        'leave.request',
+        'attendance.view',
+    ];
+
+    /**
      * @var array<string, array{description: string, is_system: bool, permissions: list<string>}>
      */
     private const ROLES = [
@@ -149,6 +236,13 @@ final class RoleSeeder extends Seeder
                 'supplier-price-lists.export',
                 'settings.procurement.update',
                 ...self::ACCOUNTING_PERMISSIONS,
+                ...self::HR_MANAGER_PERMISSIONS,
+                ...self::PAYROLL_OFFICER_PERMISSIONS,
+                'expenses.create',
+                'expenses.post',
+                'expenses.reverse',
+                'expenses.manage-categories',
+                'expenses.manage-recurring',
             ],
         ],
         'branch-manager' => [
@@ -210,6 +304,7 @@ final class RoleSeeder extends Seeder
                 'suppliers.export',
                 'supplier-price-lists.import',
                 'supplier-price-lists.export',
+                ...self::LINE_MANAGER_PERMISSIONS,
             ],
         ],
         'accountant' => [
@@ -227,6 +322,7 @@ final class RoleSeeder extends Seeder
                 'procurement.view',
                 'procurement.process-payments',
                 ...self::ACCOUNTING_PERMISSIONS,
+                ...self::EXPENSE_ACCOUNTANT_PERMISSIONS,
             ],
         ],
         'cashier' => [
@@ -239,6 +335,26 @@ final class RoleSeeder extends Seeder
                 'pos.void-cart',
                 'customers.view',
             ],
+        ],
+        'hr-manager' => [
+            'description' => 'HR manager',
+            'is_system' => true,
+            'permissions' => self::HR_MANAGER_PERMISSIONS,
+        ],
+        'payroll-officer' => [
+            'description' => 'Payroll officer',
+            'is_system' => true,
+            'permissions' => self::PAYROLL_OFFICER_PERMISSIONS,
+        ],
+        'line-manager' => [
+            'description' => 'Line manager',
+            'is_system' => true,
+            'permissions' => self::LINE_MANAGER_PERMISSIONS,
+        ],
+        'employee' => [
+            'description' => 'Employee self-service',
+            'is_system' => true,
+            'permissions' => self::EMPLOYEE_ROLE_PERMISSIONS,
         ],
     ];
 

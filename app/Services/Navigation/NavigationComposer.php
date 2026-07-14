@@ -6,12 +6,14 @@ namespace App\Services\Navigation;
 
 use App\Models\User;
 use App\Services\Accounting\Contracts\AccountingModuleGate;
+use App\Services\Hr\Contracts\HrPayrollModuleGate;
 
 final class NavigationComposer
 {
     public function __construct(
         private readonly NavigationRegistry $registry,
         private readonly AccountingModuleGate $accountingModules,
+        private readonly HrPayrollModuleGate $hrModules,
     ) {}
 
     /**
@@ -19,7 +21,10 @@ final class NavigationComposer
      */
     public function forUser(User $user, ?int $branchId): array
     {
-        $enabledModules = $this->accountingModules->enabledModules($branchId);
+        $enabledModules = array_values(array_unique([
+            ...$this->accountingModules->enabledModules($branchId),
+            ...$this->hrModules->enabledModules($branchId),
+        ]));
         $tree = [];
 
         foreach ($this->registry->sections() as $section) {

@@ -15,7 +15,8 @@ final class AccountMappingsSeeder extends Seeder
         $accounts = ChartOfAccount::query()
             ->whereIn('code', [
                 '1100', '1110', '1210', '1300', '1350', '1400', '1500', '1510', '1610', '1620',
-                '2100', '2200', '2300', '3400', '4100', '4150', '4200', '5100', '5500', '5600', '5900', '5910',
+                '2100', '2200', '2210', '2300', '3400', '4100', '4150', '4200',
+                '5100', '5200', '5300', '5400', '5500', '5600', '5900', '5910',
             ])
             ->pluck('id', 'code');
 
@@ -47,6 +48,15 @@ final class AccountMappingsSeeder extends Seeder
             ['mapping_key' => 'dishonour_expense', 'account_code' => '5900'],
             ['mapping_key' => 'gain_on_disposal', 'account_code' => '4200'],
             ['mapping_key' => 'loss_on_disposal', 'account_code' => '5600'],
+            // Phase 12 — DocumentNumberService types used at call sites: employee, expense_voucher, payroll_run, payslip
+            ['mapping_key' => 'expense_default', 'account_code' => '5300'],
+            ['mapping_key' => 'payroll_expense', 'account_code' => '5200'],
+            ['mapping_key' => 'overtime_expense', 'account_code' => '5200'],
+            ['mapping_key' => 'employer_contribution_expense', 'account_code' => '5200'],
+            ['mapping_key' => 'net_salary_payable', 'account_code' => '2100'],
+            ['mapping_key' => 'tax_withheld_payable', 'account_code' => '2210'],
+            ['mapping_key' => 'employee_advance_receivable', 'account_code' => '1300'],
+            ['mapping_key' => 'reimbursement_payable', 'account_code' => '2100'],
         ];
 
         foreach ($mappings as $mapping) {

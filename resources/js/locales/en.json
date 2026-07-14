@@ -58,6 +58,8 @@
         "overview": "Overview",
         "organization": "Organization",
         "accountingSection": "Accounting",
+        "hrSection": "HR & Payroll",
+        "employees": "Employees",
         "chartOfAccounts": "Chart of Accounts",
         "accountMappings": "Account Mappings",
         "postingRules": "Posting Rules",
@@ -134,6 +136,9 @@
         "view": "View",
         "edit": "Edit",
         "delete": "Delete",
+        "all": "All",
+        "none": "None",
+        "back": "Back",
         "deactivate": "Deactivate",
         "clone": "Clone",
         "showing": "Showing {{from}}–{{to}} of {{total}}",
@@ -359,6 +364,57 @@
         "cancel": "Cancel"
     },
     "pages": {
+        "hrEmployees": {
+            "indexTitle": "Employees",
+            "indexDescription": "Manage Staff Records Across Legal Entities And Branches.",
+            "createTitle": "New Employee",
+            "createDescription": "Add A Staff Record Linked To A Legal Entity And Primary Branch.",
+            "createSubmit": "Create Employee",
+            "editTitle": "Edit Employee",
+            "updateSubmit": "Save Changes",
+            "searchPlaceholder": "Search By Name Or Code…",
+            "allBranches": "All Branches",
+            "selectLegalEntity": "Select Legal Entity…",
+            "selectBranch": "Select Branch…",
+            "columns": {
+                "employee": "Employee",
+                "branch": "Branch",
+                "type": "Type",
+                "status": "Status"
+            },
+            "fields": {
+                "code": "Employee Code",
+                "name": "Name",
+                "firstName": "First Name",
+                "lastName": "Last Name",
+                "email": "Email",
+                "phone": "Phone",
+                "legalEntity": "Legal Entity",
+                "branch": "Primary Branch",
+                "costCentre": "Cost Centre",
+                "hireDate": "Hire Date",
+                "terminationDate": "Termination Date",
+                "employmentType": "Employment Type",
+                "status": "Status",
+                "paymentMethod": "Payment Method",
+                "bankDetails": "Bank Details",
+                "bankName": "Bank Name",
+                "accountNumber": "Account Number",
+                "iban": "IBAN",
+                "linkedUser": "Linked User"
+            },
+            "employmentTypes": {
+                "full_time": "Full Time",
+                "part_time": "Part Time",
+                "contract": "Contract",
+                "hourly": "Hourly"
+            },
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive",
+                "terminated": "Terminated"
+            }
+        },
         "helpSupport": {
             "askAi": {
                 "button": "Ask AI",
