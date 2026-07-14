@@ -29,6 +29,7 @@ final class DashboardService
      *     average_transaction_value: float,
      *     transaction_count: int,
      *     pending_approvals: int,
+     *     trends: array<string, array{direction: string, percent: float, points: list<float>}>,
      * }
      */
     public function salesKpis(?int $branchId = null, ?array $accessibleBranchIds = null): array
@@ -39,13 +40,9 @@ final class DashboardService
             $accessibleBranchIds,
         );
 
-        $todayQuery = (clone $completed)->whereDate('completed_at', today());
-        $todaysSales = (float) (clone $todayQuery)->toBase()->sum('grand_total');
-        $todayCount = (int) (clone $todayQuery)->toBase()->count('*');
-
-        $grossProfit = (float) (clone $todayQuery)
-            ->get(['subtotal', 'total_discount'])
-            ->sum(fn (Sale $sale): float => (float) $sale->subtotal - (float) $sale->total_discount);
+        $todayMetrics = $this->salesMetricsForDate($completed, today());
+        $yesterdayMetrics = $this->salesMetricsForDate($completed, today()->subDay());
+        $sparkline = $this->salesDailySeries($completed, 7);
 
         $layawayPending = (int) $this->scopeSales(
             Sale::query()->where('status', SaleStatus::PartiallyPaid)->where('is_historical', false),
@@ -54,13 +51,33 @@ final class DashboardService
         )->toBase()->count('*');
 
         return [
-            'todays_sales' => round($todaysSales, 2),
-            'gross_profit' => round($grossProfit, 2),
-            'average_transaction_value' => $todayCount > 0
-                ? round($todaysSales / $todayCount, 2)
-                : 0.0,
-            'transaction_count' => $todayCount,
+            'todays_sales' => $todayMetrics['sales'],
+            'gross_profit' => $todayMetrics['gross_profit'],
+            'average_transaction_value' => $todayMetrics['atv'],
+            'transaction_count' => $todayMetrics['count'],
             'pending_approvals' => $layawayPending,
+            'trends' => [
+                'todays_sales' => $this->buildTrend(
+                    $todayMetrics['sales'],
+                    $yesterdayMetrics['sales'],
+                    array_column($sparkline, 'sales'),
+                ),
+                'gross_profit' => $this->buildTrend(
+                    $todayMetrics['gross_profit'],
+                    $yesterdayMetrics['gross_profit'],
+                    array_column($sparkline, 'gross_profit'),
+                ),
+                'transaction_count' => $this->buildTrend(
+                    (float) $todayMetrics['count'],
+                    (float) $yesterdayMetrics['count'],
+                    array_map('floatval', array_column($sparkline, 'count')),
+                ),
+                'average_transaction_value' => $this->buildTrend(
+                    $todayMetrics['atv'],
+                    $yesterdayMetrics['atv'],
+                    array_column($sparkline, 'atv'),
+                ),
+            ],
         ];
     }
 
@@ -220,6 +237,84 @@ final class DashboardService
             'categories' => (int) Category::query()->toBase()->count('*'),
             'brands' => (int) Brand::query()->toBase()->count('*'),
             'branches_preview' => $this->branchesPreview($branchId, $accessibleBranchIds),
+        ];
+    }
+
+    /**
+     * @param  Builder<Sale>  $completed
+     * @return array{sales: float, gross_profit: float, count: int, atv: float}
+     */
+    private function salesMetricsForDate(Builder $completed, \Illuminate\Support\Carbon $date): array
+    {
+        $dayQuery = (clone $completed)->whereDate('completed_at', $date);
+        $sales = (float) (clone $dayQuery)->toBase()->sum('grand_total');
+        $count = (int) (clone $dayQuery)->toBase()->count('*');
+        $grossProfit = (float) (clone $dayQuery)
+            ->get(['subtotal', 'total_discount'])
+            ->sum(fn (Sale $sale): float => (float) $sale->subtotal - (float) $sale->total_discount);
+
+        return [
+            'sales' => round($sales, 2),
+            'gross_profit' => round($grossProfit, 2),
+            'count' => $count,
+            'atv' => $count > 0 ? round($sales / $count, 2) : 0.0,
+        ];
+    }
+
+    /**
+     * Daily sales series for sparkline trends (aligned with revenueCharts wow window).
+     *
+     * @param  Builder<Sale>  $completed
+     * @return list<array{label: string, sales: float, gross_profit: float, count: int, atv: float}>
+     */
+    private function salesDailySeries(Builder $completed, int $days = 7): array
+    {
+        $start = now()->subDays($days - 1)->startOfDay();
+        $sales = (clone $completed)
+            ->where('completed_at', '>=', $start)
+            ->get(['completed_at', 'grand_total', 'subtotal', 'total_discount']);
+
+        return collect(range(0, $days - 1))->map(function (int $offset) use ($start, $sales): array {
+            $date = $start->copy()->addDays($offset);
+            $daySales = $sales->filter(fn (Sale $sale): bool => $sale->completed_at?->isSameDay($date) ?? false);
+            $amount = (float) $daySales->sum(fn (Sale $sale): float => (float) $sale->grand_total);
+            $count = $daySales->count();
+            $grossProfit = (float) $daySales->sum(
+                fn (Sale $sale): float => (float) $sale->subtotal - (float) $sale->total_discount,
+            );
+
+            return [
+                'label' => $date->format('M j'),
+                'sales' => round($amount, 2),
+                'gross_profit' => round($grossProfit, 2),
+                'count' => $count,
+                'atv' => $count > 0 ? round($amount / $count, 2) : 0.0,
+            ];
+        })->all();
+    }
+
+    /**
+     * @param  list<float|int>  $points
+     * @return array{direction: string, percent: float, points: list<float>}
+     */
+    private function buildTrend(float $current, float $prior, array $points): array
+    {
+        if ($prior == 0.0 && $current == 0.0) {
+            $direction = 'flat';
+            $percent = 0.0;
+        } elseif ($prior == 0.0) {
+            $direction = 'up';
+            $percent = 100.0;
+        } else {
+            $change = (($current - $prior) / abs($prior)) * 100;
+            $percent = round(abs($change), 1);
+            $direction = $change > 0.05 ? 'up' : ($change < -0.05 ? 'down' : 'flat');
+        }
+
+        return [
+            'direction' => $direction,
+            'percent' => $percent,
+            'points' => array_map(static fn ($v): float => round((float) $v, 2), array_values($points)),
         ];
     }
 

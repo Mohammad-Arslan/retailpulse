@@ -1,7 +1,7 @@
 # RetailPulse User Manual — Catalogue & Inventory
 
 **Audience:** Customer support teams and store operators  
-**Version:** 1.1 (July 2026)  
+**Version:** 1.3 (July 2026)  
 **Scope:** Product catalogue (PIM) and warehouse inventory features available in the admin panel
 
 This manual explains **where to click**, **what each screen does**, **how data flows**, and **what every term means**. Hand it to customers who manage products and stock in RetailPulse.
@@ -52,13 +52,15 @@ The Dashboard shows only widgets you are allowed to see. Assign these permission
 
 | Permission | Widget |
 |------------|--------|
-| `dashboard.exceptions.view` | Needs Attention (business exception feed) |
-| `dashboard.sales.view` | Sales KPIs |
-| `dashboard.view-profit` | Gross profit and revenue trends (with sales) |
-| `dashboard.inventory.view` | Low stock, transfers, movements |
-| `dashboard.procurement.view` | Procurement KPIs |
-| `dashboard.finance.view` | Unposted journals, bank match queue, AR/AP aging |
+| `dashboard.exceptions.view` | Health strip summary + Needs Attention feed |
+| `dashboard.sales.view` | Sales KPIs (with day-over-day trend badges when data exists) |
+| `dashboard.view-profit` | Gross profit KPI and revenue bar chart (7-day / 6-month toggle) |
+| `dashboard.inventory.view` | Inventory operations card, stock movement trend |
+| `dashboard.procurement.view` | Procurement operations card + top suppliers |
+| `dashboard.finance.view` | Finance operations card (unposted journals, bank match queue, AR/AP aging) |
 | `dashboard.operations.view` | Branch / warehouse / catalogue snapshot |
+
+Layout (top to bottom): greeting → health strip → Sales KPIs → revenue chart beside Needs Attention → Operations (Inventory / Procurement / Finance) → Organization snapshot → Quick Actions.
 
 IAM statistics (users, roles, permissions charts) are **not** on the home dashboard. Manage those under **Organization**.
 
@@ -877,6 +879,7 @@ Movements are **permanent audit records** — they are not edited or deleted.
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.3 | July 2026 | Home dashboard layout: health strip, sales trends, revenue bar chart, Operations stat-group cards |
 | 1.2 | July 2026 | Checkout (confirm + payment) uses the same full-screen POS shell as the register |
 | 1.1 | July 2026 | ERP home dashboard is permission-driven business widgets; POS uses a dedicated full-screen shell; login home resolved by permissions |
 | 1.0 | June 2026 | Initial customer-facing manual for catalogue & inventory |

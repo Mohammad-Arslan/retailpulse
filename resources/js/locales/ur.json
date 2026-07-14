@@ -135,33 +135,56 @@
                 "procurement": "خریداری",
                 "finance": "فنانس",
                 "operations": "آپریشنز",
+                "organization": "تنظیم",
                 "quickActions": "فوری اقدامات"
             },
+            "sections": {
+                "operations": "آپریشنز"
+            },
+            "health": {
+                "allClear": "سب ٹھیک ہے — سیلز، اسٹاک یا فنانس میں کوئی استثنا نہیں",
+                "itemCount_one": "{{count}} آئٹم",
+                "itemCount_other": "{{count}} آئٹمز",
+                "needAttentionSuffix": "توجہ درکار",
+                "moreSuffix": "، +{{count}} مزید",
+                "reviewAll": "سب دیکھیں →"
+            },
             "exceptions": {
-                "empty": "اس وقت کوئی کھلا استثنا نہیں۔"
+                "empty": "اس وقت کوئی کھلا استثنا نہیں۔",
+                "subtitle": "سیلز، اسٹاک اور فنانس میں"
             },
             "sales": {
+                "sectionTitle": "سیلز — آج",
+                "viewReports": "رپورٹس دیکھیں →",
                 "todaysSales": "آج کی سیلز",
                 "grossProfit": "مجموعی منافع",
                 "transactions": "لین دین",
                 "atv": "اوسط ٹکٹ",
                 "layaways": "کھلے لی اوے",
                 "wowRevenue": "آمدنی — آخری 7 دن",
-                "momRevenue": "آمدنی — آخری 6 ماہ"
+                "momRevenue": "آمدنی — آخری 6 ماہ",
+                "revenueTrend": "آمدنی کا رجحان",
+                "range7d": "7D",
+                "range6m": "6M",
+                "noRevenueData": "اس مدت کے لیے کوئی آمدنی کا ڈیٹا نہیں۔"
             },
             "inventory": {
                 "unitsOnHand": "دستیاب یونٹس",
                 "lowStock": "کم اسٹاک لائنز",
                 "criticalSub": "{{count}} سنگین",
+                "criticalLines": "سنگین کم اسٹاک",
                 "movementsToday": "آج کی نقل و حرکت",
                 "transfers": "ٹرانسفرز",
-                "transfersSub": "ڈرافٹ · راستے میں"
+                "transfersSub": "ڈرافٹ · راستے میں",
+                "transfersRow": "ٹرانسفرز (ڈرافٹ · راستے میں)",
+                "manageLink": "انوینٹری منظم کریں →"
             },
             "finance": {
                 "unpostedJournals": "غیر پوسٹ شدہ جرنلز",
                 "bankUnmatched": "غیر مماثل بینک لائنز",
                 "arAging": "AR ایجنگ کل",
-                "apAging": "AP ایجنگ کل"
+                "apAging": "AP ایجنگ کل",
+                "viewLink": "مالی رپورٹس دیکھیں →"
             },
             "operations": {
                 "branches": "برانچز",
@@ -192,6 +215,7 @@
             "procurement": {
                 "title": "خریداری",
                 "viewReports": "رپورٹس دیکھیں",
+                "viewLink": "خریداری دیکھیں →",
                 "alertsTitle": "خریداری الرٹس",
                 "openPos": "کھلے PO",
                 "pendingApprovals": "زیر التواء منظوریاں",

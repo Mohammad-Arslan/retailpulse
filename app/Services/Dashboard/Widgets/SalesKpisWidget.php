@@ -43,6 +43,8 @@ final class SalesKpisWidget extends AbstractDashboardWidget
         $kpis = $this->dashboard->salesKpis($branchId, $accessibleBranchIds);
         $canViewProfit = $user->can('dashboard.view-profit');
 
+        $trends = $kpis['trends'] ?? [];
+
         return [
             'todays_sales' => $kpis['todays_sales'],
             'transaction_count' => $kpis['transaction_count'],
@@ -51,6 +53,12 @@ final class SalesKpisWidget extends AbstractDashboardWidget
             'gross_profit' => $canViewProfit ? $kpis['gross_profit'] : null,
             'can_view_profit' => $canViewProfit,
             'sales_index_href' => route('admin.sales.index'),
+            'trends' => [
+                'todays_sales' => $trends['todays_sales'] ?? null,
+                'gross_profit' => $canViewProfit ? ($trends['gross_profit'] ?? null) : null,
+                'transaction_count' => $trends['transaction_count'] ?? null,
+                'average_transaction_value' => $trends['average_transaction_value'] ?? null,
+            ],
         ];
     }
 }
