@@ -229,6 +229,10 @@
         @apply text-[15px] font-semibold text-rp-text;
     }
 
+    .rp-section-label {
+        @apply text-xs font-bold tracking-[0.08em] text-rp-text-muted uppercase;
+    }
+
     .rp-table-head {
         @apply px-4 py-3 text-left text-[11px] font-bold tracking-wider text-rp-text-muted uppercase;
     }

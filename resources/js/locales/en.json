@@ -380,33 +380,56 @@
                 "procurement": "Procurement",
                 "finance": "Finance",
                 "operations": "Operations",
+                "organization": "Organization",
                 "quickActions": "Quick Actions"
             },
+            "sections": {
+                "operations": "Operations"
+            },
+            "health": {
+                "allClear": "All Clear — No Exceptions Across Sales, Stock, Or Finance",
+                "itemCount_one": "{{count}} Item",
+                "itemCount_other": "{{count}} Items",
+                "needAttentionSuffix": "Need Attention",
+                "moreSuffix": ", +{{count}} More",
+                "reviewAll": "Review All →"
+            },
             "exceptions": {
-                "empty": "No Open Exceptions Right Now."
+                "empty": "No Open Exceptions Right Now.",
+                "subtitle": "Across Sales, Stock & Finance"
             },
             "sales": {
+                "sectionTitle": "Sales — Today",
+                "viewReports": "View Reports →",
                 "todaysSales": "Today's Sales",
                 "grossProfit": "Gross Profit",
                 "transactions": "Transactions",
                 "atv": "Average Ticket",
                 "layaways": "Open Layaways",
                 "wowRevenue": "Revenue — Last 7 Days",
-                "momRevenue": "Revenue — Last 6 Months"
+                "momRevenue": "Revenue — Last 6 Months",
+                "revenueTrend": "Revenue Trend",
+                "range7d": "7D",
+                "range6m": "6M",
+                "noRevenueData": "No Revenue Data For This Period."
             },
             "inventory": {
                 "unitsOnHand": "Units On Hand",
                 "lowStock": "Low Stock Lines",
                 "criticalSub": "{{count}} Critical",
+                "criticalLines": "Critical Low Stock",
                 "movementsToday": "Movements Today",
                 "transfers": "Transfers",
-                "transfersSub": "Draft · In Transit"
+                "transfersSub": "Draft · In Transit",
+                "transfersRow": "Transfers (Draft · In Transit)",
+                "manageLink": "Manage Inventory →"
             },
             "finance": {
                 "unpostedJournals": "Unposted Journals",
                 "bankUnmatched": "Bank Lines Unmatched",
                 "arAging": "AR Aging Total",
-                "apAging": "AP Aging Total"
+                "apAging": "AP Aging Total",
+                "viewLink": "View Financial Reports →"
             },
             "operations": {
                 "branches": "Branches",
@@ -437,6 +460,7 @@
             "procurement": {
                 "title": "Procurement",
                 "viewReports": "View Reports",
+                "viewLink": "View Procurement →",
                 "alertsTitle": "Procurement Alerts",
                 "openPos": "Open POs",
                 "pendingApprovals": "Pending Approvals",
