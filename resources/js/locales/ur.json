@@ -1,4 +1,25 @@
 {
+    "search": {
+        "recent": "حالیہ",
+        "loading": "تلاش ہو رہی ہے…",
+        "noResults": "آپ کے سوال سے کوئی میل نہیں۔",
+        "noPages": "کوئی صفحہ میل نہیں کھاتا۔",
+        "categories": {
+            "pages": "صفحات",
+            "products": "مصنوعات",
+            "customers": "کسٹمرز",
+            "suppliers": "سپلائرز",
+            "sales": "سیلز",
+            "purchasing": "خریداری",
+            "inventory": "انوینٹری",
+            "branches": "برانچز اور گودام",
+            "accounting": "اکاؤنٹنگ",
+            "users": "صارفین",
+            "assets": "اثاثے",
+            "reports": "رپورٹس",
+            "settings": "ترتیبات"
+        }
+    },
     "nav": {
         "dashboard": "ڈیش بورڈ",
         "pos": "پوائنٹ آف سیل",
@@ -64,7 +85,8 @@
         "logOut": "لاگ آؤٹ",
         "openMenu": "مینو کھولیں",
         "closeMenu": "مینو بند کریں",
-        "commandPalette": "صفحات، صارفین، اعمال تلاش کریں…",
+        "commandPalette": "صفحات، مصنوعات، کسٹمرز، سیلز تلاش کریں…",
+        "navSearch": "صفحات تلاش کریں…",
         "switchToLight": "لائٹ موڈ",
         "switchToDark": "ڈارک موڈ",
         "expandSidebar": "سائیڈبار کھولیں",

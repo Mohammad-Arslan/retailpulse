@@ -8,6 +8,7 @@ use App\Services\Accounting\Contracts\AccountingModuleGate;
 use App\Services\BranchContextService;
 use App\Services\Dashboard\HomeRouteResolver;
 use App\Services\LocaleService;
+use App\Services\Navigation\NavigationComposer;
 use App\Support\BranchContext;
 use Closure;
 use Illuminate\Http\Request;
@@ -83,6 +84,9 @@ class HandleInertiaRequests extends Middleware
             'locale' => fn () => $this->shareLocale($request),
             'enabledAccountingModules' => fn () => $user
                 ? app(AccountingModuleGate::class)->enabledModules($branchContext?->branchId)
+                : [],
+            'navigation' => fn () => $user
+                ? app(NavigationComposer::class)->forUser($user, $branchContext?->branchId)
                 : [],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

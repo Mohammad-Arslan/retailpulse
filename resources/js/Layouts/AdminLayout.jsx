@@ -5,7 +5,7 @@ import SidebarSearch from '@/Components/admin/SidebarSearch';
 import BrandIcon from '@/Components/brand/BrandIcon';
 import Breadcrumbs from '@/Components/common/Breadcrumbs';
 import ScrollArea from '@/Components/common/ScrollArea';
-import { ADMIN_NAV_SECTIONS } from '@/config/adminNav';
+import { withNavIcons } from '@/config/adminNav';
 import { isAdminNavItemActive } from '@/lib/adminNav';
 import { useCommandPalette } from '@/Hooks/useCommandPalette';
 import { useSidebarCollapsed } from '@/Hooks/useSidebarCollapsed';
@@ -15,37 +15,27 @@ import { cn } from '@/lib/utils';
 import { useCan } from '@/Hooks/useCan';
 import { Link, usePage } from '@inertiajs/react';
 import { LogOut, X } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const SIDEBAR_SCROLL_KEY = 'rp-admin-sidebar-scroll';
 
 function SidebarNav({ collapsed, onNavigate }) {
-    const can = useCan();
     const { t } = useTranslation();
-    const enabledAccountingModules = usePage().props.enabledAccountingModules ?? [];
+    const rawNavigation = usePage().props.navigation ?? [];
+    const sections = useMemo(() => withNavIcons(rawNavigation), [rawNavigation]);
 
     return (
         <>
-            {ADMIN_NAV_SECTIONS.map((section) => {
-                const items = section.items.filter((item) => {
-                    const permissionOk = item.permissionsAny?.length
-                        ? item.permissionsAny.some((p) => can(p))
-                        : item.permission
-                            ? can(item.permission)
-                            : true;
-
-                    const moduleOk = !item.module || enabledAccountingModules.includes(item.module);
-
-                    return permissionOk && moduleOk;
-                });
+            {sections.map((section) => {
+                const items = section.items ?? [];
 
                 if (items.length === 0) {
                     return null;
                 }
 
                 return (
-                    <div key={section.label} className="mb-1 px-2">
+                    <div key={section.id ?? section.labelKey} className="mb-1 px-2">
                         {!collapsed && (
                             <span className="block px-3 py-2.5 text-[10px] font-bold tracking-widest text-rp-text-muted uppercase dark:text-ink-500">
                                 {t(`nav.${section.labelKey}`)}
@@ -57,7 +47,7 @@ function SidebarNav({ collapsed, onNavigate }) {
 
                             return (
                                 <Link
-                                    key={item.href}
+                                    key={item.id ?? item.href}
                                     href={route(item.href)}
                                     onClick={onNavigate}
                                     title={
@@ -119,7 +109,8 @@ export default function AdminLayout({ children, fullHeight = false, posMode = fa
     const [mobileOpen, setMobileOpen] = useState(false);
     const { collapsed, toggleCollapsed } = useSidebarCollapsed();
     const { isDark, toggleTheme } = useTheme();
-    const { open: paletteOpen, openPalette, closePalette } = useCommandPalette();
+    const { open: paletteOpen, mode: paletteMode, openGlobalSearch, openNavSearch, closePalette } =
+        useCommandPalette();
     const navScrollRef = useRef(null);
     const pageUrl = usePage().url;
 
@@ -193,7 +184,7 @@ export default function AdminLayout({ children, fullHeight = false, posMode = fa
                 </Link>
             </div>
 
-            <SidebarSearch collapsed={collapsed} onOpen={openPalette} />
+            <SidebarSearch collapsed={collapsed} onOpen={openNavSearch} />
 
             <ScrollArea
                 ref={navScrollRef}
@@ -256,7 +247,7 @@ export default function AdminLayout({ children, fullHeight = false, posMode = fa
     return (
         <ImportJobsProvider>
         <div className="min-h-screen bg-rp-page font-sans">
-            <CommandPalette open={paletteOpen} onClose={closePalette} />
+            <CommandPalette open={paletteOpen} mode={paletteMode} onClose={closePalette} />
 
             {mobileOpen && (
                 <button
@@ -297,7 +288,7 @@ export default function AdminLayout({ children, fullHeight = false, posMode = fa
                         collapsed={collapsed}
                         isDark={isDark}
                         onToggleCollapse={toggleCollapsed}
-                        onOpenSearch={openPalette}
+                        onOpenSearch={openGlobalSearch}
                         onToggleTheme={toggleTheme}
                         onOpenMobileMenu={() => setMobileOpen(true)}
                         posMode={posMode}

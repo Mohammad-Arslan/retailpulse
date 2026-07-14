@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Procurement\SupplierApiController;
 use App\Http\Controllers\Api\V1\Sales\HistoricalSaleImportController;
 use App\Http\Controllers\Api\V1\Sales\SaleController;
 use App\Http\Controllers\Api\V1\Sales\SaleExportController;
+use App\Http\Controllers\Api\V1\Search\SearchController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -84,9 +85,11 @@ Route::prefix('v1')
     });
 
 Route::prefix('v1')
-    ->middleware(['web', 'auth'])
+    ->middleware(['web', 'auth', 'branch.context'])
     ->name('api.v1.')
     ->group(function () {
+        Route::get('search', SearchController::class)->name('search');
+
         Route::get('customers', [CustomerController::class, 'search'])->name('customers.search');
         Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
         Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
