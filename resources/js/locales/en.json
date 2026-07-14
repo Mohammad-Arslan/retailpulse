@@ -2359,22 +2359,32 @@
             },
             "costCentres": {
                 "title": "Cost Centres",
-                "description": "Manage cost centre hierarchy for departmental P&L reporting.",
-                "empty": "No cost centres found.",
+                "description": "Manage Cost Centre Hierarchy For Departmental P&L Reporting And Shared Expense Allocations.",
+                "empty": "No Cost Centres Found.",
                 "createTitle": "New Cost Centre",
                 "editTitle": "Edit {{code}}",
-                "confirmDelete": "Delete this cost centre?",
+                "confirmDelete": "Delete This Cost Centre?",
                 "noParent": "No Parent",
+                "allocateTitle": "Allocate Shared Expense",
+                "allocateAction": "Allocate Expense",
+                "allocateSubmit": "Run Allocation",
                 "columns": {
                     "code": "Code",
                     "name": "Name",
-                    "branch": "Branch"
+                    "branch": "Branch",
+                    "headcount": "Headcount",
+                    "floorArea": "Floor Area"
                 },
                 "fields": {
                     "code": "Code",
                     "name": "Name",
                     "parent": "Parent Centre",
-                    "branch": "Branch"
+                    "branch": "Branch",
+                    "headcount": "Headcount",
+                    "floorArea": "Floor Area",
+                    "sourceLine": "Source Expense Line",
+                    "method": "Allocation Method",
+                    "targets": "Target Centres"
                 }
             },
             "reports": {

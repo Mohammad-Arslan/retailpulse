@@ -16,9 +16,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'branch_id',
     'legal_entity_id',
     'status',
+    'headcount',
+    'floor_area',
 ])]
 class CostCentre extends Model
 {
+    protected function casts(): array
+    {
+        return [
+            'headcount' => 'integer',
+            'floor_area' => 'decimal:4',
+        ];
+    }
+
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id');
