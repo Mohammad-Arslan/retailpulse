@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Accounting\UpdatePostingRuleSetRequest;
 use App\Models\PostingRuleSet;
 use App\Services\Accounting\PostingRuleService;
+use App\Support\AccountMappingKeys;
 use App\Support\ListPagination;
 use App\Support\PostingRuleSetPresenter;
 use Illuminate\Http\RedirectResponse;
@@ -48,8 +49,9 @@ final class PostingRuleController extends Controller
 
         return Inertia::render('Admin/Accounting/PostingRules/Edit', [
             'ruleSet' => PostingRuleSetPresenter::forEdit($ruleSet),
-            'postableAccounts' => $this->postingRuleService->postableAccountOptions(),
-            'accountResolutionTypes' => AccountResolutionType::values(),
+            'accounts' => $this->postingRuleService->postableAccountOptions(),
+            'mappingKeys' => AccountMappingKeys::all(),
+            'resolutionTypes' => AccountResolutionType::values(),
             'amountSources' => AmountSource::values(),
             'entrySides' => PostingRuleEntrySide::values(),
         ]);
