@@ -120,6 +120,75 @@
             }
         },
         "dashboard": {
+            "title": "ڈیش بورڈ",
+            "description": "آج سیلز، اسٹاک، خریداری اور فنانس میں کیا توجہ چاہتا ہے۔",
+            "empty": "آپ کی اجازتوں کے لیے کوئی ڈیش بورڈ ویجیٹ دستیاب نہیں۔",
+            "greetingMorning": "صبح بخیر",
+            "greetingAfternoon": "ظہر بخیر",
+            "greetingEvening": "شام بخیر",
+            "greetingFallback": "وہاں",
+            "widgets": {
+                "exceptions": "توجہ درکار",
+                "sales": "سیلز",
+                "revenue": "آمدنی",
+                "inventory": "انوینٹری",
+                "procurement": "خریداری",
+                "finance": "فنانس",
+                "operations": "آپریشنز",
+                "quickActions": "فوری اقدامات"
+            },
+            "exceptions": {
+                "empty": "اس وقت کوئی کھلا استثنا نہیں۔"
+            },
+            "sales": {
+                "todaysSales": "آج کی سیلز",
+                "grossProfit": "مجموعی منافع",
+                "transactions": "لین دین",
+                "atv": "اوسط ٹکٹ",
+                "layaways": "کھلے لی اوے",
+                "wowRevenue": "آمدنی — آخری 7 دن",
+                "momRevenue": "آمدنی — آخری 6 ماہ"
+            },
+            "inventory": {
+                "unitsOnHand": "دستیاب یونٹس",
+                "lowStock": "کم اسٹاک لائنز",
+                "criticalSub": "{{count}} سنگین",
+                "movementsToday": "آج کی نقل و حرکت",
+                "transfers": "ٹرانسفرز",
+                "transfersSub": "ڈرافٹ · راستے میں"
+            },
+            "finance": {
+                "unpostedJournals": "غیر پوسٹ شدہ جرنلز",
+                "bankUnmatched": "غیر مماثل بینک لائنز",
+                "arAging": "AR ایجنگ کل",
+                "apAging": "AP ایجنگ کل"
+            },
+            "operations": {
+                "branches": "برانچز",
+                "branchesSub": "فعال · کل",
+                "warehouses": "گودام",
+                "products": "فعال مصنوعات",
+                "productsSub": "{{variants}} SKUs · {{categories}} زمرے · {{brands}} برانڈز",
+                "branchMeta": "{{warehouses}} گودام · {{users}} صارفین"
+            },
+            "quickActions": {
+                "pos": "پوائنٹ آف سیل",
+                "posDesc": "رجسٹر کھولیں",
+                "sales": "سیلز",
+                "salesDesc": "انوائسز اور لین دین",
+                "inventory": "انوینٹری",
+                "inventoryDesc": "اسٹاک لیولز اور الرٹس",
+                "transfers": "اسٹاک ٹرانسفرز",
+                "transfersDesc": "گودام کے درمیان منتقلی",
+                "purchaseOrders": "خریداری کے آرڈر",
+                "purchaseOrdersDesc": "خریداری اور وصولی",
+                "accountingReports": "اکاؤنٹنگ رپورٹس",
+                "accountingReportsDesc": "مالی بیانات",
+                "products": "مصنوعات",
+                "productsDesc": "کیٹلاگ اور ویریئنٹس",
+                "customers": "کسٹمرز",
+                "customersDesc": "اکاؤنٹس اور کریڈٹ"
+            },
             "procurement": {
                 "title": "خریداری",
                 "viewReports": "رپورٹس دیکھیں",
@@ -135,6 +204,76 @@
                 "supplierColumn": "سپلائر",
                 "balanceColumn": "بیلنس",
                 "onTimeColumn": "وقت پر %"
+            }
+        },
+        "pos": {
+            "title": "پوائنٹ آف سیل",
+            "lockScreen": "لاک",
+            "exitToErp": "ERP پر جائیں",
+            "registerFallback": "رجسٹر",
+            "customerPlaceholder": "نام یا فون سے کسٹمر منسلک کریں…",
+            "searchPlaceholder": "بارکوڈ اسکین کریں یا نام، SKU تلاش کریں…",
+            "searching": "تلاش جاری…",
+            "noCustomers": "\"{{query}}\" کے لیے کوئی کسٹمر نہیں ملا",
+            "selectBranchTitle": "برانچ منتخب کریں",
+            "selectBranchHint": "برانچ اسٹاک دیکھنے کے لیے اوپر سے ایک برانچ منتخب کریں۔",
+            "cartPanel": "موجودہ کارٹ",
+            "cart": {
+                "emptyTitle": "آپ کی کارٹ خالی ہے",
+                "emptyHint": "اسکین کریں یا تلاش کریں تاکہ ایک اور لائن شامل ہو۔",
+                "removeItem": "آئٹم ہٹائیں",
+                "quantity": "مقدار",
+                "unitPrice": "یونٹ",
+                "tax": "ٹیکس",
+                "discount": "رعایت",
+                "subtotal": "ذیلی کل",
+                "totalDue": "قابل ادائیگی کل",
+                "addDiscount": "+ رعایت شامل کریں",
+                "editDiscount": "رعایت تبدیل کریں",
+                "lockedForPayment": "ادائیگی کے لیے کارٹ مقفل ہے — آئٹمز صرف پڑھنے کے لیے ہیں۔",
+                "lineCount_one": "{{count}} لائن",
+                "lineCount_other": "{{count}} لائنز",
+                "colItem": "آئٹم",
+                "colQty": "مقدار",
+                "colPrice": "قیمت",
+                "colTax": "ٹیکس",
+                "colTotal": "کل",
+                "clearCart": "کارٹ صاف کریں",
+                "holdCart": "کارٹ روکیں",
+                "resumeCart": "دوبارہ شروع",
+                "reopen": "دوبارہ کھولیں",
+                "more": "مزید",
+                "notesComingSoon": "کارٹ نوٹس (جلد)",
+                "attachCustomer": "کسٹمر منسلک کریں",
+                "changeCustomer": "کسٹمر تبدیل کریں",
+                "cash": "نقد",
+                "card": "کارڈ",
+                "eWallet": "ای والیٹ",
+                "pay": "ادائیگی"
+            },
+            "quickkeys": {
+                "search": "تلاش",
+                "hold": "روکیں",
+                "discount": "رعایت",
+                "pay": "ادائیگی",
+                "voidLine": "لائن منسوخ"
+            },
+            "catalog": {
+                "category": "زمرہ",
+                "brand": "برانڈ",
+                "allCategories": "تمام زمروں",
+                "allBrands": "تمام برانڈز",
+                "inStock": "دستیاب",
+                "inStockCount": "{{count}} دستیاب",
+                "outOfStock": "غیر دستیاب",
+                "service": "سروس",
+                "digital": "ڈیجیٹل",
+                "emptyTitle": "کوئی مصنوعات نہیں ملیں",
+                "emptyHint": "دوسرا زمرہ، برانڈ یا تلاش آزمائیں۔",
+                "resultCount": "{{count}} مصنوعات",
+                "sortedByName": "نام کے مطابق ترتیب",
+                "perPage": "فی صفحہ مصنوعات",
+                "perPageOption": "{{count}} فی صفحہ"
             }
         },
         "settings": {

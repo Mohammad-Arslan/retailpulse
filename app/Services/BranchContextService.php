@@ -131,7 +131,7 @@ final class BranchContextService
      */
     public function accessibleBranchIds(User $user): ?array
     {
-        if ($user->hasRole('super-admin')) {
+        if ($user->can('branches.access-all')) {
             return null;
         }
 

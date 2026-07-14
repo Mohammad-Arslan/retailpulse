@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Services\AuditService;
 use App\Services\BranchContextService;
+use App\Services\Dashboard\HomeRouteResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +21,7 @@ class AuthenticatedSessionController extends Controller
     public function __construct(
         private readonly AuditService $audit,
         private readonly BranchContextService $branchContext,
+        private readonly HomeRouteResolver $homeRoute,
     ) {}
 
     public function create(): Response
@@ -59,9 +61,7 @@ class AuthenticatedSessionController extends Controller
             event(UserLoggedIn::fromRequest($user, $request));
         }
 
-        $home = $user !== null && $user->can('admin.access')
-            ? route('admin.dashboard', absolute: false)
-            : route('admin.pos.index', absolute: false);
+        $home = $this->homeRoute->url($user);
 
         return redirect()->intended($home);
     }

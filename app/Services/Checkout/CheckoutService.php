@@ -30,6 +30,7 @@ use App\Services\Customer\StoreCreditService;
 use App\Services\Customer\WalletService;
 use App\Services\InventoryService;
 use App\Services\Loyalty\CheckoutLoyaltyService;
+use App\Services\PosCartService;
 use App\Support\Pos\PosBranchWarehouses;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,7 @@ final class CheckoutService
 {
     public function __construct(
         private readonly PosCartRepositoryInterface $carts,
+        private readonly PosCartService $posCartService,
         private readonly CheckoutConfigService $config,
         private readonly TaxCalculationService $tax,
         private readonly SalePaymentProcessor $payments,
@@ -509,6 +511,137 @@ final class CheckoutService
         ]);
     }
 
+    /**
+     * Remove a cart line during checkout. Allowed before any payment is applied.
+     * When a pending sale exists, its lines and totals are resynced from the cart.
+     *
+     * @return array{emptied: bool, bootstrap: ?array<string, mixed>}
+     */
+    public function removeCartItem(PosCart $cart, int $cartItemId): array
+    {
+        return DB::transaction(function () use ($cart, $cartItemId) {
+            $sale = Sale::query()
+                ->where('cart_id', $cart->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($sale !== null) {
+                if ($sale->status->isImmutable()) {
+                    throw ValidationException::withMessages([
+                        'status' => __('This sale can no longer be edited.'),
+                    ]);
+                }
+
+                if (! $sale->status->isPayable()) {
+                    throw ValidationException::withMessages([
+                        'status' => __('This sale can no longer be edited.'),
+                    ]);
+                }
+
+                $hasCompletedPayment = $sale->payments()
+                    ->where('status', PaymentStatus::Completed)
+                    ->exists();
+
+                if ($hasCompletedPayment) {
+                    throw ValidationException::withMessages([
+                        'payments' => __('Remove applied payments before editing cart lines.'),
+                    ]);
+                }
+
+                $sale->payments()->where('status', PaymentStatus::Pending)->delete();
+                $this->checkoutLoyalty->reverseSaleRedemptions($sale, $sale->cashier_id);
+            } elseif ($cart->status !== PosCartStatus::Completing) {
+                throw ValidationException::withMessages([
+                    'status' => __('Cart is not ready for checkout.'),
+                ]);
+            }
+
+            $item = PosCartItem::query()
+                ->where('cart_id', $cart->id)
+                ->findOrFail($cartItemId);
+
+            $this->posCartService->removeCheckoutItem($cart, $item);
+
+            $cart->load('items');
+
+            if ($cart->items->isEmpty()) {
+                if ($sale !== null) {
+                    $sale->items()->delete();
+                    $sale->update([
+                        'status' => SaleStatus::Voided,
+                        'voided_at' => now(),
+                        'balance_due' => 0,
+                    ]);
+                    $sale->delete();
+                }
+
+                $this->carts->update($cart, [
+                    'status' => PosCartStatus::Active,
+                    'completed_at' => null,
+                ]);
+
+                return [
+                    'emptied' => true,
+                    'bootstrap' => null,
+                ];
+            }
+
+            if ($sale !== null) {
+                $this->resyncSaleFromCart($sale->fresh() ?? $sale, $cart);
+            }
+
+            return [
+                'emptied' => false,
+                'bootstrap' => $this->bootstrap($cart->fresh() ?? $cart),
+            ];
+        });
+    }
+
+    private function resyncSaleFromCart(Sale $sale, PosCart $cart): void
+    {
+        $cart->load('items');
+        $taxMode = $sale->tax_mode ?? TaxMode::Exclusive;
+        $taxedItems = $this->buildTaxedCartItems($cart->items, $taxMode, asSaleRows: true);
+
+        $sale->items()->delete();
+
+        $taxTotal = 0.0;
+        $subtotal = 0.0;
+        $grandTotal = 0.0;
+        $grossSubtotal = 0.0;
+
+        foreach ($taxedItems as $row) {
+            $sale->items()->create([
+                'product_id' => $row['product_id'],
+                'product_variant_id' => $row['variant_id'],
+                'sku' => $row['sku'],
+                'name' => $row['name'],
+                'unit_price' => $row['unit_price_raw'],
+                'quantity' => $row['quantity'],
+                'discount_type' => $row['discount_type'],
+                'discount_value' => $row['discount_value_raw'],
+                'line_total' => $row['line_total_raw'],
+                'tax_rate' => $row['tax_rate_raw'],
+                'tax_amount' => $row['tax_amount_raw'],
+                'line_total_inc_tax' => $row['line_total_inc_tax_raw'],
+            ]);
+
+            $subtotal += $row['line_total_raw'];
+            $taxTotal += $row['tax_amount_raw'];
+            $grandTotal += $row['line_total_inc_tax_raw'];
+            $grossSubtotal += $row['gross_line_total'];
+        }
+
+        $sale->update([
+            'subtotal' => round($subtotal, 2),
+            'total_discount' => round(max(0, $grossSubtotal - $subtotal), 2),
+            'tax_total' => round($taxTotal, 2),
+            'grand_total' => round($grandTotal, 2),
+            'balance_due' => round($grandTotal, 2),
+            'status' => SaleStatus::PendingPayment,
+        ]);
+    }
+
     private function finalizeSale(Sale $sale, int $cashierId): Sale
     {
         $settings = $this->config->resolve($sale->branch_id);
@@ -612,6 +745,7 @@ final class CheckoutService
             $lineTotal = (float) $item->line_total;
 
             $row = [
+                'id' => $item->id,
                 'product_id' => $item->product_id,
                 'variant_id' => $item->product_variant_id,
                 'sku' => $item->sku,

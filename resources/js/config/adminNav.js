@@ -45,6 +45,7 @@ export const ADMIN_NAV_SECTIONS = [
                 href: 'admin.dashboard',
                 routeName: 'admin.dashboard',
                 permission: 'admin.dashboard.view',
+                permissionsAny: ['admin.dashboard.view', 'dashboard.view'],
                 icon: LayoutDashboard,
                 keywords: ['home', 'overview', 'stats'],
             },

@@ -1,7 +1,7 @@
 # RetailPulse User Manual — Put a Product in Stock (Any Branch)
 
 **Audience:** Store operators, stock clerks, and support teams  
-**Version:** 1.0 (June 2026)  
+**Version:** 1.1 (July 2026)  
 **Scope:** How to make a product **in hand** (available to sell) at a specific branch
 
 This guide is a **focused, step-by-step** walkthrough. For full catalogue and inventory reference, see [`user-manual-inventory-and-catalogue.md`](user-manual-inventory-and-catalogue.md).
@@ -242,12 +242,12 @@ After putting stock in hand, confirm at the register:
 
 ### Step 2 — Check POS (correct branch)
 
-1. In the admin header, select the **same branch** you stocked.
+1. In the admin header, select the **same branch** you stocked (not All Branches).
 2. Open **Point of Sale** (Overview → Point of Sale).
-3. Search for the product by name, SKU, or scan barcode.
-4. The product should **appear in search** and be addable to the cart.
+3. Browse the product grid (defaults to all in-stock items for that branch), or filter by **Category** / **Brand**, or search by name, SKU, or barcode.
+4. Tap a product tile to add it to the cart.
 
-> POS only shows inventory-tracked products that have **available stock** at that branch’s warehouse. Out-of-stock items are hidden from search.
+> POS only shows inventory-tracked products that have **available stock** at that branch’s warehouses (plus always-sellable **service** / **digital** items). Category and brand chips only list facets that have sellable stock at the active branch. Service and digital lines skip stock reservation and out-of-stock checks when adding to the cart.
 
 ### Step 3 — If the product still does not appear
 
@@ -318,4 +318,6 @@ Common causes:
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.2 | July 2026 | Service/digital POS cart add skips stock reservation and out-of-stock validation |
+| 1.1 | July 2026 | POS browse by category/brand grid (branch-stock aware); select a specific branch |
 | 1.0 | June 2026 | Initial guide — put product in stock for any branch |

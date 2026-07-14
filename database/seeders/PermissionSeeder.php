@@ -19,8 +19,14 @@ final class PermissionSeeder extends Seeder
             ['name' => 'admin.dashboard.view', 'description' => 'View admin dashboard (legacy alias)'],
         ],
         'dashboard' => [
-            ['name' => 'dashboard.view', 'description' => 'View operational dashboard'],
-            ['name' => 'dashboard.view-profit', 'description' => 'View profit-sensitive dashboard widgets'],
+            ['name' => 'dashboard.view', 'description' => 'View the ERP home dashboard'],
+            ['name' => 'dashboard.view-profit', 'description' => 'View profit-sensitive dashboard figures'],
+            ['name' => 'dashboard.sales.view', 'description' => 'View sales dashboard widgets'],
+            ['name' => 'dashboard.inventory.view', 'description' => 'View inventory dashboard widgets'],
+            ['name' => 'dashboard.finance.view', 'description' => 'View finance dashboard widgets'],
+            ['name' => 'dashboard.procurement.view', 'description' => 'View procurement dashboard widgets'],
+            ['name' => 'dashboard.operations.view', 'description' => 'View operations dashboard widgets'],
+            ['name' => 'dashboard.exceptions.view', 'description' => 'View the business exception feed'],
         ],
         'users' => [
             ['name' => 'users.view', 'description' => 'View users'],
@@ -49,6 +55,7 @@ final class PermissionSeeder extends Seeder
             ['name' => 'branches.create', 'description' => 'Create branches'],
             ['name' => 'branches.update', 'description' => 'Update branches'],
             ['name' => 'branches.delete', 'description' => 'Delete branches'],
+            ['name' => 'branches.access-all', 'description' => 'Access all branches without assignment restrictions'],
         ],
         'warehouses' => [
             ['name' => 'warehouses.view', 'description' => 'View warehouses'],

@@ -17,7 +17,18 @@ export default function CommandPalette({ open, onClose }) {
     const items = useMemo(() => {
         return ADMIN_NAV_SECTIONS.flatMap((section) =>
             section.items
-                .filter((item) => can(item.permission) && (!item.module || enabledAccountingModules.includes(item.module)))
+                .filter((item) => {
+                    const permissionOk = item.permissionsAny?.length
+                        ? item.permissionsAny.some((p) => can(p))
+                        : item.permission
+                          ? can(item.permission)
+                          : true;
+
+                    const moduleOk =
+                        !item.module || enabledAccountingModules.includes(item.module);
+
+                    return permissionOk && moduleOk;
+                })
                 .map((item) => ({
                     ...item,
                     sectionKey: section.labelKey,

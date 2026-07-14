@@ -1,7 +1,7 @@
 # RetailPulse User Manual — Customers & Loyalty
 
 **Audience:** Customer support teams, store managers, and cashiers  
-**Version:** 1.0 (June 2026)  
+**Version:** 1.1 (July 2026)  
 **Scope:** Customer profiles, loyalty tiers, wallets, store credit, credit limits, AR aging, and POS/checkout integration
 
 This manual explains **where to click**, **what each screen does**, **how data flows**, and **what every term means**. Hand it to customers who manage CRM, loyalty, and customer payments in RetailPulse.
@@ -50,7 +50,7 @@ This manual explains **where to click**, **what each screen does**, **how data f
 
 1. Open your RetailPulse URL (e.g. `https://your-store.example/admin`).
 2. Sign in with the email and password provided by your administrator.
-3. After login you land on the **Dashboard**.
+3. After login, users with dashboard permissions land on the **ERP Home Dashboard**; cashiers with only POS access open the full-screen register.
 
 ### 1.3 Branch context (important)
 
@@ -373,19 +373,21 @@ The customer is carried into **checkout** when you complete the cart (F10 / chec
 
 ### 8.2 Checkout — confirm sale
 
-**Path:** Opens automatically after POS checkout, or `/admin/checkout/{cartId}`
+**Path:** Opens automatically after POS checkout (**Pay** / F10), or `/admin/checkout/{cartId}`
+
+Checkout uses the same **full-screen POS shell** as the register (no ERP sidebar). The top bar still shows branch, Exit To ERP (if permitted), and user controls.
 
 Before payment:
 
 1. Optionally **search and attach a customer** (same as POS).  
-2. Review cart lines and totals.  
+2. Review cart lines and totals. Use **×** on a line to **remove** it (available until a payment is applied). Removing the last line returns you to POS.  
 3. Click **Confirm sale** — creates the sale record.
 
 If a customer is attached, the **customer card** shows wallet balance, store credit, AR outstanding, and credit available.
 
 ### 8.3 Checkout — take payment
 
-After the sale exists, choose a **payment method**:
+After the sale exists, choose a **payment method**. You can still **remove lines** until the first payment is applied; totals and balance due update automatically.
 
 | Method | Requires customer? | Behaviour |
 |--------|-------------------|-----------|
@@ -804,6 +806,9 @@ Ensure Laravel scheduler is running in production (`schedule:run` every minute).
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.3 | July 2026 | Checkout allows removing cart lines until a payment is applied |
+| 1.2 | July 2026 | Checkout uses the same full-screen POS shell as the register (no ERP sidebar) |
+| 1.1 | July 2026 | Login home resolved by permissions (dashboard vs full-screen POS) |
 | 1.0 | June 2026 | Initial customer-facing manual for Phase 9 — customers, loyalty, wallet, credit, AR |
 
 *For product updates, verify menu labels against the live admin UI — labels may be refined in future releases.*

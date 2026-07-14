@@ -84,6 +84,8 @@ final class ProductSearchController extends Controller
                 'barcode' => $variant->barcode,
                 'name' => $variant->product->name.($variant->variant_name ? ' — '.$variant->variant_name : ''),
                 'unit_price' => (float) $price,
+                'product_type' => $variant->product?->type?->value,
+                'tracks_inventory' => $tracksInventory,
                 'available_stock' => $tracksInventory ? $available : null,
                 'in_stock' => ! $tracksInventory || $available > 0,
             ];

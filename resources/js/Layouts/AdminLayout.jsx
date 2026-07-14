@@ -105,10 +105,16 @@ function SidebarNav({ collapsed, onNavigate }) {
 export default function AdminLayout({ children, fullHeight = false, posMode = false, hideTopbar = false }) {
     const user = usePage().props.auth.user;
     const roles = usePage().props.auth.roles ?? [];
+    const homeRouteName = usePage().props.home?.route;
     const can = useCan();
     const { t } = useTranslation();
 
-    const homeRoute = can('admin.dashboard.view') ? 'admin.dashboard' : 'admin.pos.index';
+    const homeRoute =
+        homeRouteName && homeRouteName !== 'login'
+            ? homeRouteName
+            : can('dashboard.view') || can('admin.dashboard.view')
+              ? 'admin.dashboard'
+              : 'admin.pos.index';
 
     const [mobileOpen, setMobileOpen] = useState(false);
     const { collapsed, toggleCollapsed } = useSidebarCollapsed();

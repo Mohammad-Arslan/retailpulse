@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Minus, Plus, ShoppingCart, X } from 'lucide-react';
-import { cartItemApi } from '@/lib/posApi';
+import ScrollArea from '@/Components/common/ScrollArea';
 import { usePosDialog } from '@/Hooks/usePosDialog';
-import { DiscountModal } from './DiscountModal';
+import { cartItemApi } from '@/lib/posApi';
 import {
     estimateCartTax,
     formatPkr,
@@ -10,15 +8,13 @@ import {
     lineGross,
     lineTotal,
 } from '@/lib/posCartTotals';
+import { cn } from '@/lib/utils';
+import { Minus, Plus, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { DiscountModal } from './DiscountModal';
 
-function TaxCell({ item, taxEnabled, defaultTaxRate, taxMode }) {
-    if (!taxEnabled) return <span className="text-rp-text-muted">—</span>;
-    const lt = lineTotal(item);
-    const { taxAmount } = estimateCartTax(lt, defaultTaxRate, taxMode);
-    return <span>{formatPkr(taxAmount)}</span>;
-}
-
-function CartTableRow({
+function CartLineRow({
     cartId,
     item,
     onUpdated,
@@ -31,18 +27,23 @@ function CartTableRow({
     defaultTaxRate,
     taxMode,
     currency,
+    taxRatePct,
 }) {
     const [showDiscount, setShowDiscount] = useState(false);
     const [saving, setSaving] = useState(false);
     const [qtyInput, setQtyInput] = useState(String(item.quantity));
     const [editingQty, setEditingQty] = useState(false);
     const { error, confirmRemoveItem } = usePosDialog();
+    const { t } = useTranslation();
 
     const locked = readOnly || processing || saving;
     const gross = lineGross(item);
     const total = lineTotal(item);
     const discount = lineDiscount(item);
     const hasDiscount = discount > 0;
+    const taxAmount = taxEnabled
+        ? estimateCartTax(total, defaultTaxRate, taxMode).taxAmount
+        : 0;
 
     useEffect(() => {
         if (!editingQty) {
@@ -61,8 +62,8 @@ function CartTableRow({
         } catch (err) {
             error(
                 err?.response?.data?.errors?.quantity?.[0] ||
-                err?.response?.data?.message ||
-                'Failed to update quantity.',
+                    err?.response?.data?.message ||
+                    'Failed to update quantity.',
             );
         } finally {
             setSaving(false);
@@ -89,8 +90,8 @@ function CartTableRow({
             setQtyInput(String(item.quantity));
             error(
                 err?.response?.data?.errors?.quantity?.[0] ||
-                err?.response?.data?.message ||
-                'Failed to update quantity.',
+                    err?.response?.data?.message ||
+                    'Failed to update quantity.',
             );
         } finally {
             setSaving(false);
@@ -150,8 +151,8 @@ function CartTableRow({
         } catch (err) {
             throw new Error(
                 err?.response?.data?.errors?.discount_value?.[0] ||
-                err?.response?.data?.message ||
-                'Failed to apply discount.',
+                    err?.response?.data?.message ||
+                    'Failed to apply discount.',
             );
         } finally {
             setSaving(false);
@@ -160,32 +161,73 @@ function CartTableRow({
 
     return (
         <>
-            <tr className={`group border-b border-rp-border transition-colors hover:bg-rp-surface-subtle ${stockWarning ? 'bg-amber-500/5' : ''}`}>
-                {/* Item */}
-                <td className="px-4 py-3">
-                    <p className="text-sm font-semibold text-rp-text leading-tight">{item.name}</p>
-                    <p className="text-xs text-rp-text-muted mt-0.5">{item.sku}</p>
-                    {stockWarning && (
-                        <p className="text-xs font-medium text-amber-400 mt-0.5">{stockWarning.message}</p>
-                    )}
+            <tr
+                className={cn(
+                    'border-b border-[var(--pos-border)] even:bg-[var(--pos-bg-subtle)]',
+                    stockWarning && 'bg-amber-50 dark:bg-amber-500/10',
+                )}
+            >
+                <td className="px-[18px] py-2.5 align-top">
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                            <div className="text-[12.5px] font-semibold text-[var(--pos-text-1)]">
+                                {item.name}
+                            </div>
+                            <div className="pos-mono mt-0.5 text-[10.5px] text-[var(--pos-text-3)]">
+                                {item.sku}
+                            </div>
+                            {stockWarning ? (
+                                <div className="mt-1 text-[11px] font-medium text-amber-600">
+                                    {stockWarning.message}
+                                </div>
+                            ) : null}
+                            {hasDiscount ? (
+                                <div className="mt-1 text-[11px] font-medium text-emerald-600">
+                                    −{currency} {formatPkr(discount)}
+                                    {gross > total ? (
+                                        <span className="ml-1 text-[var(--pos-text-3)] line-through">
+                                            {formatPkr(gross)}
+                                        </span>
+                                    ) : null}
+                                </div>
+                            ) : null}
+                            {!readOnly && canApplyDiscount ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDiscount(true)}
+                                    disabled={locked}
+                                    className="mt-1 inline-block text-[11px] font-semibold text-[var(--pos-teal-700)] hover:underline disabled:opacity-40"
+                                >
+                                    {hasDiscount
+                                        ? t('pages.pos.cart.editDiscount')
+                                        : t('pages.pos.cart.addDiscount')}
+                                </button>
+                            ) : null}
+                        </div>
+                        {!readOnly ? (
+                            <button
+                                type="button"
+                                onClick={handleRemove}
+                                disabled={locked}
+                                className="shrink-0 text-[var(--pos-text-3)] hover:text-[var(--pos-danger)] disabled:opacity-40"
+                                title={t('pages.pos.cart.removeItem')}
+                                aria-label={t('pages.pos.cart.removeItem')}
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        ) : null}
+                    </div>
                 </td>
-
-                {/* Price */}
-                <td className="px-4 py-3 text-sm text-rp-text-secondary whitespace-nowrap">
-                    {currency} {formatPkr(item.unit_price)}
-                </td>
-
-                {/* Qty */}
-                <td className="px-4 py-3">
+                <td className="px-[18px] py-2.5 text-right align-top">
                     {readOnly ? (
-                        <span className="text-sm text-rp-text">{item.quantity}</span>
+                        <span className="pos-mono text-[12.5px] font-semibold">{item.quantity}</span>
                     ) : (
-                        <div className="flex items-center gap-1">
+                        <div className="ml-auto inline-flex overflow-hidden rounded-[7px] border border-[var(--pos-border)]">
                             <button
                                 type="button"
                                 onClick={() => changeQty(-1)}
                                 disabled={locked || item.quantity <= 1}
-                                className="flex h-7 w-7 items-center justify-center rounded-md border border-rp-border bg-rp-surface-inset text-rp-text-secondary hover:border-rp-text-muted hover:text-rp-text disabled:opacity-40 transition-colors"
+                                className="flex h-[22px] w-[22px] items-center justify-center bg-[var(--pos-bg-sunken)] text-[13px] font-bold text-[var(--pos-text-1)] disabled:opacity-40"
                             >
                                 <Minus className="h-3 w-3" />
                             </button>
@@ -199,99 +241,47 @@ function CartTableRow({
                                 onBlur={handleQtyBlur}
                                 onKeyDown={handleQtyKeyDown}
                                 disabled={locked}
-                                aria-label="Quantity"
-                                className="w-12 rounded-md border border-rp-border bg-rp-surface-inset px-1 py-1 text-center text-sm font-semibold text-rp-text focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-40"
+                                aria-label={t('pages.pos.cart.quantity')}
+                                className="pos-mono h-[22px] w-7 border-0 bg-transparent text-center text-xs font-bold text-[var(--pos-text-1)] outline-none disabled:opacity-40"
                             />
                             <button
                                 type="button"
                                 onClick={() => changeQty(1)}
                                 disabled={locked}
-                                className="flex h-7 w-7 items-center justify-center rounded-md border border-rp-border bg-rp-surface-inset text-rp-text-secondary hover:border-rp-text-muted hover:text-rp-text disabled:opacity-40 transition-colors"
+                                className="flex h-[22px] w-[22px] items-center justify-center bg-[var(--pos-bg-sunken)] text-[13px] font-bold text-[var(--pos-text-1)] disabled:opacity-40"
                             >
                                 <Plus className="h-3 w-3" />
                             </button>
                         </div>
                     )}
                 </td>
-
-                {/* Discount */}
-                <td className="px-4 py-3">
-                    {hasDiscount ? (
-                        <div className="flex flex-col gap-0.5">
-                            <span className="text-xs font-medium text-emerald-400">
-                                {item.discount_type === 'percent'
-                                    ? `${item.discount_value}%`
-                                    : `${currency} ${formatPkr(item.discount_value)}`}
+                <td className="pos-mono px-[18px] py-2.5 text-right align-top text-[12.5px] font-semibold whitespace-nowrap">
+                    {formatPkr(item.unit_price)}
+                </td>
+                {taxEnabled ? (
+                    <td className="px-[18px] py-2.5 text-right align-top whitespace-nowrap">
+                        {taxRatePct > 0 ? (
+                            <span className="block text-[11px] text-[var(--pos-text-2)]">
+                                {taxRatePct}%
                             </span>
-                            <span className="text-xs text-rp-text-muted">−{currency} {formatPkr(discount)}</span>
-                            {!readOnly && canApplyDiscount && (
-                                <button
-                                    type="button"
-                                    onClick={() => setShowDiscount(true)}
-                                    disabled={locked}
-                                    className="text-left text-[10px] text-rp-text-muted hover:text-rp-text-secondary disabled:opacity-40 transition-colors"
-                                >
-                                    Edit
-                                </button>
-                            )}
-                        </div>
-                    ) : (
-                        !readOnly && canApplyDiscount ? (
-                            <button
-                                type="button"
-                                onClick={() => setShowDiscount(true)}
-                                disabled={locked}
-                                className="text-xs font-medium text-blue-400 hover:text-blue-300 disabled:opacity-40 transition-colors"
-                            >
-                                + Discount
-                            </button>
-                        ) : (
-                            <span className="text-xs text-rp-text-muted">—</span>
-                        )
-                    )}
-                </td>
-
-                {/* Tax */}
-                <td className="px-4 py-3 text-sm text-rp-text-secondary whitespace-nowrap">
-                    <TaxCell
-                        item={item}
-                        taxEnabled={taxEnabled}
-                        defaultTaxRate={defaultTaxRate}
-                        taxMode={taxMode}
-                    />
-                </td>
-
-                {/* Total */}
-                <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-3">
-                        <div className="text-right">
-                            {hasDiscount && (
-                                <p className="text-xs text-rp-text-muted line-through">{currency} {formatPkr(gross)}</p>
-                            )}
-                            <p className="text-sm font-bold text-rp-text">{currency} {formatPkr(total)}</p>
-                        </div>
-                        {!readOnly && (
-                            <button
-                                type="button"
-                                onClick={handleRemove}
-                                disabled={locked}
-                                className="flex h-7 w-7 items-center justify-center rounded-md border border-rp-border text-rp-text-muted opacity-0 group-hover:opacity-100 hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40 transition-all"
-                                title="Remove item"
-                            >
-                                <X className="h-3.5 w-3.5" />
-                            </button>
-                        )}
-                    </div>
+                        ) : null}
+                        <span className="pos-mono text-[12.5px] font-semibold">
+                            {formatPkr(taxAmount)}
+                        </span>
+                    </td>
+                ) : null}
+                <td className="pos-mono px-[18px] py-2.5 text-right align-top text-[12.5px] font-bold whitespace-nowrap">
+                    {formatPkr(total)}
                 </td>
             </tr>
 
-            {showDiscount && (
+            {showDiscount ? (
                 <DiscountModal
                     item={item}
                     onSave={handleDiscountSaved}
                     onClose={() => setShowDiscount(false)}
                 />
-            )}
+            ) : null}
         </>
     );
 }
@@ -308,62 +298,86 @@ export function CartTable({
     canDiscount,
     processing,
 }) {
+    const { t } = useTranslation();
     const items = cart?.items || [];
     const isCompleting = cart?.status === 'completing';
     const isEditable = cart?.status === 'active' || cart?.status === 'suspended';
-
-    if (items.length === 0) {
-        return (
-            <div className="flex flex-1 flex-col items-center justify-center text-center py-16">
-                <ShoppingCart className="h-16 w-16 text-rp-text-muted opacity-20 mb-4" />
-                <p className="text-lg font-semibold text-rp-text">Your cart is empty</p>
-                <p className="text-sm text-rp-text-muted mt-1">Scan or search for a product to add it to the cart</p>
-            </div>
-        );
-    }
+    const taxRatePct = Math.round(parseFloat(defaultTaxRate || '0') * 100);
+    const lineCount = items.length;
 
     return (
-        <div className="flex-1 overflow-auto">
-            <table className="w-full text-left">
-                <thead className="sticky top-0 z-10 bg-rp-surface border-b border-rp-border">
-                    <tr>
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-rp-text-muted">Item</th>
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-rp-text-muted">Price</th>
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-rp-text-muted">Qty</th>
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-rp-text-muted">Discount</th>
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-rp-text-muted">Tax</th>
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-rp-text-muted text-right">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {isCompleting && (
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--pos-bg)]">
+            <div className="flex shrink-0 items-center justify-between border-b border-[var(--pos-border)] px-[18px] py-3">
+                <span className="text-[11px] font-extrabold tracking-[0.08em] text-[var(--pos-text-3)]">
+                    {t('pages.pos.cartPanel').toUpperCase()}
+                </span>
+                <span className="rounded-full bg-[var(--pos-teal-50)] px-2 py-0.5 text-[11px] font-bold text-[var(--pos-teal-700)]">
+                    {t('pages.pos.cart.lineCount', { count: lineCount })}
+                </span>
+            </div>
+
+            {isCompleting ? (
+                <p className="shrink-0 border-b border-orange-200 bg-orange-50 px-[18px] py-2 text-xs text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300">
+                    {t('pages.pos.cart.lockedForPayment')}
+                </p>
+            ) : null}
+
+            <ScrollArea className="pos-scroll min-h-0 flex-1 overflow-y-auto overflow-x-auto">
+                <table className="w-full min-w-[320px] border-collapse">
+                    <thead>
                         <tr>
-                            <td colSpan={6} className="px-4 py-2">
-                                <p className="text-xs text-orange-300 bg-orange-500/10 border border-orange-500/30 rounded-lg px-3 py-2">
-                                    Cart locked for payment — items are read-only.
-                                </p>
-                            </td>
+                            <th className="sticky top-0 z-1 border-b border-[var(--pos-border)] bg-[var(--pos-bg)] px-[18px] py-2 text-left text-[10px] font-extrabold tracking-[0.06em] text-[var(--pos-text-3)]">
+                                {t('pages.pos.cart.colItem')}
+                            </th>
+                            <th className="sticky top-0 z-1 border-b border-[var(--pos-border)] bg-[var(--pos-bg)] px-[18px] py-2 text-right text-[10px] font-extrabold tracking-[0.06em] text-[var(--pos-text-3)]">
+                                {t('pages.pos.cart.colQty')}
+                            </th>
+                            <th className="sticky top-0 z-1 border-b border-[var(--pos-border)] bg-[var(--pos-bg)] px-[18px] py-2 text-right text-[10px] font-extrabold tracking-[0.06em] text-[var(--pos-text-3)]">
+                                {t('pages.pos.cart.colPrice')}
+                            </th>
+                            {taxEnabled ? (
+                                <th className="sticky top-0 z-1 border-b border-[var(--pos-border)] bg-[var(--pos-bg)] px-[18px] py-2 text-right text-[10px] font-extrabold tracking-[0.06em] text-[var(--pos-text-3)]">
+                                    {t('pages.pos.cart.colTax')}
+                                </th>
+                            ) : null}
+                            <th className="sticky top-0 z-1 border-b border-[var(--pos-border)] bg-[var(--pos-bg)] px-[18px] py-2 text-right text-[10px] font-extrabold tracking-[0.06em] text-[var(--pos-text-3)]">
+                                {t('pages.pos.cart.colTotal')}
+                            </th>
                         </tr>
-                    )}
-                    {items.map((item) => (
-                        <CartTableRow
-                            key={item.id}
-                            cartId={cart.id}
-                            item={item}
-                            onUpdated={onItemUpdated}
-                            onRemoved={onItemRemoved}
-                            canApplyDiscount={canDiscount && isEditable}
-                            stockWarning={stockWarnings?.[item.id] || null}
-                            readOnly={isCompleting}
-                            processing={processing}
-                            taxEnabled={taxEnabled}
-                            defaultTaxRate={defaultTaxRate}
-                            taxMode={taxMode}
-                            currency={currency}
-                        />
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {items.length === 0 ? (
+                            <tr>
+                                <td
+                                    colSpan={taxEnabled ? 5 : 4}
+                                    className="px-[18px] py-10 text-center text-xs text-[var(--pos-text-3)]"
+                                >
+                                    {t('pages.pos.cart.emptyHint')}
+                                </td>
+                            </tr>
+                        ) : (
+                            items.map((item) => (
+                                <CartLineRow
+                                    key={item.id}
+                                    cartId={cart.id}
+                                    item={item}
+                                    onUpdated={onItemUpdated}
+                                    onRemoved={onItemRemoved}
+                                    canApplyDiscount={canDiscount && isEditable}
+                                    stockWarning={stockWarnings?.[item.id] || null}
+                                    readOnly={isCompleting}
+                                    processing={processing}
+                                    taxEnabled={taxEnabled}
+                                    defaultTaxRate={defaultTaxRate}
+                                    taxMode={taxMode}
+                                    currency={currency}
+                                    taxRatePct={taxRatePct}
+                                />
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </ScrollArea>
         </div>
     );
 }
