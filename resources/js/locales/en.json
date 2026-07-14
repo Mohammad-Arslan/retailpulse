@@ -62,6 +62,7 @@
         "employees": "Employees",
         "expenses": "Expenses",
         "expenseCategories": "Expense Categories",
+        "recurringExpenses": "Recurring Expenses",
         "chartOfAccounts": "Chart of Accounts",
         "accountMappings": "Account Mappings",
         "postingRules": "Posting Rules",
@@ -469,6 +470,70 @@
                 "draft": "Draft",
                 "pending_approval": "Pending Approval",
                 "posted": "Posted"
+            },
+            "paymentMethods": {
+                "cash": "Cash",
+                "card": "Card",
+                "bank_transfer": "Bank Transfer"
+            }
+        },
+        "recurringExpenses": {
+            "indexTitle": "Recurring Expenses",
+            "indexDescription": "Manage Automatic Expense Schedules And Due Occurrences.",
+            "createTitle": "New Recurring Expense",
+            "createDescription": "Define A Schedule That Generates Expense Occurrences Automatically.",
+            "createSubmit": "Create Schedule",
+            "searchPlaceholder": "Search By Category Or Branch…",
+            "allStatuses": "All Statuses",
+            "selectCategory": "Select Category…",
+            "selectLegalEntity": "Select Legal Entity…",
+            "selectBranch": "Select Branch…",
+            "selectCostCentre": "Select Cost Centre…",
+            "selectTaxType": "Select Tax Type…",
+            "noPaymentMethod": "Unpaid (Accounts Payable)",
+            "dayOfPeriodPlaceholder": "E.g. 1 For First Of Month",
+            "columns": {
+                "category": "Category",
+                "amount": "Amount",
+                "frequency": "Frequency",
+                "nextRun": "Next Run",
+                "status": "Status"
+            },
+            "fields": {
+                "category": "Category",
+                "branch": "Branch",
+                "legalEntity": "Legal Entity",
+                "costCentre": "Cost Centre",
+                "amount": "Amount",
+                "currency": "Currency",
+                "taxType": "Tax Type",
+                "frequency": "Frequency",
+                "intervalCount": "Every",
+                "dayOfPeriod": "Day Of Period",
+                "startDate": "Start Date",
+                "endDate": "End Date",
+                "prorationPolicy": "Proration Policy",
+                "paymentMethod": "Payment Method",
+                "status": "Status"
+            },
+            "frequencies": {
+                "daily": "Daily",
+                "weekly": "Weekly",
+                "monthly": "Monthly",
+                "quarterly": "Quarterly",
+                "annual": "Annual",
+                "custom_interval": "Custom Interval"
+            },
+            "prorationPolicies": {
+                "none": "None",
+                "first_period": "First Period",
+                "last_period": "Last Period",
+                "both": "Both"
+            },
+            "statuses": {
+                "active": "Active",
+                "paused": "Paused",
+                "cancelled": "Cancelled"
             },
             "paymentMethods": {
                 "cash": "Cash",

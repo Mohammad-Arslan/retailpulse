@@ -199,6 +199,13 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.expenses.expense-categories.*',
                 'keywords' => ['category', 'expense type'],
             ]),
+            self::item('recurring-expenses', 'recurringExpenses', 'admin.expenses.recurring-expenses.index', 'calendar-clock', 'expenses', 40, [
+                'permission' => 'expenses.manage-recurring',
+                'permissionsAny' => ['expenses.manage-recurring', 'expenses.view'],
+                'module' => 'expenses',
+                'routePattern' => 'admin.expenses.recurring-expenses.*',
+                'keywords' => ['recurring', 'schedule', 'rent', 'subscription'],
+            ]),
         ]));
 
         $registry->registerSection(new NavigationSection('accounting', 'accountingSection', 60, [

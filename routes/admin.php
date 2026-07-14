@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\CustomerWalletController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\Expense\ExpenseCategoryController;
 use App\Http\Controllers\Admin\Expense\ExpenseController;
+use App\Http\Controllers\Admin\Expense\RecurringExpenseScheduleController;
 use App\Http\Controllers\Admin\FixedAssetController;
 use App\Http\Controllers\Admin\Hr\EmployeeController;
 use App\Http\Controllers\Admin\InventoryController;
@@ -121,6 +122,7 @@ Route::middleware(['auth', 'admin', 'branch.context'])
         Route::middleware(['hr-module:expenses'])->prefix('expenses')->name('expenses.')->group(function () {
             Route::resource('expense-categories', ExpenseCategoryController::class)->except(['show', 'destroy']);
             Route::resource('expenses', ExpenseController::class)->except(['destroy', 'edit', 'update']);
+            Route::resource('recurring-expenses', RecurringExpenseScheduleController::class)->only(['index', 'create', 'store']);
             Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve'])->name('expenses.approve');
             Route::post('expenses/{expense}/attachments', [ExpenseController::class, 'attachReceipt'])->name('expenses.attachments');
         });

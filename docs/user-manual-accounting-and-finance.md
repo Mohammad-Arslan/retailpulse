@@ -55,7 +55,9 @@ This manual explains **where to click**, **what each screen does**, **how money 
 | **Sub-modules** | Cost centres, credit notes, bank accounts & reconciliation, multi-currency, petty cash, cheques, fixed assets |
 | **Reports** | Trial balance, P&L, balance sheet, GL, AR/AP aging, and more |
 
-**Not covered in depth here:** Payroll journals (Phase 12), full expense module, Phase 23 module registry UI (sub-module toggles are branch-profile based for now).
+**Not covered in depth here:** Payroll journals (Phase 12), one-off expense vouchers (Phase 12 Block 1), Phase 23 module registry UI (sub-module toggles are branch-profile based for now).
+
+**Recurring expenses (Phase 12 Block 2):** Admin → **HR & Payroll** → **Recurring Expenses** (`expenses.manage-recurring`). Schedules auto-generate occurrences via `expenses:process-recurring` (daily at 06:00). Each occurrence publishes `expense.recurring_due` through the accounting event pipeline — same GL lines as `expense.posted`.
 
 ### 1.2 Dependencies on other modules
 
@@ -1346,6 +1348,7 @@ A: Distinct `payment.received` event is deferred; partial coverage via sale sett
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2.0 | July 2026 | Phase 12 recurring expenses: nav item, scheduler command, `expense.recurring_due` posting |
 | 1.9 | July 2026 | Cost Centre Allocate Shared Expense: clarified Run Allocation steps, methods table, troubleshooting; fixed allocate form submit (Inertia transform) |
 | 1.8 | July 2026 | Cost Centre Allocate Expense UI; headcount/floor area drivers; P11 correctness fixes (COGS idempotency, mapping scopes, FX closing rates, transfer warehouse scope, split-tender, asset.acquired) |
 | 1.7 | July 2026 | ERP home finance widgets (`dashboard.finance.view`); All Branches gated by `branches.access-all` (not role name) |

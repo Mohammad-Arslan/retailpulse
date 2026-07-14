@@ -47,6 +47,8 @@ use App\Models\Expense;
 use App\Models\ExpenseApprovalPolicy;
 use App\Models\ExpenseAttachment;
 use App\Models\ExpenseCategory;
+use App\Models\RecurringExpenseOccurrence;
+use App\Models\RecurringExpenseSchedule;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
 use App\Models\GoodsReceivingNote;
@@ -269,6 +271,8 @@ class AppServiceProvider extends ServiceProvider
         ExpenseCategory::observe(AuditObserver::class);
         ExpenseApprovalPolicy::observe(AuditObserver::class);
         ExpenseAttachment::observe(AuditObserver::class);
+        RecurringExpenseSchedule::observe(AuditObserver::class);
+        RecurringExpenseOccurrence::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email');

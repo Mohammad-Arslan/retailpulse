@@ -36,6 +36,7 @@ final class PostingRulesSeeder extends Seeder
         $this->seedAssetDisposalRule($effectiveFrom);
         $this->seedAssetAcquiredRule($effectiveFrom);
         $this->seedExpensePostedRule($effectiveFrom);
+        $this->seedExpenseRecurringDueRule($effectiveFrom);
     }
 
     private function seedExpensePostedRule(string $effectiveFrom): void
@@ -44,6 +45,21 @@ final class PostingRulesSeeder extends Seeder
             code: 'expense_posted_default',
             name: 'Expense Posted — Default',
             eventType: 'expense.posted',
+            effectiveFrom: $effectiveFrom,
+        );
+
+        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::ExpenseCategoryAccount, AmountSource::NetAmount);
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Debit, AccountResolutionType::TaxAccount, AmountSource::TaxAmount, required: false);
+        $this->createLine($ruleSet->id, 3, PostingRuleEntrySide::Credit, AccountResolutionType::PaymentMethodAccount, AmountSource::SettlementAmount, required: false);
+        $this->createLine($ruleSet->id, 4, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::GrossAmount, 'accounts_payable', required: false);
+    }
+
+    private function seedExpenseRecurringDueRule(string $effectiveFrom): void
+    {
+        $ruleSet = $this->createRuleSet(
+            code: 'expense_recurring_due_default',
+            name: 'Recurring Expense Due — Default',
+            eventType: 'expense.recurring_due',
             effectiveFrom: $effectiveFrom,
         );
 

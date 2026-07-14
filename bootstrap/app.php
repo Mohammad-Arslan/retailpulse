@@ -123,4 +123,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->job(PoApprovalEscalationJob::class)->hourly();
         $schedule->job(PriceListExpiryAlertJob::class)->dailyAt('07:00');
         $schedule->command('accounting:process-depreciation')->monthlyOn(1, '05:00');
+        $schedule->command('expenses:process-recurring')->dailyAt('06:00');
     })->create();

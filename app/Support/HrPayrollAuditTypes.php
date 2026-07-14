@@ -10,6 +10,8 @@ use App\Models\Expense;
 use App\Models\ExpenseApprovalPolicy;
 use App\Models\ExpenseAttachment;
 use App\Models\ExpenseCategory;
+use App\Models\RecurringExpenseOccurrence;
+use App\Models\RecurringExpenseSchedule;
 use Illuminate\Database\Eloquent\Model;
 
 final class HrPayrollAuditTypes
@@ -24,6 +26,8 @@ final class HrPayrollAuditTypes
         ExpenseCategory::class,
         ExpenseApprovalPolicy::class,
         ExpenseAttachment::class,
+        RecurringExpenseSchedule::class,
+        RecurringExpenseOccurrence::class,
     ];
 
     /**
