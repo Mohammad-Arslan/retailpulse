@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Enums\AccountResolutionType;
 use App\Enums\AmountSource;
 use App\Enums\PostingRuleEntrySide;
+use App\Enums\PostingRuleWarehouseScope;
 use App\Models\PostingRuleLine;
 use App\Models\PostingRuleSet;
 use Illuminate\Database\Seeder;
@@ -33,6 +34,7 @@ final class PostingRulesSeeder extends Seeder
         $this->seedPettyCashRules($effectiveFrom);
         $this->seedAssetDepreciationRule($effectiveFrom);
         $this->seedAssetDisposalRule($effectiveFrom);
+        $this->seedAssetAcquiredRule($effectiveFrom);
     }
 
     private function seedSaleCompletedRule(string $effectiveFrom): void
@@ -192,8 +194,8 @@ final class PostingRulesSeeder extends Seeder
             effectiveFrom: $effectiveFrom,
         );
 
-        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false);
-        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false);
+        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false, warehouseScope: PostingRuleWarehouseScope::Destination);
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false, warehouseScope: PostingRuleWarehouseScope::Source);
     }
 
     private function seedChequeRules(string $effectiveFrom): void
@@ -265,6 +267,19 @@ final class PostingRulesSeeder extends Seeder
         $this->createLine($ruleSet->id, 4, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::CustomFormula, 'gain_on_disposal', required: false);
     }
 
+    private function seedAssetAcquiredRule(string $effectiveFrom): void
+    {
+        $ruleSet = $this->createRuleSet(
+            'asset_acquired_default',
+            'Asset Acquired',
+            'asset.acquired',
+            $effectiveFrom,
+        );
+
+        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AssetAccount, AmountSource::GrossAmount, 'asset_account');
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::GrossAmount, 'accounts_payable');
+    }
+
     private function createRuleSet(
         string $code,
         string $name,
@@ -291,6 +306,7 @@ final class PostingRulesSeeder extends Seeder
         AmountSource $amountSource,
         ?string $mappingKey = null,
         bool $required = true,
+        ?PostingRuleWarehouseScope $warehouseScope = null,
     ): void {
         PostingRuleLine::query()->firstOrCreate(
             [
@@ -301,6 +317,7 @@ final class PostingRulesSeeder extends Seeder
                 'entry_side' => $side,
                 'account_resolution_type' => $resolutionType,
                 'account_mapping_key' => $mappingKey,
+                'warehouse_scope' => $warehouseScope,
                 'amount_source' => $amountSource,
                 'required' => $required,
                 'status' => 'active',

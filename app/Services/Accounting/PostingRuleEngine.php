@@ -7,6 +7,7 @@ namespace App\Services\Accounting;
 use App\Enums\AccountResolutionType;
 use App\Enums\AmountSource;
 use App\Enums\PostingRuleEntrySide;
+use App\Enums\PostingRuleWarehouseScope;
 use App\Models\AccountMapping;
 use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
@@ -44,54 +45,25 @@ final class PostingRuleEngine
                 continue;
             }
 
-            $amount = $this->resolveAmount($line->amount_source, $payload, $line);
+            if ($this->shouldExpandPaymentMethodSettlement($line, $payload)) {
+                foreach ($this->completedPayments($payload) as $payment) {
+                    $paymentPayload = $payload;
+                    $paymentPayload['payment_method'] = $payment['method'];
+                    $paymentPayload['settlement_amount'] = (float) $payment['amount'];
 
-            if ($amount <= 0) {
-                if ($line->required) {
-                    throw new DomainException("Required posting rule line {$line->id} resolved to a non-positive amount.");
+                    $built = $this->buildSingleLine($line, $paymentPayload);
+                    if ($built !== null) {
+                        $lines[] = $built;
+                    }
                 }
 
                 continue;
             }
 
-            $account = $this->resolveAccount($line, $payload);
-
-            if ($account === null) {
-                if ($line->required) {
-                    throw new DomainException("Could not resolve account for rule line {$line->id}");
-                }
-
-                continue;
+            $built = $this->buildSingleLine($line, $payload);
+            if ($built !== null) {
+                $lines[] = $built;
             }
-
-            $isDebit = $line->entry_side === PostingRuleEntrySide::Debit;
-            $currencyCode = $payload['currency_code'] ?? $this->currencyConversion->functionalCurrencyCode();
-            $fx = $this->currencyConversion->convertToFunctional(
-                $amount,
-                $currencyCode,
-                isset($payload['exchange_rate']) ? (float) $payload['exchange_rate'] : null,
-                $payload['date'] ?? now()->toDateString(),
-            );
-            $functionalAmount = $fx['functional_amount'];
-            $taxType = $this->resolveTaxTypeForLine($line, $payload);
-
-            $lines[] = [
-                'account_id' => $account->id,
-                'debit' => $isDebit ? $functionalAmount : 0,
-                'credit' => $isDebit ? 0 : $functionalAmount,
-                'functional_currency_amount' => $isDebit ? $functionalAmount : -$functionalAmount,
-                'transaction_currency_amount' => $currencyCode !== $this->currencyConversion->functionalCurrencyCode()
-                    ? $fx['transaction_amount']
-                    : null,
-                'currency_code' => $currencyCode,
-                'exchange_rate' => $fx['exchange_rate'],
-                'branch_id' => $payload['branch_id'] ?? null,
-                'warehouse_id' => $payload['warehouse_id'] ?? null,
-                'party_type' => $payload['party_type'] ?? null,
-                'party_id' => $payload['party_id'] ?? null,
-                'tax_type_id' => $taxType?->id,
-                'description' => $line->narration_template,
-            ];
         }
 
         if ($lines === []) {
@@ -99,6 +71,114 @@ final class PostingRuleEngine
         }
 
         return $lines;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>|null
+     */
+    private function buildSingleLine(PostingRuleLine $line, array $payload): ?array
+    {
+        $amount = $this->resolveAmount($line->amount_source, $payload, $line);
+
+        if ($amount <= 0) {
+            if ($line->required) {
+                throw new DomainException("Required posting rule line {$line->id} resolved to a non-positive amount.");
+            }
+
+            return null;
+        }
+
+        $account = $this->resolveAccount($line, $payload);
+
+        if ($account === null) {
+            if ($line->required) {
+                throw new DomainException("Could not resolve account for rule line {$line->id}");
+            }
+
+            return null;
+        }
+
+        $isDebit = $line->entry_side === PostingRuleEntrySide::Debit;
+        $currencyCode = $payload['currency_code'] ?? $this->currencyConversion->functionalCurrencyCode();
+        $fx = $this->currencyConversion->convertToFunctional(
+            $amount,
+            $currencyCode,
+            isset($payload['exchange_rate']) ? (float) $payload['exchange_rate'] : null,
+            $payload['date'] ?? now()->toDateString(),
+        );
+        $functionalAmount = $fx['functional_amount'];
+        $taxType = $this->resolveTaxTypeForLine($line, $payload);
+        $warehouseId = $this->resolveWarehouseIdForLine($line, $payload);
+
+        return [
+            'account_id' => $account->id,
+            'debit' => $isDebit ? $functionalAmount : 0,
+            'credit' => $isDebit ? 0 : $functionalAmount,
+            'functional_currency_amount' => $isDebit ? $functionalAmount : -$functionalAmount,
+            'transaction_currency_amount' => $currencyCode !== $this->currencyConversion->functionalCurrencyCode()
+                ? $fx['transaction_amount']
+                : null,
+            'currency_code' => $currencyCode,
+            'exchange_rate' => $fx['exchange_rate'],
+            'branch_id' => $payload['branch_id'] ?? null,
+            'warehouse_id' => $warehouseId,
+            'party_type' => $payload['party_type'] ?? null,
+            'party_id' => $payload['party_id'] ?? null,
+            'tax_type_id' => $taxType?->id,
+            'description' => $line->narration_template,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function shouldExpandPaymentMethodSettlement(PostingRuleLine $line, array $payload): bool
+    {
+        return $line->account_resolution_type === AccountResolutionType::PaymentMethodAccount
+            && $line->amount_source === AmountSource::SettlementAmount
+            && $this->completedPayments($payload) !== [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return list<array{method: string, amount: float, status?: string}>
+     */
+    private function completedPayments(array $payload): array
+    {
+        $payments = $payload['payments'] ?? null;
+
+        if (! is_array($payments) || $payments === []) {
+            return [];
+        }
+
+        $completed = [];
+
+        foreach ($payments as $payment) {
+            if (! is_array($payment)) {
+                continue;
+            }
+
+            $status = strtolower((string) ($payment['status'] ?? 'completed'));
+            if (! in_array($status, ['completed', ''], true)) {
+                continue;
+            }
+
+            $amount = (float) ($payment['amount'] ?? 0);
+            $method = (string) ($payment['method'] ?? '');
+
+            if ($amount <= 0 || $method === '') {
+                continue;
+            }
+
+            $completed[] = [
+                'method' => $method,
+                'amount' => $amount,
+                'status' => $status,
+            ];
+        }
+
+        return $completed;
     }
 
     /**
@@ -126,11 +206,27 @@ final class PostingRuleEngine
     /**
      * @param  array<string, mixed>  $payload
      */
+    private function resolveWarehouseIdForLine(PostingRuleLine $line, array $payload): ?int
+    {
+        $scope = $line->warehouse_scope;
+
+        $id = match ($scope) {
+            PostingRuleWarehouseScope::Source => $payload['from_warehouse_id'] ?? $payload['warehouse_id'] ?? null,
+            PostingRuleWarehouseScope::Destination => $payload['to_warehouse_id'] ?? $payload['warehouse_id'] ?? null,
+            default => $payload['warehouse_id'] ?? null,
+        };
+
+        return $id !== null ? (int) $id : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
     private function resolveAccount(PostingRuleLine $line, array $payload): ?ChartOfAccount
     {
         $context = [
             'branch_id' => $payload['branch_id'] ?? null,
-            'warehouse_id' => $payload['warehouse_id'] ?? null,
+            'warehouse_id' => $this->resolveWarehouseIdForLine($line, $payload),
             'payment_method' => $payload['payment_method'] ?? null,
             'currency_code' => $payload['currency_code'] ?? null,
             'legal_entity_id' => $payload['legal_entity_id'] ?? null,
