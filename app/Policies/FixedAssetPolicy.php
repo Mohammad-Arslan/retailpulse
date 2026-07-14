@@ -23,4 +23,14 @@ final class FixedAssetPolicy
     {
         return $user->can('accounting.manage-assets');
     }
+
+    public function dispose(User $user, FixedAsset $fixedAsset): bool
+    {
+        return $user->can('accounting.manage-assets');
+    }
+
+    public function runDepreciation(User $user): bool
+    {
+        return $user->can('accounting.manage-assets');
+    }
 }

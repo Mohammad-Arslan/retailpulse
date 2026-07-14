@@ -439,6 +439,53 @@
                     "code": "کوڈ",
                     "legalEntity": "قانونی ادارہ"
                 }
+            },
+            "accountMappings": {
+                "allWarehouses": "تمام گودام",
+                "allCategories": "تمام زمرے",
+                "allPaymentMethods": "تمام ادائیگی طریقے",
+                "allCurrencies": "تمام کرنسیاں",
+                "allLegalEntities": "تمام قانونی ادارے",
+                "scopeWarehouse": "گودام",
+                "columns": {
+                    "scope": "اسکوپ"
+                },
+                "fields": {
+                    "warehouse": "گودام",
+                    "category": "پروڈکٹ زمرہ",
+                    "paymentMethod": "ادائیگی کا طریقہ",
+                    "currency": "کرنسی",
+                    "legalEntity": "قانونی ادارہ",
+                    "effectiveFrom": "مؤثر از",
+                    "effectiveTo": "مؤثر تا"
+                }
+            },
+            "pettyCash": {
+                "createVoucherTitle": "نیا واؤچر",
+                "createVoucherSubmit": "واؤچر محفوظ کریں",
+                "approve": "منظور کریں",
+                "reject": "مسترد کریں",
+                "rejectSubmit": "مسترد کی تصدیق",
+                "rejectReasonPlaceholder": "مسترد کرنے کی وجہ…",
+                "columns": {
+                    "approval": "منظوری"
+                },
+                "fields": {
+                    "voucherType": "واؤچر کی قسم",
+                    "adjustmentDelta": "ایڈجسٹمنٹ ڈیلٹا",
+                    "expenseAccount": "اخراجات اکاؤنٹ",
+                    "description": "تفصیل"
+                },
+                "voucherTypes": {
+                    "top_up": "ٹاپ اپ",
+                    "disbursement": "ادائیگی",
+                    "adjustment": "ایڈجسٹمنٹ"
+                },
+                "approvalStatuses": {
+                    "pending": "زیر التوا",
+                    "approved": "منظور",
+                    "rejected": "مسترد"
+                }
             }
         }
     }

@@ -56,8 +56,7 @@ final class BankReconciliationController extends Controller
 
         $this->reconciliationPage->match(
             $bankStatementLine,
-            $data->journalTransactionId,
-            $data->matchedAmount,
+            $data,
             (int) $request->user()->id,
         );
 

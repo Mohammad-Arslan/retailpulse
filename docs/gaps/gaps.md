@@ -1,7 +1,7 @@
 # RetailPulse — Phase Gaps Register
 
 Tracked gaps between **phase specifications** (`docs/phases/`) and the **current codebase**.  
-Last reviewed: 2026-07-08 (Phase 11 section corrected and expanded — see below).
+Last reviewed: 2026-07-14 (Phase 11 high-severity sub-module gaps closed; P10-01 / P11-03 marked resolved to match code).
 
 ## Severity legend
 
@@ -182,7 +182,7 @@ Last reviewed: 2026-07-08 (Phase 11 section corrected and expanded — see below
 
 | ID | Gap | Severity | Notes |
 | :--- | :--- | :---: | :--- |
-| P10-01 | **GL / FIFO cost layers stubbed** — `NullProcurementPostingHook` for landed cost, returns, payments | **High** | Blocks Phase 11 integration. |
+| P10-01 | **GL / FIFO cost layers stubbed** — `NullProcurementPostingHook` for landed cost, returns, payments | — | **Resolved** — `ProcurementAccountingHook` is bound in `AppServiceProvider`; procurement path posts via accounting events. `NullProcurementPostingHook` remains in tree unused. |
 | P10-02 | **Historical PO bulk import** — `is_historical` column; no import handler | **Medium** | |
 | P10-03 | **Procurement alert delivery** — DB alerts only; email/SMS deferred Phase 14 | **Medium** | |
 | P10-04 | **Procurement report export queue** — in-app reports only | **Low** | |
@@ -197,14 +197,14 @@ Last reviewed: 2026-07-08 (Phase 11 section corrected and expanded — see below
 
 ## Phase 11 — Accounting & Finance
 
-**Phase doc status:** Substantially built (this section was stale — previously said "module not started"; corrected below)  
-**Overall gap level:** Medium — core GL, sub-module gating, and test coverage are now in place; COGS/financial-statement integration is the largest remaining gap
+**Phase doc status:** Substantially built  
+**Overall gap level:** Low–Medium — core GL and High sub-module UI/report surfaces are in place; Intercompany product and residual Medium/Low depth remain
 
 | ID | Gap | Severity | Notes |
 | :--- | :--- | :---: | :--- |
 | P11-01 | **Double-entry GL stack** — COA, journals, posting rules | — | **Resolved** — `chart_of_accounts`, `journal_entries`, `journal_transactions`, `posting_rule_sets`/`posting_rule_lines` migrations and services exist (`JournalService`, `PostingRuleEngine`, `AccountResolverService`). |
 | P11-02 | **Auto-post on sale complete** — `SaleCompleted` has loyalty listener only | — | **Resolved** — `ProcessAccountingOnSaleCompleted` listener registered in `AppServiceProvider`, routes through `AccountingEventService`. |
-| P11-03 | **`inventory_cost_layers` + COGS** | **High** | Spec in phase doc; not built — inventory valuation is still FIFO-only via `InventoryService`; no dedicated cost-layer table feeds COGS journals. Largest remaining Phase 11 gap. |
+| P11-03 | **`inventory_cost_layers` + COGS** | — | **Resolved** — `inventory_cost_layers` + `CostService` (FIFO/WAC), sale COGS consumption, GRN layer create, Create Cost Layer admin. Residual Medium items (LIFO report-only, scoped valuation, inventory movement report) are not tracked as this ID. |
 | P11-04 | **Financial statements** (Trial Balance, P&L, Balance Sheet) | — | **Resolved** — `FinancialReportingService` + `AccountingReportController` implement all core reports. |
 | P11-05 | **COA / opening balance import (X-06)** | — | **Resolved** — `CoaImportService`, `OpeningBalanceImportService`. |
 | P11-06 | **Float-equality bug in journal balance validation** — `JournalValidationService::assertCanPost()` compared debit/credit totals via `round((float)$a,2) !== round((float)$b,2)` | — | **Resolved 2026-07-08** — replaced with `bccomp()` on decimal strings (never cast through float); regression test covers the classic `0.10+0.10+0.10` vs `0.30` float-imprecision trap. |
@@ -220,6 +220,14 @@ Last reviewed: 2026-07-08 (Phase 11 section corrected and expanded — see below
 | P11-16 | **Duplicate unique constraints on `accounting_events`** — both `idempotency_key` (unique) and the composite `(event_type, source_type, source_id)` encode the same uniqueness rule | **Low** | Redundant, not incorrect. A future migration could drop one without a behavior change. |
 | P11-17 | **`AccountingEventService` can leave an event stuck in `Processing`** — status flips to `Processing` before the posting transaction runs; if the process crashes after a successful post but before the final `Completed` update, the event row never reflects success, and `retry()` only re-processes from `Failed` so it silently no-ops | — | **Resolved 2026-07-08** — `recoverStaleProcessing()` runs at the start of `process()` and `retry()`; uses `config('accounting.processing_stale_after_seconds', 300)`. If stale and a journal is already linked, auto-completes; otherwise marks `Failed` so retry works. `Completed` update is inside the same DB transaction as `post()` where possible. |
 | P11-18 | **`JournalService::reverse()` reuses the original entry's `fiscal_year_id`** instead of resolving the fiscal year for the new reversal date | — | **Resolved 2026-07-08** — reversal draft no longer copies `fiscal_year_id`; `createDraft()` resolves FY from `journal_date` via `resolveFiscalYearId()`. |
+| P11-19 | **Account Mapping UI missing scope fields** — warehouse, category, payment method, currency, legal entity, effective dates | — | **Resolved 2026-07-14** — Account Mappings modal + option props; Store/Update empty-string → null prep. |
+| P11-20 | **Petty cash vouchers** — create/approve/reject routes and UI | — | **Resolved 2026-07-14** — voucher store/approve/reject; `accounting.approve-petty-cash`; `PettyCashVoucherPolicy`; Index create + approve/reject. |
+| P11-21 | **Fixed asset dispose + run depreciation UI** | — | **Resolved 2026-07-14** — dispose + run-depreciation routes/actions on Fixed Assets Index. |
+| P11-22 | **Tax Return report** | — | **Resolved 2026-07-14** — `FinancialReportingService::taxReturn()` + report card; Show page fiscal-year filter. |
+| P11-23 | **Bank reconciliation multi-match / partial status** | — | **Resolved 2026-07-14** — `BankStatementLineStatus::PartiallyMatched`; multi-transaction match; remaining amounts in UI. |
+| P11-24 | **Draft journal edit/delete** | — | **Resolved 2026-07-14** — `JournalService::deleteDraft`; edit/update/destroy routes; `JournalEntries/Edit.jsx`; Index/Show draft actions. |
+| P11-25 | **Cost Centre Allocations** — shared expense allocation workflow | **Medium** | **Schema only** — `CostCentreAllocation` model + `CostCentreAllocationMethod` enum/migration. No service, controller, route, or UI for allocation runs. Cost Centre CRUD + Cost Centre P&L are separate and working. |
+| P11-26 | **Intercompany product surface** — transfers / settlement / balance report | **High** | Deliberately deferred — module gate + tables exist; no admin routes/UI; `intercompany_account` resolution type absent by design (enum doc-comment). |
 
 ---
 
@@ -277,7 +285,7 @@ Last reviewed: 2026-07-08 (Phase 11 section corrected and expanded — see below
 | X-03 | Shared `import_export_jobs` framework | — | **Resolved** — wizard, queued jobs, `ImportExportRegistry`. |
 | X-04 | Historical sales archive import | **Medium** | Phase 8 — dedicated API exists; not in generic import registry. |
 | X-05 | Customer/supplier bulk import | — | **Resolved** — `CustomerImportHandler`, `SupplierImportHandler`. |
-| X-06 | COA / opening balance import | **Medium** | Phase 11 |
+| X-06 | COA / opening balance import | — | **Resolved** — see P11-05. |
 | X-07 | Report Excel/PDF export queue | **Medium** | Phase 13 |
 | X-08 | Import/export API endpoints | **Low** | Partial — admin session routes exist; Phase 15 external API TBD. |
 
@@ -294,8 +302,8 @@ flowchart LR
   P8[Phase 8 Sales] --> P6_02[P6-02 sales KPIs]
   P8 --> P6_04[P6-04 revenue charts]
   P17[Phase 17 Shifts] --> P8_04[P8-04 register context]
-  P10_01[P10-01 GL stub] --> P11_01[P11-01 accounting module]
-  P11_01 --> X06[X-06 COA import]
+  P10_01[P10-01 GL stub resolved] --> P11_01[P11-01 accounting module]
+  P11_01 --> X06[X-06 COA import resolved]
 ```
 
 ---
@@ -307,7 +315,7 @@ flowchart LR
 3. **P8-04** / Phase 17 — Shift/register before production checkout.  
 4. **P7-02**, **P7-03** — Discount approval PIN and stock override.  
 5. **P6-05**, **P6-06** — Dashboard permissions and branch-scoped widgets.  
-6. **P11-03**, **P10-01** — COGS/inventory-cost-layer integration + procurement GL hooks (core GL/journals/posting-rules/sub-module gating are now built; this is the remaining Phase 11 gap).  
+6. **P11-26** — Intercompany product surface (deferred by design until multi-entity ops need it); **P11-25** Cost Centre Allocations workflow.  
 7. **P14-01** — Customer returns workflow.  
 8. **P4-02** — Serial capture on receive.  
 9. **P8-01** — Live payment gateways when required.
@@ -319,8 +327,8 @@ flowchart LR
 | Severity | Count (approx.) |
 | :--- | :---: |
 | Critical | 1 |
-| High | 23 |
+| High | 21 |
 | Medium | 23 |
 | Low | 12 |
 
-*Counts exclude resolved rows (P1-05–P1-08, P3-02, P5-01/P5-03/P5-05, P11-01/02/04-14, X-01–X-03/X-05) and “not a gap” / implemented subsections.*
+*Counts exclude resolved rows (including P10-01, P11-01–P11-15, P11-17–P11-24, X-01–X-03/X-05–X-06) and “not a gap” / implemented subsections. High count still driven by earlier phases (P1/P4/P7/P8/P12/P13/P14) plus P11-26 Intercompany.*

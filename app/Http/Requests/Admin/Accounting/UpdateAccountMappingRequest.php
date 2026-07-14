@@ -13,6 +13,27 @@ final class UpdateAccountMappingRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $nullable = [
+            'branch_id',
+            'warehouse_id',
+            'product_category_id',
+            'payment_method',
+            'currency_code',
+            'legal_entity_id',
+            'effective_from',
+            'effective_to',
+            'priority',
+        ];
+
+        foreach ($nullable as $field) {
+            if ($this->input($field) === '') {
+                $this->merge([$field => null]);
+            }
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */

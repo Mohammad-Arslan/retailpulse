@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\DTOs\Accounting;
 
 use App\Http\Requests\Admin\Accounting\StoreJournalEntryRequest;
+use App\Http\Requests\Admin\Accounting\UpdateJournalEntryRequest;
 
 final readonly class CreateJournalEntryData
 {
@@ -21,7 +22,7 @@ final readonly class CreateJournalEntryData
         public array $lines,
     ) {}
 
-    public static function fromRequest(StoreJournalEntryRequest $request): self
+    public static function fromRequest(StoreJournalEntryRequest|UpdateJournalEntryRequest $request): self
     {
         $lines = array_map(
             fn (array $line) => JournalEntryLineData::fromArray($line),

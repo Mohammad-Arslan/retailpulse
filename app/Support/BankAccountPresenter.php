@@ -29,8 +29,18 @@ final class BankAccountPresenter
     /**
      * @return array<string, mixed>
      */
-    public static function statementLine(BankStatementLine $line): array
-    {
+    /**
+     * @return array<string, mixed>
+     */
+    public static function statementLine(
+        BankStatementLine $line,
+        ?float $matchedAmount = null,
+        ?float $remainingAmount = null,
+    ): array {
+        $lineAmount = abs($line->signedAmount());
+        $matched = $matchedAmount ?? (float) $line->matches->sum('matched_amount');
+        $remaining = $remainingAmount ?? max(0, $lineAmount - $matched);
+
         return [
             'id' => $line->id,
             'transaction_date' => $line->transaction_date?->toDateString(),
@@ -39,6 +49,9 @@ final class BankAccountPresenter
             'debit' => number_format((float) $line->debit, 2, '.', ''),
             'credit' => number_format((float) $line->credit, 2, '.', ''),
             'status' => $line->status->value,
+            'matched_amount' => number_format($matched, 2, '.', ''),
+            'remaining_amount' => number_format($remaining, 2, '.', ''),
+            'line_amount' => number_format($lineAmount, 2, '.', ''),
         ];
     }
 }

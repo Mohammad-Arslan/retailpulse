@@ -1,7 +1,7 @@
 # RetailPulse User Manual — Accounting & Finance
 
 **Audience:** Accountants, finance managers, implementation consultants, and customer support  
-**Version:** 1.4 (July 2026)  
+**Version:** 1.5 (July 2026)  
 **Scope:** Phase 11 — General Ledger (GL), auto-posting, fiscal control, tax, imports, sub-ledgers, inventory costing, and financial reports
 
 This manual explains **where to click**, **what each screen does**, **how money flows through the system**, **what every term means**, and **what happens when something is missing or misconfigured**.
@@ -144,7 +144,7 @@ See [Section 20](#20-permissions-reference-for-support).
 | **Journal line / transaction** | One row: account, debit OR credit, optional dimensions (cost centre, tax type, party). |
 | **Debit** | Increases assets and expenses; decreases liabilities, equity, and revenue (in standard accounting). |
 | **Credit** | Opposite of debit. System enforces **debits = credits** before posting. |
-| **Draft journal** | Created but not yet posted. Can be edited or deleted (subject to permissions). |
+| **Draft journal** | Created but not yet posted. Can be edited or deleted from Journal Entries (status **Draft** only; requires `accounting.create-journal`). |
 | **Posted journal** | Finalized in the GL. Immutable except via reversal. |
 | **Reversal** | System-generated offsetting journal that negates a posted entry. |
 | **Opening balance** | Initial GL balances at go-live, flagged `is_opening_balance = true`. |
@@ -310,7 +310,7 @@ Auto-posting runs **synchronously** in the same request as the business operatio
 | Bank Accounts | `bank_reconciliation` | `accounting.manage-bank-accounts` |
 | Bank Reconciliation | `bank_reconciliation` | `accounting.reconcile-bank` |
 | Currencies | `multi_currency` | `accounting.view` |
-| Petty Cash | `petty_cash` | `accounting.manage-petty-cash` |
+| Petty Cash | `petty_cash` | `accounting.manage-petty-cash` (create); `accounting.approve-petty-cash` (approve/reject) |
 | Cheques | `cheques` | `accounting.manage-cheques` |
 | Fixed Assets | `fixed_assets` | `accounting.manage-assets` |
 
@@ -414,7 +414,24 @@ Mappings connect **logical keys** used by posting rules to **concrete GL account
 - Card settlements → bank account
 - Warehouse-specific inventory accounts (when configured)
 
-### 7.2 Common mapping keys (seeded)
+### 7.2 Creating and editing mappings
+
+1. Open **Accounting → Account Mappings**.
+2. Click **New Mapping** (or **Edit** on a row).
+3. Choose the **Mapping Key** and GL **Account**.
+4. Optionally scope the mapping with any combination of:
+   - **Branch**
+   - **Warehouse**
+   - **Product Category**
+   - **Payment Method**
+   - **Currency**
+   - **Legal Entity**
+   - **Effective From / To**
+5. Set **Priority** (lower number wins among equally specific matches) and save.
+
+Leave scope fields blank for a global mapping. More specific dimensions always beat a global key during resolution.
+
+### 7.3 Common mapping keys (seeded)
 
 | Mapping key | Used for | Default account (example) |
 |-------------|----------|---------------------------|
@@ -435,7 +452,7 @@ Mappings connect **logical keys** used by posting rules to **concrete GL account
 | `inventory_write_off` | Scrap/write-off | 5910 |
 | `bad_debt_expense` | AR write-off | 5910 |
 
-### 7.3 How resolution works
+### 7.4 How resolution works
 
 When a posting rule line uses **Account Mapping** resolution:
 
@@ -444,7 +461,7 @@ When a posting rule line uses **Account Mapping** resolution:
 3. Respects effective dates (`effective_from` / `effective_to`).
 4. Picks the **most specific** mapping (branch + warehouse beats global).
 
-### 7.4 What if…
+### 7.5 What if…
 
 | Situation | What happens |
 |-----------|----------------|
@@ -713,22 +730,31 @@ System validates:
 - Fiscal period open.
 - Accounts postable and active.
 
-### 11.3 Reversing a posted journal
+### 11.3 Editing or deleting a draft
+
+1. From the journal list or show page, open a **Draft** journal.
+2. Click **Edit** to change header fields and lines, then save.
+3. Or click **Delete** to remove the draft and its lines (confirmation required).
+
+Only **Draft** journals can be edited or deleted. Posted, approved, pending approval, and reversed journals cannot. Edit/delete require `accounting.create-journal` (same as create).
+
+### 11.4 Reversing a posted journal
 
 1. Open posted journal → **Reverse**.
-2. System creates a new draft with opposite debits/credits on the **reversal date** you choose.
+2. System creates a new draft with opposite debits and credits on the **reversal date** you choose.
 3. Reversal posts (subject to same validations).
 4. Original journal marked **reversed**.
 
 **Note:** Reversal fiscal year is resolved from the **reversal date**, not copied from the original entry.
 
-### 11.4 What if…
+### 11.5 What if…
 
 | Situation | What happens |
 |-----------|----------------|
 | Unbalanced draft | Post blocked — error shows debit/credit totals and difference |
 | Post to closed FY | Blocked — rich error with FY name and status |
 | Edit posted journal | Not allowed — use reversal |
+| Edit/delete non-draft | Blocked (403 / validation) |
 | Manual posting disabled in settings | Post blocked for manual entries |
 
 ---
@@ -834,6 +860,8 @@ Optional **dimension** on journal lines for departmental P&L (e.g. Store, Wareho
 ### 14.3 Reports
 
 **Cost Centre P&L** under Financial Reports aggregates revenue and expense by cost centre.
+
+Shared **Cost Centre Allocations** (percentage split of shared expenses across centres) are not available in the admin UI yet — only schema exists for a future workflow.
 
 ### 14.4 What if…
 
@@ -944,8 +972,9 @@ Unlike credit notes, **debit notes are not a separate item under Accounting → 
 **Bank Reconciliation:**
 
 1. Import bank statement CSV.
-2. System lists unmatched statement lines.
-3. User matches lines to existing journal transactions or creates adjustments.
+2. System lists statement lines with **Matched** and **Remaining** amounts and statuses (*Unmatched*, *Suggested*, *Partially Matched*, *Matched*, etc.).
+3. Use a **Suggested Match** one-click action, or open **Match** on a line to allocate one or more journal transactions with per-line amounts.
+4. When the sum of matches is less than the statement amount, status becomes **Partially Matched**; when remaining is zero, **Matched**. Allocated amounts cannot exceed remaining.
 
 **What if bank account not linked to COA?** Reconciliation cannot tie to GL.
 
@@ -960,8 +989,9 @@ Unlike credit notes, **debit notes are not a separate item under Accounting → 
 
 ### 16.5 Petty cash (`petty_cash`)
 
-- Create **register** per branch/imprest holder.
-- Record top-ups, disbursements, adjustments → optional GL events `petty_cash.*`.
+- Create a **register** per branch/imprest holder.
+- Create vouchers for **Top Up**, **Disbursement**, or **Adjustment** (amount, date, optional expense account, description).
+- Below the approval threshold, the voucher posts a journal immediately; above the threshold it stays **Pending** until a user with `accounting.approve-petty-cash` **Approves** or **Rejects** (reject requires a reason; no journal).
 
 ### 16.6 Cheques (`cheques`)
 
@@ -972,7 +1002,8 @@ Unlike credit notes, **debit notes are not a separate item under Accounting → 
 ### 16.7 Fixed assets (`fixed_assets`)
 
 - Asset categories define depreciation accounts.
-- Assets capitalized; **depreciation** batch posts `asset.depreciation_due` periodically.
+- Assets capitalized; use **Run Depreciation Now** on Fixed Assets to process monthly depreciation for the selected as-of date (same logic as the CLI).
+- On an active asset, **Dispose** with disposal date and proceeds — posts disposal journals and marks the asset **Disposed**.
 
 **What if depreciation accounts missing?** Depreciation post fails.
 
@@ -998,6 +1029,7 @@ Unlike credit notes, **debit notes are not a separate item under Accounting → 
 | **Inventory Valuation** | Stock value from cost layers |
 | **Asset Register** | Fixed asset listing |
 | **FX Revaluation** | FX exposure summary |
+| **Tax Return** | Output / input / net payable by tax type for a fiscal year |
 | **Petty Cash** | Register activity |
 | **Cheque Status** | Outstanding cheques |
 | **Audit Trail** | Accounting-related audit log entries |
@@ -1007,7 +1039,7 @@ Unlike credit notes, **debit notes are not a separate item under Accounting → 
 ### 17.2 Common filters
 
 - Date from / to
-- Fiscal year
+- Fiscal year (required / primary for **Tax Return**)
 - Branch
 - Account or account range
 - Cost centre (where applicable)
@@ -1295,6 +1327,7 @@ A: Distinct `payment.received` event is deferred; partial coverage via sale sett
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.5 | July 2026 | Mapping scope fields UI; petty cash voucher create/approve; FA dispose & run depreciation; Tax Return report; bank multi-match / Partially Matched; draft journal edit/delete |
 | 1.4 | July 2026 | Posting Rules: Duplicate flow (no blank create); event type locked to source; debit/credit structural validation; same-priority overlap warning |
 | 1.3 | July 2026 | All Branches (head-office) view now shows the union of every branch's enabled accounting sub-modules, so super-admin no longer loses Cost Centres/Tax/etc. from the sidebar |
 | 1.2 | July 2026 | Inventory & Costing settings; opening stock `unit_cost` + cost layers; Create Cost Layer backfill; TB gross period columns; Cash Flow cash/bank scope; Accounting Events default all statuses |

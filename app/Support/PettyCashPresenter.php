@@ -32,10 +32,14 @@ final class PettyCashPresenter
         return [
             'id' => $voucher->id,
             'voucher_number' => $voucher->voucher_number,
+            'register_id' => $voucher->petty_cash_register_id,
             'register_name' => $voucher->register?->name,
             'voucher_type' => $voucher->voucher_type->value,
             'date' => $voucher->date?->toDateString(),
             'amount' => number_format((float) $voucher->amount, 2, '.', ''),
+            'approval_status' => $voucher->approval_status->value,
+            'approval_required' => (bool) $voucher->approval_required,
+            'description' => $voucher->description,
         ];
     }
 }

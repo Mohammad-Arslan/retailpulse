@@ -7,6 +7,7 @@ import { Button } from '@/Components/ui/button';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { mappingKeyLabel } from '@/lib/accountingI18n';
+import { paymentMethodLabel } from '@/lib/procurementI18n';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Link2, Plus, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -17,12 +18,30 @@ function emptyMappingForm() {
         mapping_key: '',
         account_id: '',
         branch_id: '',
+        warehouse_id: '',
+        product_category_id: '',
+        payment_method: '',
+        currency_code: '',
+        legal_entity_id: '',
+        effective_from: '',
+        effective_to: '',
         priority: '100',
         status: 'active',
     };
 }
 
-function Index({ mappings, filters, mappingKeys = [], accounts = [], branches = [] }) {
+function Index({
+    mappings,
+    filters,
+    mappingKeys = [],
+    accounts = [],
+    branches = [],
+    warehouses = [],
+    categories = [],
+    paymentMethods = [],
+    currencies = [],
+    legalEntities = [],
+}) {
     const can = useCan();
     const { t } = useTranslation();
     const [modalOpen, setModalOpen] = useState(false);
@@ -52,6 +71,13 @@ function Index({ mappings, filters, mappingKeys = [], accounts = [], branches = 
             mapping_key: mapping.mapping_key ?? '',
             account_id: mapping.account_id ? String(mapping.account_id) : '',
             branch_id: mapping.branch_id ? String(mapping.branch_id) : '',
+            warehouse_id: mapping.warehouse_id ? String(mapping.warehouse_id) : '',
+            product_category_id: mapping.product_category_id ? String(mapping.product_category_id) : '',
+            payment_method: mapping.payment_method ?? '',
+            currency_code: mapping.currency_code ?? '',
+            legal_entity_id: mapping.legal_entity_id ? String(mapping.legal_entity_id) : '',
+            effective_from: mapping.effective_from?.slice(0, 10) ?? '',
+            effective_to: mapping.effective_to?.slice(0, 10) ?? '',
             priority: String(mapping.priority ?? 100),
             status: mapping.status ?? 'active',
         });
@@ -66,6 +92,20 @@ function Index({ mappings, filters, mappingKeys = [], accounts = [], branches = 
     const submitMapping = (e) => {
         e.preventDefault();
         const options = { preserveScroll: true, onSuccess: () => closeModal() };
+
+        const payload = {
+            ...form.data,
+            branch_id: form.data.branch_id || null,
+            warehouse_id: form.data.warehouse_id || null,
+            product_category_id: form.data.product_category_id || null,
+            payment_method: form.data.payment_method || null,
+            currency_code: form.data.currency_code || null,
+            legal_entity_id: form.data.legal_entity_id || null,
+            effective_from: form.data.effective_from || null,
+            effective_to: form.data.effective_to || null,
+        };
+
+        form.transform(() => payload);
 
         if (editing) {
             form.put(route('admin.accounting.account-mappings.update', editing.id), options);
@@ -98,6 +138,58 @@ function Index({ mappings, filters, mappingKeys = [], accounts = [], branches = 
             ...branches.map((b) => ({ value: String(b.id), label: b.name })),
         ],
         [branches, t],
+    );
+
+    const warehouseOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.accounting.accountMappings.allWarehouses') },
+            ...warehouses.map((w) => ({
+                value: String(w.id),
+                label: w.code ? `${w.code} — ${w.name}` : w.name,
+            })),
+        ],
+        [warehouses, t],
+    );
+
+    const categoryOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.accounting.accountMappings.allCategories') },
+            ...categories.map((c) => ({ value: String(c.id), label: c.name })),
+        ],
+        [categories, t],
+    );
+
+    const paymentMethodOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.accounting.accountMappings.allPaymentMethods') },
+            ...paymentMethods.map((method) => ({
+                value: method,
+                label: paymentMethodLabel(t, method),
+            })),
+        ],
+        [paymentMethods, t],
+    );
+
+    const currencyOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.accounting.accountMappings.allCurrencies') },
+            ...currencies.map((c) => ({
+                value: c.code,
+                label: `${c.code} — ${c.name}`,
+            })),
+        ],
+        [currencies, t],
+    );
+
+    const legalEntityOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.accounting.accountMappings.allLegalEntities') },
+            ...legalEntities.map((entity) => ({
+                value: String(entity.id),
+                label: entity.legal_name,
+            })),
+        ],
+        [legalEntities, t],
     );
 
     const columns = useMemo(
@@ -135,6 +227,23 @@ function Index({ mappings, filters, mappingKeys = [], accounts = [], branches = 
                 id: 'branch',
                 header: t('common.branch'),
                 cell: ({ row }) => row.original.branch?.name ?? t('common.allBranches'),
+            },
+            {
+                id: 'scope',
+                header: t('pages.accounting.accountMappings.columns.scope'),
+                cell: ({ row }) => {
+                    const bits = [];
+                    if (row.original.warehouse_id) {
+                        bits.push(t('pages.accounting.accountMappings.scopeWarehouse'));
+                    }
+                    if (row.original.payment_method) {
+                        bits.push(paymentMethodLabel(t, row.original.payment_method));
+                    }
+                    if (row.original.currency_code) {
+                        bits.push(row.original.currency_code);
+                    }
+                    return bits.length > 0 ? bits.join(' · ') : '—';
+                },
             },
             {
                 id: 'priority',
@@ -220,7 +329,7 @@ function Index({ mappings, filters, mappingKeys = [], accounts = [], branches = 
                 emptyMessage={t('pages.accounting.accountMappings.empty')}
             />
 
-            <Modal show={modalOpen} onClose={closeModal} maxWidth="lg">
+            <Modal show={modalOpen} onClose={closeModal} maxWidth="2xl">
                 <form onSubmit={submitMapping} className="p-6">
                     <h2 className="text-lg font-semibold">
                         {editing
@@ -228,7 +337,7 @@ function Index({ mappings, filters, mappingKeys = [], accounts = [], branches = 
                             : t('pages.accounting.accountMappings.createTitle')}
                     </h2>
 
-                    <div className="mt-5 space-y-4">
+                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
                         <AdminFormField
                             label={t('pages.accounting.accountMappings.fields.key')}
                             id="mapping_key"
@@ -272,6 +381,92 @@ function Index({ mappings, filters, mappingKeys = [], accounts = [], branches = 
                             />
                         </AdminFormField>
                         <AdminFormField
+                            label={t('pages.accounting.accountMappings.fields.warehouse')}
+                            id="warehouse_id"
+                            error={form.errors.warehouse_id}
+                        >
+                            <Select
+                                id="warehouse_id"
+                                value={form.data.warehouse_id}
+                                onChange={(value) => form.setData('warehouse_id', value ?? '')}
+                                options={warehouseOptions}
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.accounting.accountMappings.fields.category')}
+                            id="product_category_id"
+                            error={form.errors.product_category_id}
+                        >
+                            <Select
+                                id="product_category_id"
+                                value={form.data.product_category_id}
+                                onChange={(value) => form.setData('product_category_id', value ?? '')}
+                                options={categoryOptions}
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.accounting.accountMappings.fields.paymentMethod')}
+                            id="payment_method"
+                            error={form.errors.payment_method}
+                        >
+                            <Select
+                                id="payment_method"
+                                value={form.data.payment_method}
+                                onChange={(value) => form.setData('payment_method', value ?? '')}
+                                options={paymentMethodOptions}
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.accounting.accountMappings.fields.currency')}
+                            id="currency_code"
+                            error={form.errors.currency_code}
+                        >
+                            <Select
+                                id="currency_code"
+                                value={form.data.currency_code}
+                                onChange={(value) => form.setData('currency_code', value ?? '')}
+                                options={currencyOptions}
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.accounting.accountMappings.fields.legalEntity')}
+                            id="legal_entity_id"
+                            error={form.errors.legal_entity_id}
+                        >
+                            <Select
+                                id="legal_entity_id"
+                                value={form.data.legal_entity_id}
+                                onChange={(value) => form.setData('legal_entity_id', value ?? '')}
+                                options={legalEntityOptions}
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.accounting.accountMappings.fields.effectiveFrom')}
+                            id="effective_from"
+                            error={form.errors.effective_from}
+                        >
+                            <input
+                                id="effective_from"
+                                type="date"
+                                value={form.data.effective_from}
+                                onChange={(e) => form.setData('effective_from', e.target.value)}
+                                className="rp-form-input"
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.accounting.accountMappings.fields.effectiveTo')}
+                            id="effective_to"
+                            error={form.errors.effective_to}
+                        >
+                            <input
+                                id="effective_to"
+                                type="date"
+                                value={form.data.effective_to}
+                                onChange={(e) => form.setData('effective_to', e.target.value)}
+                                className="rp-form-input"
+                            />
+                        </AdminFormField>
+                        <AdminFormField
                             label={t('pages.accounting.accountMappings.fields.priority')}
                             id="priority"
                             error={form.errors.priority}
@@ -279,10 +474,25 @@ function Index({ mappings, filters, mappingKeys = [], accounts = [], branches = 
                             <input
                                 id="priority"
                                 type="number"
-                                min="1"
+                                min="0"
                                 value={form.data.priority}
                                 onChange={(e) => form.setData('priority', e.target.value)}
                                 className="rp-form-input"
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('common.status')}
+                            id="status"
+                            error={form.errors.status}
+                        >
+                            <Select
+                                id="status"
+                                value={form.data.status}
+                                onChange={(value) => form.setData('status', value ?? 'active')}
+                                options={[
+                                    { value: 'active', label: t('common.active') },
+                                    { value: 'inactive', label: t('common.inactive') },
+                                ]}
                             />
                         </AdminFormField>
                     </div>

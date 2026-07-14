@@ -32,6 +32,7 @@ final class RoleSeeder extends Seeder
         'accounting.import-bank-statements',
         'accounting.reconcile-bank',
         'accounting.manage-petty-cash',
+        'accounting.approve-petty-cash',
         'accounting.manage-cheques',
         'accounting.manage-assets',
         'accounting.manage-tax-settings',

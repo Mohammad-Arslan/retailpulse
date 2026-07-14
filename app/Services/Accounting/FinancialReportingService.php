@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Services\Accounting;
 
 use App\Enums\ChartOfAccountType;
+use App\Enums\FiscalYearStatus;
 use App\Enums\JournalEntryStatus;
 use App\Models\AccountMapping;
 use App\Models\AuditLog;
 use App\Models\ChartOfAccount;
 use App\Models\FinancialSetting;
+use App\Models\FiscalYear;
 use App\Models\InventoryCostLayer;
 use App\Models\JournalEntry;
 use App\Models\JournalTransaction;
@@ -25,6 +27,9 @@ use Illuminate\Support\Facades\Schema;
 
 final class FinancialReportingService
 {
+    public function __construct(
+        private readonly TaxLedgerService $taxLedger,
+    ) {}
     /**
      * @param  array<string, mixed>  $filters
      * @return array{rows: list<array<string, mixed>>, totals: array<string, float>}
@@ -759,6 +764,64 @@ final class FinancialReportingService
             $headers,
             ...array_map(fn (array $row) => array_values($row), $rows),
         ];
+    }
+
+    /**
+     * Fiscal-year scoped tax return (output / input / net payable by tax type).
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array{rows: list<array<string, mixed>>, totals: array<string, float>, filters: array<string, mixed>}
+     */
+    public function taxReturn(array $filters = []): array
+    {
+        $fiscalYear = $this->resolveFiscalYearForTaxReturn($filters);
+
+        $rows = $fiscalYear === null
+            ? []
+            : $this->taxLedger->getTaxReturn($fiscalYear);
+
+        $totals = [
+            'output_tax' => 0.0,
+            'input_tax' => 0.0,
+            'net_payable' => 0.0,
+        ];
+
+        foreach ($rows as $row) {
+            $totals['output_tax'] += (float) ($row['output_tax'] ?? 0);
+            $totals['input_tax'] += (float) ($row['input_tax'] ?? 0);
+            $totals['net_payable'] += (float) ($row['net_payable'] ?? 0);
+        }
+
+        return [
+            'rows' => $rows,
+            'totals' => $totals,
+            'filters' => [
+                ...$filters,
+                'fiscal_year_id' => $fiscalYear?->id,
+                'date_from' => $fiscalYear?->start_date?->toDateString(),
+                'date_to' => $fiscalYear?->end_date?->toDateString(),
+                'fiscal_year_name' => $fiscalYear?->name,
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    private function resolveFiscalYearForTaxReturn(array $filters): ?FiscalYear
+    {
+        if (! empty($filters['fiscal_year_id'])) {
+            return FiscalYear::query()->find((int) $filters['fiscal_year_id']);
+        }
+
+        $today = now();
+
+        return FiscalYear::query()
+            ->whereIn('status', [FiscalYearStatus::Open, FiscalYearStatus::Reopening])
+            ->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->orderByDesc('start_date')
+            ->first();
     }
 
     private function settings(): FinancialSetting

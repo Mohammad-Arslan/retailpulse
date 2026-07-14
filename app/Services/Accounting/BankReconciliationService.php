@@ -107,7 +107,11 @@ final class BankReconciliationService
     {
         $lines = BankStatementLine::query()
             ->where('bank_account_id', $bankAccount->id)
-            ->whereIn('status', [BankStatementLineStatus::Unmatched, BankStatementLineStatus::Suggested])
+            ->whereIn('status', [
+                BankStatementLineStatus::Unmatched,
+                BankStatementLineStatus::Suggested,
+                BankStatementLineStatus::PartiallyMatched,
+            ])
             ->orderByDesc('transaction_date')
             ->limit($limit)
             ->get();
@@ -115,7 +119,12 @@ final class BankReconciliationService
         $suggestions = collect();
 
         foreach ($lines as $line) {
-            $amount = abs($line->signedAmount());
+            $remaining = $this->remainingAmount($line);
+
+            if ($remaining <= 0) {
+                continue;
+            }
+
             $candidates = JournalTransaction::query()
                 ->select('journal_transactions.*')
                 ->join('journal_entries', 'journal_entries.id', '=', 'journal_transactions.journal_entry_id')
@@ -129,11 +138,16 @@ final class BankReconciliationService
             foreach ($candidates as $candidate) {
                 $journalAmount = max((float) $candidate->debit, (float) $candidate->credit);
 
-                if (abs($journalAmount - $amount) > 0.01) {
+                // Suggest journals that can apply toward remaining balance (exact or partial).
+                if ($journalAmount - $remaining > 0.01) {
                     continue;
                 }
 
                 $score = 50;
+
+                if (abs($journalAmount - $remaining) <= 0.01) {
+                    $score += 15;
+                }
 
                 if ($line->reference && Str::contains((string) $candidate->description, (string) $line->reference, true)) {
                     $score += 30;
@@ -149,7 +163,10 @@ final class BankReconciliationService
                     'score' => $score,
                 ]);
 
-                $line->update(['status' => BankStatementLineStatus::Suggested]);
+                if ($line->status === BankStatementLineStatus::Unmatched) {
+                    $line->update(['status' => BankStatementLineStatus::Suggested]);
+                    $line->status = BankStatementLineStatus::Suggested;
+                }
             }
         }
 
@@ -163,10 +180,23 @@ final class BankReconciliationService
         ?float $matchedAmount = null,
         BankReconciliationMatchType $matchType = BankReconciliationMatchType::OneToOne,
     ): BankReconciliationMatch {
-        $amount = $matchedAmount ?? min(
-            abs($line->signedAmount()),
-            max((float) $transaction->debit, (float) $transaction->credit),
-        );
+        $remaining = $this->remainingAmount($line);
+        $journalAmount = max((float) $transaction->debit, (float) $transaction->credit);
+        $amount = round($matchedAmount ?? min($remaining, $journalAmount), 2);
+
+        if ($amount <= 0) {
+            throw ValidationException::withMessages([
+                'matched_amount' => __('This statement line is already fully matched.'),
+            ]);
+        }
+
+        if ($amount - $remaining > 0.001) {
+            throw ValidationException::withMessages([
+                'matched_amount' => __('Matched amount exceeds the remaining statement line balance of :remaining.', [
+                    'remaining' => number_format($remaining, 2, '.', ''),
+                ]),
+            ]);
+        }
 
         return DB::transaction(function () use ($line, $transaction, $userId, $amount, $matchType) {
             $match = BankReconciliationMatch::query()->create([
@@ -178,10 +208,44 @@ final class BankReconciliationService
                 'matched_at' => now(),
             ]);
 
-            $line->update(['status' => BankStatementLineStatus::Matched]);
+            $this->refreshLineMatchStatus($line->fresh(['matches']) ?? $line);
 
             return $match;
         });
+    }
+
+    public function matchedAmountTotal(BankStatementLine $line): float
+    {
+        $line->loadMissing('matches');
+
+        return round((float) $line->matches->sum('matched_amount'), 2);
+    }
+
+    public function remainingAmount(BankStatementLine $line): float
+    {
+        $lineAmount = round(abs($line->signedAmount()), 2);
+
+        return round(max(0, $lineAmount - $this->matchedAmountTotal($line)), 2);
+    }
+
+    public function refreshLineMatchStatus(BankStatementLine $line): BankStatementLine
+    {
+        if (in_array($line->status, [BankStatementLineStatus::Ignored, BankStatementLineStatus::Reconciled], true)) {
+            return $line;
+        }
+
+        $covered = $this->matchedAmountTotal($line);
+        $lineAmount = round(abs($line->signedAmount()), 2);
+
+        $status = match (true) {
+            $covered <= 0.0 => BankStatementLineStatus::Unmatched,
+            $covered + 0.00001 < $lineAmount => BankStatementLineStatus::PartiallyMatched,
+            default => BankStatementLineStatus::Matched,
+        };
+
+        $line->update(['status' => $status]);
+
+        return $line->fresh() ?? $line;
     }
 
     public function ignoreLine(BankStatementLine $line): BankStatementLine

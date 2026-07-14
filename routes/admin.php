@@ -333,6 +333,12 @@ Route::middleware(['auth', 'admin', 'branch.context'])
                 ->name('journal-entries.create');
             Route::post('journal-entries', [JournalEntryController::class, 'store'])
                 ->name('journal-entries.store');
+            Route::get('journal-entries/{journal_entry}/edit', [JournalEntryController::class, 'edit'])
+                ->name('journal-entries.edit');
+            Route::put('journal-entries/{journal_entry}', [JournalEntryController::class, 'update'])
+                ->name('journal-entries.update');
+            Route::delete('journal-entries/{journal_entry}', [JournalEntryController::class, 'destroy'])
+                ->name('journal-entries.destroy');
             Route::get('journal-entries/{journal_entry}', [JournalEntryController::class, 'show'])
                 ->name('journal-entries.show');
             Route::post('journal-entries/{journal_entry}/approve', [JournalEntryController::class, 'approve'])
@@ -417,6 +423,8 @@ Route::middleware(['auth', 'admin', 'branch.context'])
                 ->name('reports.unposted-journals');
             Route::get('reports/journal-register', [AccountingReportController::class, 'journalRegister'])
                 ->name('reports.journal-register');
+            Route::get('reports/tax-return', [AccountingReportController::class, 'taxReturn'])
+                ->name('reports.tax-return');
             Route::get('reports/{reportKey}/export', [AccountingReportController::class, 'export'])
                 ->name('reports.export');
 
@@ -469,6 +477,12 @@ Route::middleware(['auth', 'admin', 'branch.context'])
                     ->name('petty-cash.index');
                 Route::post('petty-cash/registers', [PettyCashController::class, 'storeRegister'])
                     ->name('petty-cash.registers.store');
+                Route::post('petty-cash/registers/{petty_cash_register}/vouchers', [PettyCashController::class, 'storeVoucher'])
+                    ->name('petty-cash.vouchers.store');
+                Route::post('petty-cash/vouchers/{petty_cash_voucher}/approve', [PettyCashController::class, 'approveVoucher'])
+                    ->name('petty-cash.vouchers.approve');
+                Route::post('petty-cash/vouchers/{petty_cash_voucher}/reject', [PettyCashController::class, 'rejectVoucher'])
+                    ->name('petty-cash.vouchers.reject');
             });
 
             Route::middleware(['accounting-module:cheques'])->group(function () {
@@ -485,8 +499,12 @@ Route::middleware(['auth', 'admin', 'branch.context'])
                     ->name('fixed-assets.index');
                 Route::post('fixed-assets', [FixedAssetController::class, 'store'])
                     ->name('fixed-assets.store');
+                Route::post('fixed-assets/run-depreciation', [FixedAssetController::class, 'runDepreciation'])
+                    ->name('fixed-assets.run-depreciation');
                 Route::post('fixed-assets/categories', [FixedAssetController::class, 'storeCategory'])
                     ->name('fixed-assets.categories.store');
+                Route::post('fixed-assets/{fixed_asset}/dispose', [FixedAssetController::class, 'dispose'])
+                    ->name('fixed-assets.dispose');
             });
         });
 
