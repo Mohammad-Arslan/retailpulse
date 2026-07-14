@@ -170,7 +170,11 @@ Route::middleware(['auth', 'admin', 'branch.context'])
 
             Route::get('runs', [PayrollRunController::class, 'index'])->name('runs.index');
             Route::post('runs', [PayrollRunController::class, 'store'])->name('runs.store');
-            Route::post('runs/{payroll_run}/process', [PayrollRunController::class, 'process'])->name('runs.process');
+            Route::post('runs/{payroll_run}/calculate', [PayrollRunController::class, 'calculate'])->name('runs.calculate');
+            Route::post('runs/{payroll_run}/submit', [PayrollRunController::class, 'submit'])->name('runs.submit');
+            Route::post('runs/{payroll_run}/approve', [PayrollRunController::class, 'approve'])->name('runs.approve');
+            Route::post('runs/{payroll_run}/post', [PayrollRunController::class, 'post'])->name('runs.post');
+            Route::post('runs/{payroll_run}/reverse', [PayrollRunController::class, 'reverse'])->name('runs.reverse');
         });
 
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');

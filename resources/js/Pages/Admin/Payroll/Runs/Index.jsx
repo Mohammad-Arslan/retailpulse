@@ -4,28 +4,24 @@ import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, router } from '@inertiajs/react';
-import { Play } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Index({ runs, entities, filters }) {
     const { t } = useTranslation();
     const canProcess = useCan('payroll.process');
+    const canApprove = useCan('payroll.approve');
+    const canPost = useCan('payroll.post');
+    const canReverse = useCan('payroll.reverse');
 
     const search = (e) => {
         e.preventDefault();
         const form = new FormData(e.target);
-        router.get(route('admin.payroll.runs.index'), Object.fromEntries(form), {
-            preserveState: true,
-        });
+        router.get(route('admin.payroll.runs.index'), Object.fromEntries(form), { preserveState: true });
     };
 
-    const handleProcess = (runId) => {
-        router.post(
-            route('admin.payroll.runs.process', { payroll_run: runId }),
-            {},
-            { preserveState: false },
-        );
+    const action = (routeName, id) => {
+        router.post(route(routeName, { payroll_run: id }), {}, { preserveState: false });
     };
 
     const columns = useMemo(
@@ -46,22 +42,12 @@ function Index({ runs, entities, filters }) {
                 cell: ({ row }) => `${row.original.period_start} → ${row.original.period_end}`,
             },
             {
-                id: 'currency',
-                header: t('pages.payrollRuns.columns.currency'),
-                cell: ({ row }) => row.original.currency_code,
-            },
-            {
                 id: 'totals',
                 header: t('pages.payrollRuns.columns.totals'),
                 cell: ({ row }) =>
-                    row.original.totals != null ? (
-                        <div className="text-sm">
-                            <div>{t('pages.payrollRuns.employeeCount')}: {row.original.totals.employee_count ?? 0}</div>
-                            <div>{t('pages.payrollRuns.totalNet')}: {Number(row.original.totals.total_net ?? 0).toLocaleString()}</div>
-                        </div>
-                    ) : (
-                        '—'
-                    ),
+                    row.original.totals != null
+                        ? `${t('pages.payrollRuns.totalNet')}: ${Number(row.original.totals.total_net ?? 0).toLocaleString()}`
+                        : '—',
             },
             {
                 id: 'status',
@@ -74,20 +60,61 @@ function Index({ runs, entities, filters }) {
             {
                 id: 'actions',
                 header: '',
-                cell: ({ row }) =>
-                    canProcess && row.original.status === 'draft' ? (
-                        <button
-                            type="button"
-                            onClick={() => handleProcess(row.original.id)}
-                            className="rp-btn-outline flex items-center gap-1 text-xs"
-                        >
-                            <Play className="h-3 w-3" />
-                            {t('pages.payrollRuns.process')}
-                        </button>
-                    ) : null,
+                cell: ({ row }) => {
+                    const s = row.original.status;
+                    return (
+                        <div className="flex flex-wrap gap-1">
+                            {canProcess && s === 'draft' && (
+                                <button
+                                    type="button"
+                                    className="rp-btn-outline text-xs"
+                                    onClick={() => action('admin.payroll.runs.calculate', row.original.id)}
+                                >
+                                    {t('pages.payrollRuns.calculate')}
+                                </button>
+                            )}
+                            {canProcess && s === 'draft' && (
+                                <button
+                                    type="button"
+                                    className="rp-btn-outline text-xs"
+                                    onClick={() => action('admin.payroll.runs.submit', row.original.id)}
+                                >
+                                    {t('pages.payrollRuns.submit')}
+                                </button>
+                            )}
+                            {canApprove && ['draft', 'pending_approval'].includes(s) && (
+                                <button
+                                    type="button"
+                                    className="rp-btn-outline text-xs"
+                                    onClick={() => action('admin.payroll.runs.approve', row.original.id)}
+                                >
+                                    {t('pages.payrollRuns.approve')}
+                                </button>
+                            )}
+                            {canPost && s === 'approved' && (
+                                <button
+                                    type="button"
+                                    className="rp-btn-primary text-xs"
+                                    onClick={() => action('admin.payroll.runs.post', row.original.id)}
+                                >
+                                    {t('pages.payrollRuns.post')}
+                                </button>
+                            )}
+                            {canReverse && s === 'posted' && (
+                                <button
+                                    type="button"
+                                    className="rp-btn-outline text-xs"
+                                    onClick={() => action('admin.payroll.runs.reverse', row.original.id)}
+                                >
+                                    {t('pages.payrollRuns.reverse')}
+                                </button>
+                            )}
+                        </div>
+                    );
+                },
             },
         ],
-        [t, canProcess],
+        [t, canProcess, canApprove, canPost, canReverse],
     );
 
     return (
@@ -109,9 +136,9 @@ function Index({ runs, entities, filters }) {
                 </Select>
                 <Select name="status" defaultValue={filters.status ?? ''} className="min-w-[140px]">
                     <option value="">{t('pages.payrollRuns.allStatuses')}</option>
-                    {['draft', 'processed', 'approved', 'posted'].map((status) => (
+                    {['draft', 'pending_approval', 'approved', 'posted', 'reversed'].map((status) => (
                         <option key={status} value={status}>
-                            {t(`pages.payrollRuns.statuses.${status}`)}
+                            {t(`pages.payrollRuns.statuses.${status}`, { defaultValue: status })}
                         </option>
                     ))}
                 </Select>

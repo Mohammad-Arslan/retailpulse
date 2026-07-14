@@ -37,6 +37,24 @@ final class PostingRulesSeeder extends Seeder
         $this->seedAssetAcquiredRule($effectiveFrom);
         $this->seedExpensePostedRule($effectiveFrom);
         $this->seedExpenseRecurringDueRule($effectiveFrom);
+        $this->seedPayrollPostedRule($effectiveFrom);
+    }
+
+    private function seedPayrollPostedRule(string $effectiveFrom): void
+    {
+        $ruleSet = $this->createRuleSet(
+            code: 'payroll_posted_default',
+            name: 'Payroll Posted — Default',
+            eventType: 'payroll.posted',
+            effectiveFrom: $effectiveFrom,
+        );
+
+        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::GrossAmount, 'payroll_expense');
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'employer_contribution_expense', required: false);
+        $this->createLine($ruleSet->id, 3, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::TaxAmount, 'tax_withheld_payable', required: false);
+        $this->createLine($ruleSet->id, 4, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::SettlementAmount, 'net_salary_payable');
+        $this->createLine($ruleSet->id, 5, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::DiscountAmount, 'statutory_payable', required: false);
+        $this->createLine($ruleSet->id, 6, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'statutory_payable', required: false);
     }
 
     private function seedExpensePostedRule(string $effectiveFrom): void

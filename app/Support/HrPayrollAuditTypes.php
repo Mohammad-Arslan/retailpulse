@@ -20,6 +20,7 @@ use App\Models\OvertimeMultiplier;
 use App\Models\OvertimePolicy;
 use App\Models\OvertimeRecord;
 use App\Models\PayComponent;
+use App\Models\PayrollApprovalSetting;
 use App\Models\PayrollItem;
 use App\Models\PayrollItemLine;
 use App\Models\PayrollRun;
@@ -62,6 +63,7 @@ final class HrPayrollAuditTypes
         PayrollRun::class,
         PayrollItem::class,
         PayrollItemLine::class,
+        PayrollApprovalSetting::class,
     ];
 
     /**

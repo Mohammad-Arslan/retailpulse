@@ -156,6 +156,63 @@ final class AccountingEventService
             ->first();
     }
 
+    /**
+     * Reverse the journal linked to a completed source event and record an idempotent
+     * reversal accounting event. Callers outside Accounting must use this instead of
+     * importing JournalService.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function reverseLinkedJournal(
+        string $originalEventType,
+        string $reversalEventType,
+        string $sourceType,
+        int $sourceId,
+        array $payload,
+        int $userId,
+        ?string $description = null,
+    ): AccountingEvent {
+        $existingReversal = $this->findForSource($reversalEventType, $sourceType, $sourceId);
+        if ($existingReversal?->processing_status === AccountingEventStatus::Completed) {
+            return $existingReversal;
+        }
+
+        $original = $this->findForSource($originalEventType, $sourceType, $sourceId);
+        if ($original === null || $original->journal_entry_id === null) {
+            throw new \DomainException('No Posted Accounting Event Exists To Reverse.');
+        }
+
+        $original->loadMissing('journalEntry');
+        $journal = $original->journalEntry;
+        if ($journal === null) {
+            throw new \DomainException('Linked Journal Entry Is Missing.');
+        }
+
+        $reversal = $this->journalService->reverse($journal, $userId, $description);
+
+        $idempotencyKey = $this->idempotencyKey($reversalEventType, $sourceType, $sourceId);
+
+        try {
+            $event = AccountingEvent::query()->create([
+                'event_type' => $reversalEventType,
+                'source_type' => $sourceType,
+                'source_id' => $sourceId,
+                'idempotency_key' => $idempotencyKey,
+                'processing_status' => AccountingEventStatus::Completed,
+                'payload' => array_merge($payload, [
+                    'reversal_journal_entry_id' => $reversal->id,
+                    'original_journal_entry_id' => $journal->id,
+                ]),
+                'journal_entry_id' => $reversal->id,
+                'processed_at' => now(),
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            return AccountingEvent::query()->where('idempotency_key', $idempotencyKey)->firstOrFail();
+        }
+
+        return $event->fresh(['journalEntry']);
+    }
+
     public function idempotencyKey(
         string $eventType,
         string $sourceType,

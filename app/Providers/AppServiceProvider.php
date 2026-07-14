@@ -60,6 +60,7 @@ use App\Models\OvertimeRecord;
 use App\Models\PayComponent;
 use App\Models\PayrollItem;
 use App\Models\PayrollItemLine;
+use App\Models\PayrollApprovalSetting;
 use App\Models\PayrollRun;
 use App\Models\RecurringExpenseOccurrence;
 use App\Models\SalaryStructure;
@@ -326,6 +327,7 @@ class AppServiceProvider extends ServiceProvider
         PayrollRun::observe(AuditObserver::class);
         PayrollItem::observe(AuditObserver::class);
         PayrollItemLine::observe(AuditObserver::class);
+        PayrollApprovalSetting::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email');

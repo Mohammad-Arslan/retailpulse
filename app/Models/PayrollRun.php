@@ -61,4 +61,14 @@ final class PayrollRun extends Model
     {
         return $this->hasMany(PayrollItem::class);
     }
+
+    public function journalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class);
+    }
+
+    public function accountingEvent(): BelongsTo
+    {
+        return $this->belongsTo(AccountingEvent::class);
+    }
 }

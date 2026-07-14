@@ -33,4 +33,14 @@ final class PayrollRunPolicy
     {
         return $user->can('payroll.approve');
     }
+
+    public function post(User $user, PayrollRun $payrollRun): bool
+    {
+        return $user->can('payroll.post');
+    }
+
+    public function reverse(User $user, PayrollRun $payrollRun): bool
+    {
+        return $user->can('payroll.reverse');
+    }
 }
