@@ -1858,19 +1858,34 @@
                 },
                 "keys": {
                     "sales_revenue": "Sales Revenue",
+                    "sales_return": "Sales Return",
+                    "bad_debt_expense": "Bad Debt Expense",
                     "cash_on_hand": "Cash on Hand",
                     "bank_account": "Bank Account",
+                    "petty_cash": "Petty Cash",
+                    "payment_method_account": "Payment Method Account",
                     "accounts_receivable": "Accounts Receivable",
                     "accounts_payable": "Accounts Payable",
                     "inventory_asset": "Inventory Asset",
                     "cogs": "Cost of Goods Sold",
+                    "inventory_adjustment": "Inventory Adjustment",
+                    "inventory_write_off": "Inventory Write Off",
                     "output_tax": "Output Tax",
                     "input_tax": "Input Tax",
                     "tax_payable": "Tax Payable",
                     "retained_earnings": "Retained Earnings",
                     "opening_balance_equity": "Opening Balance Equity",
                     "suspense_account": "Suspense Account",
-                    "rounding_difference": "Rounding Difference"
+                    "rounding_difference": "Rounding Difference",
+                    "cheques_in_hand": "Cheques in Hand",
+                    "cheques_deposited": "Cheques Deposited",
+                    "cheques_payable": "Cheques Payable",
+                    "fixed_asset": "Fixed Asset",
+                    "accumulated_depreciation": "Accumulated Depreciation",
+                    "depreciation_expense": "Depreciation Expense",
+                    "dishonour_expense": "Dishonour Expense",
+                    "gain_on_disposal": "Gain on Disposal",
+                    "loss_on_disposal": "Loss on Disposal"
                 }
             },
             "postingRules": {
@@ -1918,7 +1933,8 @@
                     "warehouse_inventory_account": "Warehouse Inventory Account",
                     "product_category_account": "Product Category Account",
                     "tax_account": "Tax Account",
-                    "configurable_mapping": "Configurable Mapping"
+                    "configurable_mapping": "Configurable Mapping",
+                    "asset_account": "Asset Account"
                 },
                 "amountSources": {
                     "gross_amount": "Gross Amount",

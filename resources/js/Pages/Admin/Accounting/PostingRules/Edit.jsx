@@ -8,6 +8,7 @@ import { useCan } from '@/Hooks/useCan';
 import {
     accountResolutionTypeLabel,
     amountSourceLabel,
+    mappingKeyLabel,
     postingRuleEntrySideLabel,
 } from '@/lib/accountingI18n';
 import { Head, Link, useForm } from '@inertiajs/react';
@@ -106,9 +107,9 @@ function Edit({
         () =>
             mappingKeys.map((key) => ({
                 value: key,
-                label: key,
+                label: mappingKeyLabel(t, key),
             })),
-        [mappingKeys],
+        [mappingKeys, t],
     );
 
     const updateLine = (index, patch) => {

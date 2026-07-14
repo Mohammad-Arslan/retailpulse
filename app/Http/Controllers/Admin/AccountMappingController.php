@@ -10,7 +10,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Accounting\StoreAccountMappingRequest;
 use App\Http\Requests\Admin\Accounting\UpdateAccountMappingRequest;
 use App\Models\AccountMapping;
+use App\Models\Branch;
 use App\Services\Accounting\AccountMappingService;
+use App\Support\AccountMappingKeys;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,7 +35,12 @@ final class AccountMappingController extends Controller
         return Inertia::render('Admin/Accounting/AccountMappings/Index', [
             'mappings' => $this->accountMappingService->paginateIndex($filters, $perPage),
             'filters' => $filters,
-            'postableAccounts' => $this->accountMappingService->postableAccountOptions(),
+            'mappingKeys' => AccountMappingKeys::all(),
+            'accounts' => $this->accountMappingService->postableAccountOptions(),
+            'branches' => Branch::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 
