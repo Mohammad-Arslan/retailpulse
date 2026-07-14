@@ -54,6 +54,8 @@ final class AccountMappingKeys
             'tax_withheld_payable',
             'employee_advance_receivable',
             'reimbursement_payable',
+            'statutory_payable',
+            'hra_expense',
         ];
     }
 }

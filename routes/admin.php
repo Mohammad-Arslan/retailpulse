@@ -36,6 +36,10 @@ use App\Http\Controllers\Admin\Leave\LeaveRequestController;
 use App\Http\Controllers\Admin\Leave\LeaveTypeController;
 use App\Http\Controllers\Admin\Overtime\OvertimePolicyController;
 use App\Http\Controllers\Admin\Overtime\OvertimeRecordController;
+use App\Http\Controllers\Admin\Payroll\PayComponentController;
+use App\Http\Controllers\Admin\Payroll\PayrollRunController;
+use App\Http\Controllers\Admin\Payroll\StatutorySchemeController;
+use App\Http\Controllers\Admin\Payroll\TaxSlabController;
 use App\Http\Controllers\Admin\Expense\RecurringExpenseScheduleController;
 use App\Http\Controllers\Admin\FixedAssetController;
 use App\Http\Controllers\Admin\Hr\EmployeeController;
@@ -152,6 +156,21 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::get('policies', [OvertimePolicyController::class, 'index'])->name('policies.index');
             Route::get('records', [OvertimeRecordController::class, 'index'])->name('records.index');
             Route::post('records/{overtimeRecord}/approve', [OvertimeRecordController::class, 'approve'])->name('records.approve');
+        });
+
+        Route::middleware(['hr-module:payroll'])->prefix('payroll')->name('payroll.')->group(function () {
+            Route::get('pay-components', [PayComponentController::class, 'index'])->name('pay-components.index');
+            Route::post('pay-components', [PayComponentController::class, 'store'])->name('pay-components.store');
+            Route::put('pay-components/{pay_component}', [PayComponentController::class, 'update'])->name('pay-components.update');
+            Route::delete('pay-components/{pay_component}', [PayComponentController::class, 'destroy'])->name('pay-components.destroy');
+
+            Route::get('tax-slabs', [TaxSlabController::class, 'index'])->name('tax-slabs.index');
+
+            Route::get('statutory-schemes', [StatutorySchemeController::class, 'index'])->name('statutory-schemes.index');
+
+            Route::get('runs', [PayrollRunController::class, 'index'])->name('runs.index');
+            Route::post('runs', [PayrollRunController::class, 'store'])->name('runs.store');
+            Route::post('runs/{payroll_run}/process', [PayrollRunController::class, 'process'])->name('runs.process');
         });
 
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');

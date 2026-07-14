@@ -19,8 +19,16 @@ use App\Models\LeaveType;
 use App\Models\OvertimeMultiplier;
 use App\Models\OvertimePolicy;
 use App\Models\OvertimeRecord;
+use App\Models\PayComponent;
+use App\Models\PayrollItem;
+use App\Models\PayrollItemLine;
+use App\Models\PayrollRun;
 use App\Models\RecurringExpenseOccurrence;
 use App\Models\RecurringExpenseSchedule;
+use App\Models\SalaryStructure;
+use App\Models\SalaryStructureComponent;
+use App\Models\StatutoryScheme;
+use App\Models\TaxSlab;
 use Illuminate\Database\Eloquent\Model;
 
 final class HrPayrollAuditTypes
@@ -46,6 +54,14 @@ final class HrPayrollAuditTypes
         OvertimePolicy::class,
         OvertimeMultiplier::class,
         OvertimeRecord::class,
+        PayComponent::class,
+        SalaryStructure::class,
+        SalaryStructureComponent::class,
+        TaxSlab::class,
+        StatutoryScheme::class,
+        PayrollRun::class,
+        PayrollItem::class,
+        PayrollItemLine::class,
     ];
 
     /**

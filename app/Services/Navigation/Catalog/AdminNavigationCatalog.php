@@ -248,6 +248,34 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.overtime.records.*',
                 'keywords' => ['overtime record', 'extra hours', 'approval', 'timesheet'],
             ]),
+            self::item('pay-components', 'payComponents', 'admin.payroll.pay-components.index', 'circle-dollar-sign', 'payroll', 110, [
+                'permission' => 'payroll.manage-components',
+                'permissionsAny' => ['payroll.manage-components', 'payroll.view'],
+                'module' => 'payroll',
+                'routePattern' => 'admin.payroll.pay-components.*',
+                'keywords' => ['pay component', 'earning', 'deduction', 'salary', 'payroll'],
+            ]),
+            self::item('tax-slabs', 'taxSlabs', 'admin.payroll.tax-slabs.index', 'layers', 'payroll', 120, [
+                'permission' => 'payroll.manage-tax-slabs',
+                'permissionsAny' => ['payroll.manage-tax-slabs', 'payroll.view'],
+                'module' => 'payroll',
+                'routePattern' => 'admin.payroll.tax-slabs.*',
+                'keywords' => ['tax slab', 'income tax', 'progressive', 'payroll'],
+            ]),
+            self::item('statutory-schemes', 'statutorySchemes', 'admin.payroll.statutory-schemes.index', 'shield-check', 'payroll', 130, [
+                'permission' => 'payroll.manage-statutory',
+                'permissionsAny' => ['payroll.manage-statutory', 'payroll.view'],
+                'module' => 'payroll',
+                'routePattern' => 'admin.payroll.statutory-schemes.*',
+                'keywords' => ['statutory', 'eobi', 'gpssa', 'contribution', 'payroll'],
+            ]),
+            self::item('payroll-runs', 'payrollRuns', 'admin.payroll.runs.index', 'play-circle', 'payroll', 140, [
+                'permission' => 'payroll.process',
+                'permissionsAny' => ['payroll.process', 'payroll.view', 'payroll.approve'],
+                'module' => 'payroll',
+                'routePattern' => 'admin.payroll.runs.*',
+                'keywords' => ['payroll run', 'payslip', 'salary processing', 'draft'],
+            ]),
         ]));
 
         $registry->registerSection(new NavigationSection('accounting', 'accountingSection', 60, [

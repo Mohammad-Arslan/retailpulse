@@ -57,7 +57,15 @@ use App\Models\LeaveType;
 use App\Models\OvertimeMultiplier;
 use App\Models\OvertimePolicy;
 use App\Models\OvertimeRecord;
+use App\Models\PayComponent;
+use App\Models\PayrollItem;
+use App\Models\PayrollItemLine;
+use App\Models\PayrollRun;
 use App\Models\RecurringExpenseOccurrence;
+use App\Models\SalaryStructure;
+use App\Models\SalaryStructureComponent;
+use App\Models\StatutoryScheme;
+use App\Models\TaxSlab;
 use App\Models\RecurringExpenseSchedule;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
@@ -310,6 +318,14 @@ class AppServiceProvider extends ServiceProvider
         OvertimePolicy::observe(AuditObserver::class);
         OvertimeMultiplier::observe(AuditObserver::class);
         OvertimeRecord::observe(AuditObserver::class);
+        PayComponent::observe(AuditObserver::class);
+        SalaryStructure::observe(AuditObserver::class);
+        SalaryStructureComponent::observe(AuditObserver::class);
+        TaxSlab::observe(AuditObserver::class);
+        StatutoryScheme::observe(AuditObserver::class);
+        PayrollRun::observe(AuditObserver::class);
+        PayrollItem::observe(AuditObserver::class);
+        PayrollItemLine::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email');

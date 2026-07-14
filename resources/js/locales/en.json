@@ -69,6 +69,10 @@
         "leaveRequests": "Leave Requests",
         "overtimePolicies": "Overtime Policies",
         "overtimeRecords": "Overtime Records",
+        "payComponents": "Pay Components",
+        "taxSlabs": "Tax Slabs",
+        "statutorySchemes": "Statutory Schemes",
+        "payrollRuns": "Payroll Runs",
         "chartOfAccounts": "Chart of Accounts",
         "accountMappings": "Account Mappings",
         "postingRules": "Posting Rules",
@@ -705,6 +709,106 @@
                 "pending": "Pending",
                 "approved": "Approved",
                 "rejected": "Rejected"
+            }
+        },
+        "payComponents": {
+            "indexTitle": "Pay Components",
+            "indexDescription": "Configure Earnings, Deductions, And Contributions For Payroll Calculation.",
+            "searchPlaceholder": "Search By Code Or Name…",
+            "allTypes": "All Types",
+            "allStatuses": "All Statuses",
+            "columns": {
+                "code": "Code",
+                "type": "Type",
+                "calculationType": "Calculation",
+                "basis": "Basis Component",
+                "rate": "Rate",
+                "taxable": "Taxable",
+                "accountMappingKey": "Account Key",
+                "status": "Status"
+            },
+            "types": {
+                "earning": "Earning",
+                "deduction": "Deduction",
+                "employer_contribution": "Employer Contribution",
+                "statutory": "Statutory",
+                "reimbursement": "Reimbursement"
+            },
+            "calculationTypes": {
+                "fixed": "Fixed Amount",
+                "percentage_of": "Percentage Of",
+                "table_lookup": "Table Lookup"
+            },
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive"
+            }
+        },
+        "taxSlabs": {
+            "indexTitle": "Tax Slabs",
+            "indexDescription": "Progressive Income Tax Slab Configuration By Legal Entity.",
+            "allEntities": "All Entities",
+            "allStatuses": "All Statuses",
+            "columns": {
+                "legalEntity": "Legal Entity",
+                "effectiveDates": "Effective Dates",
+                "lowerBound": "Lower Bound",
+                "upperBound": "Upper Bound",
+                "fixedAmount": "Fixed Amount",
+                "marginalRate": "Marginal Rate",
+                "status": "Status"
+            },
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive"
+            }
+        },
+        "statutorySchemes": {
+            "indexTitle": "Statutory Schemes",
+            "indexDescription": "Employee And Employer Contribution Schemes (EOBI, GPSSA, Etc.).",
+            "allEntities": "All Entities",
+            "allStatuses": "All Statuses",
+            "employeeRate": "Employee Rate",
+            "employerRate": "Employer Rate",
+            "employeeKey": "Employee Key",
+            "employerKey": "Employer Key",
+            "columns": {
+                "code": "Code",
+                "legalEntity": "Legal Entity",
+                "rates": "Rates",
+                "wageCeiling": "Wage Ceiling",
+                "mappingKeys": "Account Mapping Keys",
+                "effectiveDates": "Effective Dates",
+                "status": "Status"
+            },
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive"
+            }
+        },
+        "payrollRuns": {
+            "indexTitle": "Payroll Runs",
+            "indexDescription": "Draft And Process Payroll Runs For Your Legal Entities.",
+            "allEntities": "All Entities",
+            "allStatuses": "All Statuses",
+            "draft": "Draft",
+            "process": "Process",
+            "employeeCount": "Employees",
+            "totalNet": "Total Net",
+            "columns": {
+                "payrollNumber": "Payroll #",
+                "legalEntity": "Legal Entity",
+                "period": "Period",
+                "currency": "Currency",
+                "totals": "Totals",
+                "status": "Status"
+            },
+            "statuses": {
+                "draft": "Draft",
+                "processed": "Processed",
+                "approved": "Approved",
+                "posted": "Posted",
+                "reversed": "Reversed"
             }
         },
         "expenseCategories": {

@@ -60,6 +60,11 @@ class Employee extends Model
         return $this->belongsTo(CostCentre::class, 'default_cost_centre_id');
     }
 
+    public function salaryStructure(): BelongsTo
+    {
+        return $this->belongsTo(SalaryStructure::class);
+    }
+
     public function fullName(): string
     {
         return trim($this->first_name.' '.$this->last_name);
