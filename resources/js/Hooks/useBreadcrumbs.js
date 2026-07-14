@@ -85,6 +85,7 @@ const ROUTE_CRUMBS = {
     'Admin/Accounting/AccountMappings/Index': ['home', 'accountMappings'],
     'Admin/Accounting/PostingRules/Index': ['home', 'postingRules'],
     'Admin/Accounting/PostingRules/Edit': ['home', 'postingRules', 'edit'],
+    'Admin/Accounting/PostingRules/Create': ['home', 'postingRules', 'create'],
     'Admin/Accounting/JournalEntries/Index': ['home', 'journalEntries'],
     'Admin/Accounting/JournalEntries/Create': ['home', 'journalEntries', 'create'],
     'Admin/Accounting/JournalEntries/Show': ['home', 'journalEntries', 'view'],
@@ -196,6 +197,14 @@ export function useBreadcrumbs() {
                 { label: t('breadcrumbs.home'), href: route(CRUMB_HREFS.home) },
                 { label: t('breadcrumbs.postingRules'), href: route(CRUMB_HREFS.postingRules) },
                 { label: props.ruleSet.name },
+            ];
+        }
+
+        if (component === 'Admin/Accounting/PostingRules/Create' && props.source?.code) {
+            return [
+                { label: t('breadcrumbs.home'), href: route(CRUMB_HREFS.home) },
+                { label: t('breadcrumbs.postingRules'), href: route(CRUMB_HREFS.postingRules) },
+                { label: t('pages.accounting.postingRules.createTitle') },
             ];
         }
 

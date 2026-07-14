@@ -4,7 +4,7 @@ import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, router } from '@inertiajs/react';
-import { FileSpreadsheet, Search } from 'lucide-react';
+import { Copy, FileSpreadsheet, Search } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -90,12 +90,21 @@ function Index({ ruleSets, filters }) {
         ];
 
         if (can('accounting.manage-posting-rules')) {
-            actions.push({
-                label: t('common.edit'),
-                type: 'edit',
-                href: route('admin.accounting.posting-rules.edit', ruleSet.id),
-                permission: 'accounting.manage-posting-rules',
-            });
+            actions.push(
+                {
+                    label: t('common.edit'),
+                    type: 'edit',
+                    href: route('admin.accounting.posting-rules.edit', ruleSet.id),
+                    permission: 'accounting.manage-posting-rules',
+                },
+                {
+                    label: t('pages.accounting.postingRules.duplicate'),
+                    type: 'duplicate',
+                    icon: Copy,
+                    href: route('admin.accounting.posting-rules.create', ruleSet.id),
+                    permission: 'accounting.manage-posting-rules',
+                },
+            );
         }
 
         return actions;
