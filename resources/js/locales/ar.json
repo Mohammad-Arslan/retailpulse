@@ -32,6 +32,7 @@
         "organization": "المؤسسة",
         "admin": "الإدارة",
         "settings": "الإعدادات",
+        "accountingModules": "وحدات المحاسبة",
         "costLayers": "إنشاء طبقة تكلفة"
     },
     "common": {
@@ -63,7 +64,20 @@
         "clear": "مسح",
         "saving": "جارٍ الحفظ…",
         "selectCurrency": "اختر العملة…",
-        "selectBranch": "اختر الفرع…"
+        "selectBranch": "اختر الفرع…",
+        "accountingModules": {
+            "core": "الأساسية",
+            "ar_ap": "الذمم المدينة / الدائنة",
+            "tax": "الضريبة",
+            "cost_centres": "مراكز التكلفة",
+            "multi_currency": "متعدد العملات",
+            "bank_reconciliation": "التسوية البنكية",
+            "petty_cash": "النثرية",
+            "cheques": "الشيكات",
+            "fixed_assets": "الأصول الثابتة",
+            "intercompany": "بين الشركات",
+            "credit_notes": "إشعارات دائن"
+        }
     },
     "auth": {
         "welcomeBack": "مرحبًا بعودتك.",
@@ -134,6 +148,16 @@
             "saving": "جارٍ الحفظ…"
         },
         "accounting": {
+            "modules": {
+                "title": "وحدات المحاسبة",
+                "description": "تمكين أو تعطيل وحدات المحاسبة الفرعية لكل فرع. الوحدة الأساسية دائماً مفعّلة.",
+                "selectBranchHint": "حدد فرعاً لإدارة وحداته. لا يمكن حفظ إعدادات الوحدات في عرض كل الفروع.",
+                "modulesTitle": "الوحدات المفعّلة",
+                "modulesHint": "تفعيل وحدة يفعّل متطلباتها أيضاً. تعطيلها يعطّل الوحدات التي تعتمد عليها.",
+                "alwaysOn": "دائماً مفعّل",
+                "requires": "يتطلب {{modules}}",
+                "save": "حفظ الوحدات"
+            },
             "settings": {
                 "inventoryTitle": "المخزون والتكلفة",
                 "valuationMethods": {

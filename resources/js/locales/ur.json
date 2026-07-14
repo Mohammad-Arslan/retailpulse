@@ -32,12 +32,27 @@
         "organization": "تنظیم",
         "admin": "ایڈمن",
         "settings": "ترتیبات",
+        "accountingModules": "اکاؤنٹنگ ماڈیولز",
         "costLayers": "لاگت کی تہ بنائیں"
     },
     "common": {
         "search": "تلاش",
         "allStatuses": "تمام اسٹیٹس",
         "allSuppliers": "تمام سپلائرز",
+        "selectBranch": "برانچ منتخب کریں…",
+        "accountingModules": {
+            "core": "Core",
+            "ar_ap": "AR / AP",
+            "tax": "ٹیکس",
+            "cost_centres": "لاگت مراکز",
+            "multi_currency": "ملٹی کرنسی",
+            "bank_reconciliation": "بینک ری کنسلی ایشن",
+            "petty_cash": "پیٹی کیش",
+            "cheques": "چیکس",
+            "fixed_assets": "فکسڈ ایسٹس",
+            "intercompany": "انٹر کمپنی",
+            "credit_notes": "کریڈٹ نوٹس"
+        },
         "allBranches": "تمام برانچز",
         "branch": "برانچ",
         "language": "زبان",
@@ -62,8 +77,7 @@
         "status": "اسٹیٹس",
         "clear": "صاف کریں",
         "saving": "محفوظ ہو رہا ہے…",
-        "selectCurrency": "کرنسی منتخب کریں…",
-        "selectBranch": "برانچ منتخب کریں…"
+        "selectCurrency": "کرنسی منتخب کریں…"
     },
     "auth": {
         "welcomeBack": "خوش آمدید۔",
@@ -396,6 +410,16 @@
             }
         },
         "accounting": {
+            "modules": {
+                "title": "اکاؤنٹنگ ماڈیولز",
+                "description": "ہر برانچ کے لیے اکاؤنٹنگ سب ماڈیولز فعال یا غیرفعال کریں۔ Core ہمیشہ آن رہتا ہے۔",
+                "selectBranchHint": "ماڈیولز منظم کرنے کے لیے برانچ منتخب کریں۔ All Branches ویو میں سیٹنگز محفوظ نہیں ہو سکتیں۔",
+                "modulesTitle": "فعال ماڈیولز",
+                "modulesHint": "ماڈیول آن کرنے سے اس کی ضروریات بھی فعال ہوتی ہیں۔ آف کرنے سے منحصر ماڈیولز بند ہو جاتے ہیں۔",
+                "alwaysOn": "ہمیشہ آن",
+                "requires": "ضروری ہے {{modules}}",
+                "save": "ماڈیولز محفوظ کریں"
+            },
             "settings": {
                 "inventoryTitle": "انوینٹری اور لاگت",
                 "valuationMethods": {

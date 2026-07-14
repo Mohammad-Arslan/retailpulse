@@ -1,7 +1,7 @@
 # RetailPulse User Manual — Accounting & Finance
 
 **Audience:** Accountants, finance managers, implementation consultants, and customer support  
-**Version:** 1.5 (July 2026)  
+**Version:** 1.6 (July 2026)  
 **Scope:** Phase 11 — General Ledger (GL), auto-posting, fiscal control, tax, imports, sub-ledgers, inventory costing, and financial reports
 
 This manual explains **where to click**, **what each screen does**, **how money flows through the system**, **what every term means**, and **what happens when something is missing or misconfigured**.
@@ -99,7 +99,7 @@ Beyond permissions, some menu items require the branch to have the sub-module **
 | `credit_notes` | Credit Notes (also needs `ar_ap`) |
 | `intercompany` | Intercompany (also needs `multi_currency`) |
 
-**Default for a new branch:** only `core` is enabled. An administrator must enable additional modules (currently via database / `php artisan tinker` on `BranchAccountingProfile`; a UI toggle is planned for Phase 23).
+**Default for a new branch:** only `core` is enabled. An administrator must enable additional modules under **Accounting → Accounting Modules** (permission `accounting.manage-modules`).
 
 **What if a sub-module is not enabled?**
 - The menu item is hidden.
@@ -296,6 +296,7 @@ Auto-posting runs **synchronously** in the same request as the business operatio
 | Posting Rules | Accounting → Posting Rules | `accounting.manage-posting-rules` |
 | Journal Entries | Accounting → Journal Entries | `accounting.view` |
 | Financial Settings | Accounting → Financial Settings | `accounting.manage-fiscal-years` or `accounting.view` |
+| Accounting Modules | Accounting → Accounting Modules | `accounting.manage-modules` |
 | Create Cost Layer | Accounting → Create Cost Layer | `accounting.manage-fiscal-years` |
 | Financial Reports | Accounting → Financial Reports | `accounting.view-reports` |
 | Accounting Events | Accounting → Accounting Events | `accounting.view` |
@@ -1272,25 +1273,16 @@ flowchart LR
 | Reopen not available | Year not closed or pending request exists | Complete close first |
 | Posting blocked after reopen | Window expired | New reopen request or post in current FY |
 
-### 21.7 Enabling sub-modules via tinker (interim)
+### 21.7 Enabling sub-modules (per branch)
 
-Until Phase 23 provides a UI, enable modules per branch:
+1. Open **Accounting → Accounting Modules** (requires `accounting.manage-modules`).
+2. Select the **branch** to configure (required — All Branches cannot save module settings).
+3. Check the sub-modules to enable. **Core** is always on.
+4. Enabling a module also enables its dependencies (e.g. **Credit Notes** turns on **AR / AP**). Disabling a module turns off dependents (e.g. disabling **Multi-Currency** clears **Intercompany**).
+5. Click **Save Modules**.
+6. Select that branch in the header switcher and refresh if the sidebar does not update immediately.
 
-```php
-// php artisan tinker
-$modules = [
-    'core', 'ar_ap', 'tax', 'cost_centres', 'multi_currency',
-    'bank_reconciliation', 'petty_cash', 'cheques', 'fixed_assets',
-    'intercompany', 'credit_notes',
-];
-
-\App\Models\BranchAccountingProfile::updateOrCreate(
-    ['branch_id' => 1], // your branch id
-    ['status' => 'active', 'accounting_enabled_modules' => $modules]
-);
-```
-
-Then **select that branch** in the header switcher and refresh.
+This writes `branch_accounting_profiles.accounting_enabled_modules` for the existing interim gate. The full Module Registry UI remains planned for Phase 23.
 
 ### 21.8 FAQ
 
@@ -1327,6 +1319,7 @@ A: Distinct `payment.received` event is deferred; partial coverage via sale sett
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.6 | July 2026 | Accounting Modules admin UI (per-branch enable/disable); replaces tinker recipe |
 | 1.5 | July 2026 | Mapping scope fields UI; petty cash voucher create/approve; FA dispose & run depreciation; Tax Return report; bank multi-match / Partially Matched; draft journal edit/delete |
 | 1.4 | July 2026 | Posting Rules: Duplicate flow (no blank create); event type locked to source; debit/credit structural validation; same-priority overlap warning |
 | 1.3 | July 2026 | All Branches (head-office) view now shows the union of every branch's enabled accounting sub-modules, so super-admin no longer loses Cost Centres/Tax/etc. from the sidebar |
