@@ -4,16 +4,15 @@ import PageHeader from '@/Components/common/PageHeader';
 import Select from '@/Components/ui/select';
 import { Button } from '@/Components/ui/button';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
-import { useCan } from '@/Hooks/useCan';
 import {
     accountResolutionTypeLabel,
     amountSourceLabel,
     mappingKeyLabel,
     postingRuleEntrySideLabel,
 } from '@/lib/accountingI18n';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { Plus, Trash2, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { Plus, Trash2 } from 'lucide-react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function emptyLine(sequence = 1) {
@@ -30,42 +29,47 @@ function emptyLine(sequence = 1) {
     };
 }
 
-function Edit({
-    ruleSet,
+function mapSourceLines(source) {
+    if (!source?.lines?.length) {
+        return [emptyLine()];
+    }
+
+    return source.lines.map((line, index) => ({
+        sequence: line.sequence ?? index + 1,
+        entry_side: line.entry_side ?? 'debit',
+        account_resolution_type: line.account_resolution_type ?? 'account_mapping',
+        account_id: line.account_id ? String(line.account_id) : '',
+        account_mapping_key: line.account_mapping_key ?? '',
+        amount_source: line.amount_source ?? 'gross_amount',
+        narration_template: line.narration_template ?? '',
+        required: line.required !== false,
+        status: line.status ?? 'active',
+    }));
+}
+
+function Create({
+    source,
     accounts = [],
     mappingKeys = [],
     resolutionTypes = [],
     amountSources = [],
     entrySides = ['debit', 'credit'],
+    branches = [],
+    legalEntities = [],
 }) {
-    const can = useCan();
     const { t } = useTranslation();
-    const flashWarning = usePage().props.flash?.warning;
-    const [dismissedWarning, setDismissedWarning] = useState(false);
 
-    const initialLines =
-        ruleSet.lines?.length > 0
-            ? ruleSet.lines.map((line, index) => ({
-                  id: line.id ?? null,
-                  sequence: line.sequence ?? index + 1,
-                  entry_side: line.entry_side ?? 'debit',
-                  account_resolution_type: line.account_resolution_type ?? 'account_mapping',
-                  account_id: line.account_id ? String(line.account_id) : '',
-                  account_mapping_key: line.account_mapping_key ?? '',
-                  amount_source: line.amount_source ?? 'gross_amount',
-                  narration_template: line.narration_template ?? '',
-                  required: line.required !== false,
-                  status: line.status ?? 'active',
-              }))
-            : [emptyLine()];
-
-    const { data, setData, put, processing, errors } = useForm({
-        name: ruleSet.name ?? '',
-        priority: String(ruleSet.priority ?? 100),
-        effective_from: ruleSet.effective_from?.slice(0, 10) ?? '',
-        effective_to: ruleSet.effective_to?.slice(0, 10) ?? '',
-        status: ruleSet.status ?? 'active',
-        lines: initialLines,
+    const { data, setData, post, processing, errors, transform } = useForm({
+        code: '',
+        name: t('pages.accounting.postingRules.nameCopy', { name: source.name ?? '' }),
+        duplicate_from_id: source.source_id,
+        branch_id: source.branch_id ? String(source.branch_id) : '',
+        legal_entity_id: source.legal_entity_id ? String(source.legal_entity_id) : '',
+        priority: String(source.priority ?? 100),
+        effective_from: source.effective_from?.slice(0, 10) ?? '',
+        effective_to: source.effective_to?.slice(0, 10) ?? '',
+        status: source.status ?? 'active',
+        lines: mapSourceLines(source),
     });
 
     const accountOptions = useMemo(
@@ -88,9 +92,9 @@ function Edit({
 
     const amountSourceOptions = useMemo(
         () =>
-            amountSources.map((source) => ({
-                value: source,
-                label: amountSourceLabel(t, source),
+            amountSources.map((src) => ({
+                value: src,
+                label: amountSourceLabel(t, src),
             })),
         [amountSources, t],
     );
@@ -111,6 +115,25 @@ function Edit({
                 label: mappingKeyLabel(t, key),
             })),
         [mappingKeys, t],
+    );
+
+    const branchOptions = useMemo(
+        () => [
+            { value: '', label: t('common.allBranches') },
+            ...branches.map((b) => ({ value: String(b.id), label: b.name })),
+        ],
+        [branches, t],
+    );
+
+    const legalEntityOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.accounting.postingRules.selectLegalEntity') },
+            ...legalEntities.map((entity) => ({
+                value: String(entity.id),
+                label: entity.legal_name,
+            })),
+        ],
+        [legalEntities, t],
     );
 
     const updateLine = (index, patch) => {
@@ -136,37 +159,32 @@ function Edit({
 
     const submit = (e) => {
         e.preventDefault();
-        put(route('admin.accounting.posting-rules.update', ruleSet.id));
+        transform((form) => ({
+            ...form,
+            branch_id: form.branch_id || null,
+            legal_entity_id: form.legal_entity_id || null,
+            effective_to: form.effective_to || null,
+            lines: form.lines.map((line) => ({
+                ...line,
+                account_id: line.account_id || null,
+                account_mapping_key: line.account_mapping_key || null,
+            })),
+        })).post(route('admin.accounting.posting-rules.store'));
     };
-
-    const readOnly = !can('accounting.manage-posting-rules');
-    const showWarning = Boolean(flashWarning) && !dismissedWarning;
 
     return (
         <>
-            <Head title={t('pages.accounting.postingRules.editTitle', { code: ruleSet.code })} />
+            <Head title={t('pages.accounting.postingRules.createTitle')} />
             <PageHeader
-                title={t('pages.accounting.postingRules.editTitle', { code: ruleSet.code })}
-                description={ruleSet.name}
+                title={t('pages.accounting.postingRules.createTitle')}
+                description={t('pages.accounting.postingRules.createDescription', {
+                    code: source.code,
+                })}
             >
                 <Link href={route('admin.accounting.posting-rules.index')} className="rp-btn-outline">
                     {t('common.back')}
                 </Link>
             </PageHeader>
-
-            {showWarning && (
-                <div className="mb-5 flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-                    <p>{String(flashWarning)}</p>
-                    <button
-                        type="button"
-                        className="rounded-lg p-1 text-amber-700 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-500/20"
-                        onClick={() => setDismissedWarning(true)}
-                        aria-label={t('common.closeMenu')}
-                    >
-                        <X className="h-4 w-4" />
-                    </button>
-                </div>
-            )}
 
             <form onSubmit={submit} className="space-y-5">
                 {errors.lines && typeof errors.lines === 'string' && (
@@ -177,13 +195,29 @@ function Edit({
 
                 <FormCard>
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <AdminFormField label={t('pages.accounting.postingRules.fields.name')} id="name" error={errors.name}>
+                        <AdminFormField
+                            label={t('pages.accounting.postingRules.fields.code')}
+                            id="code"
+                            error={errors.code}
+                        >
+                            <input
+                                id="code"
+                                value={data.code}
+                                onChange={(e) => setData('code', e.target.value)}
+                                className="rp-form-input font-mono text-sm"
+                                required
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.accounting.postingRules.fields.name')}
+                            id="name"
+                            error={errors.name}
+                        >
                             <input
                                 id="name"
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
                                 className="rp-form-input"
-                                disabled={readOnly}
                                 required
                             />
                         </AdminFormField>
@@ -193,7 +227,7 @@ function Edit({
                         >
                             <input
                                 id="event_type"
-                                value={ruleSet.event_type ?? ''}
+                                value={source.event_type ?? ''}
                                 className="rp-form-input font-mono text-sm"
                                 disabled
                                 readOnly
@@ -201,6 +235,30 @@ function Edit({
                             <p className="mt-1 text-xs text-rp-text-muted">
                                 {t('pages.accounting.postingRules.eventTypeLocked')}
                             </p>
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('common.branch')}
+                            id="branch_id"
+                            error={errors.branch_id}
+                        >
+                            <Select
+                                id="branch_id"
+                                value={data.branch_id}
+                                onChange={(value) => setData('branch_id', value ?? '')}
+                                options={branchOptions}
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.accounting.postingRules.fields.legalEntity')}
+                            id="legal_entity_id"
+                            error={errors.legal_entity_id}
+                        >
+                            <Select
+                                id="legal_entity_id"
+                                value={data.legal_entity_id}
+                                onChange={(value) => setData('legal_entity_id', value ?? '')}
+                                options={legalEntityOptions}
+                            />
                         </AdminFormField>
                         <AdminFormField
                             label={t('pages.accounting.postingRules.fields.priority')}
@@ -213,7 +271,6 @@ function Edit({
                                 value={data.priority}
                                 onChange={(e) => setData('priority', e.target.value)}
                                 className="rp-form-input"
-                                disabled={readOnly}
                             />
                         </AdminFormField>
                         <AdminFormField
@@ -227,7 +284,6 @@ function Edit({
                                 value={data.effective_from}
                                 onChange={(e) => setData('effective_from', e.target.value)}
                                 className="rp-form-input"
-                                disabled={readOnly}
                                 required
                             />
                         </AdminFormField>
@@ -242,7 +298,21 @@ function Edit({
                                 value={data.effective_to}
                                 onChange={(e) => setData('effective_to', e.target.value)}
                                 className="rp-form-input"
-                                disabled={readOnly}
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('common.status')}
+                            id="status"
+                            error={errors.status}
+                        >
+                            <Select
+                                id="status"
+                                value={data.status}
+                                onChange={(value) => setData('status', value ?? 'active')}
+                                options={[
+                                    { value: 'active', label: t('common.active') },
+                                    { value: 'inactive', label: t('common.inactive') },
+                                ]}
                             />
                         </AdminFormField>
                     </div>
@@ -251,17 +321,15 @@ function Edit({
                 <div className="rp-card overflow-hidden">
                     <div className="flex items-center justify-between border-b px-4 py-3">
                         <h3 className="font-semibold">{t('pages.accounting.postingRules.linesTitle')}</h3>
-                        {!readOnly && (
-                            <Button type="button" variant="outline" size="sm" onClick={addLine}>
-                                <Plus className="h-4 w-4" />
-                                {t('pages.accounting.postingRules.addLine')}
-                            </Button>
-                        )}
+                        <Button type="button" variant="outline" size="sm" onClick={addLine}>
+                            <Plus className="h-4 w-4" />
+                            {t('pages.accounting.postingRules.addLine')}
+                        </Button>
                     </div>
 
                     <div className="divide-y">
                         {data.lines.map((line, index) => (
-                            <div key={line.id ?? `line-${index}`} className="grid gap-3 p-4 lg:grid-cols-6">
+                            <div key={`line-${index}`} className="grid gap-3 p-4 lg:grid-cols-6">
                                 <AdminFormField
                                     label={t('pages.accounting.postingRules.lineFields.side')}
                                     id={`line-side-${index}`}
@@ -271,7 +339,6 @@ function Edit({
                                         value={line.entry_side}
                                         onChange={(value) => updateLine(index, { entry_side: value ?? '' })}
                                         options={entrySideOptions}
-                                        disabled={readOnly}
                                     />
                                 </AdminFormField>
                                 <AdminFormField
@@ -286,7 +353,6 @@ function Edit({
                                             updateLine(index, { account_resolution_type: value ?? '' })
                                         }
                                         options={resolutionOptions}
-                                        disabled={readOnly}
                                     />
                                 </AdminFormField>
                                 {line.account_resolution_type === 'fixed_account' ? (
@@ -303,7 +369,6 @@ function Edit({
                                                 { value: '', label: '—' },
                                                 ...accountOptions,
                                             ]}
-                                            disabled={readOnly}
                                         />
                                     </AdminFormField>
                                 ) : (
@@ -322,7 +387,6 @@ function Edit({
                                                 { value: '', label: '—' },
                                                 ...mappingKeyOptions,
                                             ]}
-                                            disabled={readOnly}
                                         />
                                     </AdminFormField>
                                 )}
@@ -335,37 +399,32 @@ function Edit({
                                         value={line.amount_source}
                                         onChange={(value) => updateLine(index, { amount_source: value ?? '' })}
                                         options={amountSourceOptions}
-                                        disabled={readOnly}
                                     />
                                 </AdminFormField>
-                                {!readOnly && (
-                                    <div className="flex items-end justify-end">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => removeLine(index)}
-                                            disabled={data.lines.length <= 1}
-                                        >
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </div>
-                                )}
+                                <div className="flex items-end justify-end">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => removeLine(index)}
+                                        disabled={data.lines.length <= 1}
+                                    >
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {!readOnly && (
-                    <div className="flex justify-end">
-                        <Button type="submit" variant="brand" disabled={processing}>
-                            {t('pages.accounting.postingRules.updateSubmit')}
-                        </Button>
-                    </div>
-                )}
+                <div className="flex justify-end">
+                    <Button type="submit" variant="brand" disabled={processing}>
+                        {t('pages.accounting.postingRules.createSubmit')}
+                    </Button>
+                </div>
             </form>
         </>
     );
 }
 
-export default withAdminLayout(Edit);
+export default withAdminLayout(Create);

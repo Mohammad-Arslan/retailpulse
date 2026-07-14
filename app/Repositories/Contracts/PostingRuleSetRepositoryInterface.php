@@ -13,5 +13,15 @@ interface PostingRuleSetRepositoryInterface
 
     public function findByIdWithLines(int $id): ?PostingRuleSet;
 
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @param  list<array<string, mixed>>  $lines
+     */
+    public function create(array $attributes, array $lines, int $userId): PostingRuleSet;
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @param  list<array<string, mixed>>  $lines
+     */
     public function update(PostingRuleSet $ruleSet, array $attributes, array $lines, int $userId): PostingRuleSet;
 }

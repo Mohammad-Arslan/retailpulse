@@ -50,6 +50,26 @@ final class PostingRuleSetRepository implements PostingRuleSetRepositoryInterfac
             ->find($id);
     }
 
+    public function create(array $attributes, array $lines, int $userId): PostingRuleSet
+    {
+        return DB::transaction(function () use ($attributes, $lines, $userId) {
+            $ruleSet = PostingRuleSet::query()->create([
+                ...$attributes,
+                'created_by' => $userId,
+                'updated_by' => $userId,
+            ]);
+
+            foreach ($lines as $line) {
+                PostingRuleLine::query()->create([
+                    'posting_rule_set_id' => $ruleSet->id,
+                    ...$line,
+                ]);
+            }
+
+            return $ruleSet->fresh(['lines.account']) ?? $ruleSet;
+        });
+    }
+
     public function update(PostingRuleSet $ruleSet, array $attributes, array $lines, int $userId): PostingRuleSet
     {
         return DB::transaction(function () use ($ruleSet, $attributes, $lines, $userId) {

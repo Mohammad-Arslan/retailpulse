@@ -23,4 +23,9 @@ final class PostingRuleSetPolicy
     {
         return $user->can('accounting.manage-posting-rules');
     }
+
+    public function create(User $user): bool
+    {
+        return $user->can('accounting.manage-posting-rules');
+    }
 }

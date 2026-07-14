@@ -426,6 +426,19 @@
                 },
                 "reasonPlaceholder": "اس لاگت کی تہ کی ضرورت کی وضاحت کریں (کم از کم 10 حروف)…",
                 "submit": "لاگت کی تہ بنائیں"
+            },
+            "postingRules": {
+                "createTitle": "رول سیٹ نقل کریں",
+                "createDescription": "{{code}} سے نیا رول سیٹ بنائیں۔ ایونٹ ٹائپ سورس کے مطابق مقفل رہتی ہے۔",
+                "createSubmit": "رول سیٹ بنائیں",
+                "duplicate": "نقل کریں",
+                "nameCopy": "{{name}} (نقل)",
+                "eventTypeLocked": "ایونٹ ٹائپ سورس رول سیٹ سے موروثی ہے اور تبدیل نہیں ہو سکتی۔",
+                "selectLegalEntity": "تمام قانونی ادارے",
+                "fields": {
+                    "code": "کوڈ",
+                    "legalEntity": "قانونی ادارہ"
+                }
             }
         }
     }

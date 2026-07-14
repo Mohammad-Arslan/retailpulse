@@ -1,7 +1,7 @@
 # RetailPulse User Manual — Accounting & Finance
 
 **Audience:** Accountants, finance managers, implementation consultants, and customer support  
-**Version:** 1.3 (July 2026)  
+**Version:** 1.4 (July 2026)  
 **Scope:** Phase 11 — General Ledger (GL), auto-posting, fiscal control, tax, imports, sub-ledgers, inventory costing, and financial reports
 
 This manual explains **where to click**, **what each screen does**, **how money flows through the system**, **what every term means**, and **what happens when something is missing or misconfigured**.
@@ -469,11 +469,30 @@ A **posting rule set** is tied to one **event type** (e.g. `sale.completed`) and
 | Field | Meaning |
 |-------|---------|
 | **Code / Name** | Admin identification |
-| **Event type** | Which accounting event triggers this rule |
+| **Event type** | Which accounting event triggers this rule (locked when duplicating — inherited from the source set) |
 | **Effective from / to** | Date range the rule applies |
 | **Branch** | Optional branch-specific override |
-| **Priority** | When multiple sets match, higher priority wins |
+| **Priority** | When multiple sets match, lower priority number wins (`orderBy priority` first) |
 | **Status** | Inactive rules are ignored |
+
+### 8.2.1 Duplicate a rule set
+
+There is no blank “New Rule Set” button. To create a branch override or effective-dated variant:
+
+1. Open **Accounting → Posting Rules**.
+2. On the source row, open **⋯ → Duplicate** (requires `accounting.manage-posting-rules`).
+3. Enter a unique **Code**, adjust **Name**, **Branch**, dates, **Priority**, and lines as needed.
+4. **Event type** is shown read-only and always matches the source.
+5. Save — you are redirected to edit the new set.
+
+**Validation**
+
+| Check | Behavior |
+|-------|----------|
+| At least one active debit **and** one active credit line | Blocks save |
+| Same event type + same branch scope + overlapping dates + **same priority** as another active set | Save succeeds, warning toast/banner names the conflicting code(s) |
+
+Differing priorities for overlapping scopes is intentional (that is what **Priority** is for).
 
 ### 8.3 Rule line concepts
 
@@ -1276,6 +1295,7 @@ A: Distinct `payment.received` event is deferred; partial coverage via sale sett
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.4 | July 2026 | Posting Rules: Duplicate flow (no blank create); event type locked to source; debit/credit structural validation; same-priority overlap warning |
 | 1.3 | July 2026 | All Branches (head-office) view now shows the union of every branch's enabled accounting sub-modules, so super-admin no longer loses Cost Centres/Tax/etc. from the sidebar |
 | 1.2 | July 2026 | Inventory & Costing settings; opening stock `unit_cost` + cost layers; Create Cost Layer backfill; TB gross period columns; Cash Flow cash/bank scope; Accounting Events default all statuses |
 | 1.1 | July 2026 | Added §16.2 debit notes (procurement flow); cross-ref §18.2 |

@@ -318,6 +318,10 @@ Route::middleware(['auth', 'admin', 'branch.context'])
 
             Route::get('posting-rules', [PostingRuleController::class, 'index'])
                 ->name('posting-rules.index');
+            Route::get('posting-rules/{posting_rule_set}/duplicate', [PostingRuleController::class, 'create'])
+                ->name('posting-rules.create');
+            Route::post('posting-rules', [PostingRuleController::class, 'store'])
+                ->name('posting-rules.store');
             Route::get('posting-rules/{posting_rule_set}/edit', [PostingRuleController::class, 'edit'])
                 ->name('posting-rules.edit');
             Route::put('posting-rules/{posting_rule_set}', [PostingRuleController::class, 'update'])

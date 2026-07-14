@@ -1893,7 +1893,13 @@
                 "description": "Configure auto-posting rule sets and debit/credit lines per event.",
                 "empty": "No posting rule sets found.",
                 "searchPlaceholder": "Search code, name, or event…",
-                "createTitle": "New Rule Set",
+                "createTitle": "Duplicate Rule Set",
+                "createDescription": "Create a new rule set from {{code}}. Event type stays locked to the source.",
+                "createSubmit": "Create Rule Set",
+                "duplicate": "Duplicate",
+                "nameCopy": "{{name}} (Copy)",
+                "eventTypeLocked": "Event type is inherited from the source rule set and cannot be changed.",
+                "selectLegalEntity": "All Legal Entities",
                 "editTitle": "Edit {{code}}",
                 "updateSubmit": "Save Rule Set",
                 "linesTitle": "Posting Lines",
@@ -1906,8 +1912,10 @@
                     "effectiveFrom": "Effective From"
                 },
                 "fields": {
+                    "code": "Code",
                     "name": "Name",
                     "eventType": "Event Type",
+                    "legalEntity": "Legal Entity",
                     "priority": "Priority",
                     "effectiveFrom": "Effective From",
                     "effectiveTo": "Effective To"

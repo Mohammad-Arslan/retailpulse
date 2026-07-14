@@ -66,4 +66,23 @@ final class PostingRuleSetPresenter
             ])->values()->all(),
         ];
     }
+
+    /**
+     * Payload for the duplicate/create form — source identity is explicit; line ids are omitted.
+     *
+     * @return array<string, mixed>
+     */
+    public static function forDuplicate(PostingRuleSet $set): array
+    {
+        $data = self::forEdit($set);
+        $data['source_id'] = $data['id'];
+        unset($data['id']);
+        $data['lines'] = array_map(static function (array $line): array {
+            unset($line['id']);
+
+            return $line;
+        }, $data['lines']);
+
+        return $data;
+    }
 }
