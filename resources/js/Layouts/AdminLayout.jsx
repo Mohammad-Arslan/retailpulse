@@ -15,8 +15,10 @@ import { cn } from '@/lib/utils';
 import { useCan } from '@/Hooks/useCan';
 import { Link, usePage } from '@inertiajs/react';
 import { LogOut, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+const SIDEBAR_SCROLL_KEY = 'rp-admin-sidebar-scroll';
 
 function SidebarNav({ collapsed, onNavigate }) {
     const can = useCan();
@@ -112,6 +114,45 @@ export default function AdminLayout({ children, fullHeight = false, posMode = fa
     const { collapsed, toggleCollapsed } = useSidebarCollapsed();
     const { isDark, toggleTheme } = useTheme();
     const { open: paletteOpen, openPalette, closePalette } = useCommandPalette();
+    const navScrollRef = useRef(null);
+    const pageUrl = usePage().url;
+
+    // Inertia remounts the layout on navigation, which resets scrollTop.
+    // Restore the last position, then ensure the active item is visible.
+    useLayoutEffect(() => {
+        const scroller = navScrollRef.current;
+        if (!scroller) return;
+
+        const saved = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+        if (saved !== null) {
+            scroller.scrollTop = Number(saved) || 0;
+        }
+
+        const active = scroller.querySelector('.rp-sidebar-nav-item--active');
+        if (active) {
+            const itemRect = active.getBoundingClientRect();
+            const scrollerRect = scroller.getBoundingClientRect();
+            if (itemRect.top < scrollerRect.top) {
+                scroller.scrollTop -= scrollerRect.top - itemRect.top;
+            } else if (itemRect.bottom > scrollerRect.bottom) {
+                scroller.scrollTop += itemRect.bottom - scrollerRect.bottom;
+            }
+        }
+
+        sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(scroller.scrollTop));
+    }, [pageUrl, collapsed]);
+
+    useEffect(() => {
+        const scroller = navScrollRef.current;
+        if (!scroller) return;
+
+        const onScroll = () => {
+            sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(scroller.scrollTop));
+        };
+
+        scroller.addEventListener('scroll', onScroll, { passive: true });
+        return () => scroller.removeEventListener('scroll', onScroll);
+    }, []);
 
     const roleLabel = roles[0] ?? 'Administrator';
 
@@ -148,7 +189,11 @@ export default function AdminLayout({ children, fullHeight = false, posMode = fa
 
             <SidebarSearch collapsed={collapsed} onOpen={openPalette} />
 
-            <ScrollArea as="nav" className="flex-1 overflow-y-auto overflow-x-hidden py-2">
+            <ScrollArea
+                ref={navScrollRef}
+                as="nav"
+                className="flex-1 overflow-y-auto overflow-x-hidden py-2"
+            >
                 <SidebarNav
                     collapsed={collapsed}
                     onNavigate={() => setMobileOpen(false)}
