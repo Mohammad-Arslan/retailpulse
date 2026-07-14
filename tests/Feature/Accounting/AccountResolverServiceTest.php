@@ -6,7 +6,9 @@ namespace Tests\Feature\Accounting;
 
 use App\Models\AccountMapping;
 use App\Models\Branch;
+use App\Models\Category;
 use App\Models\ChartOfAccount;
+use App\Models\OrganizationEntity;
 use App\Services\Accounting\AccountResolverService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -149,5 +151,100 @@ final class AccountResolverServiceTest extends TestCase
         $resolved = app(AccountResolverService::class)->resolveByMappingKey('cash_on_hand');
 
         $this->assertNull($resolved);
+    }
+
+    public function test_legal_entity_scoped_mapping_is_only_used_for_that_entity(): void
+    {
+        $entityA = OrganizationEntity::query()->create([
+            'legal_name' => 'Entity A',
+            'functional_currency_code' => 'USD',
+            'status' => 'active',
+        ]);
+        $entityB = OrganizationEntity::query()->create([
+            'legal_name' => 'Entity B',
+            'functional_currency_code' => 'USD',
+            'status' => 'active',
+        ]);
+
+        $entityAccount = ChartOfAccount::query()->create([
+            'code' => '1100-A',
+            'name' => 'Entity A Cash',
+            'type' => 'asset',
+        ]);
+
+        AccountMapping::query()->create([
+            'mapping_key' => 'cash_on_hand',
+            'account_id' => $this->globalAccount->id,
+            'status' => 'active',
+        ]);
+        AccountMapping::query()->create([
+            'mapping_key' => 'cash_on_hand',
+            'account_id' => $entityAccount->id,
+            'legal_entity_id' => $entityA->id,
+            'status' => 'active',
+        ]);
+
+        $resolver = app(AccountResolverService::class);
+
+        $this->assertSame(
+            $entityAccount->id,
+            $resolver->resolveByMappingKey('cash_on_hand', ['legal_entity_id' => $entityA->id])?->id,
+        );
+        $this->assertSame(
+            $this->globalAccount->id,
+            $resolver->resolveByMappingKey('cash_on_hand', ['legal_entity_id' => $entityB->id])?->id,
+        );
+        $this->assertSame(
+            $this->globalAccount->id,
+            $resolver->resolveByMappingKey('cash_on_hand')?->id,
+        );
+    }
+
+    public function test_category_scoped_mapping_does_not_leak_into_other_lookups(): void
+    {
+        $category = Category::query()->create([
+            'name' => 'Electronics',
+            'slug' => 'electronics-resolver',
+            'is_active' => true,
+        ]);
+        $otherCategory = Category::query()->create([
+            'name' => 'Grocery',
+            'slug' => 'grocery-resolver',
+            'is_active' => true,
+        ]);
+
+        $categoryAccount = ChartOfAccount::query()->create([
+            'code' => '4001-C',
+            'name' => 'Electronics Revenue',
+            'type' => 'revenue',
+        ]);
+
+        AccountMapping::query()->create([
+            'mapping_key' => 'sales_revenue',
+            'account_id' => $this->globalAccount->id,
+            'status' => 'active',
+        ]);
+        AccountMapping::query()->create([
+            'mapping_key' => 'sales_revenue',
+            'account_id' => $categoryAccount->id,
+            'product_category_id' => $category->id,
+            'status' => 'active',
+            'priority' => 10,
+        ]);
+
+        $resolver = app(AccountResolverService::class);
+
+        $this->assertSame(
+            $categoryAccount->id,
+            $resolver->resolveByMappingKey('sales_revenue', ['product_category_id' => $category->id])?->id,
+        );
+        $this->assertSame(
+            $this->globalAccount->id,
+            $resolver->resolveByMappingKey('sales_revenue', ['product_category_id' => $otherCategory->id])?->id,
+        );
+        $this->assertSame(
+            $this->globalAccount->id,
+            $resolver->resolveByMappingKey('sales_revenue')?->id,
+        );
     }
 }

@@ -78,6 +78,48 @@ final class FixedAssetsTest extends TestCase
         ]);
     }
 
+    public function test_acquiring_an_asset_posts_balanced_asset_and_payable_journal(): void
+    {
+        $category = AssetCategory::query()->firstOrFail();
+        $branchId = $this->asset->branch_id;
+
+        $asset = app(\App\Services\Accounting\FixedAssetService::class)->create(
+            new \App\DTOs\Accounting\CreateFixedAssetData(
+                assetCode: 'FA-NEW-100',
+                name: 'Scanner',
+                categoryId: $category->id,
+                acquisitionCost: 2500,
+                acquisitionDate: '2026-03-01',
+                usefulLifeMonths: 36,
+                salvageValue: 0,
+                branchId: $branchId,
+                legalEntityId: null,
+                location: null,
+            ),
+        );
+
+        $event = AccountingEvent::query()
+            ->where('event_type', 'asset.acquired')
+            ->where('source_id', $asset->id)
+            ->firstOrFail();
+
+        $this->assertNotNull($event->journal_entry_id);
+
+        $journal = JournalEntry::query()->with('transactions')->findOrFail($event->journal_entry_id);
+        $this->assertSame(
+            (float) $journal->transactions->sum('debit'),
+            (float) $journal->transactions->sum('credit'),
+        );
+
+        $assetAccountId = (int) $asset->asset_account_id;
+        $payableAccountId = (int) \App\Models\AccountMapping::query()
+            ->where('mapping_key', 'accounts_payable')
+            ->value('account_id');
+
+        $this->assertSame(2500.0, (float) $journal->transactions->where('account_id', $assetAccountId)->sum('debit'));
+        $this->assertSame(2500.0, (float) $journal->transactions->where('account_id', $payableAccountId)->sum('credit'));
+    }
+
     public function test_monthly_depreciation_is_two_hundred_for_twelve_thousand_over_five_years(): void
     {
         $this->assertSame(200.0, $this->asset->monthlyDepreciation());

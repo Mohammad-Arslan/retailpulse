@@ -8,7 +8,7 @@ import { Button } from '@/Components/ui/button';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Layers, Plus } from 'lucide-react';
+import { Layers, Plus, SplitSquareVertical } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -20,6 +20,8 @@ function emptyForm() {
         branch_id: '',
         legal_entity_id: '',
         status: 'active',
+        headcount: '',
+        floor_area: '',
     };
 }
 
@@ -30,14 +32,28 @@ function flattenTree(nodes, depth = 0) {
     ]);
 }
 
-function Index({ costCentres = [], parentOptions = [], branches = [] }) {
+function Index({
+    costCentres = [],
+    parentOptions = [],
+    branches = [],
+    allocatableLines = [],
+    allocationMethods = [],
+}) {
     const can = useCan();
     const { t } = useTranslation();
     const [modalOpen, setModalOpen] = useState(false);
+    const [allocateOpen, setAllocateOpen] = useState(false);
     const [editing, setEditing] = useState(null);
 
     const confirm = useConfirm();
     const form = useForm(emptyForm());
+    const allocateForm = useForm({
+        source_journal_transaction_id: '',
+        method: 'equal_split',
+        targets: [],
+        period_from: '',
+        period_to: '',
+    });
     const flatRows = useMemo(() => flattenTree(costCentres), [costCentres]);
 
     const openCreate = () => {
@@ -57,6 +73,8 @@ function Index({ costCentres = [], parentOptions = [], branches = [] }) {
             branch_id: centre.branch_id ? String(centre.branch_id) : '',
             legal_entity_id: centre.legal_entity_id ? String(centre.legal_entity_id) : '',
             status: centre.status ?? 'active',
+            headcount: centre.headcount != null ? String(centre.headcount) : '',
+            floor_area: centre.floor_area != null ? String(centre.floor_area) : '',
         });
         setModalOpen(true);
     };
@@ -70,6 +88,22 @@ function Index({ costCentres = [], parentOptions = [], branches = [] }) {
         } else {
             form.post(route('admin.accounting.cost-centres.store'), options);
         }
+    };
+
+    const submitAllocate = (e) => {
+        e.preventDefault();
+        allocateForm
+            .transform((data) => ({
+                ...data,
+                source_journal_transaction_id: Number(data.source_journal_transaction_id),
+                targets: (data.targets ?? []).map((id) => ({ cost_centre_id: Number(id) })),
+                period_from: data.period_from || null,
+                period_to: data.period_to || null,
+            }))
+            .post(route('admin.accounting.cost-centres.allocate'), {
+                preserveScroll: true,
+                onSuccess: () => setAllocateOpen(false),
+            });
     };
 
     const deleteCentre = async (centre) => {
@@ -104,6 +138,23 @@ function Index({ costCentres = [], parentOptions = [], branches = [] }) {
         [branches, t],
     );
 
+    const lineOptions = useMemo(
+        () => allocatableLines.map((line) => ({ value: String(line.id), label: line.label })),
+        [allocatableLines],
+    );
+
+    const methodOptions = useMemo(
+        () =>
+            allocationMethods.map((method) => ({
+                value: method,
+                label: method
+                    .split('_')
+                    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                    .join(' '),
+            })),
+        [allocationMethods],
+    );
+
     const columns = useMemo(
         () => [
             {
@@ -132,6 +183,11 @@ function Index({ costCentres = [], parentOptions = [], branches = [] }) {
                 cell: ({ row }) => row.original.branch_name ?? '—',
             },
             {
+                id: 'headcount',
+                header: t('pages.accounting.costCentres.columns.headcount'),
+                cell: ({ row }) => row.original.headcount ?? '—',
+            },
+            {
                 id: 'status',
                 header: t('common.status'),
                 cell: ({ row }) => (
@@ -143,7 +199,7 @@ function Index({ costCentres = [], parentOptions = [], branches = [] }) {
     );
 
     const rowActions = (centre) => {
-        if (!can('accounting.manage-cost-centres')) {
+        if (! can('accounting.manage-cost-centres')) {
             return [];
         }
 
@@ -151,6 +207,14 @@ function Index({ costCentres = [], parentOptions = [], branches = [] }) {
             { label: t('common.edit'), type: 'edit', onClick: () => openEdit(centre) },
             { label: t('common.delete'), type: 'delete', onClick: () => deleteCentre(centre) },
         ];
+    };
+
+    const toggleTarget = (id) => {
+        const current = allocateForm.data.targets ?? [];
+        const next = current.includes(id)
+            ? current.filter((value) => value !== id)
+            : [...current, id];
+        allocateForm.setData('targets', next);
     };
 
     return (
@@ -161,10 +225,16 @@ function Index({ costCentres = [], parentOptions = [], branches = [] }) {
                 description={t('pages.accounting.costCentres.description')}
             >
                 {can('accounting.manage-cost-centres') && (
-                    <Button variant="brand" onClick={openCreate}>
-                        <Plus className="h-4 w-4" />
-                        {t('pages.accounting.costCentres.createTitle')}
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setAllocateOpen(true)}>
+                            <SplitSquareVertical className="h-4 w-4" />
+                            {t('pages.accounting.costCentres.allocateAction')}
+                        </Button>
+                        <Button variant="brand" onClick={openCreate}>
+                            <Plus className="h-4 w-4" />
+                            {t('pages.accounting.costCentres.createTitle')}
+                        </Button>
+                    </div>
                 )}
             </PageHeader>
 
@@ -217,6 +287,27 @@ function Index({ costCentres = [], parentOptions = [], branches = [] }) {
                                 options={branchOptions}
                             />
                         </AdminFormField>
+                        <AdminFormField label={t('pages.accounting.costCentres.fields.headcount')} id="headcount" error={form.errors.headcount}>
+                            <input
+                                id="headcount"
+                                type="number"
+                                min="0"
+                                value={form.data.headcount}
+                                onChange={(e) => form.setData('headcount', e.target.value)}
+                                className="rp-form-input"
+                            />
+                        </AdminFormField>
+                        <AdminFormField label={t('pages.accounting.costCentres.fields.floorArea')} id="floor_area" error={form.errors.floor_area}>
+                            <input
+                                id="floor_area"
+                                type="number"
+                                min="0"
+                                step="0.0001"
+                                value={form.data.floor_area}
+                                onChange={(e) => form.setData('floor_area', e.target.value)}
+                                className="rp-form-input"
+                            />
+                        </AdminFormField>
                     </div>
                     <div className="flex justify-end gap-2">
                         <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
@@ -224,6 +315,70 @@ function Index({ costCentres = [], parentOptions = [], branches = [] }) {
                         </Button>
                         <Button type="submit" variant="brand" disabled={form.processing}>
                             {t('common.save')}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            <Modal show={allocateOpen} onClose={() => setAllocateOpen(false)} maxWidth="lg">
+                <form onSubmit={submitAllocate} className="space-y-4 p-6">
+                    <h3 className="text-lg font-semibold">
+                        {t('pages.accounting.costCentres.allocateTitle')}
+                    </h3>
+                    {allocateForm.errors.allocation && (
+                        <p className="text-sm text-rose-600">{allocateForm.errors.allocation}</p>
+                    )}
+                    <AdminFormField
+                        label={t('pages.accounting.costCentres.fields.sourceLine')}
+                        id="source_journal_transaction_id"
+                        error={allocateForm.errors.source_journal_transaction_id}
+                    >
+                        <Select
+                            id="source_journal_transaction_id"
+                            value={allocateForm.data.source_journal_transaction_id}
+                            onChange={(value) => allocateForm.setData('source_journal_transaction_id', value ?? '')}
+                            options={[{ value: '', label: '—' }, ...lineOptions]}
+                        />
+                    </AdminFormField>
+                    <AdminFormField
+                        label={t('pages.accounting.costCentres.fields.method')}
+                        id="method"
+                        error={allocateForm.errors.method}
+                    >
+                        <Select
+                            id="method"
+                            value={allocateForm.data.method}
+                            onChange={(value) => allocateForm.setData('method', value ?? 'equal_split')}
+                            options={methodOptions}
+                        />
+                    </AdminFormField>
+                    <div>
+                        <p className="mb-2 text-sm font-medium text-rp-text">
+                            {t('pages.accounting.costCentres.fields.targets')}
+                        </p>
+                        <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-rp-border p-3">
+                            {flatRows.map((centre) => (
+                                <label key={centre.id} className="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={(allocateForm.data.targets ?? []).includes(String(centre.id))}
+                                        onChange={() => toggleTarget(String(centre.id))}
+                                    />
+                                    <span className="font-mono">{centre.code}</span>
+                                    <span>{centre.name}</span>
+                                </label>
+                            ))}
+                        </div>
+                        {allocateForm.errors.targets && (
+                            <p className="mt-1 text-sm text-rose-600">{allocateForm.errors.targets}</p>
+                        )}
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={() => setAllocateOpen(false)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button type="submit" variant="brand" disabled={allocateForm.processing}>
+                            {t('pages.accounting.costCentres.allocateSubmit')}
                         </Button>
                     </div>
                 </form>

@@ -386,6 +386,8 @@ Route::middleware(['auth', 'admin', 'branch.context'])
                     ->name('cost-centres.index');
                 Route::post('cost-centres', [CostCentreController::class, 'store'])
                     ->name('cost-centres.store');
+                Route::post('cost-centres/allocate', [CostCentreController::class, 'allocate'])
+                    ->name('cost-centres.allocate');
                 Route::put('cost-centres/{cost_centre}', [CostCentreController::class, 'update'])
                     ->name('cost-centres.update');
                 Route::delete('cost-centres/{cost_centre}', [CostCentreController::class, 'destroy'])

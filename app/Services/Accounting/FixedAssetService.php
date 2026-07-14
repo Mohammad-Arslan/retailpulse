@@ -12,6 +12,7 @@ use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Repositories\Contracts\ChartOfAccountRepositoryInterface;
 use App\Repositories\Contracts\FixedAssetRepositoryInterface;
 use App\Support\FixedAssetPresenter;
+use Illuminate\Support\Facades\DB;
 
 final class FixedAssetService
 {
@@ -19,6 +20,7 @@ final class FixedAssetService
         private readonly FixedAssetRepositoryInterface $fixedAssetRepository,
         private readonly BranchRepositoryInterface $branchRepository,
         private readonly ChartOfAccountRepositoryInterface $chartOfAccountRepository,
+        private readonly AccountingEventService $accountingEvents,
     ) {}
 
     /**
@@ -41,24 +43,48 @@ final class FixedAssetService
     {
         $category = $this->fixedAssetRepository->findCategoryById($data->categoryId);
 
-        return $this->fixedAssetRepository->createAsset([
-            'asset_code' => $data->assetCode,
-            'name' => $data->name,
-            'category_id' => $data->categoryId,
-            'acquisition_cost' => $data->acquisitionCost,
-            'acquisition_date' => $data->acquisitionDate,
-            'useful_life_months' => $data->usefulLifeMonths,
-            'salvage_value' => $data->salvageValue,
-            'branch_id' => $data->branchId,
-            'legal_entity_id' => $data->legalEntityId,
-            'location' => $data->location,
-            'depreciation_method' => $category?->depreciation_method ?? 'straight_line',
-            'depreciation_start_date' => $data->acquisitionDate,
-            'asset_account_id' => $category?->asset_account_id,
-            'accumulated_depreciation_account_id' => $category?->accumulated_depreciation_account_id,
-            'depreciation_expense_account_id' => $category?->depreciation_expense_account_id,
-            'status' => 'active',
-        ]);
+        return DB::transaction(function () use ($data, $category) {
+            $asset = $this->fixedAssetRepository->createAsset([
+                'asset_code' => $data->assetCode,
+                'name' => $data->name,
+                'category_id' => $data->categoryId,
+                'acquisition_cost' => $data->acquisitionCost,
+                'acquisition_date' => $data->acquisitionDate,
+                'useful_life_months' => $data->usefulLifeMonths,
+                'salvage_value' => $data->salvageValue,
+                'branch_id' => $data->branchId,
+                'legal_entity_id' => $data->legalEntityId,
+                'location' => $data->location,
+                'depreciation_method' => $category?->depreciation_method ?? 'straight_line',
+                'depreciation_start_date' => $data->acquisitionDate,
+                'asset_account_id' => $category?->asset_account_id,
+                'accumulated_depreciation_account_id' => $category?->accumulated_depreciation_account_id,
+                'depreciation_expense_account_id' => $category?->depreciation_expense_account_id,
+                'status' => 'active',
+            ]);
+
+            if ($data->acquisitionCost > 0) {
+                $this->accountingEvents->process(
+                    'asset.acquired',
+                    FixedAsset::class,
+                    (int) $asset->id,
+                    [
+                        'date' => $data->acquisitionDate,
+                        'branch_id' => $data->branchId,
+                        'legal_entity_id' => $data->legalEntityId,
+                        'fixed_asset_id' => $asset->id,
+                        'gross_amount' => $data->acquisitionCost,
+                        'settlement_amount' => $data->acquisitionCost,
+                        'net_amount' => $data->acquisitionCost,
+                        'description' => __('Asset acquisition — :code', ['code' => $asset->asset_code]),
+                        'source_module' => 'accounting',
+                        'source_number' => $asset->asset_code,
+                    ],
+                );
+            }
+
+            return $asset->fresh();
+        });
     }
 
     public function createCategory(CreateAssetCategoryData $data): void

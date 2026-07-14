@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\AccountResolutionType;
 use App\Enums\AmountSource;
 use App\Enums\PostingRuleEntrySide;
+use App\Enums\PostingRuleWarehouseScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'account_resolution_type',
     'account_id',
     'account_mapping_key',
+    'warehouse_scope',
     'amount_source',
     'narration_template',
     'required',
@@ -31,6 +33,7 @@ class PostingRuleLine extends Model
             'entry_side' => PostingRuleEntrySide::class,
             'account_resolution_type' => AccountResolutionType::class,
             'amount_source' => AmountSource::class,
+            'warehouse_scope' => PostingRuleWarehouseScope::class,
             'required' => 'boolean',
         ];
     }

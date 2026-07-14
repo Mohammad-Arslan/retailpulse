@@ -161,6 +161,33 @@ final class CostServiceTest extends TestCase
         $this->assertSame(0, InventoryCostLayer::query()->count());
     }
 
+    public function test_duplicate_sale_completed_dispatch_consumes_cost_layers_once(): void
+    {
+        $layer = app(CostService::class)->createLayerOnReceive(
+            productVariantId: $this->variant->id,
+            warehouseId: $this->warehouse->id,
+            qtyReceived: 10,
+            unitCost: 100,
+            sourceReferenceType: 'Tests\\GrnItem',
+            sourceReferenceId: 99,
+        );
+
+        $sale = $this->createSaleWithItem(quantity: 4, unitPrice: 200);
+        $listener = app(ProcessAccountingOnSaleCompleted::class);
+        $event = new SaleCompleted($sale->fresh(['items', 'payments', 'invoice']));
+
+        $listener->handle($event);
+        $listener->handle(new SaleCompleted($sale->fresh(['items', 'payments', 'invoice'])));
+
+        $layer->refresh();
+        $this->assertSame(6.0, (float) $layer->qty_remaining);
+        $this->assertSame(1, JournalEntry::query()->where('source_event', 'sale.completed')->count());
+        $this->assertSame(1, \App\Models\AccountingEvent::query()
+            ->where('event_type', 'sale.completed')
+            ->where('source_id', $sale->id)
+            ->count());
+    }
+
     private function createSaleWithItem(int $quantity, float $unitPrice): Sale
     {
         $lineTotal = $quantity * $unitPrice;

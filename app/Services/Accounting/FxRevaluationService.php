@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Accounting;
 
 use App\Enums\ChartOfAccountType;
+use App\Enums\ExchangeRateType;
 use App\Enums\JournalEntryStatus;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
@@ -49,7 +50,11 @@ final class FxRevaluationService
 
             [$netTransactionBalance, $bookedFunctional] = $balances;
 
-            $periodEndRate = $this->currencyConversion->resolveRate($account->currency_code, $asOfDate);
+            $periodEndRate = $this->currencyConversion->resolveRate(
+                $account->currency_code,
+                $asOfDate,
+                ExchangeRateType::Closing,
+            );
             $revaluedFunctional = round($netTransactionBalance * $periodEndRate, 2);
             $delta = round($revaluedFunctional - $bookedFunctional, 2);
 
@@ -183,7 +188,10 @@ final class FxRevaluationService
     {
         $rows = JournalTransaction::query()
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_transactions.journal_entry_id')
-            ->where('journal_entries.status', JournalEntryStatus::Posted)
+            ->whereIn('journal_entries.status', [
+                JournalEntryStatus::Posted,
+                JournalEntryStatus::Reversed,
+            ])
             ->where('journal_transactions.account_id', $account->id)
             ->whereDate('journal_entries.journal_date', '<=', $asOfDate->toDateString())
             ->when($branchId, fn ($q) => $q->where('journal_entries.branch_id', $branchId))

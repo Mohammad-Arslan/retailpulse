@@ -27,6 +27,8 @@ final class CostCentrePresenter
                 'branch_name' => $centre->branch?->name,
                 'legal_entity_id' => $centre->legal_entity_id,
                 'status' => $centre->status,
+                'headcount' => $centre->headcount,
+                'floor_area' => $centre->floor_area !== null ? (float) $centre->floor_area : null,
                 'depth' => $depth,
                 'children' => self::tree($centres, $centre->id, $depth + 1),
             ])

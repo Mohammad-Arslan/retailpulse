@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Accounting;
 
+use App\Enums\ExchangeRateType;
 use App\Enums\JournalEntryStatus;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\FinancialSetting;
+use App\Models\JournalEntry;
 use App\Models\User;
 use App\Services\Accounting\FxRevaluationService;
 use App\Services\Accounting\JournalService;
@@ -190,5 +192,98 @@ final class FxRevaluationServiceTest extends TestCase
         $this->expectException(DomainException::class);
 
         $service->revalue(Carbon::parse('2026-01-31'), $this->user->id);
+    }
+
+    public function test_revalue_prefers_closing_rate_over_spot_on_same_date(): void
+    {
+        $this->postOpeningBalance();
+
+        $currencyId = (int) Currency::query()->where('code', 'EUR')->value('id');
+
+        ExchangeRate::query()->create([
+            'currency_id' => $currencyId,
+            'rate_date' => '2026-01-31',
+            'rate' => 1.50,
+            'rate_type' => ExchangeRateType::Spot,
+            'status' => 'active',
+        ]);
+        ExchangeRate::query()->create([
+            'currency_id' => $currencyId,
+            'rate_date' => '2026-01-31',
+            'rate' => 1.20,
+            'rate_type' => ExchangeRateType::Closing,
+            'status' => 'active',
+        ]);
+
+        $result = app(FxRevaluationService::class)->revalue(Carbon::parse('2026-01-31'), $this->user->id);
+
+        // Booked at 1.10 → 1100; closing 1.20 → 1200; gain 100 (not spot 400).
+        $this->assertSame(100.0, $result['lines'][0]['delta']);
+        $eurLine = $result['revaluation_entry']->transactions
+            ->firstWhere('account_id', $this->eurBankAccount->id);
+        $this->assertSame(1.20, (float) $eurLine->exchange_rate);
+    }
+
+    public function test_resolve_rate_is_deterministic_when_multiple_types_share_a_date(): void
+    {
+        $currencyId = (int) Currency::query()->where('code', 'EUR')->value('id');
+
+        ExchangeRate::query()->create([
+            'currency_id' => $currencyId,
+            'rate_date' => '2026-01-31',
+            'rate' => 1.11,
+            'rate_type' => ExchangeRateType::Custom,
+            'status' => 'active',
+        ]);
+        ExchangeRate::query()->create([
+            'currency_id' => $currencyId,
+            'rate_date' => '2026-01-31',
+            'rate' => 1.05,
+            'rate_type' => ExchangeRateType::Spot,
+            'status' => 'active',
+        ]);
+        ExchangeRate::query()->create([
+            'currency_id' => $currencyId,
+            'rate_date' => '2026-01-31',
+            'rate' => 1.09,
+            'rate_type' => ExchangeRateType::Average,
+            'status' => 'active',
+        ]);
+
+        $rate = app(\App\Services\Accounting\CurrencyConversionService::class)
+            ->resolveRate('EUR', '2026-01-31');
+
+        $this->assertSame(1.05, $rate);
+    }
+
+    public function test_reversed_fx_pair_nets_zero_transaction_balance(): void
+    {
+        $this->postOpeningBalance();
+
+        $journalService = app(JournalService::class);
+        $original = JournalEntry::query()->where('description', 'Opening EUR balance')->firstOrFail();
+        $journalService->reverse($original, $this->user->id, null, Carbon::parse('2026-01-15'));
+
+        $balances = (new \ReflectionMethod(FxRevaluationService::class, 'accountBalances'))
+            ->invoke(
+                app(FxRevaluationService::class),
+                $this->eurBankAccount,
+                Carbon::parse('2026-01-31'),
+                null,
+                null,
+            );
+
+        $this->assertNotNull($balances);
+        [$netTransaction, $bookedFunctional] = $balances;
+        $this->assertSame(0.0, round($netTransaction, 2));
+        $this->assertSame(0.0, round($bookedFunctional, 2));
+
+        $reversal = JournalEntry::query()
+            ->where('reversal_of_journal_entry_id', $original->id)
+            ->firstOrFail();
+        $reversalTca = (float) $reversal->transactions()
+            ->where('account_id', $this->eurBankAccount->id)
+            ->value('transaction_currency_amount');
+        $this->assertGreaterThan(0, $reversalTca);
     }
 }

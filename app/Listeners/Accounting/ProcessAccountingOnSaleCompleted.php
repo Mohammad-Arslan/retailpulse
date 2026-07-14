@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Listeners\Accounting;
 
+use App\Enums\AccountingEventStatus;
 use App\Events\SaleCompleted;
+use App\Models\AccountingEvent;
 use App\Models\Customer;
 use App\Models\Sale;
 use App\Services\Accounting\AccountingEventService;
@@ -29,6 +31,22 @@ final class ProcessAccountingOnSaleCompleted
         }
 
         $sale->loadMissing(['items', 'payments', 'invoice']);
+
+        $idempotencyKey = 'sale.completed:'.Sale::class.':'.$sale->id;
+        $existingEvent = AccountingEvent::query()
+            ->where('idempotency_key', $idempotencyKey)
+            ->first();
+
+        if (in_array($existingEvent?->processing_status, [
+            AccountingEventStatus::Completed,
+            AccountingEventStatus::Skipped,
+        ], true)) {
+            return;
+        }
+
+        if ($sale->items->contains(fn ($item) => $item->cogs_journal_entry_id !== null)) {
+            return;
+        }
 
         DB::transaction(function () use ($sale) {
             $inventoryCost = 0.0;

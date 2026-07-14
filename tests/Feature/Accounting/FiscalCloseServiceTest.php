@@ -106,6 +106,28 @@ final class FiscalCloseServiceTest extends TestCase
 
         $this->assertSame(100.0, (float) $currentYearLine->debit);
         $this->assertSame(100.0, (float) $retainedLine->credit);
+        $this->assertNotNull($closingEntry->locked_at);
+    }
+
+    public function test_journal_posted_while_year_is_closing_attaches_to_fiscal_year(): void
+    {
+        $this->configureFinancialSettings();
+        $fiscalYear = $this->createOpenFiscalYear();
+        $fiscalYear->update(['status' => FiscalYearStatus::Closing]);
+
+        $entry = app(JournalService::class)->createDraft(
+            [
+                'journal_date' => '2026-06-15',
+                'description' => 'During close',
+            ],
+            [
+                ['account_id' => $this->cash->id, 'debit' => 25, 'credit' => 0],
+                ['account_id' => $this->revenue->id, 'debit' => 0, 'credit' => 25],
+            ],
+            $this->user->id,
+        );
+
+        $this->assertSame($fiscalYear->id, $entry->fiscal_year_id);
     }
 
     public function test_close_throws_when_unposted_journals_remain(): void

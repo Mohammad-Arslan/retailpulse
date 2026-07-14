@@ -129,6 +129,11 @@ final class AccountingEventService
             if ($event->processing_status === AccountingEventStatus::Completed) {
                 return $event;
             }
+
+            // Still in-flight within the stale window — do not create a second journal.
+            if ($event->processing_status === AccountingEventStatus::Processing) {
+                return $event;
+            }
         }
 
         return $this->process(

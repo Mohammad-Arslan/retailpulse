@@ -15,6 +15,8 @@ final readonly class CreateCostCentreData
         public ?int $branchId,
         public ?int $legalEntityId,
         public string $status,
+        public ?int $headcount = null,
+        public ?float $floorArea = null,
     ) {}
 
     public static function fromRequest(StoreCostCentreRequest $request): self
@@ -28,6 +30,8 @@ final readonly class CreateCostCentreData
             branchId: $request->validated('branch_id') !== null ? (int) $request->validated('branch_id') : null,
             legalEntityId: $request->validated('legal_entity_id') !== null ? (int) $request->validated('legal_entity_id') : null,
             status: $request->validated('status') ?? 'active',
+            headcount: $request->validated('headcount') !== null ? (int) $request->validated('headcount') : null,
+            floorArea: $request->validated('floor_area') !== null ? (float) $request->validated('floor_area') : null,
         );
     }
 
@@ -43,6 +47,8 @@ final readonly class CreateCostCentreData
             'branch_id' => $this->branchId,
             'legal_entity_id' => $this->legalEntityId,
             'status' => $this->status,
+            'headcount' => $this->headcount,
+            'floor_area' => $this->floorArea,
         ];
     }
 }

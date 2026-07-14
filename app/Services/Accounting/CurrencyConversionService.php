@@ -21,8 +21,11 @@ final class CurrencyConversionService
         return $this->settings->get()->functional_currency_code;
     }
 
-    public function resolveRate(string $currencyCode, CarbonInterface|string|null $date = null): float
-    {
+    public function resolveRate(
+        string $currencyCode,
+        CarbonInterface|string|null $date = null,
+        ?ExchangeRateType $preferredType = null,
+    ): float {
         if ($currencyCode === $this->functionalCurrencyCode()) {
             return 1.0;
         }
@@ -35,11 +38,25 @@ final class CurrencyConversionService
 
         $parsedDate = $date instanceof CarbonInterface ? $date->toDateString() : ($date ?? now()->toDateString());
 
-        $rate = ExchangeRate::query()
+        $baseQuery = ExchangeRate::query()
             ->where('currency_id', $currency->id)
             ->where('status', 'active')
-            ->whereDate('rate_date', '<=', $parsedDate)
+            ->whereDate('rate_date', '<=', $parsedDate);
+
+        if ($preferredType !== null) {
+            $preferred = (clone $baseQuery)
+                ->where('rate_type', $preferredType)
+                ->orderByDesc('rate_date')
+                ->value('rate');
+
+            if ($preferred !== null) {
+                return (float) $preferred;
+            }
+        }
+
+        $rate = (clone $baseQuery)
             ->orderByDesc('rate_date')
+            ->orderByRaw($this->rateTypePrecedenceSql())
             ->value('rate');
 
         if ($rate === null) {
@@ -47,6 +64,18 @@ final class CurrencyConversionService
         }
 
         return (float) $rate;
+    }
+
+    private function rateTypePrecedenceSql(): string
+    {
+        // closing > spot > average > custom (and unknown types last)
+        return "CASE rate_type
+            WHEN 'closing' THEN 1
+            WHEN 'spot' THEN 2
+            WHEN 'average' THEN 3
+            WHEN 'custom' THEN 4
+            ELSE 5
+        END ASC";
     }
 
     /**

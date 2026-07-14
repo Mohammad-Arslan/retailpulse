@@ -26,6 +26,8 @@ final class StoreCostCentreRequest extends FormRequest
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
             'legal_entity_id' => ['nullable', 'integer', 'exists:organization_entities,id'],
             'status' => ['nullable', 'string', Rule::in(['active', 'inactive'])],
+            'headcount' => ['nullable', 'integer', 'min:0'],
+            'floor_area' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }

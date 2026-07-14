@@ -133,8 +133,9 @@ final class JournalService
                 'debit' => $line->credit,
                 'credit' => $line->debit,
                 'functional_currency_amount' => -1 * (float) $line->functional_currency_amount,
+                // Magnitude only — sign is derived from debit/credit by consumers.
                 'transaction_currency_amount' => $line->transaction_currency_amount !== null
-                    ? -1 * (float) $line->transaction_currency_amount
+                    ? abs((float) $line->transaction_currency_amount)
                     : null,
                 'currency_code' => $line->currency_code,
                 'exchange_rate' => $line->exchange_rate,
@@ -211,7 +212,11 @@ final class JournalService
         $parsed = $date instanceof CarbonInterface ? $date : Carbon::parse($date);
 
         return FiscalYear::query()
-            ->whereIn('status', [FiscalYearStatus::Open, FiscalYearStatus::Reopening])
+            ->whereIn('status', [
+                FiscalYearStatus::Open,
+                FiscalYearStatus::Reopening,
+                FiscalYearStatus::Closing,
+            ])
             ->whereDate('start_date', '<=', $parsed)
             ->whereDate('end_date', '>=', $parsed)
             ->value('id');

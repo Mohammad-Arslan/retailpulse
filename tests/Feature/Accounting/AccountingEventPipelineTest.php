@@ -159,6 +159,9 @@ final class AccountingEventPipelineTest extends TestCase
                 'payment_method' => 'cash',
                 'user_id' => $user->id,
             ],
+        ]);
+
+        AccountingEvent::query()->whereKey($event->id)->update([
             'updated_at' => now()->subMinutes(10),
         ]);
 
