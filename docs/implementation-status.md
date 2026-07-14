@@ -284,8 +284,8 @@
 | §3.9 Customer & Loyalty | 9 | **Complete** | CRM, loyalty, wallet, AR aging, credit limits |
 | §3.10 Suppliers & Procurement | 10 | **0%** | |
 | §3.11 Accounting & Finance | 11 | **~90%** | Core GL complete; residual: Intercompany (P11-26), bank CSV templates, some reports/exports |
-| §3.12 Expense Management | 12 | **0%** | |
-| §3.13 HR & Payroll | 12 | **0%** | |
+| §3.12 Expense Management | 12 | **~95%** | One-off + recurring expenses, approval policies, receipt vault; GL via `expense.posted` / `expense.recurring_due` only |
+| §3.13 HR & Payroll | 12 | **~90%** | Employees, attendance drivers, leave, overtime, payroll calc/runs/payslips/self-service; formula components rejected; Phase 29 workflow stub |
 | §3.14 Reporting & Analytics | 13 | **0%** | |
 | §3.15 Notification Engine | 14 | **0%** | Basic DB notifications wired; full engine in Phase 14 |
 | §3.16 Refund, Return & Exchange | 14 | **0%** | Sale void exists; full return flow in Phase 14 |

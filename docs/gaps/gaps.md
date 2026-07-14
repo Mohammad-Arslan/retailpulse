@@ -238,15 +238,18 @@ Last reviewed: 2026-07-14 (Phase 11 correctness bugs P11-27–P11-31 closed; P11
 
 ## Phase 12 — Expenses & HR / Payroll
 
-**Phase doc status:** Planned  
-**Overall gap level:** High (module not started)
+**Phase doc status:** Implemented (residuals below)  
+**Overall gap level:** Low
 
 | ID | Gap | Severity | Notes |
 | :--- | :--- | :---: | :--- |
-| P12-01 | **Expense module** (entry, categories, recurring scheduler) | **High** | |
-| P12-02 | **HR / payroll module** | **High** | |
-| P12-03 | **POS clock-in/out via cashier PIN** | **Medium** | |
-| P12-04 | **Leave/overtime/payslip (v4.0 stretch)** | **Low** | |
+| P12-01 | **Expense module** (entry, categories, recurring scheduler) | — | **Resolved 2026-07-15** — categories, approvals, attachments, recurring scheduler + `expense.posted` / `expense.recurring_due`. |
+| P12-02 | **HR / payroll module** | — | **Resolved 2026-07-15** — employees, calc engine, run lifecycle; GL only via `payroll.posted` at post. |
+| P12-03 | **POS clock-in/out via cashier PIN** | — | **Resolved 2026-07-15** — `pos_pin` attendance source provider wraps Phase 7 PIN without payroll coupling. |
+| P12-04 | **Leave/overtime/payslip (v4.0 stretch)** | — | **Resolved 2026-07-15** — leave, overtime engine, payslip PDF/email, self-service services. |
+| P12-05 | **`pay_components.formula` expression evaluator** | **Low** | Validated enum; rejected on save and at calculation. Deferred to a future sandboxed math parser (no `eval`). |
+| P12-06 | **Phase 29 workflow engine for payroll/expense approval** | **Low** | `use_workflow_engine` / `requires=workflow` hooks stubbed; fallback is configurable limit + role/PIN. |
+| P12-07 | **Full employee mobile self-service UI** | **Low** | Services + thin admin self-service; full mobile UI is Phase 26. |
 
 ---
 

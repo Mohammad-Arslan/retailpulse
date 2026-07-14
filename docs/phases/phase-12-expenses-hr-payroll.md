@@ -1,7 +1,7 @@
 # Phase 12 — Expense Management & HR / Payroll
 
 **SRS Reference:** §3.12, §3.13
-**Status:** Planned
+**Status:** Implemented (formula pay-component evaluator deferred; Phase 29 workflow engine is a stub hook)
 **Depends on:** Phase 11 (Accounting event + posting-rule engine), Phase 7 (POS, for one attendance source), Phase 1 (RBAC), Phase 3 (branches / legal entities)
 **Related future phases:** Phase 23 (Module Config Engine), Phase 26 (Employee mobile app), Phase 29 (Workflow Engine)
 

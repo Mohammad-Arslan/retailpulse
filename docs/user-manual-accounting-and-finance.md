@@ -1,8 +1,8 @@
 # RetailPulse User Manual — Accounting & Finance
 
 **Audience:** Accountants, finance managers, implementation consultants, and customer support  
-**Version:** 1.7 (July 2026)  
-**Scope:** Phase 11 — General Ledger (GL), auto-posting, fiscal control, tax, imports, sub-ledgers, inventory costing, and financial reports
+**Version:** 2.1 (July 2026)  
+**Scope:** Phase 11 — General Ledger (GL), auto-posting, fiscal control, tax, imports, sub-ledgers, inventory costing, and financial reports; Phase 12 expense/payroll **GL posting** triggers
 
 This manual explains **where to click**, **what each screen does**, **how money flows through the system**, **what every term means**, and **what happens when something is missing or misconfigured**.
 
@@ -12,6 +12,7 @@ This manual explains **where to click**, **what each screen does**, **how money 
 - [`generic-import-export.md`](generic-import-export.md) — CSV upload mechanics for COA and opening balances
 - [`phases/phase-08-checkout-payments-invoicing.md`](phases/phase-08-checkout-payments-invoicing.md) — POS sales that trigger `sale.completed`
 - [`phases/phase-10-suppliers-procurement.md`](phases/phase-10-suppliers-procurement.md) — GRN, supplier invoices, payments
+- [`user-manual-hr-and-payroll.md`](user-manual-hr-and-payroll.md) — Expenses, HR, attendance, leave, overtime, payroll runs (operational UI)
 
 ---
 
@@ -55,9 +56,16 @@ This manual explains **where to click**, **what each screen does**, **how money 
 | **Sub-modules** | Cost centres, credit notes, bank accounts & reconciliation, multi-currency, petty cash, cheques, fixed assets |
 | **Reports** | Trial balance, P&L, balance sheet, GL, AR/AP aging, and more |
 
-**Not covered in depth here:** Payroll journals (Phase 12), one-off expense vouchers (Phase 12 Block 1), Phase 23 module registry UI (sub-module toggles are branch-profile based for now).
+**Phase 12 operational click-paths** (expense entry, employees, payroll runs, payslips) live in [`user-manual-hr-and-payroll.md`](user-manual-hr-and-payroll.md). This manual covers how those modules post to the GL.
 
-**Recurring expenses (Phase 12 Block 2):** Admin → **HR & Payroll** → **Recurring Expenses** (`expenses.manage-recurring`). Schedules auto-generate occurrences via `expenses:process-recurring` (daily at 06:00). Each occurrence publishes `expense.recurring_due` through the accounting event pipeline — same GL lines as `expense.posted`.
+| Phase 12 event | When it posts | Typical GL pattern (via posting rules + mappings) |
+|----------------|---------------|-----------------------------------------------------|
+| `expense.posted` | Expense approved | Dr expense (+ input tax); Cr payment method or AP |
+| `expense.recurring_due` | Recurring scheduler occurrence | Same as `expense.posted` |
+| `payroll.posted` | Payroll run **posted** (not merely approved) | Dr payroll / employer expense; Cr net salary, tax withheld, statutory payables |
+| `payroll.reversed` | Payroll run reversed | Linked Phase 11 reversal journal |
+
+**Important:** Approving a payroll run is a **state-only** step. The ledger updates only when an authorized user clicks **Post**.
 
 ### 1.2 Dependencies on other modules
 
@@ -69,6 +77,8 @@ Accounting does **not** replace operational modules. It **records** their financ
 | Customers (Phase 9) | AR balances, credit notes, write-offs |
 | Procurement (Phase 10) | `purchase.received`, `purchase.invoice_posted`, `payment.made` |
 | Inventory (Phase 5) | `inventory.adjusted`, `stock.scrapped`, `transfer.confirmed`, COGS on sales |
+| Expenses (Phase 12) | `expense.posted`, `expense.recurring_due` |
+| Payroll (Phase 12) | `payroll.posted` on post; reversal via linked journal |
 
 If Sales or Procurement is not in use, you can still run accounting with **manual journals** and **opening balance imports**.
 
@@ -1348,6 +1358,7 @@ A: Distinct `payment.received` event is deferred; partial coverage via sale sett
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2.1 | July 2026 | Phase 12 GL events for expenses + payroll; link to HR/payroll user manual; clarify approve-vs-post for payroll |
 | 2.0 | July 2026 | Phase 12 recurring expenses: nav item, scheduler command, `expense.recurring_due` posting |
 | 1.9 | July 2026 | Cost Centre Allocate Shared Expense: clarified Run Allocation steps, methods table, troubleshooting; fixed allocate form submit (Inertia transform) |
 | 1.8 | July 2026 | Cost Centre Allocate Expense UI; headcount/floor area drivers; P11 correctness fixes (COGS idempotency, mapping scopes, FX closing rates, transfer warehouse scope, split-tender, asset.acquired) |
