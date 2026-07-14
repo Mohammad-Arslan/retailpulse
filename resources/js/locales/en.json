@@ -3,6 +3,7 @@
         "recent": "Recent",
         "loading": "Searching…",
         "noResults": "No Matches For Your Query.",
+        "noPages": "No Pages Match Your Search.",
         "categories": {
             "pages": "Pages",
             "products": "Products",
@@ -151,6 +152,7 @@
         "switchToLight": "Switch to light mode",
         "switchToDark": "Switch to dark mode",
         "commandPalette": "Search Pages, Products, Customers, Sales…",
+        "navSearch": "Search Pages…",
         "continue": "Continue",
         "yes": "Yes",
         "no": "No",

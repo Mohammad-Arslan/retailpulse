@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+/** Sidebar control — opens nav-page jump only (not ERP global search). */
 export default function SidebarSearch({ collapsed, onOpen }) {
     const { t } = useTranslation();
 
@@ -12,7 +13,7 @@ export default function SidebarSearch({ collapsed, onOpen }) {
                     type="button"
                     onClick={onOpen}
                     className="flex h-10 w-full items-center justify-center rounded-lg border border-rp-border bg-rp-surface-inset text-rp-text-muted transition hover:bg-rp-surface-subtle hover:text-rp-text dark:border-transparent dark:bg-ink-800 dark:text-ink-300 dark:hover:bg-ink-700 dark:hover:text-white"
-                    title={`${t('common.search')} (Ctrl+K)`}
+                    title={t('common.navSearch')}
                 >
                     <Search className="h-4 w-4" />
                 </button>
@@ -33,11 +34,8 @@ export default function SidebarSearch({ collapsed, onOpen }) {
             >
                 <Search className="h-3.5 w-3.5 shrink-0 text-rp-text-muted dark:text-ink-400" />
                 <span className="flex-1 text-[12.5px] text-rp-text-muted dark:text-ink-400">
-                    {t('common.commandPalette')}
+                    {t('common.navSearch')}
                 </span>
-                <kbd className="rounded-md border border-rp-border bg-rp-surface px-1.5 py-0.5 text-[10px] font-medium text-rp-text-muted dark:border-ink-600 dark:bg-ink-900 dark:text-ink-400">
-                    ⌘K
-                </kbd>
             </button>
         </div>
     );

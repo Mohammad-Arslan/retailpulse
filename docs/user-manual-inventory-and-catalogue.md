@@ -62,7 +62,9 @@ The Dashboard shows only widgets you are allowed to see. Assign these permission
 
 Layout (top to bottom): greeting → health strip → Sales KPIs → revenue chart beside Needs Attention → Operations (Inventory / Procurement / Finance) → Organization snapshot → Quick Actions.
 
-**Global Search (Ctrl/Cmd+K):** Opens from the sidebar search field or top bar. Results are grouped (Pages, Products, Customers, Sales, Purchasing, Accounting, etc.) and only include records you have permission to see, scoped to the active branch where applicable. Navigation pages come from the shared Navigation Registry (same source as the sidebar).
+**Global Search (Ctrl/Cmd+K or top navbar):** Opens from the top bar search field. Results are grouped (Pages, Products, Customers, Sales, Purchasing, Accounting, etc.) and only include records you have permission to see, scoped to the active branch where applicable.
+
+**Sidebar Search Pages:** The search field under the logo jumps only between navigation pages (same sidebar menu), not products or other records.
 
 IAM statistics (users, roles, permissions charts) are **not** on the home dashboard. Manage those under **Organization**.
 

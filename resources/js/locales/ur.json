@@ -3,6 +3,7 @@
         "recent": "حالیہ",
         "loading": "تلاش ہو رہی ہے…",
         "noResults": "آپ کے سوال سے کوئی میل نہیں۔",
+        "noPages": "کوئی صفحہ میل نہیں کھاتا۔",
         "categories": {
             "pages": "صفحات",
             "products": "مصنوعات",
@@ -85,6 +86,7 @@
         "openMenu": "مینو کھولیں",
         "closeMenu": "مینو بند کریں",
         "commandPalette": "صفحات، مصنوعات، کسٹمرز، سیلز تلاش کریں…",
+        "navSearch": "صفحات تلاش کریں…",
         "switchToLight": "لائٹ موڈ",
         "switchToDark": "ڈارک موڈ",
         "expandSidebar": "سائیڈبار کھولیں",

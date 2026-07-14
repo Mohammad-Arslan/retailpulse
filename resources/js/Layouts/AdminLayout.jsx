@@ -109,7 +109,8 @@ export default function AdminLayout({ children, fullHeight = false, posMode = fa
     const [mobileOpen, setMobileOpen] = useState(false);
     const { collapsed, toggleCollapsed } = useSidebarCollapsed();
     const { isDark, toggleTheme } = useTheme();
-    const { open: paletteOpen, openPalette, closePalette } = useCommandPalette();
+    const { open: paletteOpen, mode: paletteMode, openGlobalSearch, openNavSearch, closePalette } =
+        useCommandPalette();
     const navScrollRef = useRef(null);
     const pageUrl = usePage().url;
 
@@ -183,7 +184,7 @@ export default function AdminLayout({ children, fullHeight = false, posMode = fa
                 </Link>
             </div>
 
-            <SidebarSearch collapsed={collapsed} onOpen={openPalette} />
+            <SidebarSearch collapsed={collapsed} onOpen={openNavSearch} />
 
             <ScrollArea
                 ref={navScrollRef}
@@ -246,7 +247,7 @@ export default function AdminLayout({ children, fullHeight = false, posMode = fa
     return (
         <ImportJobsProvider>
         <div className="min-h-screen bg-rp-page font-sans">
-            <CommandPalette open={paletteOpen} onClose={closePalette} />
+            <CommandPalette open={paletteOpen} mode={paletteMode} onClose={closePalette} />
 
             {mobileOpen && (
                 <button
@@ -287,7 +288,7 @@ export default function AdminLayout({ children, fullHeight = false, posMode = fa
                         collapsed={collapsed}
                         isDark={isDark}
                         onToggleCollapse={toggleCollapsed}
-                        onOpenSearch={openPalette}
+                        onOpenSearch={openGlobalSearch}
                         onToggleTheme={toggleTheme}
                         onOpenMobileMenu={() => setMobileOpen(true)}
                         posMode={posMode}

@@ -79,8 +79,12 @@ function flattenGroups(groups) {
     return flat;
 }
 
-export default function CommandPalette({ open, onClose }) {
+/**
+ * @param {{ open: boolean, onClose: () => void, mode?: 'global' | 'nav' }} props
+ */
+export default function CommandPalette({ open, onClose, mode = 'global' }) {
     const { t } = useTranslation();
+    const isNavOnly = mode === 'nav';
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const [groups, setGroups] = useState([]);
@@ -100,25 +104,41 @@ export default function CommandPalette({ open, onClose }) {
                 href: route(item.href),
                 icon: item.iconKey ?? 'layout-dashboard',
                 category: 'pages',
+                keywords: item.keywords ?? [],
             })),
         );
     }, [rawNavigation, t]);
 
-    const idlePages = useMemo(() => {
+    const filteredPages = useMemo(() => {
         const q = query.trim().toLowerCase();
-        if (q) {
-            return [];
+        if (!q) {
+            return isNavOnly ? pageItems : pageItems.slice(0, 8);
         }
-        return pageItems.slice(0, 8);
-    }, [pageItems, query]);
+
+        return pageItems.filter((item) => {
+            const haystack = [
+                item.title,
+                item.subtitle,
+                ...(item.keywords ?? []),
+            ]
+                .join(' ')
+                .toLowerCase();
+            return haystack.includes(q);
+        });
+    }, [pageItems, query, isNavOnly]);
 
     const flatResults = useMemo(() => {
+        if (isNavOnly) {
+            return filteredPages;
+        }
+
         if (!query.trim()) {
             const recentFlat = recents.map((r) => ({ ...r, category: 'recent' }));
-            return [...recentFlat, ...idlePages];
+            return [...recentFlat, ...filteredPages];
         }
+
         return flattenGroups(groups);
-    }, [query, groups, recents, idlePages]);
+    }, [isNavOnly, filteredPages, query, groups, recents]);
 
     useEffect(() => {
         if (open) {
@@ -126,19 +146,22 @@ export default function CommandPalette({ open, onClose }) {
             setGroups([]);
             setLoading(false);
             setActiveIndex(0);
-            setRecents(loadRecents());
+            if (!isNavOnly) {
+                setRecents(loadRecents());
+            }
             requestAnimationFrame(() => inputRef.current?.focus());
         } else if (abortRef.current) {
             abortRef.current.abort();
         }
-    }, [open]);
+    }, [open, isNavOnly]);
 
     useEffect(() => {
-        const q = query.trim();
-        if (!open) {
+        if (!open || isNavOnly) {
+            setLoading(false);
             return undefined;
         }
 
+        const q = query.trim();
         if (q.length < 1) {
             setGroups([]);
             setLoading(false);
@@ -171,7 +194,7 @@ export default function CommandPalette({ open, onClose }) {
             clearTimeout(timer);
             controller.abort();
         };
-    }, [query, open]);
+    }, [query, open, isNavOnly]);
 
     useEffect(() => {
         setActiveIndex(0);
@@ -181,13 +204,15 @@ export default function CommandPalette({ open, onClose }) {
         if (!item?.href) {
             return;
         }
-        saveRecent({
-            id: item.id,
-            title: item.title,
-            subtitle: item.subtitle,
-            href: item.href,
-            icon: item.icon,
-        });
+        if (!isNavOnly) {
+            saveRecent({
+                id: item.id,
+                title: item.title,
+                subtitle: item.subtitle,
+                href: item.href,
+                icon: item.icon,
+            });
+        }
         onClose();
         router.visit(item.href);
     };
@@ -214,6 +239,7 @@ export default function CommandPalette({ open, onClose }) {
 
     const showIdle = !query.trim();
     const showEmpty = !loading && query.trim() && flatResults.length === 0;
+    const placeholder = isNavOnly ? t('common.navSearch') : t('common.commandPalette');
 
     let runningIndex = -1;
 
@@ -234,7 +260,7 @@ export default function CommandPalette({ open, onClose }) {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={onKeyDown}
-                        placeholder={t('common.commandPalette')}
+                        placeholder={placeholder}
                         className="w-full border-0 bg-transparent text-sm text-rp-text outline-none placeholder:text-rp-text-muted"
                         autoComplete="off"
                     />
@@ -254,41 +280,15 @@ export default function CommandPalette({ open, onClose }) {
                         </p>
                     ) : null}
 
-                    {showIdle && recents.length > 0 ? (
-                        <div className="mb-2">
-                            <p className="px-3 py-1.5 text-[10px] font-bold tracking-widest text-rp-text-muted uppercase">
-                                {t('search.recent')}
-                            </p>
-                            <ul>
-                                {recents.map((item) => {
-                                    runningIndex += 1;
-                                    const idx = runningIndex;
-                                    const Icon = resolveNavIcon(item.icon) ?? Clock;
-                                    return (
-                                        <li key={`recent-${item.href}`}>
-                                            <ResultButton
-                                                active={idx === activeIndex}
-                                                icon={Icon}
-                                                title={item.title}
-                                                subtitle={item.subtitle}
-                                                query=""
-                                                onClick={() => navigate(item)}
-                                                onMouseEnter={() => setActiveIndex(idx)}
-                                            />
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        </div>
-                    ) : null}
-
-                    {showIdle && idlePages.length > 0 ? (
+                    {isNavOnly ? (
                         <div>
-                            <p className="px-3 py-1.5 text-[10px] font-bold tracking-widest text-rp-text-muted uppercase">
-                                {t('search.categories.pages')}
-                            </p>
+                            {!showIdle && filteredPages.length > 0 ? (
+                                <p className="px-3 py-1.5 text-[10px] font-bold tracking-widest text-rp-text-muted uppercase">
+                                    {t('search.categories.pages')}
+                                </p>
+                            ) : null}
                             <ul>
-                                {idlePages.map((item) => {
+                                {filteredPages.map((item) => {
                                     runningIndex += 1;
                                     const idx = runningIndex;
                                     const Icon = resolveNavIcon(item.icon);
@@ -299,7 +299,7 @@ export default function CommandPalette({ open, onClose }) {
                                                 icon={Icon}
                                                 title={item.title}
                                                 subtitle={item.subtitle}
-                                                query=""
+                                                query={query}
                                                 onClick={() => navigate(item)}
                                                 onMouseEnter={() => setActiveIndex(idx)}
                                             />
@@ -307,50 +307,119 @@ export default function CommandPalette({ open, onClose }) {
                                     );
                                 })}
                             </ul>
+                            {showIdle && filteredPages.length === 0 ? (
+                                <p className="px-3 py-8 text-center text-sm text-rp-text-muted">
+                                    {t('search.noPages')}
+                                </p>
+                            ) : null}
                         </div>
-                    ) : null}
+                    ) : (
+                        <>
+                            {showIdle && recents.length > 0 ? (
+                                <div className="mb-2">
+                                    <p className="px-3 py-1.5 text-[10px] font-bold tracking-widest text-rp-text-muted uppercase">
+                                        {t('search.recent')}
+                                    </p>
+                                    <ul>
+                                        {recents.map((item) => {
+                                            runningIndex += 1;
+                                            const idx = runningIndex;
+                                            const Icon = resolveNavIcon(item.icon) ?? Clock;
+                                            return (
+                                                <li key={`recent-${item.href}`}>
+                                                    <ResultButton
+                                                        active={idx === activeIndex}
+                                                        icon={Icon}
+                                                        title={item.title}
+                                                        subtitle={item.subtitle}
+                                                        query=""
+                                                        onClick={() => navigate(item)}
+                                                        onMouseEnter={() => setActiveIndex(idx)}
+                                                    />
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            ) : null}
 
-                    {!showIdle
-                        ? groups.map((group) => (
-                              <div key={group.category} className="mb-1">
-                                  <p className="px-3 py-1.5 text-[10px] font-bold tracking-widest text-rp-text-muted uppercase">
-                                      {t(`search.categories.${group.category_label_key}`, {
-                                          defaultValue: group.category,
-                                      })}
-                                  </p>
-                                  <ul>
-                                      {(group.results ?? []).map((item) => {
-                                          runningIndex += 1;
-                                          const idx = runningIndex;
-                                          const Icon = resolveNavIcon(item.icon);
-                                          const title = displayTitle(item, t);
-                                          const subtitle = displaySubtitle(item, t);
-                                          return (
-                                              <li key={item.id}>
-                                                  <ResultButton
-                                                      active={idx === activeIndex}
-                                                      icon={Icon}
-                                                      title={title}
-                                                      subtitle={subtitle}
-                                                      query={query}
-                                                      onClick={() =>
-                                                          navigate({ ...item, title, subtitle })
-                                                      }
-                                                      onMouseEnter={() => setActiveIndex(idx)}
-                                                  />
-                                              </li>
-                                          );
-                                      })}
-                                  </ul>
-                              </div>
-                          ))
-                        : null}
+                            {showIdle && filteredPages.length > 0 ? (
+                                <div>
+                                    <p className="px-3 py-1.5 text-[10px] font-bold tracking-widest text-rp-text-muted uppercase">
+                                        {t('search.categories.pages')}
+                                    </p>
+                                    <ul>
+                                        {filteredPages.map((item) => {
+                                            runningIndex += 1;
+                                            const idx = runningIndex;
+                                            const Icon = resolveNavIcon(item.icon);
+                                            return (
+                                                <li key={item.id}>
+                                                    <ResultButton
+                                                        active={idx === activeIndex}
+                                                        icon={Icon}
+                                                        title={item.title}
+                                                        subtitle={item.subtitle}
+                                                        query=""
+                                                        onClick={() => navigate(item)}
+                                                        onMouseEnter={() => setActiveIndex(idx)}
+                                                    />
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            ) : null}
 
-                    {loading && query.trim() && groups.length === 0 ? (
-                        <p className="px-3 py-6 text-center text-sm text-rp-text-muted">
-                            {t('search.loading')}
-                        </p>
-                    ) : null}
+                            {!showIdle
+                                ? groups.map((group) => (
+                                      <div key={group.category} className="mb-1">
+                                          <p className="px-3 py-1.5 text-[10px] font-bold tracking-widest text-rp-text-muted uppercase">
+                                              {t(`search.categories.${group.category_label_key}`, {
+                                                  defaultValue: group.category,
+                                              })}
+                                          </p>
+                                          <ul>
+                                              {(group.results ?? []).map((item) => {
+                                                  runningIndex += 1;
+                                                  const idx = runningIndex;
+                                                  const Icon = resolveNavIcon(item.icon);
+                                                  const title = displayTitle(item, t);
+                                                  const subtitle = displaySubtitle(item, t);
+                                                  return (
+                                                      <li key={item.id}>
+                                                          <ResultButton
+                                                              active={idx === activeIndex}
+                                                              icon={Icon}
+                                                              title={title}
+                                                              subtitle={subtitle}
+                                                              query={query}
+                                                              onClick={() =>
+                                                                  navigate({
+                                                                      ...item,
+                                                                      title,
+                                                                      subtitle,
+                                                                  })
+                                                              }
+                                                              onMouseEnter={() =>
+                                                                  setActiveIndex(idx)
+                                                              }
+                                                          />
+                                                      </li>
+                                                  );
+                                              })}
+                                          </ul>
+                                      </div>
+                                  ))
+                                : null}
+
+                            {loading && query.trim() && groups.length === 0 ? (
+                                <p className="px-3 py-6 text-center text-sm text-rp-text-muted">
+                                    {t('search.loading')}
+                                </p>
+                            ) : null}
+                        </>
+                    )}
                 </ScrollArea>
             </div>
         </div>
