@@ -37,6 +37,7 @@ final class AccountingReportController extends Controller
         'audit-trail' => ['method' => 'auditTrail', 'title' => 'Audit Trail', 'exportFilename' => 'audit-trail'],
         'unposted-journals' => ['method' => 'unpostedJournals', 'title' => 'Unposted Journals', 'exportFilename' => 'unposted-journals'],
         'journal-register' => ['method' => 'journalRegister', 'title' => 'Journal Register', 'exportFilename' => 'journal-register'],
+        'tax-return' => ['method' => 'taxReturn', 'title' => 'Tax Return', 'exportFilename' => 'tax-return'],
     ];
 
     public function __construct(
@@ -69,6 +70,7 @@ final class AccountingReportController extends Controller
             ['key' => 'auditTrail', 'route' => 'admin.accounting.reports.audit-trail', 'available' => true],
             ['key' => 'unpostedJournals', 'route' => 'admin.accounting.reports.unposted-journals', 'available' => true],
             ['key' => 'journalRegister', 'route' => 'admin.accounting.reports.journal-register', 'available' => true],
+            ['key' => 'taxReturn', 'route' => 'admin.accounting.reports.tax-return', 'available' => true],
         ];
 
         return Inertia::render('Admin/Accounting/Reports/Index', [
@@ -159,6 +161,11 @@ final class AccountingReportController extends Controller
     public function journalRegister(Request $request): Response
     {
         return $this->renderReport($request, 'journal-register');
+    }
+
+    public function taxReturn(Request $request): Response
+    {
+        return $this->renderReport($request, 'tax-return');
     }
 
     public function export(Request $request, string $reportKey): StreamedResponse

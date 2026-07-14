@@ -55,6 +55,10 @@ final class JournalService
     {
         $this->validation->assertCanEdit($entry);
 
+        if ($entry->status !== JournalEntryStatus::Draft) {
+            throw new \DomainException('Only draft journals can be edited.');
+        }
+
         return DB::transaction(function () use ($entry, $attributes, $lines, $userId) {
             $entry->update([
                 ...$attributes,
@@ -66,6 +70,20 @@ final class JournalService
             $this->applyApprovalPolicy($entry->fresh(['transactions']));
 
             return $entry->fresh(['transactions.account']);
+        });
+    }
+
+    public function deleteDraft(JournalEntry $entry): void
+    {
+        $this->validation->assertCanEdit($entry);
+
+        if ($entry->status !== JournalEntryStatus::Draft) {
+            throw new \DomainException('Only draft journals can be deleted.');
+        }
+
+        DB::transaction(function () use ($entry) {
+            $entry->transactions()->delete();
+            $entry->delete();
         });
     }
 

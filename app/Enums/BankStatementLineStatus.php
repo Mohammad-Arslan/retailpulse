@@ -8,6 +8,7 @@ enum BankStatementLineStatus: string
 {
     case Unmatched = 'unmatched';
     case Suggested = 'suggested';
+    case PartiallyMatched = 'partially_matched';
     case Matched = 'matched';
     case Ignored = 'ignored';
     case Reconciled = 'reconciled';

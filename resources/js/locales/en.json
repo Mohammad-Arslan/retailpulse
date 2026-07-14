@@ -1849,13 +1849,27 @@
                 "columns": {
                     "key": "Mapping Key",
                     "account": "Account",
-                    "priority": "Priority"
+                    "priority": "Priority",
+                    "scope": "Scope"
                 },
                 "fields": {
                     "key": "Mapping Key",
                     "account": "GL Account",
+                    "warehouse": "Warehouse",
+                    "category": "Product Category",
+                    "paymentMethod": "Payment Method",
+                    "currency": "Currency",
+                    "legalEntity": "Legal Entity",
+                    "effectiveFrom": "Effective From",
+                    "effectiveTo": "Effective To",
                     "priority": "Priority"
                 },
+                "allWarehouses": "All Warehouses",
+                "allCategories": "All Categories",
+                "allPaymentMethods": "All Payment Methods",
+                "allCurrencies": "All Currencies",
+                "allLegalEntities": "All Legal Entities",
+                "scopeWarehouse": "Warehouse",
                 "keys": {
                     "sales_revenue": "Sales Revenue",
                     "sales_return": "Sales Return",
@@ -1965,7 +1979,10 @@
                 "searchPlaceholder": "Search number, reference, or description…",
                 "createTitle": "Manual Journal Entry",
                 "createDescription": "Create a balanced manual journal with debit and credit lines.",
+                "editTitle": "Edit {{number}}",
+                "editDescription": "Update this draft journal entry before posting.",
                 "saveDraft": "Save Draft",
+                "confirmDelete": "Delete draft journal {{name}}? This cannot be undone.",
                 "post": "Post Journal",
                 "approve": "Approve Journal",
                 "reverse": "Reverse Journal",
@@ -2127,6 +2144,8 @@
                 "dateFrom": "From Date",
                 "dateTo": "To Date",
                 "asOfDate": "As Of Date",
+                "fiscalYear": "Fiscal Year",
+                "selectFiscalYear": "Select Fiscal Year…",
                 "allRecordTypes": "All Record Types",
                 "allEvents": "All Events",
                 "columns": {
@@ -2155,6 +2174,11 @@
                     "category": "Category",
                     "partyName": "Party",
                     "current": "Current",
+                    "taxTypeCode": "Tax Code",
+                    "taxTypeName": "Tax Name",
+                    "outputTax": "Output Tax",
+                    "inputTax": "Input Tax",
+                    "netPayable": "Net Payable",
                     "bucket30": "1–30 Days",
                     "bucket60": "31–60 Days",
                     "bucket90": "61–90 Days",
@@ -2198,7 +2222,10 @@
                     "financing": "Financing",
                     "netChange": "Net Change",
                     "netBookValue": "Net Book Value",
-                    "balance": "Balance"
+                    "balance": "Balance",
+                    "outputTax": "Output Tax",
+                    "inputTax": "Input Tax",
+                    "netPayable": "Net Payable"
                 },
                 "auditEvents": {
                     "created": "Created",
@@ -2276,6 +2303,10 @@
                     "journalRegister": {
                         "title": "Journal Register",
                         "description": "Posted Journals With Filters and Totals."
+                    },
+                    "taxReturn": {
+                        "title": "Tax Return",
+                        "description": "Output Tax, Input Tax, and Net Payable by Tax Type for a Fiscal Year."
                     },
                     "accountLedger": {
                         "title": "Account Ledger",
@@ -2426,7 +2457,29 @@
                 "importTitle": "Import Statement",
                 "importSubmit": "Import CSV",
                 "suggestionsTitle": "Suggested Matches",
-                "match": "Match"
+                "match": "Match",
+                "matchSubmit": "Apply Match",
+                "multiMatchTitle": "Match Statement Line",
+                "multiMatchHint": "Allocate One or More Journal Transactions. Remaining: {{remaining}}.",
+                "addTransaction": "Add Transaction",
+                "selectTransaction": "Select Journal Transaction…",
+                "matchSum": "Allocated {{sum}} of {{remaining}} Remaining",
+                "columns": {
+                    "matched": "Matched",
+                    "remaining": "Remaining"
+                },
+                "fields": {
+                    "journalTransaction": "Journal Transaction",
+                    "matchedAmount": "Matched Amount"
+                },
+                "statuses": {
+                    "unmatched": "Unmatched",
+                    "suggested": "Suggested",
+                    "partially_matched": "Partially Matched",
+                    "matched": "Matched",
+                    "ignored": "Ignored",
+                    "reconciled": "Reconciled"
+                }
             },
             "currencies": {
                 "title": "Currencies",
@@ -2458,24 +2511,45 @@
             },
             "pettyCash": {
                 "title": "Petty Cash",
-                "description": "Petty cash registers and recent vouchers.",
-                "emptyRegisters": "No petty cash registers.",
-                "emptyVouchers": "No vouchers recorded.",
+                "description": "Petty Cash Registers and Recent Vouchers.",
+                "emptyRegisters": "No Petty Cash Registers.",
+                "emptyVouchers": "No Vouchers Recorded.",
                 "createTitle": "New Register",
                 "createSubmit": "Save Register",
+                "createVoucherTitle": "New Voucher",
+                "createVoucherSubmit": "Save Voucher",
                 "selectGlAccount": "Select GL Account…",
+                "approve": "Approve",
+                "reject": "Reject",
+                "rejectSubmit": "Confirm Reject",
+                "rejectReasonPlaceholder": "Rejection Reason…",
                 "columns": {
                     "balance": "Current Balance",
                     "mode": "Register Mode",
-                    "register": "Register"
+                    "register": "Register",
+                    "approval": "Approval"
                 },
                 "fields": {
                     "name": "Register Name",
-                    "openingBalance": "Opening Balance"
+                    "openingBalance": "Opening Balance",
+                    "voucherType": "Voucher Type",
+                    "adjustmentDelta": "Adjustment Delta",
+                    "expenseAccount": "Expense Account",
+                    "description": "Description"
                 },
                 "modes": {
                     "imprest": "Imprest",
                     "running_balance": "Running Balance"
+                },
+                "voucherTypes": {
+                    "top_up": "Top Up",
+                    "disbursement": "Disbursement",
+                    "adjustment": "Adjustment"
+                },
+                "approvalStatuses": {
+                    "pending": "Pending",
+                    "approved": "Approved",
+                    "rejected": "Rejected"
                 }
             },
             "cheques": {
@@ -2503,11 +2577,15 @@
             },
             "fixedAssets": {
                 "title": "Fixed Assets",
-                "description": "Asset register with acquisition cost and net book value.",
-                "empty": "No fixed assets recorded.",
+                "description": "Asset Register with Acquisition Cost and Net Book Value.",
+                "empty": "No Fixed Assets Recorded.",
                 "createTitle": "New Fixed Asset",
                 "createSubmit": "Save Asset",
                 "selectCategory": "Select Category…",
+                "dispose": "Dispose",
+                "disposeTitle": "Dispose {{code}}",
+                "disposeSubmit": "Confirm Disposal",
+                "runDepreciation": "Run Depreciation Now",
                 "columns": {
                     "code": "Asset Code",
                     "acquisitionCost": "Acquisition Cost",
@@ -2519,7 +2597,9 @@
                     "acquisitionDate": "Acquisition Date",
                     "usefulLifeMonths": "Useful Life (Months)",
                     "salvageValue": "Salvage Value",
-                    "location": "Location"
+                    "location": "Location",
+                    "disposalDate": "Disposal Date",
+                    "proceedsAmount": "Proceeds Amount"
                 }
             }
         }

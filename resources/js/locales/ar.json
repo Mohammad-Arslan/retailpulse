@@ -177,6 +177,53 @@
                     "code": "الرمز",
                     "legalEntity": "الكيان القانوني"
                 }
+            },
+            "accountMappings": {
+                "allWarehouses": "جميع المستودعات",
+                "allCategories": "جميع الفئات",
+                "allPaymentMethods": "جميع طرق الدفع",
+                "allCurrencies": "جميع العملات",
+                "allLegalEntities": "جميع الكيانات القانونية",
+                "scopeWarehouse": "مستودع",
+                "columns": {
+                    "scope": "النطاق"
+                },
+                "fields": {
+                    "warehouse": "المستودع",
+                    "category": "فئة المنتج",
+                    "paymentMethod": "طريقة الدفع",
+                    "currency": "العملة",
+                    "legalEntity": "الكيان القانوني",
+                    "effectiveFrom": "ساري من",
+                    "effectiveTo": "ساري إلى"
+                }
+            },
+            "pettyCash": {
+                "createVoucherTitle": "قسيمة جديدة",
+                "createVoucherSubmit": "حفظ القسيمة",
+                "approve": "موافقة",
+                "reject": "رفض",
+                "rejectSubmit": "تأكيد الرفض",
+                "rejectReasonPlaceholder": "سبب الرفض…",
+                "columns": {
+                    "approval": "الموافقة"
+                },
+                "fields": {
+                    "voucherType": "نوع القسيمة",
+                    "adjustmentDelta": "فرق التسوية",
+                    "expenseAccount": "حساب المصروف",
+                    "description": "الوصف"
+                },
+                "voucherTypes": {
+                    "top_up": "تعبئة",
+                    "disbursement": "صرف",
+                    "adjustment": "تسوية"
+                },
+                "approvalStatuses": {
+                    "pending": "قيد الانتظار",
+                    "approved": "موافق عليه",
+                    "rejected": "مرفوض"
+                }
             }
         }
     }

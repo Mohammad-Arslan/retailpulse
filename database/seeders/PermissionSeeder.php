@@ -143,6 +143,7 @@ final class PermissionSeeder extends Seeder
             ['name' => 'accounting.import-bank-statements', 'description' => 'Import bank statements'],
             ['name' => 'accounting.reconcile-bank', 'description' => 'Reconcile bank statements'],
             ['name' => 'accounting.manage-petty-cash', 'description' => 'Manage petty cash registers and vouchers'],
+            ['name' => 'accounting.approve-petty-cash', 'description' => 'Approve or reject petty cash vouchers'],
             ['name' => 'accounting.manage-cheques', 'description' => 'Manage cheque register'],
             ['name' => 'accounting.manage-assets', 'description' => 'Manage fixed assets and depreciation'],
             ['name' => 'accounting.manage-tax-settings', 'description' => 'Manage tax types and tax accounts'],

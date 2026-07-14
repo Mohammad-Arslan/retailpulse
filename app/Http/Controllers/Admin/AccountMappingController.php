@@ -11,6 +11,10 @@ use App\Http\Requests\Admin\Accounting\StoreAccountMappingRequest;
 use App\Http\Requests\Admin\Accounting\UpdateAccountMappingRequest;
 use App\Models\AccountMapping;
 use App\Models\Branch;
+use App\Models\Category;
+use App\Models\OrganizationEntity;
+use App\Models\Warehouse;
+use App\Repositories\Contracts\CurrencyRepositoryInterface;
 use App\Services\Accounting\AccountMappingService;
 use App\Support\AccountMappingKeys;
 use App\Support\ListPagination;
@@ -23,6 +27,7 @@ final class AccountMappingController extends Controller
 {
     public function __construct(
         private readonly AccountMappingService $accountMappingService,
+        private readonly CurrencyRepositoryInterface $currencyRepository,
     ) {}
 
     public function index(Request $request): Response
@@ -31,6 +36,8 @@ final class AccountMappingController extends Controller
 
         $filters = ListPagination::filters($request, ['search', 'mapping_key', 'status', 'sort', 'direction']);
         $perPage = ListPagination::resolve($filters['per_page']);
+
+        $paymentMethods = ['cash', 'card', 'cheque', 'bank_transfer', 'mobile_wallet', 'credit', 'wallet', 'store_credit'];
 
         return Inertia::render('Admin/Accounting/AccountMappings/Index', [
             'mappings' => $this->accountMappingService->paginateIndex($filters, $perPage),
@@ -41,6 +48,19 @@ final class AccountMappingController extends Controller
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['id', 'name']),
+            'warehouses' => Warehouse::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'code']),
+            'categories' => Category::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            'paymentMethods' => $paymentMethods,
+            'currencies' => $this->currencyRepository->activeOptions(),
+            'legalEntities' => OrganizationEntity::query()
+                ->orderBy('legal_name')
+                ->get(['id', 'legal_name']),
         ]);
     }
 

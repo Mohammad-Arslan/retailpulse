@@ -74,9 +74,11 @@ const REPORT_COLUMNS = {
     audit_trail: ['occurred_at', 'event', 'entity_type', 'entity_label', 'user_name', 'changes_summary'],
     unposted_journals: ['journal_number', 'journal_date', 'status', 'description', 'branch_name'],
     journal_register: ['journal_number', 'journal_date', 'description', 'branch_name', 'posted_at'],
+    tax_return: ['tax_type_code', 'tax_type_name', 'output_tax', 'input_tax', 'net_payable'],
 };
 
 const AS_OF_REPORTS = new Set(['balance_sheet']);
+const FISCAL_YEAR_REPORTS = new Set(['tax_return']);
 
 function formatCell(key, value, row, reportKey, t) {
     if (key === 'account_code' && row.account_id && reportKey === 'trial_balance') {
@@ -163,6 +165,7 @@ function Show({
     totals = null,
     accounts = [],
     costCentres = [],
+    fiscalYears = [],
     auditEntityTypes = [],
     auditEvents = [],
     canExport = false,
@@ -175,6 +178,7 @@ function Show({
 
     const columns = REPORT_COLUMNS[reportKey] ?? (rows[0] ? Object.keys(rows[0]) : []);
     const isAsOfReport = AS_OF_REPORTS.has(reportKey);
+    const isFiscalYearReport = FISCAL_YEAR_REPORTS.has(reportKey);
 
     const accountOptions = useMemo(
         () => [
@@ -214,6 +218,17 @@ function Show({
         [auditEvents, t],
     );
 
+    const fiscalYearOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.accounting.reports.selectFiscalYear') },
+            ...fiscalYears.map((fy) => ({
+                value: String(fy.id),
+                label: fy.name ?? fy.label ?? String(fy.id),
+            })),
+        ],
+        [fiscalYears, t],
+    );
+
     const applyFilters = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -246,7 +261,22 @@ function Show({
             </PageHeader>
 
             <form onSubmit={applyFilters} className="rp-filter-bar mb-6 flex-wrap items-end gap-3">
-                {isAsOfReport ? (
+                {isFiscalYearReport ? (
+                    <AdminFormField
+                        label={t('pages.accounting.reports.fiscalYear')}
+                        id="fiscal_year_id"
+                        className="w-auto min-w-[14rem]"
+                    >
+                        <Select
+                            name="fiscal_year_id"
+                            defaultValue={
+                                filters.fiscal_year_id ? String(filters.fiscal_year_id) : ''
+                            }
+                            options={fiscalYearOptions}
+                            className="w-auto min-w-[14rem]"
+                        />
+                    </AdminFormField>
+                ) : isAsOfReport ? (
                     <AdminFormField label={t('pages.accounting.reports.asOfDate')} id="date_to" className="w-auto">
                         <input
                             id="date_to"

@@ -12,14 +12,17 @@ import {
 } from '@/Components/ui/table';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
+import { useConfirmDelete } from '@/Hooks/useConfirmDelete';
 import { journalEntryStatusLabel, journalStatusBadgeClass } from '@/lib/accountingI18n';
 import { Head, Link, router } from '@inertiajs/react';
-import { CheckCircle, RotateCcw, Send } from 'lucide-react';
+import { CheckCircle, Pencil, RotateCcw, Send, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 function Show({ journalEntry: entry }) {
     const can = useCan();
     const { t } = useTranslation();
+    const confirm = useConfirm();
+    const confirmDelete = useConfirmDelete();
 
     if (!entry) {
         return null;
@@ -27,14 +30,13 @@ function Show({ journalEntry: entry }) {
 
     const isBalanced = entry.total_debit === entry.total_credit;
 
+    const canEdit = can('accounting.create-journal') && entry.status === 'draft';
     const canApprove = can('accounting.approve-journal') && entry.status === 'pending_approval';
     const canPost =
         can('accounting.post-journal') &&
         ['draft', 'approved'].includes(entry.status) &&
         isBalanced;
     const canReverse = can('accounting.reverse-journal') && entry.status === 'posted';
-
-    const confirm = useConfirm();
 
     const approveJournal = () => {
         router.post(route('admin.accounting.journal-entries.approve', entry.id));
@@ -66,6 +68,17 @@ function Show({ journalEntry: entry }) {
         }
     };
 
+    const deleteJournal = async () => {
+        const confirmed = await confirmDelete(
+            entry.journal_number,
+            'pages.accounting.journalEntries.confirmDelete',
+        );
+
+        if (confirmed) {
+            router.delete(route('admin.accounting.journal-entries.destroy', entry.id));
+        }
+    };
+
     return (
         <>
             <Head title={entry.journal_number} />
@@ -73,6 +86,18 @@ function Show({ journalEntry: entry }) {
                 <Link href={route('admin.accounting.journal-entries.index')} className="rp-btn-outline">
                     {t('common.back')}
                 </Link>
+                {canEdit && (
+                    <Link href={route('admin.accounting.journal-entries.edit', entry.id)} className="rp-btn-outline">
+                        <Pencil className="h-4 w-4" />
+                        {t('common.edit')}
+                    </Link>
+                )}
+                {canEdit && (
+                    <Button variant="outline" onClick={deleteJournal}>
+                        <Trash2 className="h-4 w-4" />
+                        {t('common.delete')}
+                    </Button>
+                )}
                 {canApprove && (
                     <Button variant="brand" onClick={approveJournal}>
                         <CheckCircle className="h-4 w-4" />
