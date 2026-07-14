@@ -30,6 +30,8 @@ use App\Http\Controllers\Admin\CustomerWalletController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\Expense\ExpenseCategoryController;
 use App\Http\Controllers\Admin\Expense\ExpenseController;
+use App\Http\Controllers\Admin\Attendance\AttendanceRecordController;
+use App\Http\Controllers\Admin\Attendance\AttendanceSourceController;
 use App\Http\Controllers\Admin\Expense\RecurringExpenseScheduleController;
 use App\Http\Controllers\Admin\FixedAssetController;
 use App\Http\Controllers\Admin\Hr\EmployeeController;
@@ -125,6 +127,13 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::resource('recurring-expenses', RecurringExpenseScheduleController::class)->only(['index', 'create', 'store']);
             Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve'])->name('expenses.approve');
             Route::post('expenses/{expense}/attachments', [ExpenseController::class, 'attachReceipt'])->name('expenses.attachments');
+        });
+
+        Route::middleware(['hr-module:attendance'])->prefix('attendance')->name('attendance.')->group(function () {
+            Route::get('sources', [AttendanceSourceController::class, 'index'])->name('sources.index');
+            Route::get('records', [AttendanceRecordController::class, 'index'])->name('records.index');
+            Route::get('records/manual', [AttendanceRecordController::class, 'create'])->name('records.create');
+            Route::post('records/manual', [AttendanceRecordController::class, 'store'])->name('records.store');
         });
 
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');

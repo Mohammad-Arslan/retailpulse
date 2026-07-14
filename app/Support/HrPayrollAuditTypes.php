@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Models\AttendanceRecord;
+use App\Models\AttendanceSource;
 use App\Models\BranchHrProfile;
 use App\Models\Employee;
 use App\Models\Expense;
@@ -28,6 +30,8 @@ final class HrPayrollAuditTypes
         ExpenseAttachment::class,
         RecurringExpenseSchedule::class,
         RecurringExpenseOccurrence::class,
+        AttendanceSource::class,
+        AttendanceRecord::class,
     ];
 
     /**

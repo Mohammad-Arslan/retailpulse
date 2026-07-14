@@ -42,11 +42,14 @@ use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\DebitNote;
 use App\Models\Employee;
+use App\Models\ExchangeRate;
 use App\Models\BranchHrProfile;
 use App\Models\Expense;
 use App\Models\ExpenseApprovalPolicy;
 use App\Models\ExpenseAttachment;
 use App\Models\ExpenseCategory;
+use App\Models\AttendanceRecord;
+use App\Models\AttendanceSource;
 use App\Models\RecurringExpenseOccurrence;
 use App\Models\RecurringExpenseSchedule;
 use App\Models\FiscalYear;
@@ -155,6 +158,11 @@ use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\WarehouseRepository;
 use App\Services\Accounting\BranchAccountingModuleGate;
 use App\Services\Accounting\Contracts\AccountingModuleGate;
+use App\Services\Attendance\AttendanceService;
+use App\Services\Attendance\Providers\ManualAttendanceProvider;
+use App\Services\Attendance\Providers\PosPinAttendanceProvider;
+use App\Services\Attendance\Providers\UnsupportedAttendanceProvider;
+use App\Services\PosPinService;
 use App\Services\Hr\BranchHrPayrollModuleGate;
 use App\Services\Hr\Contracts\HrPayrollModuleGate;
 use App\Services\Accounting\ProcurementAccountingHook;
@@ -210,6 +218,19 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ProcurementPostingHook::class, ProcurementAccountingHook::class);
         $this->app->singleton(AccountingModuleGate::class, BranchAccountingModuleGate::class);
         $this->app->singleton(HrPayrollModuleGate::class, BranchHrPayrollModuleGate::class);
+
+        $this->app->singleton(AttendanceService::class, function ($app): AttendanceService {
+            return new AttendanceService(
+                providers: [
+                    'pos_pin' => $app->make(PosPinAttendanceProvider::class),
+                    'manual' => $app->make(ManualAttendanceProvider::class),
+                    'biometric' => new UnsupportedAttendanceProvider('biometric'),
+                    'mobile' => new UnsupportedAttendanceProvider('mobile'),
+                    'import' => new UnsupportedAttendanceProvider('import'),
+                ],
+                posPinService: $app->make(PosPinService::class),
+            );
+        });
     }
 
     public function boot(): void
@@ -273,6 +294,8 @@ class AppServiceProvider extends ServiceProvider
         ExpenseAttachment::observe(AuditObserver::class);
         RecurringExpenseSchedule::observe(AuditObserver::class);
         RecurringExpenseOccurrence::observe(AuditObserver::class);
+        AttendanceSource::observe(AuditObserver::class);
+        AttendanceRecord::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email');

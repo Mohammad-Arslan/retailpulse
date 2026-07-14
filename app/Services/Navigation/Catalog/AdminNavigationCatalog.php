@@ -206,6 +206,20 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.expenses.recurring-expenses.*',
                 'keywords' => ['recurring', 'schedule', 'rent', 'subscription'],
             ]),
+            self::item('attendance-records', 'attendanceRecords', 'admin.attendance.records.index', 'clock', 'attendance', 50, [
+                'permission' => 'attendance.view',
+                'permissionsAny' => ['attendance.view', 'attendance.record'],
+                'module' => 'attendance',
+                'routePattern' => 'admin.attendance.records.*',
+                'keywords' => ['attendance', 'clock in', 'clock out', 'timesheet'],
+            ]),
+            self::item('attendance-sources', 'attendanceSources', 'admin.attendance.sources.index', 'plug', 'attendance', 60, [
+                'permission' => 'attendance.manage-sources',
+                'permissionsAny' => ['attendance.manage-sources', 'attendance.view'],
+                'module' => 'attendance',
+                'routePattern' => 'admin.attendance.sources.*',
+                'keywords' => ['attendance source', 'biometric', 'pos pin', 'driver'],
+            ]),
         ]));
 
         $registry->registerSection(new NavigationSection('accounting', 'accountingSection', 60, [

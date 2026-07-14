@@ -63,6 +63,8 @@
         "expenses": "Expenses",
         "expenseCategories": "Expense Categories",
         "recurringExpenses": "Recurring Expenses",
+        "attendanceRecords": "Attendance Records",
+        "attendanceSources": "Attendance Sources",
         "chartOfAccounts": "Chart of Accounts",
         "accountMappings": "Account Mappings",
         "postingRules": "Posting Rules",
@@ -539,6 +541,67 @@
                 "cash": "Cash",
                 "card": "Card",
                 "bank_transfer": "Bank Transfer"
+            }
+        },
+        "attendanceSources": {
+            "indexTitle": "Attendance Sources",
+            "indexDescription": "Configured Drivers That Capture Employee Attendance.",
+            "searchPlaceholder": "Search By Name Or Driver…",
+            "allDrivers": "All Drivers",
+            "allStatuses": "All Statuses",
+            "allBranches": "All Branches",
+            "columns": {
+                "name": "Source",
+                "branch": "Branch",
+                "status": "Status"
+            },
+            "drivers": {
+                "pos_pin": "POS PIN",
+                "manual": "Manual Entry",
+                "biometric": "Biometric Device",
+                "mobile": "Mobile App",
+                "import": "Bulk Import"
+            },
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive"
+            }
+        },
+        "attendanceRecords": {
+            "indexTitle": "Attendance Records",
+            "indexDescription": "View Clock-In And Clock-Out Events Across All Attendance Sources.",
+            "manualClockTitle": "Manual Clock",
+            "manualClockDescription": "Record A Manual Clock-In Or Clock-Out For An Employee.",
+            "searchPlaceholder": "Search By Employee Name Or Code…",
+            "allStatuses": "All Statuses",
+            "selectEmployee": "Select Employee…",
+            "selectBranch": "Select Branch…",
+            "openRecordPlaceholder": "Optional — Leave Blank To Use Latest Open Record",
+            "saveRecord": "Save Record",
+            "columns": {
+                "employee": "Employee",
+                "branch": "Branch",
+                "source": "Source",
+                "clockIn": "Clock In",
+                "clockOut": "Clock Out",
+                "workedMinutes": "Worked",
+                "status": "Status"
+            },
+            "fields": {
+                "employee": "Employee",
+                "branch": "Branch",
+                "action": "Action",
+                "clockedAt": "Clocked At",
+                "openRecordId": "Open Record ID"
+            },
+            "actions": {
+                "clock_in": "Clock In",
+                "clock_out": "Clock Out"
+            },
+            "statuses": {
+                "open": "Open",
+                "closed": "Closed",
+                "adjusted": "Adjusted"
             }
         },
         "expenseCategories": {
