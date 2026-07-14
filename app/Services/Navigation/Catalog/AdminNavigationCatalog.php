@@ -234,6 +234,20 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.leave.requests.*',
                 'keywords' => ['leave request', 'time off', 'vacation', 'absence'],
             ]),
+            self::item('overtime-policies', 'overtimePolicies', 'admin.overtime.policies.index', 'scale', 'overtime', 90, [
+                'permission' => 'overtime.manage-policies',
+                'permissionsAny' => ['overtime.manage-policies', 'overtime.view'],
+                'module' => 'overtime',
+                'routePattern' => 'admin.overtime.policies.*',
+                'keywords' => ['overtime policy', 'threshold', 'multiplier', 'rate'],
+            ]),
+            self::item('overtime-records', 'overtimeRecords', 'admin.overtime.records.index', 'timer', 'overtime', 100, [
+                'permission' => 'overtime.view',
+                'permissionsAny' => ['overtime.view', 'overtime.approve'],
+                'module' => 'overtime',
+                'routePattern' => 'admin.overtime.records.*',
+                'keywords' => ['overtime record', 'extra hours', 'approval', 'timesheet'],
+            ]),
         ]));
 
         $registry->registerSection(new NavigationSection('accounting', 'accountingSection', 60, [

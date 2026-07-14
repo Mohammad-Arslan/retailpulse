@@ -34,6 +34,8 @@ use App\Http\Controllers\Admin\Attendance\AttendanceRecordController;
 use App\Http\Controllers\Admin\Attendance\AttendanceSourceController;
 use App\Http\Controllers\Admin\Leave\LeaveRequestController;
 use App\Http\Controllers\Admin\Leave\LeaveTypeController;
+use App\Http\Controllers\Admin\Overtime\OvertimePolicyController;
+use App\Http\Controllers\Admin\Overtime\OvertimeRecordController;
 use App\Http\Controllers\Admin\Expense\RecurringExpenseScheduleController;
 use App\Http\Controllers\Admin\FixedAssetController;
 use App\Http\Controllers\Admin\Hr\EmployeeController;
@@ -144,6 +146,12 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::get('requests/create', [LeaveRequestController::class, 'create'])->name('requests.create');
             Route::post('requests', [LeaveRequestController::class, 'store'])->name('requests.store');
             Route::post('requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('requests.approve');
+        });
+
+        Route::middleware(['hr-module:overtime'])->prefix('overtime')->name('overtime.')->group(function () {
+            Route::get('policies', [OvertimePolicyController::class, 'index'])->name('policies.index');
+            Route::get('records', [OvertimeRecordController::class, 'index'])->name('records.index');
+            Route::post('records/{overtimeRecord}/approve', [OvertimeRecordController::class, 'approve'])->name('records.approve');
         });
 
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');

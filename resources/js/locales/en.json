@@ -67,6 +67,8 @@
         "attendanceSources": "Attendance Sources",
         "leaveTypes": "Leave Types",
         "leaveRequests": "Leave Requests",
+        "overtimePolicies": "Overtime Policies",
+        "overtimeRecords": "Overtime Records",
         "chartOfAccounts": "Chart of Accounts",
         "accountMappings": "Account Mappings",
         "postingRules": "Posting Rules",
@@ -655,6 +657,54 @@
                 "approved": "Approved",
                 "rejected": "Rejected",
                 "cancelled": "Cancelled"
+            }
+        },
+        "overtimePolicies": {
+            "indexTitle": "Overtime Policies",
+            "indexDescription": "Configured Thresholds And Multipliers For Overtime Calculation.",
+            "allStatuses": "All Statuses",
+            "columns": {
+                "scope": "Scope",
+                "dailyThreshold": "Daily Threshold",
+                "weeklyThreshold": "Weekly Threshold",
+                "multipliers": "Multipliers",
+                "effectiveDates": "Effective Dates",
+                "priority": "Priority",
+                "status": "Status"
+            },
+            "scopeGlobal": "Global",
+            "minutes": "Minutes",
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive"
+            },
+            "dayTypes": {
+                "weekday": "Weekday",
+                "weekend": "Weekend",
+                "rest_day": "Rest Day",
+                "public_holiday": "Public Holiday"
+            }
+        },
+        "overtimeRecords": {
+            "indexTitle": "Overtime Records",
+            "indexDescription": "Review And Approve Calculated Overtime From Attendance.",
+            "searchPlaceholder": "Search By Employee Name Or Code…",
+            "allStatuses": "All Statuses",
+            "approve": "Approve",
+            "columns": {
+                "employee": "Employee",
+                "date": "Date",
+                "regularMinutes": "Regular Minutes",
+                "overtimeMinutes": "Overtime Minutes",
+                "dayType": "Day Type",
+                "multiplier": "Multiplier",
+                "payUnits": "Pay Units",
+                "status": "Status"
+            },
+            "statuses": {
+                "pending": "Pending",
+                "approved": "Approved",
+                "rejected": "Rejected"
             }
         },
         "expenseCategories": {

@@ -16,6 +16,9 @@ use App\Models\LeaveEntitlement;
 use App\Models\LeavePolicy;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
+use App\Models\OvertimeMultiplier;
+use App\Models\OvertimePolicy;
+use App\Models\OvertimeRecord;
 use App\Models\RecurringExpenseOccurrence;
 use App\Models\RecurringExpenseSchedule;
 use Illuminate\Database\Eloquent\Model;
@@ -40,6 +43,9 @@ final class HrPayrollAuditTypes
         LeavePolicy::class,
         LeaveEntitlement::class,
         LeaveRequest::class,
+        OvertimePolicy::class,
+        OvertimeMultiplier::class,
+        OvertimeRecord::class,
     ];
 
     /**

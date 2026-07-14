@@ -54,6 +54,9 @@ use App\Models\LeaveEntitlement;
 use App\Models\LeavePolicy;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
+use App\Models\OvertimeMultiplier;
+use App\Models\OvertimePolicy;
+use App\Models\OvertimeRecord;
 use App\Models\RecurringExpenseOccurrence;
 use App\Models\RecurringExpenseSchedule;
 use App\Models\FiscalYear;
@@ -304,6 +307,9 @@ class AppServiceProvider extends ServiceProvider
         LeavePolicy::observe(AuditObserver::class);
         LeaveEntitlement::observe(AuditObserver::class);
         LeaveRequest::observe(AuditObserver::class);
+        OvertimePolicy::observe(AuditObserver::class);
+        OvertimeMultiplier::observe(AuditObserver::class);
+        OvertimeRecord::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email');
