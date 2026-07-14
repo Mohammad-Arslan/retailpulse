@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Loyalty\LoyaltyApiController;
 use App\Http\Controllers\Api\V1\Pos\CartController;
 use App\Http\Controllers\Api\V1\Pos\CartItemController;
 use App\Http\Controllers\Api\V1\Pos\PinController;
+use App\Http\Controllers\Api\V1\Pos\PosCatalogFiltersController;
 use App\Http\Controllers\Api\V1\Pos\ProductCatalogController;
 use App\Http\Controllers\Api\V1\Pos\ProductSearchController;
 use App\Http\Controllers\Api\V1\Procurement\PurchaseOrderApiController;
@@ -41,6 +42,7 @@ Route::prefix('v1/pos')
         Route::middleware('pos.access')->group(function () {
             Route::get('products/search', ProductSearchController::class)->name('products.search');
             Route::get('products/catalog', ProductCatalogController::class)->name('products.catalog');
+            Route::get('products/filters', PosCatalogFiltersController::class)->name('products.filters');
 
             Route::get('carts', [CartController::class, 'index'])->name('carts.index');
             Route::post('carts', [CartController::class, 'store'])->name('carts.store');
@@ -73,6 +75,8 @@ Route::prefix('v1')
         Route::get('checkout/{cartId}', [CheckoutController::class, 'show'])->name('checkout.show');
         Route::post('checkout/{cartId}/confirm', [CheckoutController::class, 'confirm'])->name('checkout.confirm');
         Route::post('checkout/{cartId}/abandon', [CheckoutController::class, 'abandon'])->name('checkout.abandon');
+        Route::delete('checkout/{cartId}/items/{itemId}', [CheckoutController::class, 'removeItem'])
+            ->name('checkout.items.destroy');
 
         Route::post('sales/{id}/payments', [SaleController::class, 'addPayment'])->name('sales.payments.store');
         Route::delete('sales/{id}/payments/{paymentId}', [SaleController::class, 'removePayment'])->name('sales.payments.destroy');

@@ -6,6 +6,7 @@ import { useEffect } from 'react';
  * Binds:
  *  F2           → focus search
  *  F3           → focus qty of last cart item
+ *  F5           → suspend / hold cart
  *  F10          → trigger checkout
  *  Ctrl+H       → suspend active cart
  *  Ctrl+V       → void active cart  (needs confirmation in handler)
@@ -26,6 +27,11 @@ export function usePosKeyboard(handlers) {
                 case e.key === 'F3':
                     e.preventDefault();
                     handlers.focusQty?.();
+                    break;
+
+                case e.key === 'F5':
+                    e.preventDefault();
+                    handlers.suspendCart?.();
                     break;
 
                 case e.key === 'F10':

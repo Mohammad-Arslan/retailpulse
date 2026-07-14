@@ -10,6 +10,7 @@ import {
     Wallet,
 } from 'lucide-react';
 import { computeCartTotals, estimateCartTax, formatPkr } from '@/lib/posCartTotals';
+import { useTranslation } from 'react-i18next';
 
 export function CartBottomBar({
     cart,
@@ -27,13 +28,13 @@ export function CartBottomBar({
     onAttachCustomer,
     hasCustomer = false,
 }) {
+    const { t } = useTranslation();
     const [moreOpen, setMoreOpen] = useState(false);
 
     const items = cart?.items || [];
     const isCompleting = cart?.status === 'completing';
     const isActive = cart?.status === 'active';
     const isSuspended = cart?.status === 'suspended';
-    const isEditable = isActive || isSuspended;
     const hasItems = items.length > 0;
 
     const { subtotal, grandTotal, discount } = computeCartTotals(items);
@@ -47,191 +48,187 @@ export function CartBottomBar({
     const canHold = hasItems && isActive && canSuspend;
 
     return (
-        <div className="shrink-0 border-t border-rp-border bg-rp-surface">
-            {/* Totals strip */}
-            <div className="flex items-center gap-6 border-b border-rp-border/50 px-4 py-2.5">
-                {/* Subtotal */}
-                <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-rp-text-muted">Subtotal</span>
-                    <span className="text-xs font-medium text-rp-text-secondary">{currency} {formatPkr(subtotal)}</span>
+        <div className="shrink-0 border-t border-[var(--pos-border)] bg-[var(--pos-bg)]">
+            <div className="space-y-0.5 px-[18px] pt-3.5 pb-2">
+                <div className="flex justify-between py-0.5 text-[12.5px] text-[var(--pos-text-2)]">
+                    <span>{t('pages.pos.cart.subtotal')}</span>
+                    <b className="pos-mono font-semibold text-[var(--pos-text-1)]">
+                        {currency} {formatPkr(subtotal)}
+                    </b>
                 </div>
-
-                {/* Discount */}
-                {discount > 0 && (
-                    <>
-                        <span className="text-xs text-rp-text-muted/40">+</span>
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-rp-text-muted">Discount</span>
-                            <span className="text-xs font-medium text-emerald-400">−{currency} {formatPkr(discount)}</span>
-                        </div>
-                    </>
-                )}
-
-                {/* Tax */}
-                {taxEnabled && taxRatePct > 0 && (
-                    <>
-                        <span className="text-xs text-rp-text-muted/40">+</span>
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-rp-text-muted">Tax ({taxRatePct}%)</span>
-                            <span className="text-xs font-medium text-rp-text-secondary">{currency} {formatPkr(taxAmount)}</span>
-                        </div>
-                    </>
-                )}
-
-                <span className="text-xs font-bold text-rp-text-muted">=</span>
-
-                {/* Grand total */}
-                <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-bold text-rp-text">Total</span>
-                    <span className="text-lg font-bold text-rp-text">{currency} {formatPkr(displayTotal)}</span>
+                {taxEnabled && taxRatePct > 0 ? (
+                    <div className="flex justify-between py-0.5 text-[12.5px] text-[var(--pos-text-2)]">
+                        <span>
+                            {t('pages.pos.cart.tax')} ({taxRatePct}%)
+                            {taxMode === 'inclusive' ? (
+                                <span className="ml-1 text-[10px] opacity-70">incl.</span>
+                            ) : null}
+                        </span>
+                        <b className="pos-mono font-semibold text-[var(--pos-text-1)]">
+                            {currency} {formatPkr(taxAmount)}
+                        </b>
+                    </div>
+                ) : null}
+                <div className="flex justify-between py-0.5 text-[12.5px] text-[var(--pos-text-2)]">
+                    <span>{t('pages.pos.cart.discount')}</span>
+                    <b className="pos-mono font-semibold text-[var(--pos-text-1)]">
+                        {currency} {formatPkr(discount)}
+                    </b>
+                </div>
+                <div className="mt-1.5 flex items-center justify-between border-t border-dashed border-[var(--pos-border-strong)] pt-2.5 text-[15.5px] font-extrabold text-[var(--pos-text-1)]">
+                    <span>{t('pages.pos.cart.totalDue')}</span>
+                    <b className="pos-mono text-[19px] font-extrabold text-[var(--pos-teal-700)]">
+                        {currency} {formatPkr(displayTotal)}
+                    </b>
                 </div>
             </div>
 
-            {/* Action bar */}
-            <div className="flex items-center gap-2 px-4 py-3">
-                {/* Left actions */}
-                <div className="flex items-center gap-1.5">
-                    {/* Clear Cart / Void */}
+            <div className="flex gap-2 px-[18px] pt-2.5">
+                <button
+                    type="button"
+                    onClick={onVoid}
+                    disabled={processing || !hasItems || isCompleting}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-[var(--pos-border)] bg-[var(--pos-bg)] py-2 text-xs font-semibold text-[var(--pos-text-2)] transition hover:border-[var(--pos-border-strong)] hover:bg-[var(--pos-bg-subtle)] disabled:opacity-40"
+                >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    {t('pages.pos.cart.clearCart')}
+                </button>
+
+                {(isActive || isSuspended) ? (
                     <button
                         type="button"
-                        onClick={onVoid}
-                        disabled={processing || !hasItems || isCompleting}
-                        className="flex items-center gap-1.5 rounded-lg border border-rp-border px-3 py-2 text-xs font-medium text-rp-text-secondary transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
-                        title="Clear Cart"
+                        onClick={isSuspended ? onReopen : onSuspend}
+                        disabled={processing || (!canHold && !isSuspended)}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-[var(--pos-border)] bg-[var(--pos-bg)] py-2 text-xs font-semibold text-[var(--pos-text-2)] transition hover:border-[var(--pos-border-strong)] hover:bg-[var(--pos-bg-subtle)] disabled:opacity-40"
                     >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Clear Cart</span>
-                    </button>
-
-                    {/* Hold Cart */}
-                    {(isActive || isSuspended) && (
-                        <button
-                            type="button"
-                            onClick={isSuspended ? onReopen : onSuspend}
-                            disabled={processing || !canHold && !isSuspended}
-                            className="flex items-center gap-1.5 rounded-lg border border-rp-border px-3 py-2 text-xs font-medium text-rp-text-secondary transition hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
-                            title={isSuspended ? 'Resume Cart' : 'Hold Cart'}
-                        >
-                            {isSuspended ? (
-                                <RotateCcw className="h-3.5 w-3.5" />
-                            ) : (
-                                <Pause className="h-3.5 w-3.5" />
-                            )}
-                            <span className="hidden sm:inline">{isSuspended ? 'Resume' : 'Hold Cart'}</span>
-                        </button>
-                    )}
-
-                    {/* Reopen from completing */}
-                    {isCompleting && (
-                        <button
-                            type="button"
-                            onClick={onReopen}
-                            disabled={processing}
-                            className="flex items-center gap-1.5 rounded-lg border border-rp-border px-3 py-2 text-xs font-medium text-rp-text-secondary transition hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
+                        {isSuspended ? (
                             <RotateCcw className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Reopen</span>
-                        </button>
-                    )}
+                        ) : (
+                            <Pause className="h-3.5 w-3.5" />
+                        )}
+                        {isSuspended ? t('pages.pos.cart.resumeCart') : t('pages.pos.cart.holdCart')}
+                    </button>
+                ) : null}
 
-                    {/* More dropdown */}
-                    <div className="relative">
-                        <button
-                            type="button"
-                            onClick={() => setMoreOpen((o) => !o)}
-                            disabled={processing}
-                            className="flex items-center gap-1 rounded-lg border border-rp-border px-3 py-2 text-xs font-medium text-rp-text-secondary transition hover:border-rp-text-muted hover:text-rp-text disabled:opacity-40"
-                        >
-                            <MoreHorizontal className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">More</span>
-                        </button>
-                        {moreOpen && (
-                            <>
+                {isCompleting ? (
+                    <button
+                        type="button"
+                        onClick={onReopen}
+                        disabled={processing}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-[var(--pos-border)] bg-[var(--pos-bg)] py-2 text-xs font-semibold text-[var(--pos-text-2)] transition hover:border-[var(--pos-border-strong)] hover:bg-[var(--pos-bg-subtle)] disabled:opacity-40"
+                    >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        {t('pages.pos.cart.reopen')}
+                    </button>
+                ) : null}
+
+                <div className="relative flex-1">
+                    <button
+                        type="button"
+                        onClick={() => setMoreOpen((o) => !o)}
+                        disabled={processing}
+                        className="flex w-full items-center justify-center gap-1.5 rounded-[7px] border border-[var(--pos-border)] bg-[var(--pos-bg)] py-2 text-xs font-semibold text-[var(--pos-text-2)] transition hover:border-[var(--pos-border-strong)] hover:bg-[var(--pos-bg-subtle)] disabled:opacity-40"
+                    >
+                        <MoreHorizontal className="h-3.5 w-3.5" />
+                        {t('pages.pos.cart.more')}
+                    </button>
+                    {moreOpen ? (
+                        <>
+                            <button
+                                type="button"
+                                className="fixed inset-0 z-10"
+                                onClick={() => setMoreOpen(false)}
+                                tabIndex={-1}
+                                aria-hidden
+                            />
+                            <div className="absolute bottom-full left-0 z-20 mb-1 w-44 rounded-xl border border-[var(--pos-border)] bg-[var(--pos-bg)] py-1 shadow-[var(--pos-shadow-md)]">
                                 <button
                                     type="button"
-                                    className="fixed inset-0 z-10"
                                     onClick={() => setMoreOpen(false)}
-                                    tabIndex={-1}
-                                    aria-hidden
-                                />
-                                <div className="absolute bottom-full left-0 z-20 mb-1 w-44 rounded-xl border border-rp-border bg-rp-surface py-1 shadow-xl">
-                                    <button
-                                        type="button"
-                                        onClick={() => setMoreOpen(false)}
-                                        className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-rp-text-secondary hover:bg-rp-surface-subtle hover:text-rp-text"
-                                    >
-                                        Cart Notes (coming soon)
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setMoreOpen(false);
-                                            onAttachCustomer?.();
-                                        }}
-                                        className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-rp-text-secondary hover:bg-rp-surface-subtle hover:text-rp-text"
-                                    >
-                                        <UserRound className="h-3.5 w-3.5 shrink-0" />
-                                        {hasCustomer ? 'Change Customer' : 'Attach Customer'}
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
+                                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-[var(--pos-text-2)] hover:bg-[var(--pos-bg-subtle)]"
+                                >
+                                    {t('pages.pos.cart.notesComingSoon')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setMoreOpen(false);
+                                        onAttachCustomer?.();
+                                    }}
+                                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-[var(--pos-text-2)] hover:bg-[var(--pos-bg-subtle)]"
+                                >
+                                    <UserRound className="h-3.5 w-3.5 shrink-0" />
+                                    {hasCustomer
+                                        ? t('pages.pos.cart.changeCustomer')
+                                        : t('pages.pos.cart.attachCustomer')}
+                                </button>
+                            </div>
+                        </>
+                    ) : null}
                 </div>
+            </div>
 
-                {/* Spacer */}
-                <div className="flex-1" />
-
-                {/* Right: payment shortcuts + Pay button */}
-                <div className="flex items-center gap-2">
-                    {/* Quick payment type hints */}
-                    <div className="hidden items-center gap-1 md:flex">
-                        <button
-                            type="button"
-                            disabled={!canPay || processing}
-                            onClick={onCheckout}
-                            className="flex items-center gap-1.5 rounded-lg border border-rp-border px-2.5 py-2 text-xs text-rp-text-muted transition hover:border-teal-400/40 hover:bg-teal-500/5 hover:text-rp-text-secondary disabled:cursor-not-allowed disabled:opacity-40"
-                            title="Cash"
-                        >
-                            <Banknote className="h-3.5 w-3.5" />
-                            <span>Cash</span>
-                        </button>
-                        <button
-                            type="button"
-                            disabled={!canPay || processing}
-                            onClick={onCheckout}
-                            className="flex items-center gap-1.5 rounded-lg border border-rp-border px-2.5 py-2 text-xs text-rp-text-muted transition hover:border-teal-400/40 hover:bg-teal-500/5 hover:text-rp-text-secondary disabled:cursor-not-allowed disabled:opacity-40"
-                            title="Card"
-                        >
-                            <CreditCard className="h-3.5 w-3.5" />
-                            <span>Card</span>
-                        </button>
-                        <button
-                            type="button"
-                            disabled={!canPay || processing}
-                            onClick={onCheckout}
-                            className="flex items-center gap-1.5 rounded-lg border border-rp-border px-2.5 py-2 text-xs text-rp-text-muted transition hover:border-teal-400/40 hover:bg-teal-500/5 hover:text-rp-text-secondary disabled:cursor-not-allowed disabled:opacity-40"
-                            title="e-Wallet"
-                        >
-                            <Wallet className="h-3.5 w-3.5" />
-                            <span>e-Wallet</span>
-                        </button>
-                    </div>
-
-                    {/* Main Pay button */}
-                    <button
-                        type="button"
-                        onClick={onCheckout}
-                        disabled={!canPay || processing}
-                        className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                        <CreditCard className="h-4 w-4" />
-                        <span>Pay</span>
-                        <kbd className="ml-1 rounded border border-emerald-400/40 bg-emerald-700/60 px-1.5 py-0.5 text-[10px] font-medium">
+            <div className="flex gap-2 px-[18px] py-3">
+                <button
+                    type="button"
+                    disabled={!canPay || processing}
+                    onClick={onCheckout}
+                    className="flex flex-1 flex-col items-center gap-1 rounded-lg border border-[var(--pos-border)] bg-[var(--pos-bg)] px-1 py-2 text-[11px] font-semibold text-[var(--pos-text-2)] transition hover:border-[var(--pos-border-strong)] disabled:opacity-40"
+                >
+                    <Banknote className="h-4 w-4" />
+                    {t('pages.pos.cart.cash')}
+                </button>
+                <button
+                    type="button"
+                    disabled={!canPay || processing}
+                    onClick={onCheckout}
+                    className="flex flex-1 flex-col items-center gap-1 rounded-lg border border-[var(--pos-border)] bg-[var(--pos-bg)] px-1 py-2 text-[11px] font-semibold text-[var(--pos-text-2)] transition hover:border-[var(--pos-border-strong)] disabled:opacity-40"
+                >
+                    <CreditCard className="h-4 w-4" />
+                    {t('pages.pos.cart.card')}
+                </button>
+                <button
+                    type="button"
+                    disabled={!canPay || processing}
+                    onClick={onCheckout}
+                    className="flex flex-1 flex-col items-center gap-1 rounded-lg border border-[var(--pos-border)] bg-[var(--pos-bg)] px-1 py-2 text-[11px] font-semibold text-[var(--pos-text-2)] transition hover:border-[var(--pos-border-strong)] disabled:opacity-40"
+                >
+                    <Wallet className="h-4 w-4" />
+                    {t('pages.pos.cart.eWallet')}
+                </button>
+                <button
+                    type="button"
+                    onClick={onCheckout}
+                    disabled={!canPay || processing}
+                    className="flex flex-[1.6] flex-col items-center justify-center rounded-lg border-0 bg-linear-to-br from-[var(--pos-teal-500)] to-[var(--pos-teal-700)] text-white shadow-[var(--pos-shadow-md)] transition active:scale-[0.98] disabled:opacity-40"
+                >
+                    <span className="flex items-center gap-1.5 text-[13.5px] font-extrabold">
+                        {t('pages.pos.cart.pay')}
+                        <span className="rounded bg-white/20 px-1.5 py-0.5 text-[9.5px] font-bold">
                             F10
-                        </kbd>
-                    </button>
-                </div>
+                        </span>
+                    </span>
+                </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 bg-[var(--pos-text-1)] px-[18px] py-1.5">
+                {[
+                    ['F2', t('pages.pos.quickkeys.search')],
+                    ['F5', t('pages.pos.quickkeys.hold')],
+                    ['F9', t('pages.pos.quickkeys.discount')],
+                    ['F10', t('pages.pos.quickkeys.pay')],
+                    ['F12', t('pages.pos.quickkeys.voidLine')],
+                ].map(([key, label]) => (
+                    <span
+                        key={key}
+                        className="flex items-center gap-1 text-[10.5px] font-medium text-[#c9d5d3]"
+                    >
+                        <b className="pos-mono rounded bg-white/12 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                            {key}
+                        </b>
+                        {label}
+                    </span>
+                ))}
             </div>
         </div>
     );

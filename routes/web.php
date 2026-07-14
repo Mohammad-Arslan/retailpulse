@@ -6,6 +6,7 @@ use App\Http\Controllers\HelpSupport\HelpSupportController;
 use App\Http\Controllers\InvoicePrintController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PublicInvoiceController;
+use App\Services\Dashboard\HomeRouteResolver;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -13,24 +14,29 @@ Route::put('/locale', [LocaleController::class, 'update'])
     ->middleware('web')
     ->name('locale.update');
 
-Route::get('/', function () {
+Route::get('/', function (HomeRouteResolver $home) {
     if (Auth::check()) {
-        $user = Auth::user();
-
-        if ($user?->can('admin.access')) {
-            return redirect()->route('admin.dashboard');
-        }
-
-        if ($user?->can('pos.access')) {
-            return redirect()->route('admin.pos.index');
-        }
+        return redirect()->to($home->url(Auth::user()));
     }
 
     return redirect()->route('login');
 });
 
-Route::redirect('/home', '/admin/dashboard');
-Route::redirect('/dashboard', '/admin/dashboard');
+Route::get('/home', function (HomeRouteResolver $home) {
+    if (! Auth::check()) {
+        return redirect()->route('login');
+    }
+
+    return redirect()->to($home->url(Auth::user()));
+});
+
+Route::get('/dashboard', function (HomeRouteResolver $home) {
+    if (! Auth::check()) {
+        return redirect()->route('login');
+    }
+
+    return redirect()->to($home->url(Auth::user()));
+})->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::prefix('help-support')->name('help-support.')->group(function () {

@@ -1,7 +1,7 @@
 # RetailPulse User Manual — Accounting & Finance
 
 **Audience:** Accountants, finance managers, implementation consultants, and customer support  
-**Version:** 1.6 (July 2026)  
+**Version:** 1.7 (July 2026)  
 **Scope:** Phase 11 — General Ledger (GL), auto-posting, fiscal control, tax, imports, sub-ledgers, inventory costing, and financial reports
 
 This manual explains **where to click**, **what each screen does**, **how money flows through the system**, **what every term means**, and **what happens when something is missing or misconfigured**.
@@ -76,7 +76,7 @@ RetailPulse accounting is **branch-aware**:
 
 - **Select a specific branch** in the header branch switcher before working in Accounting.
 - When a **specific branch** is active, the sidebar shows only the sub-modules that branch has enabled in its accounting profile.
-- When **All Branches** (head-office view — the default for super-admin) is active, the sidebar shows the **union** of every branch's enabled sub-modules, so an unrestricted user can reach any configured accounting area. If a sub-module is enabled on at least one branch, it appears here.
+- When **All Branches** (head-office view — users with `branches.access-all`, or users without branch assignment restrictions) is active, the sidebar shows the **union** of every branch's enabled sub-modules, so an unrestricted user can reach any configured accounting area. If a sub-module is enabled on at least one branch, it appears here.
 - **If a sub-module is still missing:** confirm it is enabled on at least one `BranchAccountingProfile`, then refresh.
 
 Journal lines, bank accounts, and many reports filter by the active branch unless the user has head-office (all-branches) access.
@@ -111,7 +111,9 @@ Beyond permissions, some menu items require the branch to have the sub-module **
 Menu items appear only when the user has the required permission **and** (where applicable) the branch module is enabled. If a user says “I don’t see Tax Types”, check:
 
 1. `tax` module enabled for the active branch — or, in the All Branches view, on at least one branch.
-2. Role has `accounting.manage-tax-settings` (or super-admin).
+2. Role has `accounting.manage-tax-settings` (full-access system roles include this automatically when seeded with all permissions).
+
+Accountants with `dashboard.finance.view` also see finance KPIs (unposted journals, bank unmatched lines, AR/AP aging) on the **ERP Home Dashboard**.
 
 See [Section 20](#20-permissions-reference-for-support).
 
@@ -1319,6 +1321,7 @@ A: Distinct `payment.received` event is deferred; partial coverage via sale sett
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.7 | July 2026 | ERP home finance widgets (`dashboard.finance.view`); All Branches gated by `branches.access-all` (not role name) |
 | 1.6 | July 2026 | Accounting Modules admin UI (per-branch enable/disable); replaces tinker recipe |
 | 1.5 | July 2026 | Mapping scope fields UI; petty cash voucher create/approve; FA dispose & run depreciation; Tax Return report; bank multi-match / Partially Matched; draft journal edit/delete |
 | 1.4 | July 2026 | Posting Rules: Duplicate flow (no blank create); event type locked to source; debit/credit structural validation; same-priority overlap warning |

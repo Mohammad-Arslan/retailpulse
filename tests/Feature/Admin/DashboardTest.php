@@ -21,7 +21,7 @@ final class DashboardTest extends TestCase
         $this->seedRbac();
     }
 
-    public function test_super_admin_dashboard_includes_chart_data(): void
+    public function test_super_admin_dashboard_includes_permission_driven_widgets(): void
     {
         $admin = User::factory()->create(['is_active' => true]);
         $admin->assignRole('super-admin');
@@ -31,19 +31,14 @@ final class DashboardTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Admin/Dashboard')
-                ->has('stats', fn (Assert $stats) => $stats
-                    ->has('users')
-                    ->has('roles')
-                    ->has('permissions')
-                    ->has('active_users')
-                    ->has('inactive_users')
-                )
-                ->has('charts', fn (Assert $charts) => $charts
-                    ->has('user_growth', 7)
-                    ->has('users_by_role')
-                    ->has('permissions_by_group')
-                    ->has('user_status', 2)
-                )
+                ->has('widgets')
+                ->where('widgets', function ($widgets): bool {
+                    $ids = collect($widgets)->pluck('id')->all();
+
+                    return in_array('sales_kpis', $ids, true)
+                        && in_array('business_exceptions', $ids, true)
+                        && ! in_array('rbac', $ids, true);
+                })
             );
     }
 }

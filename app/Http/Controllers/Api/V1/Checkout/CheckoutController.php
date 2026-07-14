@@ -55,6 +55,23 @@ final class CheckoutController extends Controller
         ]);
     }
 
+    public function removeItem(Request $request, string $cartId, int $itemId): JsonResponse
+    {
+        $cart = $this->findOwnedCart($request, $cartId);
+        $result = $this->checkout->removeCartItem($cart, $itemId);
+
+        if ($result['emptied']) {
+            return response()->json([
+                'emptied' => true,
+            ]);
+        }
+
+        return response()->json([
+            'emptied' => false,
+            'bootstrap' => $result['bootstrap'],
+        ]);
+    }
+
     private function findOwnedCart(Request $request, string $cartId): PosCart
     {
         return PosCart::query()

@@ -67,18 +67,22 @@ final class PosCartService
             ->with(['product', 'branchPrices' => fn ($q) => $q->where('branch_id', $cart->branch_id)])
             ->findOrFail($data->productVariantId);
 
-        $available = $this->availableStock($cart->branch_id, $data->productVariantId);
+        $tracksInventory = $this->shouldReserve($variant);
 
-        if ($available <= 0) {
-            throw ValidationException::withMessages([
-                'quantity' => __('This product is out of stock.'),
-            ]);
-        }
+        if ($tracksInventory) {
+            $available = $this->availableStock($cart->branch_id, $data->productVariantId);
 
-        if ($data->quantity > $available) {
-            throw ValidationException::withMessages([
-                'quantity' => __('Only :n units available.', ['n' => $available]),
-            ]);
+            if ($available <= 0) {
+                throw ValidationException::withMessages([
+                    'quantity' => __('This product is out of stock.'),
+                ]);
+            }
+
+            if ($data->quantity > $available) {
+                throw ValidationException::withMessages([
+                    'quantity' => __('Only :n units available.', ['n' => $available]),
+                ]);
+            }
         }
 
         $unitPrice = $this->resolvePrice($variant, $cart->branch_id);
@@ -89,12 +93,15 @@ final class PosCartService
 
         if ($existingItem !== null) {
             $newQuantity = $existingItem->quantity + $data->quantity;
-            $availableForLine = $this->availableForLine($cart, $existingItem, $data->productVariantId);
 
-            if ($newQuantity > $availableForLine) {
-                throw ValidationException::withMessages([
-                    'quantity' => __('Only :n units available.', ['n' => $availableForLine]),
-                ]);
+            if ($tracksInventory) {
+                $availableForLine = $this->availableForLine($cart, $existingItem, $data->productVariantId);
+
+                if ($newQuantity > $availableForLine) {
+                    throw ValidationException::withMessages([
+                        'quantity' => __('Only :n units available.', ['n' => $availableForLine]),
+                    ]);
+                }
             }
 
             return $this->updateItem($cart, $existingItem, new UpdateCartItemData(
@@ -155,12 +162,16 @@ final class PosCartService
         }
 
         if ($data->quantity !== null && $data->quantity !== $item->quantity) {
-            $available = $this->availableForLine($cart, $item, $item->product_variant_id);
+            $variant = ProductVariant::query()->with('product')->find($item->product_variant_id);
 
-            if ($data->quantity > $available) {
-                throw ValidationException::withMessages([
-                    'quantity' => __('Only :n units available.', ['n' => $available]),
-                ]);
+            if ($variant !== null && $this->shouldReserve($variant)) {
+                $available = $this->availableForLine($cart, $item, $item->product_variant_id);
+
+                if ($data->quantity > $available) {
+                    throw ValidationException::withMessages([
+                        'quantity' => __('Only :n units available.', ['n' => $available]),
+                    ]);
+                }
             }
         }
 
@@ -219,6 +230,23 @@ final class PosCartService
         });
     }
 
+    /**
+     * Remove a line while the cart is in checkout (Completing / Completed + pending sale).
+     */
+    public function removeCheckoutItem(PosCart $cart, PosCartItem $item): void
+    {
+        if (! in_array($cart->status, [PosCartStatus::Completing, PosCartStatus::Completed], true)) {
+            throw ValidationException::withMessages([
+                'status' => __('Cart is not in checkout.'),
+            ]);
+        }
+
+        DB::transaction(function () use ($cart, $item): void {
+            $this->releaseForItem($cart, $item, $this->activeReservationQty($item->id));
+            $item->delete();
+        });
+    }
+
     public function suspendCart(PosCart $cart): PosCart
     {
         if ($cart->status !== PosCartStatus::Active) {
@@ -244,6 +272,12 @@ final class PosCartService
         $cart->load('items');
 
         foreach ($cart->items as $item) {
+            $variant = ProductVariant::query()->with('product')->find($item->product_variant_id);
+
+            if ($variant === null || ! $this->shouldReserve($variant)) {
+                continue;
+            }
+
             $available = $this->availableForLine($cart, $item, $item->product_variant_id);
 
             if ($available <= 0 || $item->quantity > $available) {
@@ -346,7 +380,20 @@ final class PosCartService
         $cart->load('items');
         $warnings = [];
 
+        $variantIds = $cart->items->pluck('product_variant_id')->unique()->filter()->all();
+        $variants = ProductVariant::query()
+            ->with('product')
+            ->whereIn('id', $variantIds)
+            ->get()
+            ->keyBy('id');
+
         foreach ($cart->items as $item) {
+            $variant = $variants->get($item->product_variant_id);
+
+            if ($variant === null || ! $this->shouldReserve($variant)) {
+                continue;
+            }
+
             $available = $this->availableForLine($cart, $item, $item->product_variant_id);
 
             if ($available <= 0) {

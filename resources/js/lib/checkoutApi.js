@@ -27,6 +27,8 @@ export const checkoutApi = {
     confirm: (cartId, payload = {}) =>
         post(r('api.v1.checkout.confirm', { cartId }), payload),
     abandon: (cartId) => post(r('api.v1.checkout.abandon', { cartId })),
+    removeItem: (cartId, itemId) =>
+        del(r('api.v1.checkout.items.destroy', { cartId, itemId })),
 };
 
 export const loyaltyApi = {

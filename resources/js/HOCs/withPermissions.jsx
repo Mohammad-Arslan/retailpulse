@@ -7,6 +7,7 @@ export function withPermissions(permission) {
         function PermissionGate(props) {
             const can = useCan();
             const user = usePage().props.auth?.user;
+            const homeRoute = usePage().props.home?.route;
 
             useEffect(() => {
                 if (!user) {
@@ -15,9 +16,11 @@ export function withPermissions(permission) {
                 }
 
                 if (!can(permission)) {
-                    router.visit(route('admin.dashboard'));
+                    const fallback =
+                        homeRoute && homeRoute !== 'login' ? homeRoute : 'admin.dashboard';
+                    router.visit(route(fallback));
                 }
-            }, [can, user]);
+            }, [can, user, homeRoute]);
 
             if (!user || !can(permission)) {
                 return null;

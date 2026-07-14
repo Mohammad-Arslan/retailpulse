@@ -1,7 +1,7 @@
 # RetailPulse User Manual — Catalogue & Inventory
 
 **Audience:** Customer support teams and store operators  
-**Version:** 1.0 (June 2026)  
+**Version:** 1.1 (July 2026)  
 **Scope:** Product catalogue (PIM) and warehouse inventory features available in the admin panel
 
 This manual explains **where to click**, **what each screen does**, **how data flows**, and **what every term means**. Hand it to customers who manage products and stock in RetailPulse.
@@ -40,7 +40,27 @@ This manual explains **where to click**, **what each screen does**, **how data f
 
 1. Open your RetailPulse URL (e.g. `https://your-store.example/admin`).
 2. Sign in with the email and password provided by your administrator.
-3. After login you land on the **Dashboard**.
+3. After login:
+   - Users with **Dashboard** permissions land on the **ERP Home Dashboard** (business KPIs and exceptions — not user/role counts).
+   - Users with only **POS Access** (cashiers) land on the **Point of Sale** full-screen register (no admin sidebar). Checkout (confirm sale + payment) uses the same shell.
+
+Home destination is resolved from permissions only. Creating a new role and assigning permissions will automatically choose the correct landing page.
+
+### 1.2.1 ERP Home Dashboard widgets
+
+The Dashboard shows only widgets you are allowed to see. Assign these permissions on the role:
+
+| Permission | Widget |
+|------------|--------|
+| `dashboard.exceptions.view` | Needs Attention (business exception feed) |
+| `dashboard.sales.view` | Sales KPIs |
+| `dashboard.view-profit` | Gross profit and revenue trends (with sales) |
+| `dashboard.inventory.view` | Low stock, transfers, movements |
+| `dashboard.procurement.view` | Procurement KPIs |
+| `dashboard.finance.view` | Unposted journals, bank match queue, AR/AP aging |
+| `dashboard.operations.view` | Branch / warehouse / catalogue snapshot |
+
+IAM statistics (users, roles, permissions charts) are **not** on the home dashboard. Manage those under **Organization**.
 
 ### 1.3 Branch context (important)
 
@@ -702,6 +722,15 @@ Edit or deactivate schedules from the list.
 | `warehouses.update` | Edit warehouse |
 | `warehouses.deactivate` | Deactivate warehouse |
 
+### 8.3.1 Dashboard widget permissions
+
+| Permission | Allows |
+|------------|--------|
+| `dashboard.view` | Open ERP home dashboard |
+| `dashboard.inventory.view` | Inventory health widgets on home |
+| `dashboard.exceptions.view` | Business exception feed |
+| `branches.access-all` | All Branches context (no branch assignment restriction) |
+
 ### 8.4 Typical role mapping
 
 | Role | Catalogue | Inventory |
@@ -848,6 +877,8 @@ Movements are **permanent audit records** — they are not edited or deleted.
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.2 | July 2026 | Checkout (confirm + payment) uses the same full-screen POS shell as the register |
+| 1.1 | July 2026 | ERP home dashboard is permission-driven business widgets; POS uses a dedicated full-screen shell; login home resolved by permissions |
 | 1.0 | June 2026 | Initial customer-facing manual for catalogue & inventory |
 
 *For product updates, verify menu labels against the live admin UI — labels may be refined in future releases.*

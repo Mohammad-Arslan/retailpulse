@@ -1,0 +1,66 @@
+/* Point of Sale shell — scoped to .pos-shell */
+
+.pos-shell {
+    --pos-teal-700: #0b7c72;
+    --pos-teal-600: #0d9488;
+    --pos-teal-500: #14b8a6;
+    --pos-teal-50: #eefbf9;
+    --pos-teal-100: #d9f5f1;
+    --pos-bg: #ffffff;
+    --pos-bg-subtle: #f6f9f8;
+    --pos-bg-sunken: #f0f4f3;
+    --pos-border: #e3e9e8;
+    --pos-border-strong: #cfd8d6;
+    --pos-text-1: #182726;
+    --pos-text-2: #5c6b69;
+    --pos-text-3: #92a09d;
+    --pos-success: #178a4c;
+    --pos-success-bg: #e9f7ee;
+    --pos-warn: #b1690a;
+    --pos-danger: #c02929;
+    --pos-radius: 8px;
+    --pos-shadow-sm: 0 1px 2px rgba(16, 40, 36, 0.06);
+    --pos-shadow-md: 0 4px 16px rgba(16, 40, 36, 0.08);
+
+    background: var(--pos-bg-subtle);
+    color: var(--pos-text-1);
+    font-size: 13.5px;
+}
+
+.dark .pos-shell {
+    --pos-bg: #121a19;
+    --pos-bg-subtle: #0e1514;
+    --pos-bg-sunken: #1a2423;
+    --pos-border: #2a3634;
+    --pos-border-strong: #3a4846;
+    --pos-text-1: #e8efee;
+    --pos-text-2: #9aaba8;
+    --pos-text-3: #6d7e7b;
+    --pos-teal-50: rgba(13, 148, 136, 0.14);
+    --pos-teal-100: rgba(13, 148, 136, 0.22);
+    --pos-success-bg: rgba(23, 138, 76, 0.18);
+}
+
+.pos-shell .pos-mono {
+    font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+.pos-shell .pos-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--pos-border-strong) transparent;
+}
+
+.pos-shell .pos-scroll::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+}
+
+.pos-shell .pos-scroll::-webkit-scrollbar-thumb {
+    background: var(--pos-border-strong);
+    border-radius: 20px;
+}
+
+.pos-shell .pos-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}

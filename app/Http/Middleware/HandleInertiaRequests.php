@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use App\Services\Accounting\Contracts\AccountingModuleGate;
 use App\Services\BranchContextService;
+use App\Services\Dashboard\HomeRouteResolver;
 use App\Services\LocaleService;
 use App\Support\BranchContext;
 use Closure;
@@ -90,6 +91,14 @@ class HandleInertiaRequests extends Middleware
             ],
             'app' => [
                 'name' => config('app.name'),
+            ],
+            'home' => [
+                'route' => $user
+                    ? app(HomeRouteResolver::class)->routeName($user)
+                    : 'login',
+                'can_exit_to_erp' => $user
+                    ? app(HomeRouteResolver::class)->canExitToErp($user)
+                    : false,
             ],
             'csrf_token' => fn () => csrf_token(),
         ];

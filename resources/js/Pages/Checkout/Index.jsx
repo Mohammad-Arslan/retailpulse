@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import AdminLayout from '@/Layouts/AdminLayout';
+import { Head, router, usePage } from '@inertiajs/react';
+import PosLayout from '@/Layouts/PosLayout';
+import { PosTopbar } from '@/Components/pos/PosTopbar';
 import { Button } from '@/Components/ui/button';
 import { Printer, X } from 'lucide-react';
 import { checkoutApi, customerApi, loyaltyApi, saleApi } from '@/lib/checkoutApi';
 import { pinApi } from '@/lib/posApi';
 import { usePosDialog } from '@/Hooks/usePosDialog';
 import { useTranslation } from 'react-i18next';
-
 function customerStorageKey(cartId) {
     return `checkout-customer-${cartId}`;
 }
@@ -187,7 +187,9 @@ function CustomerProfileCard({ profile, currency, t }) {
 
 export default function CheckoutIndex({ cartId }) {
     const { t } = useTranslation();
-    const { error, success, confirmVoidCart } = usePosDialog();
+    const { error, success, confirmVoidCart, confirmRemoveItem } = usePosDialog();
+    const { branch } = usePage().props;
+    const sessionStartRef = useRef(Date.now());
 
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
@@ -213,6 +215,9 @@ export default function CheckoutIndex({ cartId }) {
 
     const config = bootstrap?.config ?? {};
     const currency = bootstrap?.currency ?? 'PKR';
+    const canRemoveLines =
+        !completed &&
+        !(sale?.payments ?? []).some((p) => p.status === 'completed');
 
     const methodLabel = useCallback(
         (method) => t(`checkout.paymentMethods.${method}`, { defaultValue: method }),
@@ -550,6 +555,48 @@ export default function CheckoutIndex({ cartId }) {
         }
     }
 
+    async function handleRemoveItem(item) {
+        if (!canRemoveLines || !item?.id || processing) return;
+
+        const confirmed = await confirmRemoveItem(item.name);
+        if (!confirmed) return;
+
+        setProcessing(true);
+        try {
+            const result = await checkoutApi.removeItem(cartId, item.id);
+
+            if (result.emptied) {
+                success(t('checkout.cartEmptied'));
+                sessionStorage.removeItem(customerStorageKey(cartId));
+                router.visit(route('admin.pos.index'));
+                return;
+            }
+
+            setBootstrap(result.bootstrap);
+
+            if (result.bootstrap?.sale_id) {
+                const saleData = await saleApi.get(result.bootstrap.sale_id);
+                setSale(saleData);
+                setCompleted(saleData.status === 'completed');
+                setTenderedAmount(saleData.balance_due ?? '');
+                setPaymentAmount(saleData.balance_due ?? '');
+            } else {
+                setSale(null);
+                setTenderedAmount('');
+                setPaymentAmount('');
+            }
+        } catch (err) {
+            error(
+                err?.response?.data?.errors?.payments?.[0] ||
+                    err?.response?.data?.errors?.status?.[0] ||
+                    err?.response?.data?.message ||
+                    t('checkout.errors.removeItemFailed'),
+            );
+        } finally {
+            setProcessing(false);
+        }
+    }
+
     async function handleBackToPos() {
         if (sale?.id) {
             error(t('checkout.errors.saleConfirmed'));
@@ -590,20 +637,30 @@ export default function CheckoutIndex({ cartId }) {
 
     if (loading) {
         return (
-            <AdminLayout fullHeight>
+            <PosLayout>
                 <Head title={t('checkout.title')} />
-                <div className="flex flex-1 items-center justify-center text-muted-foreground">
+                <PosTopbar
+                    title={t('checkout.title')}
+                    subtitle={branch?.active?.name}
+                    sessionStart={sessionStartRef.current}
+                />
+                <div className="flex flex-1 items-center justify-center text-[var(--pos-text-3)]">
                     {t('checkout.loading')}
                 </div>
-            </AdminLayout>
+            </PosLayout>
         );
     }
 
     return (
-        <AdminLayout fullHeight>
+        <PosLayout>
             <Head title={t('checkout.title')} />
-            <div className="flex h-full flex-col gap-4 p-4 lg:flex-row">
-                <section className="flex flex-1 flex-col rounded-lg border bg-card p-4">
+            <PosTopbar
+                title={t('checkout.title')}
+                subtitle={branch?.active?.name}
+                sessionStart={sessionStartRef.current}
+            />
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-auto p-4 lg:flex-row lg:overflow-hidden">
+                <section className="flex min-h-0 min-w-0 flex-1 flex-col rounded-[9px] border border-[var(--pos-border)] bg-[var(--pos-bg)] p-4 shadow-[var(--pos-shadow-sm)]">
                     <div className="mb-4 flex items-center justify-between">
                         <div>
                             <h1 className="text-xl font-semibold">{t('checkout.title')}</h1>
@@ -640,26 +697,52 @@ export default function CheckoutIndex({ cartId }) {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b text-left text-muted-foreground">
-                                    <th className="py-2">Item</th>
-                                    <th className="py-2">Qty</th>
-                                    {config.tax_enabled && <th className="py-2 text-right">{t('checkout.tax')}</th>}
+                                    <th className="py-2">{t('checkout.item')}</th>
+                                    <th className="py-2">{t('checkout.qty')}</th>
+                                    {config.tax_enabled && (
+                                        <th className="py-2 text-right">{t('checkout.tax')}</th>
+                                    )}
                                     <th className="py-2 text-right">{t('checkout.total')}</th>
+                                    {canRemoveLines ? (
+                                        <th className="w-10 py-2 text-right">
+                                            <span className="sr-only">{t('checkout.removeItem')}</span>
+                                        </th>
+                                    ) : null}
                                 </tr>
                             </thead>
                             <tbody>
                                 {(bootstrap?.items ?? []).map((item) => (
-                                    <tr key={`${item.product_id}-${item.variant_id}`} className="border-b">
+                                    <tr
+                                        key={item.id ?? `${item.product_id}-${item.variant_id}`}
+                                        className="border-b"
+                                    >
                                         <td className="py-2">
                                             <div className="font-medium">{item.name}</div>
                                             <div className="text-xs text-muted-foreground">{item.sku}</div>
                                         </td>
                                         <td className="py-2">{item.quantity}</td>
                                         {config.tax_enabled && (
-                                            <td className="py-2 text-right text-muted-foreground">{item.tax_amount}</td>
+                                            <td className="py-2 text-right text-muted-foreground">
+                                                {item.tax_amount}
+                                            </td>
                                         )}
                                         <td className="py-2 text-right">
                                             {config.tax_enabled ? item.line_total_inc_tax : item.line_total}
                                         </td>
+                                        {canRemoveLines ? (
+                                            <td className="py-2 text-right">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveItem(item)}
+                                                    disabled={processing || !item.id}
+                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-rose-500/10 hover:text-rose-600 disabled:opacity-40"
+                                                    title={t('checkout.removeItem')}
+                                                    aria-label={t('checkout.removeItem')}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </button>
+                                            </td>
+                                        ) : null}
                                     </tr>
                                 ))}
                             </tbody>
@@ -696,7 +779,7 @@ export default function CheckoutIndex({ cartId }) {
                     </div>
                 </section>
 
-                <section className="w-full rounded-lg border bg-card p-4 lg:w-96">
+                <section className="w-full shrink-0 rounded-[9px] border border-[var(--pos-border)] bg-[var(--pos-bg)] p-4 shadow-[var(--pos-shadow-sm)] lg:w-96 lg:overflow-y-auto">
                     {!sale ? (
                         <div className="space-y-4">
                             <h2 className="font-semibold">{t('checkout.confirmSale')}</h2>
@@ -999,6 +1082,6 @@ export default function CheckoutIndex({ cartId }) {
                     }}
                 />
             )}
-        </AdminLayout>
+        </PosLayout>
     );
 }

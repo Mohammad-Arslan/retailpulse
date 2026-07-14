@@ -20,6 +20,7 @@ final class ProductCatalogController extends Controller
         $request->validate([
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'q' => ['nullable', 'string', 'max:200'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:48'],
@@ -27,6 +28,7 @@ final class ProductCatalogController extends Controller
 
         $branchId = (int) $request->input('branch_id');
         $categoryId = $request->input('category_id');
+        $brandId = $request->input('brand_id');
         $search = trim((string) $request->input('q', ''));
         $perPage = (int) $request->input('per_page', 24);
 
@@ -39,13 +41,15 @@ final class ProductCatalogController extends Controller
                 'product_variants.name as variant_name',
                 'product_variants.sell_price',
             ])
-            ->with(['product.primaryImage', 'product:id,name,category_id,is_active,type'])
+            ->with(['product.primaryImage', 'product:id,name,category_id,brand_id,is_active,type'])
             ->join('products', 'products.id', '=', 'product_variants.product_id')
             ->where('products.is_active', true)
             ->when($categoryId, fn ($q) => $q->where('products.category_id', (int) $categoryId))
+            ->when($brandId, fn ($q) => $q->where('products.brand_id', (int) $brandId))
             ->when($search !== '', function ($q) use ($search) {
                 $q->where(function ($inner) use ($search) {
                     $inner->where('products.name', 'like', "%{$search}%")
+                        ->orWhere('product_variants.name', 'like', "%{$search}%")
                         ->orWhere('product_variants.sku', 'like', "%{$search}%")
                         ->orWhere('product_variants.barcode', 'like', "%{$search}%");
                 });
@@ -88,10 +92,13 @@ final class ProductCatalogController extends Controller
                 'id' => $variant->id,
                 'product_id' => $variant->product_id,
                 'category_id' => $variant->product?->category_id,
+                'brand_id' => $variant->product?->brand_id,
                 'sku' => $variant->sku,
                 'barcode' => $variant->barcode,
                 'name' => $variant->product->name.($variant->variant_name ? ' — '.$variant->variant_name : ''),
                 'unit_price' => (float) $price,
+                'product_type' => $variant->product?->type?->value,
+                'tracks_inventory' => $tracksInventory,
                 'available_stock' => $tracksInventory ? $available : null,
                 'in_stock' => ! $tracksInventory || $available > 0,
                 'image_url' => $image !== null ? ($image->thumbnailUrl() ?? $image->url()) : null,
