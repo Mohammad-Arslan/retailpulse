@@ -1,4 +1,24 @@
 {
+    "search": {
+        "recent": "Recent",
+        "loading": "Searching…",
+        "noResults": "No Matches For Your Query.",
+        "categories": {
+            "pages": "Pages",
+            "products": "Products",
+            "customers": "Customers",
+            "suppliers": "Suppliers",
+            "sales": "Sales",
+            "purchasing": "Purchasing",
+            "inventory": "Inventory",
+            "branches": "Branches & Warehouses",
+            "accounting": "Accounting",
+            "users": "Users",
+            "assets": "Assets",
+            "reports": "Reports",
+            "settings": "Settings"
+        }
+    },
     "nav": {
         "dashboard": "Dashboard",
         "pos": "Point of Sale",
@@ -130,7 +150,7 @@
         "expandSidebar": "Expand sidebar",
         "switchToLight": "Switch to light mode",
         "switchToDark": "Switch to dark mode",
-        "commandPalette": "Search pages, users, actions...",
+        "commandPalette": "Search Pages, Products, Customers, Sales…",
         "continue": "Continue",
         "yes": "Yes",
         "no": "No",

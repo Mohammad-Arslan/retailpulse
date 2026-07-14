@@ -1,7 +1,7 @@
 # RetailPulse User Manual — Catalogue & Inventory
 
 **Audience:** Customer support teams and store operators  
-**Version:** 1.3 (July 2026)  
+**Version:** 1.4 (July 2026)  
 **Scope:** Product catalogue (PIM) and warehouse inventory features available in the admin panel
 
 This manual explains **where to click**, **what each screen does**, **how data flows**, and **what every term means**. Hand it to customers who manage products and stock in RetailPulse.
@@ -61,6 +61,8 @@ The Dashboard shows only widgets you are allowed to see. Assign these permission
 | `dashboard.operations.view` | Branch / warehouse / catalogue snapshot |
 
 Layout (top to bottom): greeting → health strip → Sales KPIs → revenue chart beside Needs Attention → Operations (Inventory / Procurement / Finance) → Organization snapshot → Quick Actions.
+
+**Global Search (Ctrl/Cmd+K):** Opens from the sidebar search field or top bar. Results are grouped (Pages, Products, Customers, Sales, Purchasing, Accounting, etc.) and only include records you have permission to see, scoped to the active branch where applicable. Navigation pages come from the shared Navigation Registry (same source as the sidebar).
 
 IAM statistics (users, roles, permissions charts) are **not** on the home dashboard. Manage those under **Organization**.
 
@@ -879,6 +881,7 @@ Movements are **permanent audit records** — they are not edited or deleted.
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.4 | July 2026 | Global Search (Ctrl/Cmd+K) searches pages and business records via permission-aware providers; sidebar uses shared Navigation Registry |
 | 1.3 | July 2026 | Home dashboard layout: health strip, sales trends, revenue bar chart, Operations stat-group cards |
 | 1.2 | July 2026 | Checkout (confirm + payment) uses the same full-screen POS shell as the register |
 | 1.1 | July 2026 | ERP home dashboard is permission-driven business widgets; POS uses a dedicated full-screen shell; login home resolved by permissions |
