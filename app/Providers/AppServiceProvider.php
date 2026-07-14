@@ -62,6 +62,7 @@ use App\Models\PayrollItem;
 use App\Models\PayrollItemLine;
 use App\Models\PayrollApprovalSetting;
 use App\Models\PayrollRun;
+use App\Models\Payslip;
 use App\Models\RecurringExpenseOccurrence;
 use App\Models\SalaryStructure;
 use App\Models\SalaryStructureComponent;
@@ -328,6 +329,7 @@ class AppServiceProvider extends ServiceProvider
         PayrollItem::observe(AuditObserver::class);
         PayrollItemLine::observe(AuditObserver::class);
         PayrollApprovalSetting::observe(AuditObserver::class);
+        Payslip::observe(AuditObserver::class);
 
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email');

@@ -13,6 +13,7 @@ function Index({ runs, entities, filters }) {
     const canApprove = useCan('payroll.approve');
     const canPost = useCan('payroll.post');
     const canReverse = useCan('payroll.reverse');
+    const canEmailPayslips = useCan('payroll.process');
 
     const search = (e) => {
         e.preventDefault();
@@ -109,12 +110,21 @@ function Index({ runs, entities, filters }) {
                                     {t('pages.payrollRuns.reverse')}
                                 </button>
                             )}
+                            {canEmailPayslips && ['approved', 'posted'].includes(s) && (
+                                <button
+                                    type="button"
+                                    className="rp-btn-outline text-xs"
+                                    onClick={() => action('admin.payroll.runs.payslips.email', row.original.id)}
+                                >
+                                    {t('pages.payrollRuns.emailPayslips')}
+                                </button>
+                            )}
                         </div>
                     );
                 },
             },
         ],
-        [t, canProcess, canApprove, canPost, canReverse],
+        [t, canProcess, canApprove, canPost, canReverse, canEmailPayslips],
     );
 
     return (

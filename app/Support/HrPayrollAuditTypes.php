@@ -24,6 +24,7 @@ use App\Models\PayrollApprovalSetting;
 use App\Models\PayrollItem;
 use App\Models\PayrollItemLine;
 use App\Models\PayrollRun;
+use App\Models\Payslip;
 use App\Models\RecurringExpenseOccurrence;
 use App\Models\RecurringExpenseSchedule;
 use App\Models\SalaryStructure;
@@ -64,6 +65,7 @@ final class HrPayrollAuditTypes
         PayrollItem::class,
         PayrollItemLine::class,
         PayrollApprovalSetting::class,
+        Payslip::class,
     ];
 
     /**

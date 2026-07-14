@@ -439,3 +439,188 @@ Default roles (HR Manager, Payroll Officer, Line Manager, Employee, Accountant) 
 13. Payslip PDF totals match the `payroll_item` and its lines exactly.
 14. A posted payroll run reversal produces a linked Phase 11 reversal journal; no manual GL edits occur.
 15. All Phase 12 create/approve/post/reverse actions are audit logged.
+
+
+# Phase 12 Addendum — Configurable Payroll Withholding-Tax Engine
+
+**Replaces / expands:** Phase 12 §6.2 (Statutory & Tax)
+**Principle:** Pakistan FBR is *one configured method*, never the hardcoded engine. Any jurisdiction is expressed as (a) a withholding **method**, (b) effective-dated **brackets**, and (c) **method parameters** — all editable without a code deployment.
+
+---
+
+## 1. Why a table alone is not enough
+
+Making only the slab table configurable would still bake Pakistan's *algorithm* — projected-annualized cumulative averaging with YTD self-correction — into the code. Other jurisdictions use different algorithms (periodic annualization, wage-bracket table lookup, flat rate). Configurability therefore lives at two layers: the **bracket data** and the **withholding method** that consumes it.
+
+The tax engine's only output is a resolved `income_tax_withheld` deduction component (amount + transparent breakdown). It flows into the payroll run as a component line; the run publishes `payroll.posted`; accounting maps `tax_withheld_payable`. **The tax engine never imports an accounting class or writes the GL.**
+
+---
+
+## 2. Configuration model
+
+### 2.1 Withholding schemes
+
+```text
+withholding_schemes
+- id
+- code                          # e.g. PK-FBR-SALARY, GENERIC-ANNUAL, US-PERCENTAGE
+- name
+- legal_entity_id nullable      # scheme resolved per entity (multi-country tenants)
+- jurisdiction_code             # PK, AE, GB, US, ...
+- method                        # projected_annualized_cumulative | periodic_bracket
+                                #   | flat_rate | wage_bracket_table | custom
+- fiscal_year_start_month       # 7 for Pakistan (July); 1 elsewhere
+- currency_code
+- rounding_mode                 # none | nearest_1 | nearest_10
+- remainder_absorption          # last_period | none
+- tax_base_mode                 # full_month | prorated   (full_month = SAP/Oracle)
+- min_tax_amount nullable
+- effective_from / effective_to nullable
+- priority
+- status
+```
+
+### 2.2 Brackets (generalized; holds FBR slabs or any country's table)
+
+```text
+tax_brackets
+- id
+- withholding_scheme_id
+- sequence
+- threshold                     # amount ABOVE which marginal_rate applies
+                                #   (= top of previous bracket, e.g. 1200000)
+- fixed_amount                  # cumulative tax up to `threshold`
+- marginal_rate                 # decimal, e.g. 0.11
+- effective_from / effective_to nullable
+- status
+```
+
+Tax on an amount `x`: pick the highest bracket whose `threshold <= x`, then
+`tax = fixed_amount + (x - threshold) * marginal_rate` (all via bcmath).
+
+> FBR 11% bracket → `threshold=1200000, fixed_amount=6000, rate=0.11`.
+> `x=1,422,000` → `6000 + (1,422,000 − 1,200,000)×0.11 = 6000 + 24,420 = 30,420`.
+> Defining by threshold (not `1,200,001`) removes the ±1-rupee drift.
+
+### 2.3 Method parameters (typed columns above + optional JSON for method-specific knobs)
+
+`wage_bracket_table` adds `pay_frequency` + `filing_status` dimensions to
+`tax_brackets` via a nullable discriminator column; `flat_rate` uses a single
+bracket with `threshold=0`. No schema change per country.
+
+### 2.4 YTD opening balances (mandatory for correctness)
+
+```text
+payroll_ytd_opening_balances
+- id
+- employee_id
+- fiscal_year_id
+- withholding_scheme_id
+- opening_taxable_gross         # earned before go-live / before system onboarding
+- opening_tax_withheld
+- opening_months_elapsed        # months already run outside the system this FY
+- source                        # migration | manual | prior_system
+- created_by / created_at
+```
+
+YTD used by the engine = `opening_* + sum(processed payroll items this FY)`.
+
+---
+
+## 3. Engine contract (pluggable strategy)
+
+```text
+interface TaxWithholdingMethod
+    compute(TaxContext): TaxResult
+
+TaxContext
+- employee, period (year, month index)
+- current_taxable_gross         # per tax_base_mode (full_month by default)
+- ytd_taxable_gross             # opening + processed
+- ytd_tax_withheld              # opening + processed
+- months_remaining_incl_current # (fiscal_year_end_month − current) + 1
+- fiscal_year, brackets (resolved, effective-dated), scheme (params)
+- hire_date
+
+TaxResult
+- period_tax_withheld
+- projected_annual, annual_tax, effective_bracket
+- breakdown[]                   # every step, for payslip transparency + snapshot
+```
+
+`PayrollCalculationService` calls the method, receives `period_tax_withheld`, and
+emits it as the `income_tax_withheld` component line. `breakdown` is frozen into the
+payroll item `snapshot_json`, so a later slab/param change never alters a posted month.
+
+---
+
+## 4. Method: `projected_annualized_cumulative` (Pakistan FBR, and PAYE-like regimes)
+
+```
+R  = months_remaining_incl_current            # short tenure is automatic
+projected_annual = ytd_taxable_gross + current_taxable_gross * R
+annual_tax       = brackets(projected_annual)          # §2.2
+remaining_tax    = annual_tax - ytd_tax_withheld
+period_tax       = round( remaining_tax / R , rounding_mode )
+# final period of the FY (or last processed month): period_tax = remaining_tax  (absorb remainder)
+```
+
+`current_taxable_gross` is the **full monthly salary** when `tax_base_mode=full_month`
+(gross *pay* is prorated separately as its own component; the tax base is not).
+
+This single formula reproduces every reference case (see §6): standard 12-month,
+short-tenure joiner, mid-year salary change (probation→permanent), and out-of-order
+self-correction — because projection is rebuilt each month from actual YTD + current
+base × remaining months.
+
+---
+
+## 5. Correctness guardrails (mandatory — these prevent silent wrong tax)
+
+1. **Sequential processing enforced.** The engine refuses to process a period for an
+   employee/FY unless every prior period since hire (or since `opening_months_elapsed`)
+   is posted. Out-of-order processing is the documented failure that silently
+   undercollects (the "April at PKR 370" case: 711,000 projection vs 1,422,000
+   reality, −29,310). Reject, don't guess.
+2. **Opening YTD required for mid-year onboarding.** An employee migrated in April with
+   3 prior months elsewhere must carry `opening_taxable_gross / opening_tax_withheld /
+   opening_months_elapsed=3`, or the run is blocked. This is the payroll analogue of
+   Phase 11 opening balances.
+3. **All money is bcmath on decimal strings.** No floats (the source worked examples
+   drift, e.g. 30,419.89). Rates stored as decimals; multiply/divide via bcmath.
+4. **Threshold-based excess** (over the previous bracket's ceiling), never
+   `lower_bound − 1`.
+5. **Remainder absorption** in the final period so the FY total reconciles exactly to
+   `annual_tax` (assert `sum(period_tax) == annual_tax` for a full, unchanged FY).
+6. **Snapshot immutability.** Posted months store the resolved breakdown; slab/param
+   edits are effective-dated and never retroactive.
+7. **Scheme resolution** by `legal_entity_id` + effective date + priority (same
+   specificity approach as Phase 11 `AccountResolverService`), so a multi-country
+   tenant runs PK-FBR for its Pakistan entity and a different scheme elsewhere with no
+   code branch.
+
+---
+
+## 6. Acceptance criteria (encode the reference cases as tests)
+
+**Configurability**
+1. Adding a new country = one `withholding_schemes` row + `tax_brackets` rows +
+   (if the method exists) zero code. Prove with a `flat_rate` and a
+   `periodic_bracket` scheme added by data only.
+2. Changing an FBR slab is new effective-dated `tax_brackets` rows; prior posted
+   months are unchanged (snapshot).
+3. `tax_base_mode` toggled full_month↔prorated changes a mid-month joiner's tax with
+   no code edit (Case 1B: full_month → PKR 2,000; prorated → PKR 0).
+4. No tax-engine class imports `JournalService`/`PostingRuleEngine`/GL models.
+
+**PK-FBR correctness (exact figures)**
+5. Fatima, joins Jan, 237,000/mo → Jan tax **5,070**; April (Jan–Mar posted) → **5,070**.
+6. Standard July joiner, 250,000/mo → **25,000**/mo, FY total **300,000**.
+7. Short-tenure Oct joiner, 250,000/mo → projected **2,250,000**, **14,167**/mo,
+   June absorbs remainder, FY total **127,500**.
+8. Probation→permanent (Maryam, 150,000 Aug–Oct then 244,000): Aug **5,045**,
+   Nov **18,415** (projected **2,402,000**, not 2,684,000), FY total **162,460**.
+9. Out-of-order guard: processing April with Jan–Mar missing and **no opening balance
+   is rejected**, not silently computed at 370.
+10. With `opening_months_elapsed=3, opening_taxable_gross=711,000,
+    opening_tax_withheld=15,210`, April computes **5,070** correctly.

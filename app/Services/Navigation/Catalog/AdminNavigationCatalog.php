@@ -276,6 +276,13 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.payroll.runs.*',
                 'keywords' => ['payroll run', 'payslip', 'salary processing', 'draft'],
             ]),
+            self::item('my-payslips', 'myPayslips', 'admin.self-service.payslips.index', 'file-text', 'employee_self_service', 150, [
+                'permission' => 'selfservice.view-own',
+                'permissionsAny' => ['selfservice.view-own'],
+                'module' => 'employee_self_service',
+                'routePattern' => 'admin.self-service.payslips.*',
+                'keywords' => ['payslip', 'self service', 'my payslip', 'salary slip'],
+            ]),
         ]));
 
         $registry->registerSection(new NavigationSection('accounting', 'accountingSection', 60, [

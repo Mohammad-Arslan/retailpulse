@@ -38,8 +38,10 @@ use App\Http\Controllers\Admin\Overtime\OvertimePolicyController;
 use App\Http\Controllers\Admin\Overtime\OvertimeRecordController;
 use App\Http\Controllers\Admin\Payroll\PayComponentController;
 use App\Http\Controllers\Admin\Payroll\PayrollRunController;
+use App\Http\Controllers\Admin\Payroll\PayslipController;
 use App\Http\Controllers\Admin\Payroll\StatutorySchemeController;
 use App\Http\Controllers\Admin\Payroll\TaxSlabController;
+use App\Http\Controllers\Admin\SelfService\EmployeeSelfServiceController;
 use App\Http\Controllers\Admin\Expense\RecurringExpenseScheduleController;
 use App\Http\Controllers\Admin\FixedAssetController;
 use App\Http\Controllers\Admin\Hr\EmployeeController;
@@ -175,6 +177,14 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::post('runs/{payroll_run}/approve', [PayrollRunController::class, 'approve'])->name('runs.approve');
             Route::post('runs/{payroll_run}/post', [PayrollRunController::class, 'post'])->name('runs.post');
             Route::post('runs/{payroll_run}/reverse', [PayrollRunController::class, 'reverse'])->name('runs.reverse');
+            Route::post('runs/{payroll_run}/payslips/email', [PayslipController::class, 'bulkEmail'])->name('runs.payslips.email');
+            Route::post('items/{payroll_item}/payslip/generate', [PayslipController::class, 'generate'])->name('items.payslip.generate');
+            Route::get('items/{payroll_item}/payslip', [PayslipController::class, 'download'])->name('items.payslip.download');
+        });
+
+        Route::middleware(['hr-module:employee_self_service'])->prefix('self-service')->name('self-service.')->group(function () {
+            Route::get('payslips', [EmployeeSelfServiceController::class, 'index'])->name('payslips.index');
+            Route::get('payslips/{payslip}/download', [EmployeeSelfServiceController::class, 'download'])->name('payslips.download');
         });
 
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');

@@ -73,6 +73,7 @@
         "taxSlabs": "Tax Slabs",
         "statutorySchemes": "Statutory Schemes",
         "payrollRuns": "Payroll Runs",
+        "myPayslips": "My Payslips",
         "chartOfAccounts": "Chart of Accounts",
         "accountMappings": "Account Mappings",
         "postingRules": "Posting Rules",
@@ -797,6 +798,7 @@
             "approve": "Approve",
             "post": "Post",
             "reverse": "Reverse",
+            "emailPayslips": "Email Payslips",
             "process": "Process",
             "employeeCount": "Employees",
             "totalNet": "Total Net",
@@ -815,6 +817,17 @@
                 "approved": "Approved",
                 "posted": "Posted",
                 "reversed": "Reversed"
+            }
+        },
+        "selfServicePayslips": {
+            "indexTitle": "My Payslips",
+            "indexDescription": "View And Download Your Payslip PDFs.",
+            "download": "Download PDF",
+            "columns": {
+                "payslipNumber": "Payslip #",
+                "payrollNumber": "Payroll #",
+                "period": "Period",
+                "netPay": "Net Pay"
             }
         },
         "expenseCategories": {

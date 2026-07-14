@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'payroll_run_id',
@@ -49,5 +50,10 @@ final class PayrollItem extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(PayrollItemLine::class)->orderBy('sequence');
+    }
+
+    public function payslip(): HasOne
+    {
+        return $this->hasOne(Payslip::class);
     }
 }
