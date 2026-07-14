@@ -52,7 +52,10 @@ return new class extends Migration
                 $table->unsignedSmallInteger('sequence')->default(10);
                 $table->timestamps();
 
-                $table->unique(['salary_structure_id', 'pay_component_id']);
+                $table->unique(
+                    ['salary_structure_id', 'pay_component_id'],
+                    'salary_structure_components_structure_component_unique'
+                );
                 $table->index(['salary_structure_id', 'sequence']);
             });
         }

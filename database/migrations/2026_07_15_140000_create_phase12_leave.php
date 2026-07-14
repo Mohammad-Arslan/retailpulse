@@ -54,7 +54,10 @@ return new class extends Migration
                 $table->decimal('carried_forward_days', 10, 2)->default(0);
                 $table->timestamps();
 
-                $table->unique(['employee_id', 'leave_type_id', 'fiscal_year_id']);
+                $table->unique(
+                    ['employee_id', 'leave_type_id', 'fiscal_year_id'],
+                    'leave_entitlements_emp_type_fy_unique'
+                );
             });
         }
 

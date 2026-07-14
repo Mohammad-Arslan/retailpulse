@@ -37,8 +37,10 @@ return new class extends Migration
         if (! Schema::hasTable('recurring_expense_occurrences')) {
             Schema::create('recurring_expense_occurrences', function (Blueprint $table): void {
                 $table->id();
-                $table->foreignId('recurring_expense_schedule_id')
-                    ->constrained('recurring_expense_schedules')
+                $table->unsignedBigInteger('recurring_expense_schedule_id');
+                $table->foreign('recurring_expense_schedule_id', 'reo_occurrences_schedule_fk')
+                    ->references('id')
+                    ->on('recurring_expense_schedules')
                     ->cascadeOnDelete();
                 $table->string('period_key', 32);
                 $table->date('scheduled_for');
