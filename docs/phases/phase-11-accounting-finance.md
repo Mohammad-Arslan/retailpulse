@@ -1,7 +1,7 @@
 # Phase 11 — Accounting & Financial Management
 
 **SRS Reference:** §3.11, §3.18
-**Status:** Planned
+**Status:** Mostly complete — residual gaps (Intercompany P11-26; bank CSV templates; some report/export polish)
 **Depends on:** Phase 8, Phase 9, Phase 10
 **Related Future Phase:** Phase 12 — Payroll
 

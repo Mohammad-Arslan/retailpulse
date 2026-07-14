@@ -283,7 +283,7 @@
 | §3.8 Checkout, Payments & Invoicing | 8 | **95%** | Live payment gateway HTTP drivers only |
 | §3.9 Customer & Loyalty | 9 | **Complete** | CRM, loyalty, wallet, AR aging, credit limits |
 | §3.10 Suppliers & Procurement | 10 | **0%** | |
-| §3.11 Accounting & Finance | 11 | **0%** | |
+| §3.11 Accounting & Finance | 11 | **~90%** | Core GL complete; residual: Intercompany (P11-26), bank CSV templates, some reports/exports |
 | §3.12 Expense Management | 12 | **0%** | |
 | §3.13 HR & Payroll | 12 | **0%** | |
 | §3.14 Reporting & Analytics | 13 | **0%** | |

@@ -858,20 +858,29 @@ Optional **dimension** on journal lines for departmental P&L (e.g. Store, Wareho
 ### 14.2 Setup
 
 1. Create cost centre hierarchy (code, name, optional parent, optional branch).
-2. Configure posting rules or manual journals to set `cost_centre_id` on lines (where supported in payload/rules).
+2. Optionally set **Headcount** and **Floor Area** drivers used by allocation methods.
+3. Configure posting rules or manual journals to set `cost_centre_id` on lines (where supported in payload/rules).
 
-### 14.3 Reports
+### 14.3 Shared expense allocation
+
+**Permission:** `accounting.manage-cost-centres`
+
+1. Open **Accounting → Cost Centres**.
+2. Click **Allocate Expense**.
+3. Choose a posted expense journal line, an allocation method (Equal Split, Percentage, Headcount, Floor Area, Revenue Share, Manual), and one or more target centres.
+4. Run Allocation — RetailPulse stores `cost_centre_allocations` rows and posts a balanced reclass journal (`cost_centre.allocated`) so Cost Centre P&L reflects the split without mutating the original posted line.
+
+### 14.4 Reports
 
 **Cost Centre P&L** under Financial Reports aggregates revenue and expense by cost centre.
 
-Shared **Cost Centre Allocations** (percentage split of shared expenses across centres) are not available in the admin UI yet — only schema exists for a future workflow.
-
-### 14.4 What if…
+### 14.5 What if…
 
 | Situation | What happens |
 |-----------|----------------|
 | Module disabled | Menu hidden; lines post without cost centre |
 | No cost centre on line | Line appears in consolidated P&L only |
+| Headcount / floor area missing | Those methods reject until drivers are set on each target centre |
 
 ---
 
@@ -1321,6 +1330,7 @@ A: Distinct `payment.received` event is deferred; partial coverage via sale sett
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.8 | July 2026 | Cost Centre Allocate Expense UI; headcount/floor area drivers; P11 correctness fixes (COGS idempotency, mapping scopes, FX closing rates, transfer warehouse scope, split-tender, asset.acquired) |
 | 1.7 | July 2026 | ERP home finance widgets (`dashboard.finance.view`); All Branches gated by `branches.access-all` (not role name) |
 | 1.6 | July 2026 | Accounting Modules admin UI (per-branch enable/disable); replaces tinker recipe |
 | 1.5 | July 2026 | Mapping scope fields UI; petty cash voucher create/approve; FA dispose & run depreciation; Tax Return report; bank multi-match / Partially Matched; draft journal edit/delete |
