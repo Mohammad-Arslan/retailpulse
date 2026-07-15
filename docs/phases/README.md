@@ -18,7 +18,7 @@ This folder breaks the [SRS](../srs.md) into sequential, shippable phases. Each 
 | **9** | [phase-09-customers-loyalty.md](./phase-09-customers-loyalty.md) | 3.9, 3.18 | CRM, loyalty tiers, wallets, AR aging; **customer bulk import/export** |
 | **10** | [phase-10-suppliers-procurement.md](./phase-10-suppliers-procurement.md) | 3.10, 3.18 | PO → GRN → 3-way match → invoice → payment; RMA, landed cost, supplier price lists |
 | **11** | [phase-11-accounting-finance.md](./phase-11-accounting-finance.md) | 3.11, 3.18 | COGS posting, chart of accounts, multi-currency, intercompany; **COA + opening balance import** |
-| **12** | [phase-12-expenses-hr-payroll.md](./phase-12-expenses-hr-payroll.md) | 3.12, 3.13 | Expenses, attendance, payroll, leave management, overtime, payslips |
+| **12** | [phase-12/README.md](./phase-12/README.md) | 3.12, 3.13 | Enterprise HRMS modular SRS (expenses, HR, attendance, leave, payroll, tax, PF, ATS, ESS, migration) |
 | **13** | [phase-13-reporting-analytics.md](./phase-13-reporting-analytics.md) | 3.14 | Reports, AP/AR aging, custom report builder, Excel/PDF export |
 | **14** | [phase-14-notifications-returns-tax.md](./phase-14-notifications-returns-tax.md) | 3.15, 3.16, 3.17 | Notifications, returns/disposition, composite tax, WHT, tax return exports |
 | **15** | [phase-15-api-integrations.md](./phase-15-api-integrations.md) | 4.5, 6 | REST API v1, Sanctum tokens, webhooks, per-token quotas, payment/comms integrations |
@@ -53,7 +53,7 @@ flowchart TD
     P9[Phase 9: Customers]
     P10[Phase 10: Procurement]
     P11[Phase 11: Accounting]
-    P12[Phase 12: Expenses & HR]
+    P12[Phase 12: Enterprise HRMS]
     P13[Phase 13: Reporting]
     P14[Phase 14: Notifications / Returns / Tax]
     P15[Phase 15: API & Integrations]

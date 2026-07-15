@@ -5,7 +5,7 @@
 **Scope:** Phase 12 — operating expenses, employees, attendance, leave, overtime, payroll runs, payslips, and employee self-service
 
 **See also:**
-- [`phases/phase-12-expenses-hr-payroll.md`](phases/phase-12-expenses-hr-payroll.md) — technical specification
+- [`phases/phase-12/README.md`](phases/phase-12/README.md) — Enterprise HRMS modular SRS
 - [`user-manual-accounting-and-finance.md`](user-manual-accounting-and-finance.md) — how expense/payroll events post to the GL
 
 ---

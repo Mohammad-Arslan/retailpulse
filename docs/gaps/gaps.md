@@ -238,8 +238,9 @@ Last reviewed: 2026-07-14 (Phase 11 correctness bugs P11-27–P11-31 closed; P11
 
 ## Phase 12 — Expenses & HR / Payroll
 
-**Phase doc status:** Implemented (residuals below)  
-**Overall gap level:** Low
+**Phase doc status:** Modular Enterprise HRMS SRS — see [`phases/phase-12/`](../phases/phase-12/README.md)  
+**Detailed gaps:** [`phases/phase-12/gaps.md`](../phases/phase-12/gaps.md)  
+**Overall gap level:** Medium (Wave 1–2 foundation partial/implemented; Wave 3–4 expansion mostly Planned)
 
 | ID | Gap | Severity | Notes |
 | :--- | :--- | :---: | :--- |
@@ -250,6 +251,7 @@ Last reviewed: 2026-07-14 (Phase 11 correctness bugs P11-27–P11-31 closed; P11
 | P12-05 | **`pay_components.formula` expression evaluator** | **Low** | Validated enum; rejected on save and at calculation. Deferred to a future sandboxed math parser (no `eval`). |
 | P12-06 | **Phase 29 workflow engine for payroll/expense approval** | **Low** | `use_workflow_engine` / `requires=workflow` hooks stubbed; fallback is configurable limit + role/PIN. |
 | P12-07 | **Full employee mobile self-service UI** | **Low** | Services + thin admin self-service; full mobile UI is Phase 26. |
+| P12-08 | **Enterprise HRMS expansion** (PF, loans, ATS, appraisal, shifts, holiday calendars, historical migration suite, etc.) | **High** | Specified under `docs/phases/phase-12/`; track FRs in `phase-12/gaps.md`. |
 
 ---
 
