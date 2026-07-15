@@ -1,7 +1,9 @@
+import AdminFormField from '@/Components/common/AdminFormField';
 import PageHeader from '@/Components/common/PageHeader';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Create({ employees, leaveTypes }) {
@@ -13,6 +15,28 @@ function Create({ employees, leaveTypes }) {
         end_date: '',
         reason: '',
     });
+
+    const employeeOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.leaveRequests.selectEmployee') },
+            ...employees.map((employee) => ({
+                value: String(employee.id),
+                label: `${employee.first_name} ${employee.last_name} (${employee.employee_code})`,
+            })),
+        ],
+        [employees, t],
+    );
+
+    const leaveTypeOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.leaveRequests.selectLeaveType') },
+            ...leaveTypes.map((type) => ({
+                value: String(type.id),
+                label: `${type.name} (${type.code})`,
+            })),
+        ],
+        [leaveTypes, t],
+    );
 
     const submit = (e) => {
         e.preventDefault();
@@ -33,77 +57,70 @@ function Create({ employees, leaveTypes }) {
 
             <form onSubmit={submit} className="mx-auto max-w-2xl space-y-6">
                 <div className="rp-card space-y-4 p-6">
-                    <div>
-                        <label className="rp-label">{t('pages.leaveRequests.fields.employee')}</label>
+                    <AdminFormField
+                        label={t('pages.leaveRequests.fields.employee')}
+                        id="employee_id"
+                        error={errors.employee_id}
+                    >
                         <Select
+                            id="employee_id"
                             value={data.employee_id}
-                            onChange={(e) => setData('employee_id', e.target.value)}
-                            className="w-full"
-                        >
-                            <option value="">{t('pages.leaveRequests.selectEmployee')}</option>
-                            {employees.map((employee) => (
-                                <option key={employee.id} value={employee.id}>
-                                    {employee.first_name} {employee.last_name} ({employee.employee_code})
-                                </option>
-                            ))}
-                        </Select>
-                        {errors.employee_id && <p className="mt-1 text-sm text-red-600">{errors.employee_id}</p>}
-                    </div>
+                            onChange={(value) => setData('employee_id', value ?? '')}
+                            options={employeeOptions}
+                        />
+                    </AdminFormField>
 
-                    <div>
-                        <label className="rp-label">{t('pages.leaveRequests.fields.leaveType')}</label>
+                    <AdminFormField
+                        label={t('pages.leaveRequests.fields.leaveType')}
+                        id="leave_type_id"
+                        error={errors.leave_type_id}
+                    >
                         <Select
+                            id="leave_type_id"
                             value={data.leave_type_id}
-                            onChange={(e) => setData('leave_type_id', e.target.value)}
-                            className="w-full"
-                        >
-                            <option value="">{t('pages.leaveRequests.selectLeaveType')}</option>
-                            {leaveTypes.map((type) => (
-                                <option key={type.id} value={type.id}>
-                                    {type.name} ({type.code})
-                                </option>
-                            ))}
-                        </Select>
-                        {errors.leave_type_id && (
-                            <p className="mt-1 text-sm text-red-600">{errors.leave_type_id}</p>
-                        )}
-                    </div>
+                            onChange={(value) => setData('leave_type_id', value ?? '')}
+                            options={leaveTypeOptions}
+                        />
+                    </AdminFormField>
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label className="rp-label">{t('pages.leaveRequests.fields.startDate')}</label>
+                        <AdminFormField
+                            label={t('pages.leaveRequests.fields.startDate')}
+                            id="start_date"
+                            error={errors.start_date}
+                        >
                             <input
+                                id="start_date"
                                 type="date"
                                 value={data.start_date}
                                 onChange={(e) => setData('start_date', e.target.value)}
-                                className="rp-input w-full"
+                                className="rp-form-input"
                             />
-                            {errors.start_date && (
-                                <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="rp-label">{t('pages.leaveRequests.fields.endDate')}</label>
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.leaveRequests.fields.endDate')}
+                            id="end_date"
+                            error={errors.end_date}
+                        >
                             <input
+                                id="end_date"
                                 type="date"
                                 value={data.end_date}
                                 onChange={(e) => setData('end_date', e.target.value)}
-                                className="rp-input w-full"
+                                className="rp-form-input"
                             />
-                            {errors.end_date && <p className="mt-1 text-sm text-red-600">{errors.end_date}</p>}
-                        </div>
+                        </AdminFormField>
                     </div>
 
-                    <div>
-                        <label className="rp-label">{t('pages.leaveRequests.fields.reason')}</label>
+                    <AdminFormField label={t('pages.leaveRequests.fields.reason')} id="reason" error={errors.reason}>
                         <textarea
+                            id="reason"
                             value={data.reason}
                             onChange={(e) => setData('reason', e.target.value)}
                             rows={3}
-                            className="rp-input w-full"
+                            className="rp-form-input"
                         />
-                        {errors.reason && <p className="mt-1 text-sm text-red-600">{errors.reason}</p>}
-                    </div>
+                    </AdminFormField>
                 </div>
 
                 <div className="flex justify-end gap-3">

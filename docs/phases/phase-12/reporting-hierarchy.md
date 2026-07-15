@@ -3,7 +3,7 @@
 **Gate / registry key:** `hr`  
 **Wave:** 1  
 **Depends on:** `hr`  
-**Status (module roll-up):** Planned  
+**Status (module roll-up):** Partial  
 **Follows:** [architecture.md](./architecture.md)
 
 ---
@@ -27,9 +27,9 @@ Define who reports to whom for leave/expense/overtime/appraisal approvals and or
 
 | ID | Status | Statement |
 | :--- | :--- | :--- |
-| P12-RH-FR-001 | Planned | Each employee may have a `reporting_manager_employee_id` (direct manager). |
-| P12-RH-FR-002 | Planned | Manager assignment shall be effective-dated; concurrent history stored. |
-| P12-RH-FR-003 | Planned | Hierarchy shall prevent cycles (employee cannot report to self or descendant). |
+| P12-RH-FR-001 | Implemented | Each employee may have a `reporting_manager_employee_id` (direct manager). |
+| P12-RH-FR-002 | Implemented | Manager assignment shall be effective-dated; concurrent history stored. |
+| P12-RH-FR-003 | Implemented | Hierarchy shall prevent cycles (employee cannot report to self or descendant). |
 | P12-RH-FR-004 | Planned | Approval policies may resolve approver as: direct_manager | department_head | role | named_user | workflow (Phase 29). |
 | P12-RH-FR-005 | Planned | Org chart API/UI shall return tree from a root or whole entity. |
 | P12-RH-FR-006 | Planned | Temporary delegation (acting manager) with date range shall be supported for approvals. |
@@ -97,7 +97,7 @@ approval_delegation.created
 
 | ID | Status | Criterion |
 | :--- | :--- | :--- |
-| P12-RH-AC-001 | Planned | Assigning a manager that creates a cycle is rejected. |
+| P12-RH-AC-001 | Implemented | Assigning a manager that creates a cycle is rejected. |
 | P12-RH-AC-002 | Planned | Leave approval with strategy `direct_manager` routes to resolved manager at request date. |
 | P12-RH-AC-003 | Planned | Active delegation redirects approvals within date range. |
 

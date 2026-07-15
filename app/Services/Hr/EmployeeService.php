@@ -4,23 +4,126 @@ declare(strict_types=1);
 
 namespace App\Services\Hr;
 
+use App\DTOs\Hr\CreateEmployeeData;
+use App\DTOs\Hr\CreateHolidayCalendarAssignmentData;
+use App\DTOs\Hr\UpdateEmployeeData;
+use App\Models\Branch;
+use App\Models\CostCentre;
+use App\Models\Department;
+use App\Models\Designation;
 use App\Models\Employee;
+use App\Models\EmployeeAssignmentHistory;
+use App\Models\EmployeeBankAccount;
+use App\Models\EmployeeBranchAssignment;
+use App\Models\EmployeeDependent;
+use App\Models\Grade;
+use App\Models\HolidayCalendar;
+use App\Models\OrganizationEntity;
+use App\Models\SalaryStructure;
+use App\Repositories\Contracts\CurrencyRepositoryInterface;
 use App\Services\Accounting\DocumentNumberService;
+use App\Services\ImageService;
+use App\Support\EmployeePresenter;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 final class EmployeeService
 {
+    /**
+     * @var list<string>
+     */
+    private const ASSIGNMENT_TRACKED_FIELDS = [
+        'department_id',
+        'designation_id',
+        'grade_id',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const DETAIL_RELATIONS = [
+        'legalEntity',
+        'primaryBranch',
+        'defaultCostCentre',
+        'user',
+        'department',
+        'designation',
+        'grade',
+        'reportingManager',
+        'salaryStructure',
+        'profile',
+        'medicalProfile',
+        'shiftPreference',
+        'dependents',
+        'bankAccounts',
+        'images',
+        'branchAssignments.branch',
+        'holidayAssignments.calendar',
+    ];
+
     public function __construct(
         private readonly DocumentNumberService $documentNumbers,
+        private readonly ReportingHierarchyService $hierarchy,
+        private readonly CurrencyRepositoryInterface $currencies,
+        private readonly HolidayCalendarService $holidayCalendars,
+        private readonly ImageService $images,
     ) {}
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public function indexPayload(array $filters, int $perPage): array
+    {
+        return [
+            'employees' => EmployeePresenter::paginated($this->paginate($filters, $perPage)),
+            'filters' => $filters,
+            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
+            'departments' => Department::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'code']),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function createPayload(): array
+    {
+        return $this->formOptions();
+    }
+
+    /**
+     * @return array{employee: array<string, mixed>}
+     */
+    public function showPayload(Employee $employee): array
+    {
+        $employee->load(self::DETAIL_RELATIONS);
+
+        return [
+            'employee' => EmployeePresenter::detail($employee),
+            ...$this->formOptions($employee),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function editPayload(Employee $employee): array
+    {
+        $employee->load(self::DETAIL_RELATIONS);
+
+        return [
+            'employee' => EmployeePresenter::detail($employee),
+            ...$this->formOptions($employee),
+        ];
+    }
 
     /**
      * @param  array<string, mixed>  $filters
      */
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {
-        $query = Employee::query()->with(['legalEntity', 'primaryBranch']);
+        $query = Employee::query()->with(['legalEntity', 'primaryBranch', 'department', 'designation']);
 
         if (($filters['search'] ?? '') !== '') {
             $search = '%'.$filters['search'].'%';
@@ -40,6 +143,10 @@ final class EmployeeService
             $query->where('primary_branch_id', (int) $filters['branch_id']);
         }
 
+        if (($filters['department_id'] ?? null) !== null && $filters['department_id'] !== '') {
+            $query->where('department_id', (int) $filters['department_id']);
+        }
+
         $sort = in_array($filters['sort'] ?? '', ['employee_code', 'first_name', 'hire_date', 'status'], true)
             ? $filters['sort']
             : 'employee_code';
@@ -48,33 +155,319 @@ final class EmployeeService
         return $query->orderBy($sort, $direction)->paginate($perPage);
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function create(array $data): Employee
+    public function create(CreateEmployeeData $data): Employee
     {
         return DB::transaction(function () use ($data): Employee {
+            $attributes = $data->employee;
             $code = $this->documentNumbers->next(
                 'employee',
                 'EMP',
-                isset($data['primary_branch_id']) ? (int) $data['primary_branch_id'] : null,
+                isset($attributes['primary_branch_id']) ? (int) $attributes['primary_branch_id'] : null,
             );
 
-            return Employee::query()->create([
-                ...$data,
+            $employee = Employee::query()->create([
+                ...$attributes,
                 'employee_code' => $code,
-                'status' => $data['status'] ?? 'active',
+                'status' => $attributes['status'] ?? 'active',
             ]);
+
+            if ($employee->reporting_manager_employee_id !== null) {
+                $this->hierarchy->assertNoCycle($employee->id, (int) $employee->reporting_manager_employee_id);
+                $this->hierarchy->recordManagerChange(
+                    $employee,
+                    (int) $employee->reporting_manager_employee_id,
+                    (int) Auth::id(),
+                );
+            }
+
+            $this->syncNested($employee, $data->profile, $data->shift, $data->medical, $data->dependents, $data->bankAccounts, $data->branchAssignments);
+            $this->syncHolidayAssignment($employee, $data->holidayCalendarId, true);
+            $this->syncImages($employee, $data->imageUploads, []);
+
+            return $employee->fresh(self::DETAIL_RELATIONS) ?? $employee;
+        });
+    }
+
+    public function update(Employee $employee, UpdateEmployeeData $data): Employee
+    {
+        return DB::transaction(function () use ($employee, $data): Employee {
+            $attributes = $data->employee;
+
+            if (array_key_exists('reporting_manager_employee_id', $attributes)) {
+                $newManagerId = $attributes['reporting_manager_employee_id'] !== null
+                    ? (int) $attributes['reporting_manager_employee_id']
+                    : null;
+
+                if ($newManagerId !== null) {
+                    $this->hierarchy->assertNoCycle($employee->id, $newManagerId);
+                }
+
+                if ($newManagerId !== $employee->reporting_manager_employee_id) {
+                    $this->hierarchy->recordManagerChange($employee, $newManagerId, (int) Auth::id());
+                }
+            }
+
+            foreach (self::ASSIGNMENT_TRACKED_FIELDS as $field) {
+                if (! array_key_exists($field, $attributes)) {
+                    continue;
+                }
+
+                $old = $employee->{$field};
+                $new = $attributes[$field] !== null && $attributes[$field] !== '' ? (int) $attributes[$field] : null;
+
+                if ((string) $old !== (string) $new) {
+                    EmployeeAssignmentHistory::query()->create([
+                        'employee_id' => $employee->id,
+                        'field_name' => $field,
+                        'old_value' => $old !== null ? (string) $old : null,
+                        'new_value' => $new !== null ? (string) $new : null,
+                        'effective_from' => now()->toDateString(),
+                        'changed_by' => Auth::id(),
+                    ]);
+                }
+            }
+
+            $employee->update($attributes);
+
+            $this->syncNested(
+                $employee,
+                $data->profile,
+                $data->shift,
+                $data->medical,
+                $data->dependents,
+                $data->bankAccounts,
+                $data->branchAssignments,
+            );
+
+            if ($data->holidayCalendarProvided) {
+                $this->syncHolidayAssignment($employee, $data->holidayCalendarId, true);
+            }
+
+            $this->syncImages($employee, $data->imageUploads, $data->removeImageIds);
+
+            return $employee->fresh(self::DETAIL_RELATIONS) ?? $employee;
         });
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  list<array{type: string, images: list<\Illuminate\Http\UploadedFile>, cnic_front: ?\Illuminate\Http\UploadedFile, cnic_back: ?\Illuminate\Http\UploadedFile}>  $imageUploads
+     * @param  list<int>  $removeImageIds
      */
-    public function update(Employee $employee, array $data): Employee
+    private function syncImages(Employee $employee, array $imageUploads, array $removeImageIds): void
     {
-        $employee->update($data);
+        if ($removeImageIds !== []) {
+            $this->images->removeMany($employee, $removeImageIds);
+        }
 
-        return $employee->fresh(['legalEntity', 'primaryBranch', 'defaultCostCentre', 'user']);
+        foreach ($imageUploads as $upload) {
+            $type = (string) ($upload['type'] ?? 'other');
+
+            if ($type === 'cnic') {
+                $cnicFront = $upload['cnic_front'] ?? null;
+                $cnicBack = $upload['cnic_back'] ?? null;
+                if ($cnicFront !== null) {
+                    $this->images->replaceByAlt($employee, $cnicFront, 'cnic_front');
+                }
+                if ($cnicBack !== null) {
+                    $this->images->replaceByAlt($employee, $cnicBack, 'cnic_back');
+                }
+
+                continue;
+            }
+
+            $images = $upload['images'] ?? [];
+            if ($images !== []) {
+                $this->images->attachMany($employee, $images, $type !== '' ? $type : 'other');
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $profile
+     * @param  array<string, mixed>|null  $shift
+     * @param  array<string, mixed>|null  $medical
+     * @param  list<array<string, mixed>>  $dependents
+     * @param  list<array<string, mixed>>  $bankAccounts
+     * @param  list<array<string, mixed>>  $branchAssignments
+     */
+    private function syncNested(
+        Employee $employee,
+        ?array $profile,
+        ?array $shift,
+        ?array $medical,
+        array $dependents,
+        array $bankAccounts,
+        array $branchAssignments,
+    ): void {
+        if ($profile !== null) {
+            $employee->profile()->updateOrCreate(
+                ['employee_id' => $employee->id],
+                [
+                    'address_line1' => $profile['address_line1'] ?? null,
+                    'address_line2' => $profile['address_line2'] ?? null,
+                    'city' => $profile['city'] ?? null,
+                    'state' => $profile['state'] ?? null,
+                    'postal_code' => $profile['postal_code'] ?? null,
+                    'country' => $profile['country'] ?? null,
+                    'emergency_contact_name' => $profile['emergency_contact_name'] ?? null,
+                    'emergency_contact_phone' => $profile['emergency_contact_phone'] ?? null,
+                    'emergency_contact_relation' => $profile['emergency_contact_relation'] ?? null,
+                    'attendance_grace_minutes' => (int) ($profile['attendance_grace_minutes'] ?? 0),
+                    'overtime_eligible' => (bool) ($profile['overtime_eligible'] ?? true),
+                ],
+            );
+        }
+
+        if ($shift !== null) {
+            $employee->shiftPreference()->updateOrCreate(
+                ['employee_id' => $employee->id],
+                [
+                    'shift_label' => $shift['shift_label'] ?? null,
+                    'start_time' => $shift['start_time'] ?: null,
+                    'end_time' => $shift['end_time'] ?: null,
+                    'rest_days' => $shift['rest_days'] ?? [],
+                    'notes' => $shift['notes'] ?? null,
+                ],
+            );
+        }
+
+        if ($medical !== null) {
+            $employee->medicalProfile()->updateOrCreate(
+                ['employee_id' => $employee->id],
+                [
+                    'blood_group' => $medical['blood_group'] ?? null,
+                    'allergies' => $medical['allergies'] ?? null,
+                    'conditions' => $medical['conditions'] ?? null,
+                    'insurance_provider' => $medical['insurance_provider'] ?? null,
+                    'insurance_policy_no' => $medical['insurance_policy_no'] ?? null,
+                    'emergency_notes' => $medical['emergency_notes'] ?? null,
+                ],
+            );
+        }
+
+        $keepDependentIds = [];
+        foreach ($dependents as $index => $row) {
+            $payload = [
+                'name' => $row['name'],
+                'relation' => $row['relation'],
+                'date_of_birth' => $row['date_of_birth'] ?? null,
+                'gender' => $row['gender'] ?? null,
+                'national_id' => $row['national_id'] ?? null,
+                'phone' => $row['phone'] ?? null,
+                'is_emergency_contact' => (bool) ($row['is_emergency_contact'] ?? false),
+                'sort_order' => $index,
+            ];
+
+            if (! empty($row['id'])) {
+                $dependent = $employee->dependents()->whereKey((int) $row['id'])->first();
+                if ($dependent !== null) {
+                    $dependent->update($payload);
+                    $keepDependentIds[] = $dependent->id;
+                    continue;
+                }
+            }
+
+            $keepDependentIds[] = $employee->dependents()->create($payload)->id;
+        }
+        $employee->dependents()->whereNotIn('id', $keepDependentIds ?: [0])->delete();
+
+        $keepBankIds = [];
+        foreach ($bankAccounts as $row) {
+            $payload = [
+                'label' => $row['label'] ?? null,
+                'bank_name' => $row['bank_name'],
+                'account_number' => $row['account_number'],
+                'iban' => $row['iban'] ?? null,
+                'currency_code' => $row['currency_code'] ?? null,
+                'payment_method' => $row['payment_method'] ?? null,
+                'is_primary' => (bool) ($row['is_primary'] ?? false),
+                'status' => 'active',
+            ];
+
+            if (! empty($row['id'])) {
+                $bank = $employee->bankAccounts()->whereKey((int) $row['id'])->first();
+                if ($bank !== null) {
+                    $bank->update($payload);
+                    $keepBankIds[] = $bank->id;
+                    continue;
+                }
+            }
+
+            $keepBankIds[] = $employee->bankAccounts()->create($payload)->id;
+        }
+        $employee->bankAccounts()->whereNotIn('id', $keepBankIds ?: [0])->delete();
+
+        $employee->branchAssignments()->delete();
+        foreach ($branchAssignments as $row) {
+            EmployeeBranchAssignment::query()->create([
+                'employee_id' => $employee->id,
+                'branch_id' => (int) $row['branch_id'],
+                'is_primary' => false,
+                'effective_from' => $row['effective_from'],
+                'effective_to' => $row['effective_to'] ?? null,
+                'status' => $row['status'] ?? 'active',
+            ]);
+        }
+    }
+
+    private function syncHolidayAssignment(Employee $employee, ?int $calendarId, bool $replace): void
+    {
+        if (! $replace) {
+            return;
+        }
+
+        $employee->holidayAssignments()->delete();
+
+        if ($calendarId === null) {
+            return;
+        }
+
+        $calendar = HolidayCalendar::query()->find($calendarId);
+        if ($calendar === null) {
+            return;
+        }
+
+        $this->holidayCalendars->assignCalendar(new CreateHolidayCalendarAssignmentData(
+            holidayCalendarId: $calendar->id,
+            assignableType: Employee::class,
+            assignableId: $employee->id,
+            effectiveFrom: now()->toDateString(),
+            effectiveTo: null,
+            priority: 100,
+            status: 'active',
+        ));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formOptions(?Employee $excludeFromManagers = null): array
+    {
+        $managerQuery = Employee::query()->where('status', 'active')->orderBy('first_name');
+        if ($excludeFromManagers !== null) {
+            $managerQuery->where('id', '!=', $excludeFromManagers->id);
+        }
+
+        return [
+            'legalEntities' => OrganizationEntity::query()
+                ->where('status', 'active')
+                ->orderBy('legal_name')
+                ->get(['id', 'legal_name', 'functional_currency_code']),
+            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
+            'costCentres' => CostCentre::query()->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name']),
+            'departments' => Department::query()->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name', 'legal_entity_id']),
+            'designations' => Designation::query()->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name', 'legal_entity_id']),
+            'grades' => Grade::query()->where('status', 'active')->orderBy('rank')->orderBy('name')->get(['id', 'code', 'name', 'legal_entity_id']),
+            'managers' => $managerQuery->get(['id', 'first_name', 'last_name', 'employee_code', 'legal_entity_id']),
+            'salaryStructures' => SalaryStructure::query()->orderBy('name')->get(['id', 'name', 'code']),
+            'currencies' => $this->currencies->activeOptions(),
+            'holidayCalendars' => HolidayCalendar::query()->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name']),
+            'employmentTypes' => ['full_time', 'part_time', 'contract', 'hourly'],
+            'genders' => ['male', 'female', 'other', 'undisclosed'],
+            'maritalStatuses' => ['single', 'married', 'divorced', 'widowed', 'other'],
+            'attachmentTypes' => ['cnic', 'photo', 'id_copy', 'other'],
+            'maxImages' => (int) config('media.max_images_per_model', 10),
+            'weekDays' => [0, 1, 2, 3, 4, 5, 6],
+        ];
     }
 }

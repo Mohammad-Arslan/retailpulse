@@ -24,7 +24,7 @@ final class ImageService
      * @param  list<UploadedFile>  $files
      * @return Collection<int, Image>
      */
-    public function attachMany(Model $model, array $files): Collection
+    public function attachMany(Model $model, array $files, ?string $alt = null): Collection
     {
         $stored = collect();
         $existingCount = $this->images->countForModel($model);
@@ -37,10 +37,44 @@ final class ImageService
                 $file,
                 $existingCount + $index,
                 $existingCount === 0 && $index === 0,
+                $alt,
             ));
         }
 
         return $stored;
+    }
+
+    public function attach(Model $model, UploadedFile $file, ?string $alt = null): Image
+    {
+        $existingCount = $this->images->countForModel($model);
+        $maxImages = (int) config('media.max_images_per_model', 10);
+
+        if ($existingCount >= $maxImages) {
+            abort(422, __('Maximum Number Of Images Reached.'));
+        }
+
+        return $this->storeUpload(
+            $model,
+            $file,
+            $existingCount,
+            $existingCount === 0,
+            $alt,
+        );
+    }
+
+    public function replaceByAlt(Model $model, UploadedFile $file, string $alt): Image
+    {
+        $existing = Image::query()
+            ->where('imageable_type', $model->getMorphClass())
+            ->where('imageable_id', $model->getKey())
+            ->where('alt', $alt)
+            ->get();
+
+        foreach ($existing as $image) {
+            $this->delete($image);
+        }
+
+        return $this->attach($model, $file, $alt);
     }
 
     /**
@@ -89,6 +123,7 @@ final class ImageService
         UploadedFile $file,
         int $sortOrder,
         bool $isPrimary,
+        ?string $alt = null,
     ): Image {
         $disk = (string) config('media.disk', 'public');
         $directory = $this->directoryFor($model);
@@ -131,7 +166,7 @@ final class ImageService
             'height' => $mainImage->height(),
             'sort_order' => $sortOrder,
             'is_primary' => $isPrimary,
-            'alt' => null,
+            'alt' => $alt,
         ]);
     }
 

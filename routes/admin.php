@@ -44,7 +44,11 @@ use App\Http\Controllers\Admin\Payroll\TaxSlabController;
 use App\Http\Controllers\Admin\SelfService\EmployeeSelfServiceController;
 use App\Http\Controllers\Admin\Expense\RecurringExpenseScheduleController;
 use App\Http\Controllers\Admin\FixedAssetController;
+use App\Http\Controllers\Admin\Hr\DepartmentController;
+use App\Http\Controllers\Admin\Hr\DesignationController;
 use App\Http\Controllers\Admin\Hr\EmployeeController;
+use App\Http\Controllers\Admin\Hr\GradeController;
+use App\Http\Controllers\Admin\Hr\HolidayCalendarController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\JournalEntryController;
 use App\Http\Controllers\Admin\LandedCostController;
@@ -129,6 +133,19 @@ Route::middleware(['auth', 'admin', 'branch.context'])
 
         Route::middleware(['hr-module:hr'])->prefix('hr')->name('hr.')->group(function () {
             Route::resource('employees', EmployeeController::class)->except(['destroy']);
+            Route::delete('employees/{employee}/images/{image}', [EmployeeController::class, 'destroyImage'])
+                ->name('employees.images.destroy');
+            Route::resource('departments', DepartmentController::class)->except(['show', 'destroy']);
+            Route::resource('designations', DesignationController::class)->except(['show', 'destroy']);
+            Route::resource('grades', GradeController::class)->except(['show', 'destroy']);
+        });
+
+        Route::middleware(['hr-module:holiday_calendar'])->prefix('hr')->name('hr.')->group(function () {
+            Route::resource('holiday-calendars', HolidayCalendarController::class)->except(['destroy']);
+            Route::post('holiday-calendars/{holiday_calendar}/dates', [HolidayCalendarController::class, 'storeDate'])->name('holiday-calendars.dates.store');
+            Route::delete('holiday-calendars/{holiday_calendar}/dates/{holiday_date}', [HolidayCalendarController::class, 'destroyDate'])->name('holiday-calendars.dates.destroy');
+            Route::post('holiday-calendars/{holiday_calendar}/assignments', [HolidayCalendarController::class, 'storeAssignment'])->name('holiday-calendars.assignments.store');
+            Route::delete('holiday-calendars/{holiday_calendar}/assignments/{assignment}', [HolidayCalendarController::class, 'destroyAssignment'])->name('holiday-calendars.assignments.destroy');
         });
 
         Route::middleware(['hr-module:expenses'])->prefix('expenses')->name('expenses.')->group(function () {

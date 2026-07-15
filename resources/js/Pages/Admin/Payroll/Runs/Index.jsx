@@ -1,5 +1,6 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
@@ -20,6 +21,25 @@ function Index({ runs, entities, filters }) {
         const form = new FormData(e.target);
         router.get(route('admin.payroll.runs.index'), Object.fromEntries(form), { preserveState: true });
     };
+
+    const entityOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.payrollRuns.allEntities') },
+            ...(entities ?? []).map((entity) => ({ value: String(entity.id), label: entity.name })),
+        ],
+        [entities, t],
+    );
+
+    const statusOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.payrollRuns.allStatuses') },
+            ...['draft', 'pending_approval', 'approved', 'posted', 'reversed'].map((status) => ({
+                value: status,
+                label: t(`pages.payrollRuns.statuses.${status}`, { defaultValue: status }),
+            })),
+        ],
+        [t],
+    );
 
     const action = (routeName, id) => {
         router.post(route(routeName, { payroll_run: id }), {}, { preserveState: false });
@@ -135,26 +155,22 @@ function Index({ runs, entities, filters }) {
                 description={t('pages.payrollRuns.indexDescription')}
             />
 
-            <form onSubmit={search} className="mb-4 flex flex-wrap items-end gap-3">
-                <Select name="legal_entity_id" defaultValue={filters.legal_entity_id ?? ''} className="min-w-[200px]">
-                    <option value="">{t('pages.payrollRuns.allEntities')}</option>
-                    {(entities ?? []).map((entity) => (
-                        <option key={entity.id} value={entity.id}>
-                            {entity.name}
-                        </option>
-                    ))}
-                </Select>
-                <Select name="status" defaultValue={filters.status ?? ''} className="min-w-[140px]">
-                    <option value="">{t('pages.payrollRuns.allStatuses')}</option>
-                    {['draft', 'pending_approval', 'approved', 'posted', 'reversed'].map((status) => (
-                        <option key={status} value={status}>
-                            {t(`pages.payrollRuns.statuses.${status}`, { defaultValue: status })}
-                        </option>
-                    ))}
-                </Select>
-                <button type="submit" className="rp-btn-outline">
+            <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">
+                <Select
+                    name="legal_entity_id"
+                    defaultValue={filters.legal_entity_id ?? ''}
+                    className="w-auto min-w-[12rem]"
+                    options={entityOptions}
+                />
+                <Select
+                    name="status"
+                    defaultValue={filters.status ?? ''}
+                    className="w-auto min-w-[12rem]"
+                    options={statusOptions}
+                />
+                <Button type="submit" variant="outline">
                     {t('common.search')}
-                </button>
+                </Button>
             </form>
 
             <DataTable columns={columns} data={runs.data ?? []} pagination={runs} />

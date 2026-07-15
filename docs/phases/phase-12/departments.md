@@ -3,7 +3,7 @@
 **Gate / registry key:** `hr`  
 **Wave:** 1  
 **Depends on:** `hr`  
-**Status (module roll-up):** Planned  
+**Status (module roll-up):** Implemented  
 **Follows:** [architecture.md](./architecture.md)
 
 ---
@@ -27,12 +27,12 @@ Provide hierarchical department (org unit) masters per legal entity for reportin
 
 | ID | Status | Statement |
 | :--- | :--- | :--- |
-| P12-DEPT-FR-001 | Planned | The system shall support departments with code, name, parent_id (hierarchy), legal_entity_id, status. |
-| P12-DEPT-FR-002 | Planned | Department trees shall support arbitrary depth with cycle prevention. |
-| P12-DEPT-FR-003 | Planned | Departments may optionally map to a default cost_centre_id. |
-| P12-DEPT-FR-004 | Planned | Employees may be assigned to a department (see employees.md). |
-| P12-DEPT-FR-005 | Planned | Department assignment shall support effective dating via assignment history. |
-| P12-DEPT-FR-006 | Planned | Soft-deactivate preserves history; cannot delete if active employees assigned (configurable force archive). |
+| P12-DEPT-FR-001 | Implemented | The system shall support departments with auto-generated unique code, name, parent_id (hierarchy), legal_entity_id, status. |
+| P12-DEPT-FR-002 | Implemented | Department trees shall support arbitrary depth with cycle prevention. |
+| P12-DEPT-FR-003 | Implemented | Departments may optionally map to a default cost_centre_id. |
+| P12-DEPT-FR-004 | Implemented | Employees may be assigned to a department (see employees.md). |
+| P12-DEPT-FR-005 | Partial | Department assignment shall support effective dating via assignment history. |
+| P12-DEPT-FR-006 | Implemented | Soft-deactivate preserves history; cannot deactivate if active employees assigned. |
 | P12-DEPT-FR-007 | Planned | Departments are importable via historical migration. |
 
 ---
@@ -96,9 +96,9 @@ department.deactivated
 
 | ID | Status | Criterion |
 | :--- | :--- | :--- |
-| P12-DEPT-AC-001 | Planned | Creating a department with parent forming a cycle is rejected. |
-| P12-DEPT-AC-002 | Planned | Deactivating a department with active employees is blocked unless policy allows. |
-| P12-DEPT-AC-003 | Planned | Duplicate code in same legal entity is rejected. |
+| P12-DEPT-AC-001 | Implemented | Creating a department with parent forming a cycle is rejected. |
+| P12-DEPT-AC-002 | Implemented | Deactivating a department with active employees is blocked. |
+| P12-DEPT-AC-003 | Implemented | Department codes are peeked on create (`DEPT-#####`), allocated uniquely on save, and read-only in the UI. |
 
 ---
 

@@ -12,7 +12,7 @@ Status values: `Implemented` | `Partial` | `Planned`.
 | Module | Registry key | Primary SRS file(s) | Depends on | Sellable | Status |
 | :--- | :--- | :--- | :--- | :---: | :--- |
 | HR Core | `hr` | [hr-core.md](./hr-core.md), [employees.md](./employees.md), [departments.md](./departments.md), [designations.md](./designations.md), [grades.md](./grades.md), [reporting-hierarchy.md](./reporting-hierarchy.md) | — | Yes | Partial |
-| Holiday Calendar | `holiday_calendar` | [holiday-calendar.md](./holiday-calendar.md) | `hr` | Yes | Planned |
+| Holiday Calendar | `holiday_calendar` | [holiday-calendar.md](./holiday-calendar.md) | `hr` | Yes | Implemented |
 | Attendance | `attendance` | [attendance.md](./attendance.md) | `hr` | Yes | Implemented |
 | Shifts & Roster | `shifts_roster` | [shifts-roster.md](./shifts-roster.md) | `hr` | Yes | Planned |
 | Leave | `leave` | [leave.md](./leave.md), [leave-policies.md](./leave-policies.md), [leave-fiscal-year.md](./leave-fiscal-year.md) | `hr` | Yes | Partial |
@@ -50,7 +50,7 @@ Current implementation uses `config/hr_payroll_modules.php` (mirrors accounting 
 Baseline keys already in production foundation:
 
 ```text
-expenses, hr, attendance, leave, overtime, payroll, employee_self_service
+expenses, hr, attendance, leave, overtime, payroll, employee_self_service, holiday_calendar
 ```
 
 ---

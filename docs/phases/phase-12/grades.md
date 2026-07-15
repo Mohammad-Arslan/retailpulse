@@ -3,7 +3,7 @@
 **Gate / registry key:** `hr`  
 **Wave:** 1  
 **Depends on:** `hr`  
-**Status (module roll-up):** Planned  
+**Status (module roll-up):** Implemented  
 **Follows:** [architecture.md](./architecture.md)
 
 ---
@@ -27,10 +27,10 @@ Define pay grades / bands used for compensation ranges, eligibility rules (leave
 
 | ID | Status | Statement |
 | :--- | :--- | :--- |
-| P12-GRD-FR-001 | Planned | The system shall support grades with code, name, rank/sequence, legal_entity_id nullable, status. |
-| P12-GRD-FR-002 | Planned | Grade may define min/mid/max compensation guidance amounts (currency = entity functional); informational or policy-enforced by config flag. |
-| P12-GRD-FR-003 | Planned | Grades are effective-dated (`effective_from` / `effective_to`) for band changes. |
-| P12-GRD-FR-004 | Planned | Employees reference grade_id; history retained on change. |
+| P12-GRD-FR-001 | Implemented | The system shall support grades with auto-generated unique code, name, rank/sequence, legal_entity_id nullable, status. |
+| P12-GRD-FR-002 | Implemented | Grade may define min/mid/max compensation guidance amounts (currency = entity functional); informational or policy-enforced by config flag. |
+| P12-GRD-FR-003 | Implemented | Grades are effective-dated (`effective_from` / `effective_to`) for band changes. |
+| P12-GRD-FR-004 | Implemented | Employees reference grade_id; history retained on change. |
 | P12-GRD-FR-005 | Planned | Loan / advance eligibility policies may reference grade (see salary-advance, employee-loans). |
 | P12-GRD-FR-006 | Planned | Grades are importable. |
 
@@ -96,7 +96,8 @@ grade.updated
 | ID | Status | Criterion |
 | :--- | :--- | :--- |
 | P12-GRD-AC-001 | Planned | When `enforce_salary_band` is true, assigning structure amounts outside min/max is blocked or warns per policy. |
-| P12-GRD-AC-002 | Planned | Overlapping effective grade definitions for same code are rejected. |
+| P12-GRD-AC-002 | Implemented | Overlapping effective grade definitions for same code are rejected. |
+| P12-GRD-AC-003 | Implemented | Grade codes are peeked on create (`GRADE-#####`), allocated uniquely on save, and read-only in the UI. |
 
 ---
 

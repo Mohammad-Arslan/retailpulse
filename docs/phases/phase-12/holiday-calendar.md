@@ -3,7 +3,7 @@
 **Gate / registry key:** `holiday_calendar`  
 **Wave:** 1  
 **Depends on:** `hr`  
-**Status (module roll-up):** Planned  
+**Status (module roll-up):** Implemented  
 **Follows:** [architecture.md](./architecture.md)
 
 ---
@@ -27,9 +27,9 @@ Support multiple configurable holiday calendars (national, regional, branch/enti
 
 | ID | Status | Statement |
 | :--- | :--- | :--- |
-| P12-HOL-FR-001 | Planned | The system shall support multiple holiday calendars per tenant with code, name, legal_entity_id nullable, branch_id nullable. |
-| P12-HOL-FR-002 | Planned | Each calendar contains holiday dates with name, type (public / optional / company), and is_paid flag. |
-| P12-HOL-FR-003 | Planned | Calendars are assigned to employees, branches, or entities with effective dating; most specific wins (employee > branch > entity > default). |
+| P12-HOL-FR-001 | Implemented | The system shall support multiple holiday calendars per tenant with code, name, legal_entity_id nullable, branch_id nullable. |
+| P12-HOL-FR-002 | Implemented | Each calendar contains holiday dates with name, type (public / optional / company), and is_paid flag. |
+| P12-HOL-FR-003 | Implemented | Calendars are assigned to employees, branches, or entities with effective dating; most specific wins (employee > branch > entity > default). |
 | P12-HOL-FR-004 | Planned | Leave day counting shall exclude or include holidays per leave policy configuration. |
 | P12-HOL-FR-005 | Planned | Overtime engine day_type `public_holiday` shall resolve from assigned calendar. |
 | P12-HOL-FR-006 | Planned | Roster generation shall mark holidays. |
@@ -100,10 +100,10 @@ Used by leave/OT recalculation listeners if needed.
 
 | ID | Status | Criterion |
 | :--- | :--- | :--- |
-| P12-HOL-AC-001 | Planned | Employee on Branch A calendar sees Branch A holidays, not Branch B. |
+| P12-HOL-AC-001 | Implemented | Employee on Branch A calendar sees Branch A holidays, not Branch B. |
 | P12-HOL-AC-002 | Planned | Leave request spanning a public holiday excludes that day when policy says so. |
 | P12-HOL-AC-003 | Planned | Overtime on a configured public holiday uses public_holiday multiplier. |
-| P12-HOL-AC-004 | Planned | Duplicate date in same calendar rejected. |
+| P12-HOL-AC-004 | Implemented | Duplicate date in same calendar rejected. |
 
 ---
 

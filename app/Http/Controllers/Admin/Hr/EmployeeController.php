@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin\Hr;
 
+use App\DTOs\Hr\CreateEmployeeData;
+use App\DTOs\Hr\UpdateEmployeeData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Hr\StoreEmployeeRequest;
 use App\Http\Requests\Admin\Hr\UpdateEmployeeRequest;
-use App\Models\Branch;
-use App\Models\CostCentre;
 use App\Models\Employee;
-use App\Models\OrganizationEntity;
+use App\Models\Image;
 use App\Services\Hr\EmployeeService;
+use App\Services\ImageService;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,70 +23,56 @@ final class EmployeeController extends Controller
 {
     public function __construct(
         private readonly EmployeeService $employees,
+        private readonly ImageService $images,
     ) {}
 
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Employee::class);
 
-        $filters = ListPagination::filters($request, ['search', 'status', 'branch_id', 'sort', 'direction']);
-        $paginator = $this->employees->paginate($filters, ListPagination::resolve($filters['per_page']));
+        $filters = ListPagination::filters($request, ['search', 'status', 'branch_id', 'department_id', 'sort', 'direction']);
 
-        return Inertia::render('Admin/Hr/Employees/Index', [
-            'employees' => $paginator->through(fn (Employee $e) => [
-                'id' => $e->id,
-                'employee_code' => $e->employee_code,
-                'name' => $e->fullName(),
-                'email' => $e->email,
-                'employment_type' => $e->employment_type,
-                'status' => $e->status,
-                'hire_date' => $e->hire_date?->toDateString(),
-                'branch' => $e->primaryBranch?->name,
-                'legal_entity' => $e->legalEntity?->legal_name,
-            ]),
-            'filters' => $filters,
-            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
-        ]);
+        return Inertia::render(
+            'Admin/Hr/Employees/Index',
+            $this->employees->indexPayload($filters, ListPagination::resolve($filters['per_page'])),
+        );
     }
 
     public function create(): Response
     {
         $this->authorize('create', Employee::class);
 
-        return Inertia::render('Admin/Hr/Employees/Create', $this->formOptions());
+        return Inertia::render('Admin/Hr/Employees/Create', $this->employees->createPayload());
     }
 
     public function store(StoreEmployeeRequest $request): RedirectResponse
     {
         $this->authorize('create', Employee::class);
 
-        $employee = $this->employees->create($request->validated());
+        $employee = $this->employees->create(CreateEmployeeData::fromRequest($request));
 
         return redirect()
-            ->route('admin.hr.employees.show', $employee)
-            ->with('success', __('Employee Created Successfully.'));
+            ->route('admin.hr.employees.edit', $employee)
+            ->with('success', __('Employee Created Successfully. Complete Remaining Profile Tabs.'));
     }
 
     public function show(Employee $employee): Response
     {
         $this->authorize('view', $employee);
 
-        $employee->load(['legalEntity', 'primaryBranch', 'defaultCostCentre', 'user']);
-
         return Inertia::render('Admin/Hr/Employees/Show', [
-            'employee' => $this->present($employee),
+            ...$this->employees->showPayload($employee),
+            'tab' => request()->string('tab')->toString() ?: 'basic',
         ]);
     }
 
-    public function edit(Employee $employee): Response
+    public function edit(Request $request, Employee $employee): Response
     {
         $this->authorize('update', $employee);
 
-        $employee->load(['legalEntity', 'primaryBranch', 'defaultCostCentre', 'user']);
-
         return Inertia::render('Admin/Hr/Employees/Edit', [
-            'employee' => $this->present($employee),
-            ...$this->formOptions(),
+            ...$this->employees->editPayload($employee),
+            'tab' => $request->string('tab')->toString() ?: 'basic',
         ]);
     }
 
@@ -93,56 +80,27 @@ final class EmployeeController extends Controller
     {
         $this->authorize('update', $employee);
 
-        $this->employees->update($employee, $request->validated());
+        $this->employees->update($employee, UpdateEmployeeData::fromRequest($request));
+
+        $tab = $request->string('active_tab')->toString() ?: 'basic';
 
         return redirect()
-            ->route('admin.hr.employees.show', $employee)
+            ->route('admin.hr.employees.edit', ['employee' => $employee, 'tab' => $tab])
             ->with('success', __('Employee Updated Successfully.'));
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function formOptions(): array
+    public function destroyImage(Employee $employee, Image $image): RedirectResponse
     {
-        return [
-            'legalEntities' => OrganizationEntity::query()
-                ->where('status', 'active')
-                ->orderBy('legal_name')
-                ->get(['id', 'legal_name', 'functional_currency_code']),
-            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
-            'costCentres' => CostCentre::query()->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name']),
-            'employmentTypes' => ['full_time', 'part_time', 'contract', 'hourly'],
-        ];
-    }
+        $this->authorize('update', $employee);
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function present(Employee $employee): array
-    {
-        return [
-            'id' => $employee->id,
-            'employee_code' => $employee->employee_code,
-            'first_name' => $employee->first_name,
-            'last_name' => $employee->last_name,
-            'name' => $employee->fullName(),
-            'email' => $employee->email,
-            'phone' => $employee->phone,
-            'user_id' => $employee->user_id,
-            'legal_entity_id' => $employee->legal_entity_id,
-            'primary_branch_id' => $employee->primary_branch_id,
-            'hire_date' => $employee->hire_date?->toDateString(),
-            'termination_date' => $employee->termination_date?->toDateString(),
-            'employment_type' => $employee->employment_type,
-            'default_cost_centre_id' => $employee->default_cost_centre_id,
-            'payment_method' => $employee->payment_method,
-            'bank_details_encrypted' => $employee->bank_details_encrypted,
-            'status' => $employee->status,
-            'legal_entity' => $employee->legalEntity?->legal_name,
-            'branch' => $employee->primaryBranch?->name,
-            'cost_centre' => $employee->defaultCostCentre?->name,
-            'user_name' => $employee->user?->name,
-        ];
+        abort_unless(
+            $image->imageable_type === $employee->getMorphClass()
+            && (int) $image->imageable_id === (int) $employee->id,
+            404,
+        );
+
+        $this->images->delete($image);
+
+        return back()->with('success', __('Image Removed Successfully.'));
     }
 }

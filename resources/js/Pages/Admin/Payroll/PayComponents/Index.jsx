@@ -1,9 +1,10 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, router } from '@inertiajs/react';
-import { CircleDollarSign } from 'lucide-react';
+import { CircleDollarSign, Search } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -17,6 +18,28 @@ function Index({ components, filters }) {
             preserveState: true,
         });
     };
+
+    const typeOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.payComponents.allTypes') },
+            ...['earning', 'deduction', 'employer_contribution', 'statutory', 'reimbursement'].map((type) => ({
+                value: type,
+                label: t(`pages.payComponents.types.${type}`),
+            })),
+        ],
+        [t],
+    );
+
+    const statusOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.payComponents.allStatuses') },
+            ...['active', 'inactive'].map((status) => ({
+                value: status,
+                label: t(`pages.payComponents.statuses.${status}`),
+            })),
+        ],
+        [t],
+    );
 
     const columns = useMemo(
         () => [
@@ -89,33 +112,31 @@ function Index({ components, filters }) {
                 description={t('pages.payComponents.indexDescription')}
             />
 
-            <form onSubmit={search} className="mb-4 flex flex-wrap items-end gap-3">
-                <input
-                    type="text"
-                    name="search"
-                    defaultValue={filters.search ?? ''}
-                    placeholder={t('pages.payComponents.searchPlaceholder')}
-                    className="rp-input min-w-[220px]"
+            <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">
+                <div className="rp-search-inset min-w-[200px] flex-1">
+                    <Search className="h-3.5 w-3.5 shrink-0 text-rp-text-muted" />
+                    <input
+                        name="search"
+                        defaultValue={filters.search ?? ''}
+                        placeholder={t('pages.payComponents.searchPlaceholder')}
+                        className="rp-search-input"
+                    />
+                </div>
+                <Select
+                    name="type"
+                    defaultValue={filters.type ?? ''}
+                    className="w-auto min-w-[12rem]"
+                    options={typeOptions}
                 />
-                <Select name="type" defaultValue={filters.type ?? ''} className="min-w-[160px]">
-                    <option value="">{t('pages.payComponents.allTypes')}</option>
-                    {['earning', 'deduction', 'employer_contribution', 'statutory', 'reimbursement'].map((type) => (
-                        <option key={type} value={type}>
-                            {t(`pages.payComponents.types.${type}`)}
-                        </option>
-                    ))}
-                </Select>
-                <Select name="status" defaultValue={filters.status ?? ''} className="min-w-[140px]">
-                    <option value="">{t('pages.payComponents.allStatuses')}</option>
-                    {['active', 'inactive'].map((status) => (
-                        <option key={status} value={status}>
-                            {t(`pages.payComponents.statuses.${status}`)}
-                        </option>
-                    ))}
-                </Select>
-                <button type="submit" className="rp-btn-outline">
+                <Select
+                    name="status"
+                    defaultValue={filters.status ?? ''}
+                    className="w-auto min-w-[12rem]"
+                    options={statusOptions}
+                />
+                <Button type="submit" variant="outline">
                     {t('common.search')}
-                </button>
+                </Button>
             </form>
 
             <DataTable columns={columns} data={components.data ?? []} pagination={components} />

@@ -110,11 +110,11 @@ Modules remain independently enableable; waves are the recommended implementatio
 | — | [gaps.md](./gaps.md) | Residuals | Living |
 | 1 | [hr-core.md](./hr-core.md) | `hr` | Partial |
 | 1 | [employees.md](./employees.md) | `hr` | Partial |
-| 1 | [departments.md](./departments.md) | `hr` | Planned |
-| 1 | [designations.md](./designations.md) | `hr` | Planned |
-| 1 | [grades.md](./grades.md) | `hr` | Planned |
-| 1 | [reporting-hierarchy.md](./reporting-hierarchy.md) | `hr` | Planned |
-| 1 | [holiday-calendar.md](./holiday-calendar.md) | `holiday_calendar` | Planned |
+| 1 | [departments.md](./departments.md) | `hr` | Implemented |
+| 1 | [designations.md](./designations.md) | `hr` | Implemented |
+| 1 | [grades.md](./grades.md) | `hr` | Implemented |
+| 1 | [reporting-hierarchy.md](./reporting-hierarchy.md) | `hr` | Partial |
+| 1 | [holiday-calendar.md](./holiday-calendar.md) | `holiday_calendar` | Implemented |
 | 2 | [attendance.md](./attendance.md) | `attendance` | Implemented |
 | 2 | [shifts-roster.md](./shifts-roster.md) | `shifts_roster` | Planned |
 | 2 | [leave.md](./leave.md) | `leave` | Partial |

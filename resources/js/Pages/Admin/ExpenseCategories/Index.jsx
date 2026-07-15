@@ -34,6 +34,23 @@ function Index({ categories, filters, parentOptions = [] }) {
         status: 'active',
     });
 
+    const parentSelectOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.expenseCategories.fields.parent') },
+            ...parentOptions.map((p) => ({ value: String(p.id), label: p.name })),
+        ],
+        [parentOptions, t],
+    );
+
+    const statusSelectOptions = useMemo(
+        () =>
+            ['active', 'inactive'].map((s) => ({
+                value: s,
+                label: t(`pages.expenseCategories.statuses.${s}`),
+            })),
+        [t],
+    );
+
     const search = (e) => {
         e.preventDefault();
         const form = new FormData(e.target);
@@ -47,7 +64,7 @@ function Index({ categories, filters, parentOptions = [] }) {
         editForm.setData({
             code: category.code,
             name: category.name,
-            parent_id: category.parent_id ?? '',
+            parent_id: category.parent_id ? String(category.parent_id) : '',
             account_mapping_key: category.account_mapping_key ?? '',
             is_group: category.is_group,
             requires_receipt: category.requires_receipt,
@@ -132,30 +149,25 @@ function Index({ categories, filters, parentOptions = [] }) {
                         placeholder={t('pages.expenseCategories.fields.code')}
                         value={createForm.data.code}
                         onChange={(e) => createForm.setData('code', e.target.value)}
-                        className="rp-input"
+                        className="rp-form-input"
                     />
                     <input
                         placeholder={t('pages.expenseCategories.fields.name')}
                         value={createForm.data.name}
                         onChange={(e) => createForm.setData('name', e.target.value)}
-                        className="rp-input"
+                        className="rp-form-input"
                     />
                     <Select
                         value={createForm.data.parent_id}
-                        onChange={(e) => createForm.setData('parent_id', e.target.value)}
-                    >
-                        <option value="">{t('pages.expenseCategories.fields.parent')}</option>
-                        {parentOptions.map((p) => (
-                            <option key={p.id} value={p.id}>
-                                {p.name}
-                            </option>
-                        ))}
-                    </Select>
+                        onChange={(value) => createForm.setData('parent_id', value ?? '')}
+                        options={parentSelectOptions}
+                        isClearable
+                    />
                     <input
                         placeholder={t('pages.expenseCategories.fields.accountMappingKey')}
                         value={createForm.data.account_mapping_key}
                         onChange={(e) => createForm.setData('account_mapping_key', e.target.value)}
-                        className="rp-input"
+                        className="rp-form-input"
                     />
                     <label className="flex items-center gap-2 text-sm">
                         <input
@@ -173,7 +185,7 @@ function Index({ categories, filters, parentOptions = [] }) {
                         />
                         {t('pages.expenseCategories.fields.requiresReceipt')}
                     </label>
-                    <Button type="submit" disabled={createForm.processing} className="sm:col-span-2 w-fit">
+                    <Button type="submit" disabled={createForm.processing} className="w-fit sm:col-span-2">
                         {t('pages.expenseCategories.createSubmit')}
                     </Button>
                 </form>
@@ -194,39 +206,29 @@ function Index({ categories, filters, parentOptions = [] }) {
                     <input
                         value={editForm.data.code}
                         onChange={(e) => editForm.setData('code', e.target.value)}
-                        className="rp-input"
+                        className="rp-form-input"
                     />
                     <input
                         value={editForm.data.name}
                         onChange={(e) => editForm.setData('name', e.target.value)}
-                        className="rp-input"
+                        className="rp-form-input"
                     />
                     <Select
                         value={editForm.data.parent_id}
-                        onChange={(e) => editForm.setData('parent_id', e.target.value)}
-                    >
-                        <option value="">{t('pages.expenseCategories.fields.parent')}</option>
-                        {parentOptions.map((p) => (
-                            <option key={p.id} value={p.id}>
-                                {p.name}
-                            </option>
-                        ))}
-                    </Select>
+                        onChange={(value) => editForm.setData('parent_id', value ?? '')}
+                        options={parentSelectOptions}
+                        isClearable
+                    />
                     <input
                         value={editForm.data.account_mapping_key}
                         onChange={(e) => editForm.setData('account_mapping_key', e.target.value)}
-                        className="rp-input"
+                        className="rp-form-input"
                     />
                     <Select
                         value={editForm.data.status}
-                        onChange={(e) => editForm.setData('status', e.target.value)}
-                    >
-                        {['active', 'inactive'].map((s) => (
-                            <option key={s} value={s}>
-                                {t(`pages.expenseCategories.statuses.${s}`)}
-                            </option>
-                        ))}
-                    </Select>
+                        onChange={(value) => editForm.setData('status', value ?? 'active')}
+                        options={statusSelectOptions}
+                    />
                     <div className="flex gap-2 sm:col-span-2">
                         <Button type="submit" disabled={editForm.processing}>
                             {t('common.save')}
@@ -238,19 +240,19 @@ function Index({ categories, filters, parentOptions = [] }) {
                 </form>
             )}
 
-            <form onSubmit={search} className="mb-4 flex flex-wrap items-end gap-3">
-                <div className="relative min-w-[220px] flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-rp-text-muted" />
+            <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">
+                <div className="rp-search-inset min-w-[200px] flex-1">
+                    <Search className="h-3.5 w-3.5 shrink-0 text-rp-text-muted" />
                     <input
                         name="search"
                         defaultValue={filters.search ?? ''}
                         placeholder={t('pages.expenseCategories.searchPlaceholder')}
-                        className="rp-input w-full pl-9"
+                        className="rp-search-input"
                     />
                 </div>
-                <button type="submit" className="rp-btn-outline">
+                <Button type="submit" variant="outline">
                     {t('common.search')}
-                </button>
+                </Button>
             </form>
 
             <DataTable columns={columns} data={categories.data ?? []} pagination={categories} />

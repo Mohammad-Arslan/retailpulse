@@ -25,13 +25,13 @@ Status legend: **Partial** = some code exists / incomplete vs SRS · **Planned**
 
 | Area | Status | Notable Planned / Partial FRs |
 | :--- | :--- | :--- |
-| HR Core | Partial | Employment-type catalogue table, entity HR settings, effective-dated assignments |
-| Employees | Partial | Department/designation/grade/manager FKs, profile subtables, multi-branch, import |
-| Departments | Planned | Full hierarchy CRUD |
-| Designations | Planned | Full catalogue |
-| Grades | Planned | Bands + enforcement |
-| Reporting hierarchy | Planned | Manager history, delegations, cycle prevention |
-| Holiday calendar | Planned | Calendars, assignments, leave/OT integration |
+| HR Core | Partial | Employment-type catalogue table, entity HR settings |
+| Employees | Partial | Profile subtables, multi-branch Implemented; org FKs Implemented; import/export via generic wizard Implemented |
+| Departments | Implemented | Import remaining Planned |
+| Designations | Implemented | Import remaining Planned |
+| Grades | Implemented | Band enforcement on payroll Pending; import Planned |
+| Reporting hierarchy | Partial | Manager + cycle + history Implemented; org chart UI / delegations Planned |
+| Holiday calendar | Implemented | Leave/OT consumption Planned (resolver ready) |
 
 ---
 

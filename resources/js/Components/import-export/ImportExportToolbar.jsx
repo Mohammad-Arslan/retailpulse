@@ -13,6 +13,7 @@ const ENTITY_PERMISSIONS = {
     units: { import: 'products.import', export: 'products.export' },
     products: { import: 'products.import', export: 'products.export' },
     customers: { import: 'customers.import', export: 'customers.export' },
+    employees: { import: 'employees.import', export: 'employees.export' },
     suppliers: { import: 'suppliers.import', export: 'suppliers.export' },
     'supplier-price-lists': {
         import: 'supplier-price-lists.import',

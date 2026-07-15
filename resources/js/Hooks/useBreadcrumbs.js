@@ -103,6 +103,34 @@ const ROUTE_CRUMBS = {
     'Admin/Accounting/PettyCash/Index': ['home', 'pettyCash'],
     'Admin/Accounting/Cheques/Index': ['home', 'cheques'],
     'Admin/Accounting/FixedAssets/Index': ['home', 'fixedAssets'],
+    'Admin/Hr/Employees/Index': ['home', 'hrEmployees'],
+    'Admin/Hr/Employees/Create': ['home', 'hrEmployees', 'create'],
+    'Admin/Hr/Employees/Edit': ['home', 'hrEmployees', 'edit'],
+    'Admin/Hr/Employees/Show': ['home', 'hrEmployees', 'view'],
+    'Admin/Hr/Departments/Index': ['home', 'hrDepartments'],
+    'Admin/Hr/Designations/Index': ['home', 'hrDesignations'],
+    'Admin/Hr/Grades/Index': ['home', 'hrGrades'],
+    'Admin/Hr/HolidayCalendars/Index': ['home', 'holidayCalendars'],
+    'Admin/Hr/HolidayCalendars/Show': ['home', 'holidayCalendars', 'view'],
+    'Admin/Expenses/Index': ['home', 'expenses'],
+    'Admin/Expenses/Create': ['home', 'expenses', 'create'],
+    'Admin/Expenses/Show': ['home', 'expenses', 'view'],
+    'Admin/ExpenseCategories/Index': ['home', 'expenseCategories'],
+    'Admin/RecurringExpenses/Index': ['home', 'recurringExpenses'],
+    'Admin/RecurringExpenses/Create': ['home', 'recurringExpenses', 'create'],
+    'Admin/Overtime/Policies/Index': ['home', 'overtimePolicies'],
+    'Admin/Overtime/Records/Index': ['home', 'overtimeRecords'],
+    'Admin/Leave/Types/Index': ['home', 'leaveTypes'],
+    'Admin/Leave/Requests/Index': ['home', 'leaveRequests'],
+    'Admin/Leave/Requests/Create': ['home', 'leaveRequests', 'create'],
+    'Admin/Attendance/Records/Index': ['home', 'attendanceRecords'],
+    'Admin/Attendance/Records/Create': ['home', 'attendanceRecords', 'create'],
+    'Admin/Attendance/Sources/Index': ['home', 'attendanceSources'],
+    'Admin/Payroll/Runs/Index': ['home', 'payrollRuns'],
+    'Admin/Payroll/PayComponents/Index': ['home', 'payComponents'],
+    'Admin/Payroll/TaxSlabs/Index': ['home', 'taxSlabs'],
+    'Admin/Payroll/StatutorySchemes/Index': ['home', 'statutorySchemes'],
+    'Admin/SelfService/Payslips/Index': ['home', 'selfServicePayslips'],
 };
 
 const CRUMB_HREFS = {
@@ -153,6 +181,25 @@ const CRUMB_HREFS = {
     pettyCash: 'admin.accounting.petty-cash.index',
     cheques: 'admin.accounting.cheques.index',
     fixedAssets: 'admin.accounting.fixed-assets.index',
+    hrEmployees: 'admin.hr.employees.index',
+    hrDepartments: 'admin.hr.departments.index',
+    hrDesignations: 'admin.hr.designations.index',
+    hrGrades: 'admin.hr.grades.index',
+    holidayCalendars: 'admin.hr.holiday-calendars.index',
+    expenses: 'admin.expenses.expenses.index',
+    expenseCategories: 'admin.expenses.expense-categories.index',
+    recurringExpenses: 'admin.expenses.recurring-expenses.index',
+    overtimePolicies: 'admin.overtime.policies.index',
+    overtimeRecords: 'admin.overtime.records.index',
+    leaveTypes: 'admin.leave.types.index',
+    leaveRequests: 'admin.leave.requests.index',
+    attendanceRecords: 'admin.attendance.records.index',
+    attendanceSources: 'admin.attendance.sources.index',
+    payrollRuns: 'admin.payroll.runs.index',
+    payComponents: 'admin.payroll.pay-components.index',
+    taxSlabs: 'admin.payroll.tax-slabs.index',
+    statutorySchemes: 'admin.payroll.statutory-schemes.index',
+    selfServicePayslips: 'admin.self-service.payslips.index',
 };
 
 export function useBreadcrumbs() {
@@ -216,6 +263,22 @@ export function useBreadcrumbs() {
             ];
         }
 
+        if (component === 'Admin/Hr/HolidayCalendars/Show' && props.calendar?.name) {
+            return [
+                { label: t('breadcrumbs.home'), href: route(CRUMB_HREFS.home) },
+                { label: t('breadcrumbs.holidayCalendars'), href: route(CRUMB_HREFS.holidayCalendars) },
+                { label: props.calendar.name },
+            ];
+        }
+
+        if (component === 'Admin/Hr/Employees/Show' && props.employee?.name) {
+            return [
+                { label: t('breadcrumbs.home'), href: route(CRUMB_HREFS.home) },
+                { label: t('breadcrumbs.hrEmployees'), href: route(CRUMB_HREFS.hrEmployees) },
+                { label: props.employee.name },
+            ];
+        }
+
         const keys = ROUTE_CRUMBS[component] ?? ['home'];
 
         return keys.map((key, index) => ({
@@ -225,5 +288,5 @@ export function useBreadcrumbs() {
                     ? route(CRUMB_HREFS[key])
                     : undefined,
         }));
-    }, [component, props.breadcrumbs, props.program, props.journalEntry, props.ruleSet, props.title, t]);
+    }, [component, props.breadcrumbs, props.program, props.journalEntry, props.ruleSet, props.title, props.calendar, props.employee, t]);
 }

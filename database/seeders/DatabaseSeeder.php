@@ -25,6 +25,10 @@ class DatabaseSeeder extends Seeder
             FiscalYearSeeder::class,
             FinancialSettingsSeeder::class,
             CurrenciesSeeder::class,
+            GradeSeeder::class,
+            DesignationSeeder::class,
+            DepartmentSeeder::class,
+            EmployeeSeeder::class,
             SuperAdminSeeder::class,
         ]);
     }

@@ -3,7 +3,7 @@ import { useCallback, useId, useMemo, useState } from 'react';
 import ReactSelect from 'react-select';
 
 function normalizeValue(value) {
-    if (value === null || value === undefined || value === '') {
+    if (value === null || value === undefined) {
         return null;
     }
 
@@ -11,11 +11,11 @@ function normalizeValue(value) {
 }
 
 function findOption(options, value) {
-    const normalized = normalizeValue(value);
-
-    if (normalized === null) {
+    if (value === null || value === undefined) {
         return null;
     }
+
+    const normalized = String(value);
 
     return options.find((option) => String(option.value) === normalized) ?? null;
 }

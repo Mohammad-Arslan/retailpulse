@@ -1,7 +1,9 @@
+import AdminFormField from '@/Components/common/AdminFormField';
 import PageHeader from '@/Components/common/PageHeader';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Create({ employees, branches, actions }) {
@@ -13,6 +15,34 @@ function Create({ employees, branches, actions }) {
         clocked_at: '',
         open_record_id: '',
     });
+
+    const employeeOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.attendanceRecords.selectEmployee') },
+            ...employees.map((employee) => ({
+                value: String(employee.id),
+                label: `${employee.first_name} ${employee.last_name} (${employee.employee_code})`,
+            })),
+        ],
+        [employees, t],
+    );
+
+    const branchOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.attendanceRecords.selectBranch') },
+            ...branches.map((branch) => ({ value: String(branch.id), label: branch.name })),
+        ],
+        [branches, t],
+    );
+
+    const actionOptions = useMemo(
+        () =>
+            actions.map((action) => ({
+                value: action,
+                label: t(`pages.attendanceRecords.actions.${action}`),
+            })),
+        [actions, t],
+    );
 
     const submit = (e) => {
         e.preventDefault();
@@ -33,81 +63,74 @@ function Create({ employees, branches, actions }) {
 
             <form onSubmit={submit} className="mx-auto max-w-2xl space-y-6">
                 <div className="rp-card space-y-4 p-6">
-                    <div>
-                        <label className="rp-label">{t('pages.attendanceRecords.fields.employee')}</label>
+                    <AdminFormField
+                        label={t('pages.attendanceRecords.fields.employee')}
+                        id="employee_id"
+                        error={errors.employee_id}
+                    >
                         <Select
+                            id="employee_id"
                             value={data.employee_id}
-                            onChange={(e) => setData('employee_id', e.target.value)}
-                            className="w-full"
-                        >
-                            <option value="">{t('pages.attendanceRecords.selectEmployee')}</option>
-                            {employees.map((employee) => (
-                                <option key={employee.id} value={employee.id}>
-                                    {employee.first_name} {employee.last_name} ({employee.employee_code})
-                                </option>
-                            ))}
-                        </Select>
-                        {errors.employee_id && <p className="mt-1 text-sm text-red-600">{errors.employee_id}</p>}
-                    </div>
+                            onChange={(value) => setData('employee_id', value ?? '')}
+                            options={employeeOptions}
+                        />
+                    </AdminFormField>
 
-                    <div>
-                        <label className="rp-label">{t('pages.attendanceRecords.fields.branch')}</label>
+                    <AdminFormField
+                        label={t('pages.attendanceRecords.fields.branch')}
+                        id="branch_id"
+                        error={errors.branch_id}
+                    >
                         <Select
+                            id="branch_id"
                             value={data.branch_id}
-                            onChange={(e) => setData('branch_id', e.target.value)}
-                            className="w-full"
-                        >
-                            <option value="">{t('pages.attendanceRecords.selectBranch')}</option>
-                            {branches.map((branch) => (
-                                <option key={branch.id} value={branch.id}>
-                                    {branch.name}
-                                </option>
-                            ))}
-                        </Select>
-                        {errors.branch_id && <p className="mt-1 text-sm text-red-600">{errors.branch_id}</p>}
-                    </div>
+                            onChange={(value) => setData('branch_id', value ?? '')}
+                            options={branchOptions}
+                        />
+                    </AdminFormField>
 
-                    <div>
-                        <label className="rp-label">{t('pages.attendanceRecords.fields.action')}</label>
+                    <AdminFormField
+                        label={t('pages.attendanceRecords.fields.action')}
+                        id="action"
+                        error={errors.action}
+                    >
                         <Select
+                            id="action"
                             value={data.action}
-                            onChange={(e) => setData('action', e.target.value)}
-                            className="w-full"
-                        >
-                            {actions.map((action) => (
-                                <option key={action} value={action}>
-                                    {t(`pages.attendanceRecords.actions.${action}`)}
-                                </option>
-                            ))}
-                        </Select>
-                        {errors.action && <p className="mt-1 text-sm text-red-600">{errors.action}</p>}
-                    </div>
+                            onChange={(value) => setData('action', value ?? 'clock_in')}
+                            options={actionOptions}
+                        />
+                    </AdminFormField>
 
-                    <div>
-                        <label className="rp-label">{t('pages.attendanceRecords.fields.clockedAt')}</label>
+                    <AdminFormField
+                        label={t('pages.attendanceRecords.fields.clockedAt')}
+                        id="clocked_at"
+                        error={errors.clocked_at}
+                    >
                         <input
+                            id="clocked_at"
                             type="datetime-local"
                             value={data.clocked_at}
                             onChange={(e) => setData('clocked_at', e.target.value)}
-                            className="rp-input w-full"
+                            className="rp-form-input"
                         />
-                        {errors.clocked_at && <p className="mt-1 text-sm text-red-600">{errors.clocked_at}</p>}
-                    </div>
+                    </AdminFormField>
 
                     {data.action === 'clock_out' && (
-                        <div>
-                            <label className="rp-label">{t('pages.attendanceRecords.fields.openRecordId')}</label>
+                        <AdminFormField
+                            label={t('pages.attendanceRecords.fields.openRecordId')}
+                            id="open_record_id"
+                            error={errors.open_record_id}
+                        >
                             <input
+                                id="open_record_id"
                                 type="number"
                                 value={data.open_record_id}
                                 onChange={(e) => setData('open_record_id', e.target.value)}
                                 placeholder={t('pages.attendanceRecords.openRecordPlaceholder')}
-                                className="rp-input w-full"
+                                className="rp-form-input"
                             />
-                            {errors.open_record_id && (
-                                <p className="mt-1 text-sm text-red-600">{errors.open_record_id}</p>
-                            )}
-                        </div>
+                        </AdminFormField>
                     )}
                 </div>
 

@@ -1,5 +1,6 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, router } from '@inertiajs/react';
@@ -32,6 +33,17 @@ function Index({ policies, filters }) {
             preserveState: true,
         });
     };
+
+    const statusOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.overtimePolicies.allStatuses') },
+            ...['active', 'inactive'].map((status) => ({
+                value: status,
+                label: t(`pages.overtimePolicies.statuses.${status}`),
+            })),
+        ],
+        [t],
+    );
 
     const columns = useMemo(
         () => [
@@ -115,18 +127,16 @@ function Index({ policies, filters }) {
                 description={t('pages.overtimePolicies.indexDescription')}
             />
 
-            <form onSubmit={search} className="mb-4 flex flex-wrap items-end gap-3">
-                <Select name="status" defaultValue={filters.status ?? ''} className="min-w-[160px]">
-                    <option value="">{t('pages.overtimePolicies.allStatuses')}</option>
-                    {['active', 'inactive'].map((status) => (
-                        <option key={status} value={status}>
-                            {t(`pages.overtimePolicies.statuses.${status}`)}
-                        </option>
-                    ))}
-                </Select>
-                <button type="submit" className="rp-btn-outline">
+            <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">
+                <Select
+                    name="status"
+                    defaultValue={filters.status ?? ''}
+                    className="w-auto min-w-[12rem]"
+                    options={statusOptions}
+                />
+                <Button type="submit" variant="outline">
                     {t('common.search')}
-                </button>
+                </Button>
             </form>
 
             <DataTable columns={columns} data={policies.data ?? []} pagination={policies} />

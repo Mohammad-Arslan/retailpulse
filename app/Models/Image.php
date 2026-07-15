@@ -65,6 +65,16 @@ class Image extends Model
             return null;
         }
 
-        return $disk->url($path);
+        $url = $disk->url($path);
+
+        // Prefer root-relative URLs for local public media so thumbnails load on any host.
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            $parts = parse_url($url);
+            $relative = ($parts['path'] ?? '').(isset($parts['query']) ? '?'.$parts['query'] : '');
+
+            return $relative !== '' ? $relative : $url;
+        }
+
+        return $url;
     }
 }

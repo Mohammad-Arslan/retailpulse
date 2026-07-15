@@ -14,4 +14,5 @@ return [
     'overtime' => ['requires' => ['hr', 'attendance']],
     'payroll' => ['requires' => ['hr']],
     'employee_self_service' => ['requires' => ['hr']],
+    'holiday_calendar' => ['requires' => ['hr']],
 ];

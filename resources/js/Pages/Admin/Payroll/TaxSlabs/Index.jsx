@@ -1,5 +1,6 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, router } from '@inertiajs/react';
@@ -21,6 +22,25 @@ function Index({ slabs, entities, filters }) {
             preserveState: true,
         });
     };
+
+    const entityOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.taxSlabs.allEntities') },
+            ...(entities ?? []).map((entity) => ({ value: String(entity.id), label: entity.name })),
+        ],
+        [entities, t],
+    );
+
+    const statusOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.taxSlabs.allStatuses') },
+            ...['active', 'inactive'].map((status) => ({
+                value: status,
+                label: t(`pages.taxSlabs.statuses.${status}`),
+            })),
+        ],
+        [t],
+    );
 
     const columns = useMemo(
         () => [
@@ -73,26 +93,22 @@ function Index({ slabs, entities, filters }) {
                 description={t('pages.taxSlabs.indexDescription')}
             />
 
-            <form onSubmit={search} className="mb-4 flex flex-wrap items-end gap-3">
-                <Select name="legal_entity_id" defaultValue={filters.legal_entity_id ?? ''} className="min-w-[200px]">
-                    <option value="">{t('pages.taxSlabs.allEntities')}</option>
-                    {(entities ?? []).map((entity) => (
-                        <option key={entity.id} value={entity.id}>
-                            {entity.name}
-                        </option>
-                    ))}
-                </Select>
-                <Select name="status" defaultValue={filters.status ?? ''} className="min-w-[140px]">
-                    <option value="">{t('pages.taxSlabs.allStatuses')}</option>
-                    {['active', 'inactive'].map((status) => (
-                        <option key={status} value={status}>
-                            {t(`pages.taxSlabs.statuses.${status}`)}
-                        </option>
-                    ))}
-                </Select>
-                <button type="submit" className="rp-btn-outline">
+            <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">
+                <Select
+                    name="legal_entity_id"
+                    defaultValue={filters.legal_entity_id ?? ''}
+                    className="w-auto min-w-[12rem]"
+                    options={entityOptions}
+                />
+                <Select
+                    name="status"
+                    defaultValue={filters.status ?? ''}
+                    className="w-auto min-w-[12rem]"
+                    options={statusOptions}
+                />
+                <Button type="submit" variant="outline">
                     {t('common.search')}
-                </button>
+                </Button>
             </form>
 
             <DataTable columns={columns} data={slabs.data ?? []} pagination={slabs} />

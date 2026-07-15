@@ -3,7 +3,7 @@
 **Gate / registry key:** `hr`  
 **Wave:** 1  
 **Depends on:** `hr`  
-**Status (module roll-up):** Planned  
+**Status (module roll-up):** Implemented  
 **Follows:** [architecture.md](./architecture.md)
 
 ---
@@ -27,10 +27,10 @@ Maintain job titles / designations used for hiring, grade banding links, apprais
 
 | ID | Status | Statement |
 | :--- | :--- | :--- |
-| P12-DES-FR-001 | Planned | The system shall support designations with code, name, legal_entity_id nullable (global or entity-scoped), status. |
-| P12-DES-FR-002 | Planned | Designation may optionally link to a default grade_id. |
-| P12-DES-FR-003 | Planned | Employees reference designation_id. |
-| P12-DES-FR-004 | Planned | Designations are effective-dated when reassigned on employees. |
+| P12-DES-FR-001 | Implemented | The system shall support designations with auto-generated unique code, name, legal_entity_id nullable (global or entity-scoped), status. |
+| P12-DES-FR-002 | Implemented | Designation may optionally link to a default grade_id. |
+| P12-DES-FR-003 | Implemented | Employees reference designation_id. |
+| P12-DES-FR-004 | Partial | Designations are effective-dated when reassigned on employees. |
 | P12-DES-FR-005 | Planned | Designations are importable. |
 
 ---
@@ -89,8 +89,8 @@ designation.updated
 
 | ID | Status | Criterion |
 | :--- | :--- | :--- |
-| P12-DES-AC-001 | Planned | Unique code per entity (or global uniqueness when entity null — configurable). |
-| P12-DES-AC-002 | Planned | Employee show displays designation name from FK. |
+| P12-DES-AC-001 | Implemented | Designation codes are peeked on create (`DESIG-#####`), allocated uniquely on save, and read-only in the UI. |
+| P12-DES-AC-002 | Implemented | Employee show displays designation name from FK. |
 
 ---
 

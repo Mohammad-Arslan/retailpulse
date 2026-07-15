@@ -1,5 +1,8 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import ImportExportToolbar from '@/Components/import-export/ImportExportToolbar';
+import { useImportJobsTray } from '@/Components/import-export/ImportJobsTray';
+import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
@@ -11,11 +14,36 @@ import { useTranslation } from 'react-i18next';
 function Index({ employees, filters, branches = [] }) {
     const can = useCan();
     const { t } = useTranslation();
+    const { trackJob } = useImportJobsTray();
 
     const search = (e) => {
         e.preventDefault();
         const form = new FormData(e.target);
         router.get(route('admin.hr.employees.index'), Object.fromEntries(form), { preserveState: true });
+    };
+
+    const statusOptions = useMemo(
+        () => [
+            { value: '', label: t('common.all') },
+            { value: 'active', label: t('pages.hrEmployees.statuses.active') },
+            { value: 'inactive', label: t('pages.hrEmployees.statuses.inactive') },
+            { value: 'terminated', label: t('pages.hrEmployees.statuses.terminated') },
+        ],
+        [t],
+    );
+
+    const branchOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.hrEmployees.allBranches') },
+            ...branches.map((b) => ({ value: String(b.id), label: b.name })),
+        ],
+        [branches, t],
+    );
+
+    const exportFilters = {
+        search: filters.search ?? undefined,
+        status: filters.status ?? undefined,
+        branch_id: filters.branch_id ?? undefined,
     };
 
     const columns = useMemo(
@@ -80,41 +108,50 @@ function Index({ employees, filters, branches = [] }) {
                 title={t('pages.hrEmployees.indexTitle')}
                 description={t('pages.hrEmployees.indexDescription')}
             >
-                {can('hr.manage-employees') && (
-                    <Link href={route('admin.hr.employees.create')} className="rp-btn-primary inline-flex items-center gap-2">
-                        <Plus className="h-4 w-4" />
-                        {t('pages.hrEmployees.createTitle')}
-                    </Link>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                    <ImportExportToolbar
+                        entityType="employees"
+                        entityLabel={t('pages.hrEmployees.indexTitle')}
+                        exportOptions={{ filters: exportFilters }}
+                        onJobStarted={trackJob}
+                    />
+                    {can('hr.manage-employees') && (
+                        <Link
+                            href={route('admin.hr.employees.create')}
+                            className="rp-btn-primary inline-flex items-center gap-2"
+                        >
+                            <Plus className="h-4 w-4" />
+                            {t('pages.hrEmployees.createTitle')}
+                        </Link>
+                    )}
+                </div>
             </PageHeader>
 
-            <form onSubmit={search} className="mb-4 flex flex-wrap gap-2">
-                <div className="relative min-w-[220px] flex-1">
-                    <Search className="pointer-events-none absolute top-2.5 left-3 h-4 w-4 text-rp-text-muted" />
+            <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">
+                <div className="rp-search-inset min-w-[200px] flex-1">
+                    <Search className="h-3.5 w-3.5 shrink-0 text-rp-text-muted" />
                     <input
                         name="search"
                         defaultValue={filters.search ?? ''}
                         placeholder={t('pages.hrEmployees.searchPlaceholder')}
-                        className="rp-input w-full pl-9"
+                        className="rp-search-input"
                     />
                 </div>
-                <Select name="status" defaultValue={filters.status ?? ''} className="w-40">
-                    <option value="">{t('common.all')}</option>
-                    <option value="active">{t('pages.hrEmployees.statuses.active')}</option>
-                    <option value="inactive">{t('pages.hrEmployees.statuses.inactive')}</option>
-                    <option value="terminated">{t('pages.hrEmployees.statuses.terminated')}</option>
-                </Select>
-                <Select name="branch_id" defaultValue={filters.branch_id ?? ''} className="w-48">
-                    <option value="">{t('pages.hrEmployees.allBranches')}</option>
-                    {branches.map((b) => (
-                        <option key={b.id} value={b.id}>
-                            {b.name}
-                        </option>
-                    ))}
-                </Select>
-                <button type="submit" className="rp-btn-outline">
+                <Select
+                    name="status"
+                    defaultValue={filters.status ?? ''}
+                    className="w-auto min-w-[12rem]"
+                    options={statusOptions}
+                />
+                <Select
+                    name="branch_id"
+                    defaultValue={filters.branch_id ?? ''}
+                    className="w-auto min-w-[12rem]"
+                    options={branchOptions}
+                />
+                <Button type="submit" variant="outline">
                     {t('common.apply')}
-                </button>
+                </Button>
             </form>
 
             <DataTable columns={columns} data={employees.data ?? []} pagination={employees} />

@@ -20,6 +20,8 @@ Maintain the employee master record: identity, employment lifecycle, pay structu
 | :--- | :--- |
 | `hr.view-employees` | List/view |
 | `hr.manage-employees` | Create/update/terminate/reactivate |
+| `employees.import` | Import employees via generic Import/Export wizard |
+| `employees.export` | Export employees via generic Import/Export wizard |
 | `hr.view-compensation` | View salary structure assignment (Payroll Officer / HR) |
 | `selfservice.view-own` | Own profile (read-only subset) |
 
@@ -38,21 +40,21 @@ Maintain the employee master record: identity, employment lifecycle, pay structu
 | P12-EMP-FR-007 | Implemented | Default cost centre may be set; used as payroll/expense context when not overridden. |
 | P12-EMP-FR-008 | Implemented | Payment method and encrypted bank details may be stored. |
 | P12-EMP-FR-009 | Implemented | Employee status supports active/inactive (and equivalent) lifecycle. |
-| P12-EMP-FR-010 | Planned | Employee shall support department_id, designation_id, grade_id (FK to org masters). |
-| P12-EMP-FR-011 | Planned | Employee shall support reporting_manager_employee_id (see reporting-hierarchy). |
-| P12-EMP-FR-012 | Planned | Personal data (name, CNIC/national ID, addresses, contacts, emergency contacts) shall be stored as configurable profile fields / subtables. |
-| P12-EMP-FR-013 | Planned | Document attachments (contract, ID copies) use Phase 30 document vault when available; until then configurable disk storage. |
-| P12-EMP-FR-014 | Planned | Effective-dated salary structure and org assignments shall be retained historically. |
-| P12-EMP-FR-015 | Planned | Probation end date and confirmation date shall be supported fields. |
-| P12-EMP-FR-016 | Planned | Multi-branch assignment (secondary branches) shall be supported for attendance/roster. |
-| P12-EMP-FR-017 | Planned | Employee import (CSV) shall validate and commit via migration framework; migrated rows marked immutable where historical. |
+| P12-EMP-FR-010 | Implemented | Employee shall support department_id, designation_id, grade_id (FK to org masters). |
+| P12-EMP-FR-011 | Implemented | Employee shall support reporting_manager_employee_id (see reporting-hierarchy). |
+| P12-EMP-FR-012 | Implemented | Personal data (name, CNIC/national ID, addresses, contacts, emergency contacts) shall be stored as configurable profile fields / subtables. |
+| P12-EMP-FR-013 | Partial | Document attachments (contract, ID copies) use Phase 30 document vault when available; until then configurable disk storage. |
+| P12-EMP-FR-014 | Partial | Effective-dated salary structure and org assignments shall be retained historically. |
+| P12-EMP-FR-015 | Implemented | Probation end date and confirmation date shall be supported fields. |
+| P12-EMP-FR-016 | Implemented | Multi-branch assignment (secondary branches) shall be supported for attendance/roster. |
+| P12-EMP-FR-017 | Implemented | Employee import (CSV/XLSX) validates and commits via the shared Import/Export wizard (`employees` entity). |
 
 ---
 
 ## 4. Domain model
 
 ```text
-employees                                   # Implemented core
+employees                                   # Implemented core + profile fields
 - id
 - employee_code                             # DocumentNumberService
 - user_id nullable
@@ -60,29 +62,31 @@ employees                                   # Implemented core
 - primary_branch_id
 - salary_structure_id nullable
 - hire_date / termination_date nullable
-- employment_type
+- probation_end_date / confirmation_date / contract_end_date nullable
+- employment_type / joined_as nullable
 - default_cost_centre_id nullable
 - payment_method / bank_details_encrypted nullable
+- department_id / designation_id / grade_id nullable
+- reporting_manager_employee_id nullable
+- title / first_name / middle_name / last_name / preferred_name
+- gender / date_of_birth / marital_status / nationality
+- national_id_encrypted nullable
+- email / phone
 - status
 - timestamps
 
-# Planned extensions
-- department_id nullable
-- designation_id nullable
-- grade_id nullable
-- reporting_manager_employee_id nullable
-- probation_end_date nullable
-- confirmation_date nullable
-- national_id_encrypted nullable
-- display_name / legal_name fields or profile relation
+employee_profiles                           # Implemented
+- employee_id, address_*, city/state/postal/country
+- emergency_contact_*, attendance_grace_minutes, overtime_eligible
 
-employee_profiles                           # Planned
-- employee_id, personal_json, contacts_json, timestamps
+employee_dependents                         # Implemented
+employee_medical_profiles                   # Implemented (1:1)
+employee_bank_accounts                      # Implemented (primary flag)
+employee_attachments                        # Implemented (local disk until Phase 30)
+employee_branch_assignments                 # Implemented
+employee_shift_preferences                  # Implemented (prefs only; no roster)
 
-employee_branch_assignments                 # Planned
-- id, employee_id, branch_id, is_primary, effective_from, effective_to, status
-
-employee_assignment_history                 # Planned effective-dated org/pay assignments
+employee_assignment_history                 # Partial — org field changes recorded
 - id, employee_id, field_or_type, old_value, new_value, effective_from, changed_by, timestamps
 ```
 
@@ -93,7 +97,8 @@ employee_assignment_history                 # Planned effective-dated org/pay as
 ```text
 EmployeeService           # CRUD, terminate, reactivate
 EmployeeCodeService       # wraps DocumentNumberService
-EmployeeImportHandler     # Planned — migration framework adapter
+EmployeeImportHandler     # Implemented — ImportExportRegistry entity `employees`
+EmployeeExportHandler     # Implemented — same columns as import (national_id blank on export)
 ```
 
 ---
@@ -144,8 +149,8 @@ No GL events from employee master alone.
 | P12-EMP-AC-001 | Implemented | Creating an employee issues unique `employee_code` via DocumentNumberService. |
 | P12-EMP-AC-002 | Implemented | Terminated employee is excluded from subsequent payroll generation by default. |
 | P12-EMP-AC-003 | Implemented | Bank details are not stored in plaintext. |
-| P12-EMP-AC-004 | Planned | Assigning department/designation/grade persists FKs and appears on employee show. |
-| P12-EMP-AC-005 | Planned | Import session commits N employees with reconciliation row count matching file. |
+| P12-EMP-AC-004 | Implemented | Assigning department/designation/grade persists FKs and appears on employee show. |
+| P12-EMP-AC-005 | Implemented | Import session commits N employees with reconciliation row count matching file. |
 | P12-EMP-AC-006 | Implemented | Employee mutations are audit logged. |
 
 ---

@@ -7,11 +7,19 @@ namespace App\Support;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceSource;
 use App\Models\BranchHrProfile;
+use App\Models\Department;
+use App\Models\Designation;
 use App\Models\Employee;
+use App\Models\EmployeeAssignmentHistory;
+use App\Models\EmployeeManagerHistory;
 use App\Models\Expense;
 use App\Models\ExpenseApprovalPolicy;
 use App\Models\ExpenseAttachment;
 use App\Models\ExpenseCategory;
+use App\Models\Grade;
+use App\Models\HolidayCalendar;
+use App\Models\HolidayCalendarAssignment;
+use App\Models\HolidayDate;
 use App\Models\LeaveEntitlement;
 use App\Models\LeavePolicy;
 use App\Models\LeaveRequest;
@@ -40,6 +48,14 @@ final class HrPayrollAuditTypes
      */
     private const TYPES = [
         Employee::class,
+        Department::class,
+        Designation::class,
+        Grade::class,
+        EmployeeManagerHistory::class,
+        EmployeeAssignmentHistory::class,
+        HolidayCalendar::class,
+        HolidayDate::class,
+        HolidayCalendarAssignment::class,
         BranchHrProfile::class,
         Expense::class,
         ExpenseCategory::class,

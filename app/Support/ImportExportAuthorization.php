@@ -31,6 +31,10 @@ final class ImportExportAuthorization
                 'import' => 'customers.import',
                 'export' => 'customers.export',
             ],
+            'employees' => [
+                'import' => 'employees.import',
+                'export' => 'employees.export',
+            ],
             'suppliers' => [
                 'import' => 'suppliers.import',
                 'export' => 'suppliers.export',
