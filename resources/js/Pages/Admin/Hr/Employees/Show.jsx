@@ -1,4 +1,5 @@
 import PageHeader from '@/Components/common/PageHeader';
+import { Button } from '@/Components/ui/button';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { employeeToForm } from '@/Pages/Admin/Hr/Employees/employeeFormState';
@@ -31,17 +32,23 @@ function Show(props) {
         <>
             <Head title={employee.name} />
             <PageHeader title={employee.name} description={employee.employee_code}>
-                <Link href={route('admin.hr.employees.index')} className="rp-btn-outline">
-                    {t('common.back')}
-                </Link>
-                {can('hr.manage-employees') && (
-                    <Link
-                        href={route('admin.hr.employees.edit', { employee: employee.id, tab: activeTab })}
-                        className="rp-btn-primary"
-                    >
-                        {t('common.edit')}
-                    </Link>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button type="button" variant="outline" asChild>
+                        <Link href={route('admin.hr.employees.index')}>{t('common.back')}</Link>
+                    </Button>
+                    {can('hr.manage-employees') && (
+                        <Button variant="brand" asChild>
+                            <Link
+                                href={route('admin.hr.employees.edit', {
+                                    employee: employee.id,
+                                    tab: activeTab,
+                                })}
+                            >
+                                {t('common.edit')}
+                            </Link>
+                        </Button>
+                    )}
+                </div>
             </PageHeader>
 
             <EmployeeTabbedForm

@@ -16,6 +16,7 @@ use App\Jobs\Procurement\PriceListExpiryAlertJob;
 use App\Jobs\Procurement\SupplierPerformanceScoringJob;
 use App\Jobs\RecalculateLoyaltyTiersJob;
 use App\Jobs\SendOverdueRemindersJob;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -23,6 +24,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
 use Laravel\Ai\Exceptions\InsufficientCreditsException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -58,6 +60,22 @@ return Application::configure(basePath: dirname(__DIR__))
         $wantsJson = static fn ($request): bool => $request->expectsJson()
             || $request->ajax()
             || str_contains((string) $request->header('Accept'), 'text/event-stream');
+
+        $exceptions->renderable(function (AuthorizationException $e, Request $request) use ($wantsJson) {
+            $message = $e->getMessage();
+
+            if ($message !== 'No Employee Record Is Linked To This User Account.') {
+                return null;
+            }
+
+            if ($wantsJson($request) && ! $request->header('X-Inertia')) {
+                return response()->json(['message' => $message], 403);
+            }
+
+            return redirect()
+                ->back(fallback: route('admin.dashboard'))
+                ->with('error', $message);
+        });
 
         $exceptions->renderable(function (InsufficientCreditsException $e, $request) use ($wantsJson) {
             if ($wantsJson($request)) {

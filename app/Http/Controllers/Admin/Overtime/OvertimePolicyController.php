@@ -5,9 +5,15 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Overtime;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Overtime\StoreOvertimePolicyRequest;
+use App\Http\Requests\Admin\Overtime\UpdateOvertimePolicyRequest;
+use App\Models\Branch;
+use App\Models\OrganizationEntity;
 use App\Models\OvertimePolicy;
 use App\Support\ListPagination;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -34,7 +40,9 @@ final class OvertimePolicyController extends Controller
         return Inertia::render('Admin/Overtime/Policies/Index', [
             'policies' => $policies->through(fn (OvertimePolicy $policy) => [
                 'id' => $policy->id,
+                'legal_entity_id' => $policy->legal_entity_id,
                 'legal_entity' => $policy->legalEntity?->legal_name,
+                'branch_id' => $policy->branch_id,
                 'branch' => $policy->branch?->name,
                 'branch_code' => $policy->branch?->code,
                 'daily_threshold_minutes' => $policy->daily_threshold_minutes,
@@ -52,6 +60,61 @@ final class OvertimePolicyController extends Controller
                 ])->values()->all(),
             ]),
             'filters' => $filters,
+            'legalEntities' => OrganizationEntity::query()
+                ->where('status', 'active')
+                ->orderBy('legal_name')
+                ->get(['id', 'legal_name']),
+            'branches' => Branch::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'code']),
         ]);
+    }
+
+    public function store(StoreOvertimePolicyRequest $request): RedirectResponse
+    {
+        $this->authorize('create', OvertimePolicy::class);
+
+        $validated = $request->validated();
+        $multipliers = $validated['multipliers'];
+        unset($validated['multipliers']);
+
+        DB::transaction(function () use ($validated, $multipliers): void {
+            $policy = OvertimePolicy::query()->create($validated);
+            $this->syncMultipliers($policy, $multipliers);
+        });
+
+        return back()->with('success', __('Overtime Policy Created Successfully.'));
+    }
+
+    public function update(UpdateOvertimePolicyRequest $request, OvertimePolicy $overtimePolicy): RedirectResponse
+    {
+        $this->authorize('update', $overtimePolicy);
+
+        $validated = $request->validated();
+        $multipliers = $validated['multipliers'];
+        unset($validated['multipliers']);
+
+        DB::transaction(function () use ($overtimePolicy, $validated, $multipliers): void {
+            $overtimePolicy->update($validated);
+            $this->syncMultipliers($overtimePolicy, $multipliers);
+        });
+
+        return back()->with('success', __('Overtime Policy Updated Successfully.'));
+    }
+
+    /**
+     * @param  list<array{day_type: string, multiplier: mixed}>  $multipliers
+     */
+    private function syncMultipliers(OvertimePolicy $policy, array $multipliers): void
+    {
+        $policy->multipliers()->delete();
+
+        foreach ($multipliers as $row) {
+            $policy->multipliers()->create([
+                'day_type' => $row['day_type'],
+                'multiplier' => $row['multiplier'],
+            ]);
+        }
     }
 }

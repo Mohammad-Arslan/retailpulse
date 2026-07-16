@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin\Payroll;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Payroll\StorePayComponentRequest;
 use App\Http\Requests\Admin\Payroll\UpdatePayComponentRequest;
+use App\Models\OrganizationEntity;
 use App\Models\PayComponent;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +26,9 @@ final class PayComponentController extends Controller
 
         $query = PayComponent::query()
             ->with(['basisComponent:id,code,name', 'legalEntity:id,legal_name'])
-            ->when($filters['search'] ?? null, fn ($q, string $search) => $q->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"))
+            ->when($filters['search'] ?? null, fn ($q, string $search) => $q->where(function ($inner) use ($search): void {
+                $inner->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%");
+            }))
             ->when($filters['type'] ?? null, fn ($q, string $type) => $q->where('type', $type))
             ->when($filters['status'] ?? null, fn ($q, string $status) => $q->where('status', $status))
             ->orderBy($filters['sort'] ?? 'code', $filters['direction'] ?? 'asc');
@@ -39,16 +42,26 @@ final class PayComponentController extends Controller
                 'name' => $component->name,
                 'type' => $component->type,
                 'calculation_type' => $component->calculation_type,
-                'basis_component' => $component->basisComponent ? $component->basisComponent->code : null,
+                'basis_component_id' => $component->basis_component_id,
+                'basis_component' => $component->basisComponent?->code,
                 'rate' => $component->rate !== null ? (string) $component->rate : null,
                 'taxable' => $component->taxable,
                 'account_mapping_key' => $component->account_mapping_key,
                 'effective_from' => $component->effective_from?->toDateString(),
                 'effective_to' => $component->effective_to?->toDateString(),
+                'legal_entity_id' => $component->legal_entity_id,
                 'legal_entity' => $component->legalEntity?->legal_name,
                 'status' => $component->status,
             ]),
             'filters' => $filters,
+            'legalEntities' => OrganizationEntity::query()
+                ->where('status', 'active')
+                ->orderBy('legal_name')
+                ->get(['id', 'legal_name']),
+            'basisOptions' => PayComponent::query()
+                ->where('status', 'active')
+                ->orderBy('code')
+                ->get(['id', 'code', 'name']),
         ]);
     }
 

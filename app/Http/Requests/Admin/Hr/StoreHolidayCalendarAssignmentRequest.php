@@ -14,6 +14,13 @@ final class StoreHolidayCalendarAssignmentRequest extends FormRequest
         return $this->user()?->can('holiday.manage') ?? false;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('effective_to') === '') {
+            $this->merge(['effective_to' => null]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */

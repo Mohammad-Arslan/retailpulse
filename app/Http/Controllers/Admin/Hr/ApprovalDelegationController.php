@@ -25,7 +25,7 @@ final class ApprovalDelegationController extends Controller
     {
         $this->authorize('viewAny', ApprovalDelegation::class);
 
-        $filters = ListPagination::filters($request, ['status', 'scope', 'sort', 'direction']);
+        $filters = ListPagination::filters($request, ['search', 'status', 'scope', 'sort', 'direction']);
 
         return Inertia::render(
             'Admin/Hr/Delegations/Index',

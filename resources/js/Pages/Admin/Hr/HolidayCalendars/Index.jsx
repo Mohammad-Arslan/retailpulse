@@ -137,6 +137,15 @@ function Index({ calendars, filters, legalEntities = [], branches = [], nextCode
             type: 'view',
             href: route('admin.hr.holiday-calendars.show', row.id),
         },
+        ...(can('holiday.manage')
+            ? [
+                  {
+                      label: t('common.edit'),
+                      type: 'edit',
+                      href: route('admin.hr.holiday-calendars.show', row.id),
+                  },
+              ]
+            : []),
     ];
 
     return (

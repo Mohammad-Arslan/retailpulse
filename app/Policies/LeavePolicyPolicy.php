@@ -14,6 +14,11 @@ final class LeavePolicyPolicy
         return $user->can('leave.manage-policies') || $user->can('leave.view');
     }
 
+    public function create(User $user): bool
+    {
+        return $user->can('leave.manage-policies');
+    }
+
     public function update(User $user, LeavePolicy $leavePolicy): bool
     {
         return $user->can('leave.manage-policies');

@@ -25,6 +25,10 @@ function Index({ requests, filters }) {
         router.post(route('admin.leave.requests.approve', id));
     };
 
+    const reject = (id) => {
+        router.post(route('admin.leave.requests.reject', id));
+    };
+
     const statusOptions = useMemo(
         () => [
             { value: '', label: t('pages.leaveRequests.allStatuses') },
@@ -85,13 +89,22 @@ function Index({ requests, filters }) {
                 header: t('common.actions'),
                 cell: ({ row }) =>
                     row.original.status === 'pending' && can('leave.approve') ? (
-                        <button
-                            type="button"
-                            onClick={() => approve(row.original.id)}
-                            className="rp-btn-outline text-sm"
-                        >
-                            {t('pages.leaveRequests.approve')}
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                onClick={() => approve(row.original.id)}
+                                className="rp-btn-outline text-sm"
+                            >
+                                {t('pages.leaveRequests.approve')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => reject(row.original.id)}
+                                className="rp-btn-outline text-sm"
+                            >
+                                {t('pages.leaveRequests.reject')}
+                            </button>
+                        </div>
                     ) : (
                         '—'
                     ),
@@ -108,10 +121,12 @@ function Index({ requests, filters }) {
                 description={t('pages.leaveRequests.indexDescription')}
             >
                 {can('leave.request') && (
-                    <Link href={route('admin.leave.requests.create')} className="rp-btn-primary">
-                        <Plus className="h-4 w-4" />
-                        {t('pages.leaveRequests.createTitle')}
-                    </Link>
+                    <Button variant="brand" asChild>
+                        <Link href={route('admin.leave.requests.create')} className="inline-flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            {t('pages.leaveRequests.createTitle')}
+                        </Link>
+                    </Button>
                 )}
             </PageHeader>
 
@@ -136,7 +151,12 @@ function Index({ requests, filters }) {
                 </Button>
             </form>
 
-            <DataTable columns={columns} data={requests.data ?? []} pagination={requests} />
+            <DataTable
+                columns={columns}
+                data={requests.data ?? []}
+                pagination={requests}
+                emptyMessage={t('pages.leaveRequests.empty')}
+            />
         </>
     );
 }

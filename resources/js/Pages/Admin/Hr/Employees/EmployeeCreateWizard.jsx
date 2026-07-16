@@ -142,12 +142,12 @@ export default function EmployeeCreateWizard({
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {!isLastStep && (
-                        <Button type="button" onClick={handleContinue}>
+                        <Button type="button" variant="brand" onClick={handleContinue}>
                             {t('pages.hrEmployees.wizard.continue')}
                         </Button>
                     )}
                     {isLastStep && (
-                        <Button type="submit" disabled={processing}>
+                        <Button type="submit" variant="brand" disabled={processing}>
                             {t('pages.hrEmployees.createSubmit')}
                         </Button>
                     )}

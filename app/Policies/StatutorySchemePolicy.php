@@ -18,4 +18,14 @@ final class StatutorySchemePolicy
     {
         return $this->viewAny($user);
     }
+
+    public function create(User $user): bool
+    {
+        return $user->can('payroll.manage-statutory');
+    }
+
+    public function update(User $user, StatutoryScheme $statutoryScheme): bool
+    {
+        return $user->can('payroll.manage-statutory');
+    }
 }

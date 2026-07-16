@@ -55,10 +55,8 @@ function Index({ sources, filters, drivers }) {
                             <div className="text-sm font-semibold text-rp-text-primary">
                                 {row.original.name}
                             </div>
-                            <div className="text-xs text-rp-text-muted">
-                                {t(`pages.attendanceSources.drivers.${row.original.driver}`, {
-                                    defaultValue: row.original.driver,
-                                })}
+                            <div className="font-mono text-xs text-rp-text-muted">
+                                {row.original.driver}
                             </div>
                         </div>
                     </div>
@@ -116,7 +114,12 @@ function Index({ sources, filters, drivers }) {
                 </Button>
             </form>
 
-            <DataTable columns={columns} data={sources.data ?? []} pagination={sources} />
+            <DataTable
+                columns={columns}
+                data={sources.data ?? []}
+                pagination={sources}
+                emptyMessage={t('pages.attendanceSources.empty')}
+            />
         </>
     );
 }

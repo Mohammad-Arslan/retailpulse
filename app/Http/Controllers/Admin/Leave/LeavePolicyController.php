@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Leave;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Leave\StoreLeavePolicyRequest;
 use App\Http\Requests\Admin\Leave\UpdateLeavePolicyRequest;
 use App\Models\LeavePolicy;
+use App\Models\LeaveType;
+use App\Models\OrganizationEntity;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,10 +33,17 @@ final class LeavePolicyController extends Controller
             ->withQueryString()
             ->through(fn (LeavePolicy $policy) => [
                 'id' => $policy->id,
+                'leave_type_id' => $policy->leave_type_id,
                 'leave_type' => $policy->leaveType?->name,
                 'leave_type_code' => $policy->leaveType?->code,
+                'legal_entity_id' => $policy->legal_entity_id,
                 'legal_entity' => $policy->legalEntity?->legal_name,
                 'accrual_method' => $policy->accrual_method,
+                'accrual_rate' => (string) $policy->accrual_rate,
+                'max_balance' => $policy->max_balance !== null ? (string) $policy->max_balance : null,
+                'carry_forward_limit' => $policy->carry_forward_limit !== null ? (string) $policy->carry_forward_limit : null,
+                'carry_forward_expiry_months' => $policy->carry_forward_expiry_months,
+                'proration_on_join' => $policy->proration_on_join,
                 'exclude_public_holidays' => $policy->exclude_public_holidays,
                 'effective_from' => $policy->effective_from?->toDateString(),
                 'effective_to' => $policy->effective_to?->toDateString(),
@@ -43,7 +53,24 @@ final class LeavePolicyController extends Controller
         return Inertia::render('Admin/Leave/Policies/Index', [
             'policies' => $policies,
             'filters' => $filters,
+            'leaveTypes' => LeaveType::query()
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'code', 'name']),
+            'legalEntities' => OrganizationEntity::query()
+                ->where('status', 'active')
+                ->orderBy('legal_name')
+                ->get(['id', 'legal_name']),
         ]);
+    }
+
+    public function store(StoreLeavePolicyRequest $request): RedirectResponse
+    {
+        $this->authorize('create', LeavePolicy::class);
+
+        LeavePolicy::query()->create($request->validated());
+
+        return back()->with('success', __('Leave Policy Created Successfully.'));
     }
 
     public function update(UpdateLeavePolicyRequest $request, LeavePolicy $policy): RedirectResponse

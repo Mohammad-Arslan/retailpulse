@@ -18,4 +18,14 @@ final class LeaveTypePolicy
     {
         return $user->can('leave.manage-types') || $user->can('leave.view');
     }
+
+    public function create(User $user): bool
+    {
+        return $user->can('leave.manage-types');
+    }
+
+    public function update(User $user, LeaveType $leaveType): bool
+    {
+        return $user->can('leave.manage-types');
+    }
 }

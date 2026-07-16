@@ -14,6 +14,19 @@ final class StorePayComponentRequest extends FormRequest
         return $this->user()?->can('payroll.manage-components') ?? false;
     }
 
+    protected function prepareForValidation(): void
+    {
+        foreach (['basis_component_id', 'legal_entity_id', 'effective_to', 'rate', 'account_mapping_key', 'formula_expression'] as $field) {
+            if ($this->input($field) === '') {
+                $this->merge([$field => null]);
+            }
+        }
+
+        if (! $this->has('taxable')) {
+            $this->merge(['taxable' => false]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */

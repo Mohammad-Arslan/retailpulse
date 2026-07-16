@@ -73,7 +73,7 @@ export default function EmployeeTabbedForm({
 
                     {!readOnly && (
                         <div className="sticky bottom-0 z-10 flex flex-wrap gap-2 border-t border-rp-border bg-rp-surface/95 py-4 backdrop-blur supports-[backdrop-filter]:bg-rp-surface/80">
-                            <Button type="submit" disabled={processing}>
+                            <Button type="submit" variant="brand" disabled={processing}>
                                 {t('pages.hrEmployees.updateSubmit')}
                             </Button>
                             <Link href={cancelHref} className="rp-btn-outline">

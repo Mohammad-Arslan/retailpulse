@@ -20,7 +20,7 @@ final readonly class UpdateHolidayCalendarData
         $validated = $request->validated();
         $attributes = [];
 
-        foreach (['code', 'name', 'status'] as $field) {
+        foreach (['name', 'status'] as $field) {
             if (array_key_exists($field, $validated)) {
                 $attributes[$field] = $validated[$field];
             }

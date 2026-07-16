@@ -109,10 +109,12 @@ function Index({ records, filters }) {
                 description={t('pages.attendanceRecords.indexDescription')}
             >
                 {can('attendance.record') && (
-                    <Link href={route('admin.attendance.records.create')} className="rp-btn-primary">
-                        <Plus className="h-4 w-4" />
-                        {t('pages.attendanceRecords.manualClockTitle')}
-                    </Link>
+                    <Button variant="brand" asChild>
+                        <Link href={route('admin.attendance.records.create')} className="inline-flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            {t('pages.attendanceRecords.manualClockTitle')}
+                        </Link>
+                    </Button>
                 )}
             </PageHeader>
 
@@ -137,7 +139,12 @@ function Index({ records, filters }) {
                 </Button>
             </form>
 
-            <DataTable columns={columns} data={records.data ?? []} pagination={records} />
+            <DataTable
+                columns={columns}
+                data={records.data ?? []}
+                pagination={records}
+                emptyMessage={t('pages.attendanceRecords.empty')}
+            />
         </>
     );
 }

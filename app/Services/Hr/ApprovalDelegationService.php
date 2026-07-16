@@ -73,6 +73,20 @@ final class ApprovalDelegationService
                 'fromEmployee:id,employee_code,first_name,last_name',
                 'toEmployee:id,employee_code,first_name,last_name',
             ])
+            ->when(($filters['search'] ?? '') !== '', function ($q) use ($filters): void {
+                $search = '%'.(string) $filters['search'].'%';
+                $q->where(function ($inner) use ($search): void {
+                    $inner->whereHas('fromEmployee', function ($employee) use ($search): void {
+                        $employee->where('employee_code', 'like', $search)
+                            ->orWhere('first_name', 'like', $search)
+                            ->orWhere('last_name', 'like', $search);
+                    })->orWhereHas('toEmployee', function ($employee) use ($search): void {
+                        $employee->where('employee_code', 'like', $search)
+                            ->orWhere('first_name', 'like', $search)
+                            ->orWhere('last_name', 'like', $search);
+                    });
+                });
+            })
             ->when($filters['status'] ?? null, fn ($q, string $status) => $q->where('status', $status))
             ->when($filters['scope'] ?? null, fn ($q, string $scope) => $q->where('scope', $scope))
             ->orderByDesc('effective_from')

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Leave;
 
 use App\Http\Controllers\Controller;
-use App\Models\Employee;
+use App\Http\Requests\Admin\Leave\StoreLeaveTypeRequest;
+use App\Http\Requests\Admin\Leave\UpdateLeaveTypeRequest;
 use App\Models\LeaveType;
 use App\Support\ListPagination;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -45,5 +47,23 @@ final class LeaveTypeController extends Controller
             ]),
             'filters' => $filters,
         ]);
+    }
+
+    public function store(StoreLeaveTypeRequest $request): RedirectResponse
+    {
+        $this->authorize('create', LeaveType::class);
+
+        LeaveType::query()->create($request->validated());
+
+        return back()->with('success', __('Leave Type Created Successfully.'));
+    }
+
+    public function update(UpdateLeaveTypeRequest $request, LeaveType $leaveType): RedirectResponse
+    {
+        $this->authorize('update', $leaveType);
+
+        $leaveType->update($request->validated());
+
+        return back()->with('success', __('Leave Type Updated Successfully.'));
     }
 }

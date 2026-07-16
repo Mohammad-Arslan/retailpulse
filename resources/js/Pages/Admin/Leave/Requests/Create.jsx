@@ -1,5 +1,6 @@
 import AdminFormField from '@/Components/common/AdminFormField';
 import PageHeader from '@/Components/common/PageHeader';
+import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
@@ -119,17 +120,18 @@ function Create({ employees, leaveTypes }) {
                             onChange={(e) => setData('reason', e.target.value)}
                             rows={3}
                             className="rp-form-input"
+                            placeholder={t('pages.leaveRequests.reasonPlaceholder')}
                         />
                     </AdminFormField>
                 </div>
 
                 <div className="flex justify-end gap-3">
-                    <Link href={route('admin.leave.requests.index')} className="rp-btn-outline">
-                        {t('common.cancel')}
-                    </Link>
-                    <button type="submit" disabled={processing} className="rp-btn-primary">
+                    <Button type="button" variant="outline" asChild>
+                        <Link href={route('admin.leave.requests.index')}>{t('confirm.cancel')}</Link>
+                    </Button>
+                    <Button type="submit" variant="brand" disabled={processing}>
                         {t('pages.leaveRequests.submitRequest')}
-                    </button>
+                    </Button>
                 </div>
             </form>
         </>

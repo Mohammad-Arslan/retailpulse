@@ -28,4 +28,9 @@ final class LeaveRequestPolicy
     {
         return $user->can('leave.approve');
     }
+
+    public function reject(User $user, LeaveRequest $leaveRequest): bool
+    {
+        return $user->can('leave.approve');
+    }
 }

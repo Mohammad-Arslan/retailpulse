@@ -260,6 +260,7 @@ function Index({ grades, filters, legalEntities = [], currencies = [], nextCode 
                                     id="name"
                                     value={form.data.name}
                                     onChange={(e) => form.setData('name', e.target.value)}
+                                    placeholder={t('pages.hrGrades.fields.namePlaceholder')}
                                     className="rp-form-input"
                                     required
                                 />
@@ -271,6 +272,7 @@ function Index({ grades, filters, legalEntities = [], currencies = [], nextCode 
                                     min="0"
                                     value={form.data.rank}
                                     onChange={(e) => form.setData('rank', e.target.value)}
+                                    placeholder={t('pages.hrGrades.fields.rankPlaceholder')}
                                     className="rp-form-input"
                                 />
                             </AdminFormField>
@@ -308,6 +310,7 @@ function Index({ grades, filters, legalEntities = [], currencies = [], nextCode 
                                     step="0.01"
                                     value={form.data.min_amount}
                                     onChange={(e) => form.setData('min_amount', e.target.value)}
+                                    placeholder={t('pages.hrGrades.fields.amountPlaceholder')}
                                     className="rp-form-input"
                                 />
                             </AdminFormField>
@@ -323,6 +326,7 @@ function Index({ grades, filters, legalEntities = [], currencies = [], nextCode 
                                     step="0.01"
                                     value={form.data.mid_amount}
                                     onChange={(e) => form.setData('mid_amount', e.target.value)}
+                                    placeholder={t('pages.hrGrades.fields.amountPlaceholder')}
                                     className="rp-form-input"
                                 />
                             </AdminFormField>
@@ -338,6 +342,7 @@ function Index({ grades, filters, legalEntities = [], currencies = [], nextCode 
                                     step="0.01"
                                     value={form.data.max_amount}
                                     onChange={(e) => form.setData('max_amount', e.target.value)}
+                                    placeholder={t('pages.hrGrades.fields.amountPlaceholder')}
                                     className="rp-form-input"
                                 />
                             </AdminFormField>

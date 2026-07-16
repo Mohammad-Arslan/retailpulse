@@ -241,6 +241,7 @@ function Index({ designations, filters, legalEntities = [], grades = [], nextCod
                                 id="name"
                                 value={form.data.name}
                                 onChange={(e) => form.setData('name', e.target.value)}
+                                placeholder={t('pages.hrDesignations.fields.namePlaceholder')}
                                 className="rp-form-input"
                                 required
                             />

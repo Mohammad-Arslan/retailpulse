@@ -18,4 +18,19 @@ final class TaxSlabPolicy
     {
         return $this->viewAny($user);
     }
+
+    public function create(User $user): bool
+    {
+        return $user->can('payroll.manage-tax-slabs');
+    }
+
+    public function update(User $user, TaxSlab $taxSlab): bool
+    {
+        return $user->can('payroll.manage-tax-slabs');
+    }
+
+    public function delete(User $user, TaxSlab $taxSlab): bool
+    {
+        return $user->can('payroll.manage-tax-slabs');
+    }
 }

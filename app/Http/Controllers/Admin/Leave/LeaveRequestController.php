@@ -117,4 +117,17 @@ final class LeaveRequestController extends Controller
 
         return back()->with('success', __('Leave Request Approved Successfully.'));
     }
+
+    public function reject(Request $request, LeaveRequest $leaveRequest): RedirectResponse
+    {
+        $this->authorize('reject', $leaveRequest);
+
+        try {
+            $this->leaveService->reject($leaveRequest, (int) $request->user()->id);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('Leave Request Rejected Successfully.'));
+    }
 }

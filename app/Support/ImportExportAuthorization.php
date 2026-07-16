@@ -35,6 +35,10 @@ final class ImportExportAuthorization
                 'import' => 'employees.import',
                 'export' => 'employees.export',
             ],
+            'employment-types' => [
+                'import' => 'hr.manage-settings',
+                'export' => 'hr.manage-settings',
+            ],
             'departments' => [
                 'import' => 'departments.import',
                 'export' => 'departments.export',

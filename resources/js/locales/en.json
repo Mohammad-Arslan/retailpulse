@@ -197,7 +197,6 @@
         "no": "No",
         "save": "Save",
         "cancel": "Cancel",
-        "back": "Back",
         "clear": "Clear",
         "download": "Download",
         "status": "Status",
@@ -469,6 +468,7 @@
             },
             "fields": {
                 "code": "Employee Code",
+                "codeAutoHint": "Generated Automatically.",
                 "name": "Name",
                 "title": "Title",
                 "firstName": "First Name",
@@ -648,6 +648,7 @@
                 "codeAutoHint": "Generated Automatically.",
                 "codeAutoPlaceholder": "Auto-Generated",
                 "name": "Name",
+                "namePlaceholder": "Enter Department Name",
                 "parent": "Parent Department",
                 "noParent": "No Parent",
                 "costCentre": "Default Cost Centre",
@@ -676,6 +677,7 @@
                 "code": "Code",
                 "codeAutoHint": "Generated Automatically.",
                 "name": "Name",
+                "namePlaceholder": "Enter Designation Name",
                 "defaultGrade": "Default Grade",
                 "noDefaultGrade": "No Default Grade"
             },
@@ -702,11 +704,14 @@
                 "code": "Code",
                 "codeAutoHint": "Generated Automatically.",
                 "name": "Name",
+                "namePlaceholder": "Enter Grade Name",
                 "rank": "Rank",
+                "rankPlaceholder": "e.g. 1",
                 "currency": "Currency",
                 "minAmount": "Minimum Amount",
                 "midAmount": "Mid Amount",
                 "maxAmount": "Maximum Amount",
+                "amountPlaceholder": "0.00",
                 "effectiveFrom": "Effective From",
                 "effectiveTo": "Effective To",
                 "enforceSalaryBand": "Enforce Salary Band"
@@ -726,13 +731,16 @@
             "indexTitle": "Employment Types",
             "indexDescription": "Configure Employment Type Catalogues Per Legal Entity Or Globally.",
             "createTitle": "New Employment Type",
+            "createSubmit": "Create Employment Type",
             "editTitle": "Edit Employment Type",
             "searchPlaceholder": "Search By Code Or Name…",
             "empty": "No Employment Types Found.",
             "globalScope": "Global (All Entities)",
             "fields": {
                 "code": "Code",
+                "codePlaceholder": "e.g. full_time",
                 "name": "Name",
+                "namePlaceholder": "Enter Employment Type Name",
                 "legalEntity": "Legal Entity",
                 "status": "Status"
             },
@@ -791,6 +799,7 @@
             "indexDescription": "Temporarily Redirect Approvals To An Acting Manager.",
             "createTitle": "New Delegation",
             "editTitle": "Edit Delegation",
+            "searchPlaceholder": "Search By Employee Name Or Code…",
             "selectEmployee": "Select Employee…",
             "allScopes": "All Scopes",
             "empty": "No Approval Delegations Found.",
@@ -829,6 +838,8 @@
             "indexDescription": "Configure Public Holidays And Calendar Assignments.",
             "createTitle": "New Holiday Calendar",
             "createSubmit": "Create Calendar",
+            "editTitle": "Edit Calendar",
+            "editSubmit": "Save Calendar",
             "searchPlaceholder": "Search By Name Or Code…",
             "empty": "No Holiday Calendars Found.",
             "datesTitle": "Holiday Dates",
@@ -840,22 +851,30 @@
             "fields": {
                 "code": "Code",
                 "codeAutoHint": "Generated Automatically.",
+                "codeReadOnlyHint": "Assigned On Create.",
                 "name": "Name",
                 "namePlaceholder": "Enter Calendar Name",
                 "date": "Date",
                 "dateName": "Holiday Name",
+                "dateNamePlaceholder": "Enter Holiday Name",
                 "holidayType": "Holiday Type",
                 "noBranch": "All Branches",
+                "noLegalEntity": "All Legal Entities",
                 "assignableType": "Assignable Type",
                 "assignable": "Assignable",
                 "effectiveFrom": "Effective From",
+                "effectiveTo": "Effective To",
                 "priority": "Priority",
+                "isPaid": "Paid Holiday",
+                "isPaidHint": "Count As Paid Time Off",
                 "isRecurring": "Recurring Pattern",
                 "isRecurringHint": "Repeat This Holiday Each Year",
                 "recurrenceMonth": "Recurrence Month",
                 "recurrenceDay": "Recurrence Day"
             },
             "recurringBadge": "Recurring",
+            "paidBadge": "Paid",
+            "unpaidBadge": "Unpaid",
             "columns": {
                 "name": "Calendar",
                 "code": "Code",
@@ -1005,6 +1024,7 @@
             "indexTitle": "Attendance Sources",
             "indexDescription": "Configured Drivers That Capture Employee Attendance.",
             "searchPlaceholder": "Search By Name Or Driver…",
+            "empty": "No Attendance Sources Found.",
             "allDrivers": "All Drivers",
             "allStatuses": "All Statuses",
             "allBranches": "All Branches",
@@ -1036,6 +1056,7 @@
             "selectBranch": "Select Branch…",
             "openRecordPlaceholder": "Optional — Leave Blank To Use Latest Open Record",
             "saveRecord": "Save Record",
+            "empty": "No Attendance Records Found.",
             "columns": {
                 "employee": "Employee",
                 "branch": "Branch",
@@ -1065,6 +1086,9 @@
         "leaveTypes": {
             "indexTitle": "Leave Types",
             "indexDescription": "Configured Leave Categories Used For Entitlements And Requests.",
+            "createTitle": "New Leave Type",
+            "createSubmit": "Create Leave Type",
+            "editTitle": "Edit Leave Type",
             "searchPlaceholder": "Search By Name Or Code…",
             "allStatuses": "All Statuses",
             "empty": "No Leave Types Found.",
@@ -1077,6 +1101,19 @@
                 "deductionComponent": "Deduction Component",
                 "status": "Status"
             },
+            "fields": {
+                "code": "Code",
+                "codePlaceholder": "e.g. ANNUAL",
+                "name": "Name",
+                "namePlaceholder": "e.g. Annual Leave",
+                "isPaid": "Paid Leave",
+                "isPaidHint": "Counts As Paid Leave",
+                "affectsPayroll": "Affects Payroll",
+                "affectsPayrollHint": "Trigger Payroll Deduction When Taken",
+                "deductionComponent": "Deduction Component Code",
+                "deductionComponentPlaceholder": "e.g. UNPAID_LEAVE",
+                "status": "Status"
+            },
             "statuses": {
                 "active": "Active",
                 "inactive": "Inactive"
@@ -1085,6 +1122,9 @@
         "leavePolicies": {
             "indexTitle": "Leave Policies",
             "indexDescription": "Accrual Rules And Day-Count Settings Per Leave Type And Legal Entity.",
+            "createTitle": "New Leave Policy",
+            "editTitle": "Edit Leave Policy",
+            "createSubmit": "Create Policy",
             "allStatuses": "All Statuses",
             "scopeDefault": "Default (All Entities)",
             "empty": "No Leave Policies Found.",
@@ -1092,8 +1132,30 @@
                 "leaveType": "Leave Type",
                 "legalEntity": "Legal Entity",
                 "accrualMethod": "Accrual Method",
+                "accrualRate": "Accrual Rate",
                 "excludePublicHolidays": "Exclude Public Holidays",
                 "effectiveFrom": "Effective From",
+                "status": "Status"
+            },
+            "fields": {
+                "leaveType": "Leave Type",
+                "selectLeaveType": "Select Leave Type…",
+                "legalEntity": "Legal Entity",
+                "accrualMethod": "Accrual Method",
+                "accrualRate": "Accrual Rate",
+                "accrualRatePlaceholder": "e.g. 1.25",
+                "maxBalance": "Max Balance",
+                "maxBalancePlaceholder": "Optional Cap",
+                "carryForwardLimit": "Carry Forward Limit",
+                "carryForwardLimitPlaceholder": "Optional Days",
+                "carryForwardExpiryMonths": "Carry Forward Expiry (Months)",
+                "carryForwardExpiryMonthsPlaceholder": "e.g. 3",
+                "prorationOnJoin": "Proration On Join",
+                "prorationOnJoinHint": "Prorate Accrual When An Employee Joins Mid-Period",
+                "excludePublicHolidays": "Exclude Public Holidays",
+                "excludePublicHolidaysHint": "Do Not Count Public Holidays In Leave Day Totals",
+                "effectiveFrom": "Effective From",
+                "effectiveTo": "Effective To",
                 "status": "Status"
             },
             "accrualMethods": {
@@ -1117,6 +1179,9 @@
             "selectLeaveType": "Select Leave Type…",
             "submitRequest": "Submit Request",
             "approve": "Approve",
+            "reject": "Reject",
+            "empty": "No Leave Requests Found.",
+            "reasonPlaceholder": "Optional — Note For Approvers…",
             "columns": {
                 "employee": "Employee",
                 "leaveType": "Leave Type",
@@ -1141,6 +1206,10 @@
         "overtimePolicies": {
             "indexTitle": "Overtime Policies",
             "indexDescription": "Configured Thresholds And Multipliers For Overtime Calculation.",
+            "createTitle": "New Overtime Policy",
+            "editTitle": "Edit Overtime Policy",
+            "createSubmit": "Create Policy",
+            "empty": "No Overtime Policies Found.",
             "allStatuses": "All Statuses",
             "columns": {
                 "scope": "Scope",
@@ -1162,6 +1231,22 @@
                 "weekend": "Weekend",
                 "rest_day": "Rest Day",
                 "public_holiday": "Public Holiday"
+            },
+            "fields": {
+                "legalEntity": "Legal Entity",
+                "noLegalEntity": "All Legal Entities",
+                "branch": "Branch",
+                "noBranch": "All Branches",
+                "dailyThreshold": "Daily Threshold (Minutes)",
+                "weeklyThreshold": "Weekly Threshold (Minutes)",
+                "effectiveFrom": "Effective From",
+                "effectiveTo": "Effective To",
+                "priority": "Priority",
+                "restDayApplies": "Rest Day Applies",
+                "restDayAppliesHint": "Use Rest Day Multiplier On Rest Days",
+                "publicHolidayApplies": "Public Holiday Applies",
+                "publicHolidayAppliesHint": "Use Public Holiday Multiplier On Public Holidays",
+                "multipliers": "Day Type Multipliers"
             }
         },
         "overtimeRecords": {
@@ -1170,6 +1255,8 @@
             "searchPlaceholder": "Search By Employee Name Or Code…",
             "allStatuses": "All Statuses",
             "approve": "Approve",
+            "reject": "Reject",
+            "empty": "No Overtime Records Found.",
             "columns": {
                 "employee": "Employee",
                 "date": "Date",
@@ -1189,9 +1276,34 @@
         "payComponents": {
             "indexTitle": "Pay Components",
             "indexDescription": "Configure Earnings, Deductions, And Contributions For Payroll Calculation.",
+            "createTitle": "New Pay Component",
+            "createSubmit": "Create Component",
+            "editTitle": "Edit Pay Component",
             "searchPlaceholder": "Search By Code Or Name…",
+            "empty": "No Pay Components Found.",
+            "confirmDelete": "Delete Pay Component {{name}}?",
             "allTypes": "All Types",
             "allStatuses": "All Statuses",
+            "fields": {
+                "code": "Code",
+                "codePlaceholder": "e.g. BASIC",
+                "name": "Name",
+                "namePlaceholder": "Enter Component Name",
+                "type": "Type",
+                "calculationType": "Calculation Type",
+                "basisComponent": "Basis Component",
+                "noBasis": "No Basis",
+                "rate": "Rate (%)",
+                "ratePlaceholder": "0.00",
+                "accountMappingKey": "Account Mapping Key",
+                "accountMappingKeyPlaceholder": "e.g. payroll_basic",
+                "legalEntity": "Legal Entity",
+                "noLegalEntity": "All Legal Entities",
+                "effectiveFrom": "Effective From",
+                "effectiveTo": "Effective To",
+                "taxable": "Taxable",
+                "taxableHint": "Include In Taxable Earnings"
+            },
             "columns": {
                 "code": "Code",
                 "type": "Type",
@@ -1222,6 +1334,11 @@
         "taxSlabs": {
             "indexTitle": "Tax Slabs",
             "indexDescription": "Progressive Income Tax Slab Configuration By Legal Entity.",
+            "createTitle": "New Tax Slab",
+            "editTitle": "Edit Tax Slab",
+            "createSubmit": "Create Tax Slab",
+            "empty": "No Tax Slabs Found.",
+            "confirmDelete": "Delete This Tax Slab? This Cannot Be Undone.",
             "allEntities": "All Entities",
             "allStatuses": "All Statuses",
             "columns": {
@@ -1236,11 +1353,26 @@
             "statuses": {
                 "active": "Active",
                 "inactive": "Inactive"
+            },
+            "fields": {
+                "legalEntity": "Legal Entity",
+                "selectLegalEntity": "Select Legal Entity…",
+                "effectiveFrom": "Effective From",
+                "effectiveTo": "Effective To",
+                "lowerBound": "Lower Bound",
+                "upperBound": "Upper Bound",
+                "upperBoundPlaceholder": "Leave Blank For No Upper Limit",
+                "fixedAmount": "Fixed Amount",
+                "marginalRate": "Marginal Rate (%)"
             }
         },
         "statutorySchemes": {
             "indexTitle": "Statutory Schemes",
             "indexDescription": "Employee And Employer Contribution Schemes (EOBI, GPSSA, Etc.).",
+            "createTitle": "New Statutory Scheme",
+            "editTitle": "Edit Statutory Scheme",
+            "createSubmit": "Create Scheme",
+            "empty": "No Statutory Schemes Found.",
             "allEntities": "All Entities",
             "allStatuses": "All Statuses",
             "employeeRate": "Employee Rate",
@@ -1259,6 +1391,26 @@
             "statuses": {
                 "active": "Active",
                 "inactive": "Inactive"
+            },
+            "calculationTypes": {
+                "percentage_of_wage": "Percentage Of Wage"
+            },
+            "fields": {
+                "code": "Code",
+                "codePlaceholder": "EOBI",
+                "name": "Name",
+                "namePlaceholder": "Employees Old-Age Benefits",
+                "legalEntity": "Legal Entity",
+                "selectLegalEntity": "Select Legal Entity…",
+                "calculationType": "Calculation Type",
+                "employeeRate": "Employee Rate (%)",
+                "employerRate": "Employer Rate (%)",
+                "wageCeiling": "Wage Ceiling",
+                "employeeMappingKey": "Employee Mapping Key",
+                "employerMappingKey": "Employer Mapping Key",
+                "mappingKeyPlaceholder": "statutory_payable_eobi",
+                "effectiveFrom": "Effective From",
+                "effectiveTo": "Effective To"
             }
         },
         "payrollRuns": {
@@ -2347,9 +2499,9 @@
             },
             "actions": {
                 "add": "Add",
-        "save": "Save",
-        "submit": "Submit",
-        "cancel": "Cancel",
+                "save": "Save",
+                "submit": "Submit",
+                "cancel": "Cancel",
                 "delete": "Delete",
                 "edit": "Edit",
                 "activate": "Activate",

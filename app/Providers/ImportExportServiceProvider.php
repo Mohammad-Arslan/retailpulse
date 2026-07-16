@@ -18,6 +18,8 @@ use App\Services\ImportExport\Handlers\DesignationExportHandler;
 use App\Services\ImportExport\Handlers\DesignationImportHandler;
 use App\Services\ImportExport\Handlers\EmployeeExportHandler;
 use App\Services\ImportExport\Handlers\EmployeeImportHandler;
+use App\Services\ImportExport\Handlers\EmploymentTypeExportHandler;
+use App\Services\ImportExport\Handlers\EmploymentTypeImportHandler;
 use App\Services\ImportExport\Handlers\GradeExportHandler;
 use App\Services\ImportExport\Handlers\GradeImportHandler;
 use App\Services\ImportExport\Handlers\HolidayCalendarExportHandler;
@@ -61,6 +63,7 @@ final class ImportExportServiceProvider extends ServiceProvider
         ImportExportRegistry::register('products', ProductImportHandler::class, ProductExportHandler::class);
         ImportExportRegistry::register('customers', CustomerImportHandler::class, CustomerExportHandler::class);
         ImportExportRegistry::register('employees', EmployeeImportHandler::class, EmployeeExportHandler::class);
+        ImportExportRegistry::register('employment-types', EmploymentTypeImportHandler::class, EmploymentTypeExportHandler::class);
         ImportExportRegistry::register('departments', DepartmentImportHandler::class, DepartmentExportHandler::class);
         ImportExportRegistry::register('designations', DesignationImportHandler::class, DesignationExportHandler::class);
         ImportExportRegistry::register('grades', GradeImportHandler::class, GradeExportHandler::class);

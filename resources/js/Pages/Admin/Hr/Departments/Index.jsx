@@ -253,6 +253,7 @@ function Index({ departments, filters, legalEntities = [], parentOptions = [], c
                                 id="name"
                                 value={form.data.name}
                                 onChange={(e) => form.setData('name', e.target.value)}
+                                placeholder={t('pages.hrDepartments.fields.namePlaceholder')}
                                 className="rp-form-input"
                                 required
                             />

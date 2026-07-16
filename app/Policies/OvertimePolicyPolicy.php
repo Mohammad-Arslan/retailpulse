@@ -18,4 +18,14 @@ final class OvertimePolicyPolicy
     {
         return $this->viewAny($user);
     }
+
+    public function create(User $user): bool
+    {
+        return $user->can('overtime.manage-policies');
+    }
+
+    public function update(User $user, OvertimePolicy $overtimePolicy): bool
+    {
+        return $user->can('overtime.manage-policies');
+    }
 }

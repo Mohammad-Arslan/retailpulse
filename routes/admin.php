@@ -45,6 +45,7 @@ use App\Http\Controllers\Admin\Payroll\TaxSlabController;
 use App\Http\Controllers\Admin\SelfService\EmployeeSelfServiceController;
 use App\Http\Controllers\Admin\Expense\RecurringExpenseScheduleController;
 use App\Http\Controllers\Admin\FixedAssetController;
+use App\Http\Controllers\Admin\GoodsReceivingNoteController;
 use App\Http\Controllers\Admin\Hr\ApprovalDelegationController;
 use App\Http\Controllers\Admin\Hr\DepartmentController;
 use App\Http\Controllers\Admin\Hr\DesignationController;
@@ -52,6 +53,7 @@ use App\Http\Controllers\Admin\Hr\EmployeeController;
 use App\Http\Controllers\Admin\Hr\GradeController;
 use App\Http\Controllers\Admin\Hr\HolidayCalendarController;
 use App\Http\Controllers\Admin\Hr\OrgChartController;
+use App\Http\Controllers\Admin\Hr\HrEmploymentTypeController;
 use App\Http\Controllers\Admin\Hr\HrModulesController;
 use App\Http\Controllers\Admin\Hr\HrEntitySettingsController;
 use App\Http\Controllers\Admin\InventoryController;
@@ -177,18 +179,25 @@ Route::middleware(['auth', 'admin', 'branch.context'])
 
         Route::middleware(['hr-module:leave'])->prefix('leave')->name('leave.')->group(function () {
             Route::get('types', [LeaveTypeController::class, 'index'])->name('types.index');
+            Route::post('types', [LeaveTypeController::class, 'store'])->name('types.store');
+            Route::put('types/{leave_type}', [LeaveTypeController::class, 'update'])->name('types.update');
             Route::get('policies', [LeavePolicyController::class, 'index'])->name('policies.index');
+            Route::post('policies', [LeavePolicyController::class, 'store'])->name('policies.store');
             Route::put('policies/{policy}', [LeavePolicyController::class, 'update'])->name('policies.update');
             Route::get('requests', [LeaveRequestController::class, 'index'])->name('requests.index');
             Route::get('requests/create', [LeaveRequestController::class, 'create'])->name('requests.create');
             Route::post('requests', [LeaveRequestController::class, 'store'])->name('requests.store');
             Route::post('requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('requests.approve');
+            Route::post('requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('requests.reject');
         });
 
         Route::middleware(['hr-module:overtime'])->prefix('overtime')->name('overtime.')->group(function () {
             Route::get('policies', [OvertimePolicyController::class, 'index'])->name('policies.index');
+            Route::post('policies', [OvertimePolicyController::class, 'store'])->name('policies.store');
+            Route::put('policies/{overtime_policy}', [OvertimePolicyController::class, 'update'])->name('policies.update');
             Route::get('records', [OvertimeRecordController::class, 'index'])->name('records.index');
             Route::post('records/{overtimeRecord}/approve', [OvertimeRecordController::class, 'approve'])->name('records.approve');
+            Route::post('records/{overtimeRecord}/reject', [OvertimeRecordController::class, 'reject'])->name('records.reject');
         });
 
         Route::middleware(['hr-module:payroll'])->prefix('payroll')->name('payroll.')->group(function () {
@@ -198,8 +207,13 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::delete('pay-components/{pay_component}', [PayComponentController::class, 'destroy'])->name('pay-components.destroy');
 
             Route::get('tax-slabs', [TaxSlabController::class, 'index'])->name('tax-slabs.index');
+            Route::post('tax-slabs', [TaxSlabController::class, 'store'])->name('tax-slabs.store');
+            Route::put('tax-slabs/{tax_slab}', [TaxSlabController::class, 'update'])->name('tax-slabs.update');
+            Route::delete('tax-slabs/{tax_slab}', [TaxSlabController::class, 'destroy'])->name('tax-slabs.destroy');
 
             Route::get('statutory-schemes', [StatutorySchemeController::class, 'index'])->name('statutory-schemes.index');
+            Route::post('statutory-schemes', [StatutorySchemeController::class, 'store'])->name('statutory-schemes.store');
+            Route::put('statutory-schemes/{statutory_scheme}', [StatutorySchemeController::class, 'update'])->name('statutory-schemes.update');
 
             Route::get('runs', [PayrollRunController::class, 'index'])->name('runs.index');
             Route::post('runs', [PayrollRunController::class, 'store'])->name('runs.store');

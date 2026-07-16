@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Payroll;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Payroll\StoreStatutorySchemeRequest;
+use App\Http\Requests\Admin\Payroll\UpdateStatutorySchemeRequest;
 use App\Models\OrganizationEntity;
 use App\Models\StatutoryScheme;
 use App\Support\ListPagination;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -29,7 +32,7 @@ final class StatutorySchemeController extends Controller
 
         $schemes = $query->paginate($perPage)->withQueryString();
 
-        $entities = OrganizationEntity::query()
+        $legalEntities = OrganizationEntity::query()
             ->where('status', 'active')
             ->orderBy('legal_name')
             ->get(['id', 'legal_name']);
@@ -39,6 +42,7 @@ final class StatutorySchemeController extends Controller
                 'id' => $scheme->id,
                 'code' => $scheme->code,
                 'name' => $scheme->name,
+                'legal_entity_id' => $scheme->legal_entity_id,
                 'legal_entity' => $scheme->legalEntity?->legal_name,
                 'calculation_type' => $scheme->calculation_type,
                 'employee_rate' => (string) $scheme->employee_rate,
@@ -50,8 +54,26 @@ final class StatutorySchemeController extends Controller
                 'effective_to' => $scheme->effective_to?->toDateString(),
                 'status' => $scheme->status,
             ]),
-            'entities' => $entities->map(fn ($e) => ['id' => $e->id, 'name' => $e->legal_name]),
+            'legalEntities' => $legalEntities,
             'filters' => $filters,
         ]);
+    }
+
+    public function store(StoreStatutorySchemeRequest $request): RedirectResponse
+    {
+        $this->authorize('create', StatutoryScheme::class);
+
+        StatutoryScheme::query()->create($request->validated());
+
+        return back()->with('success', __('Statutory Scheme Created Successfully.'));
+    }
+
+    public function update(UpdateStatutorySchemeRequest $request, StatutoryScheme $statutoryScheme): RedirectResponse
+    {
+        $this->authorize('update', $statutoryScheme);
+
+        $statutoryScheme->update($request->validated());
+
+        return back()->with('success', __('Statutory Scheme Updated Successfully.'));
     }
 }

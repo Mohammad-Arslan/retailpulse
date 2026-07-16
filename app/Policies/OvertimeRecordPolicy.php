@@ -23,4 +23,9 @@ final class OvertimeRecordPolicy
     {
         return $user->can('overtime.approve');
     }
+
+    public function reject(User $user, OvertimeRecord $overtimeRecord): bool
+    {
+        return $user->can('overtime.approve');
+    }
 }

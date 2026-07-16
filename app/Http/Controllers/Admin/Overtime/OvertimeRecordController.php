@@ -76,4 +76,19 @@ final class OvertimeRecordController extends Controller
 
         return back()->with('success', __('Overtime Record Approved Successfully.'));
     }
+
+    public function reject(Request $request, OvertimeRecord $overtimeRecord): RedirectResponse
+    {
+        $this->authorize('reject', $overtimeRecord);
+
+        try {
+            $this->overtimeEngine->rejectRecord($overtimeRecord, (int) $request->user()->id);
+        } catch (ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first());
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('Overtime Record Rejected Successfully.'));
+    }
 }

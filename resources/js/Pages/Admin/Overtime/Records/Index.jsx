@@ -36,6 +36,10 @@ function Index({ records, filters }) {
         router.post(route('admin.overtime.records.approve', id));
     };
 
+    const reject = (id) => {
+        router.post(route('admin.overtime.records.reject', id));
+    };
+
     const columns = useMemo(
         () => [
             {
@@ -103,13 +107,22 @@ function Index({ records, filters }) {
                 header: t('common.actions'),
                 cell: ({ row }) =>
                     row.original.status === 'pending' && can('overtime.approve') ? (
-                        <button
-                            type="button"
-                            onClick={() => approve(row.original.id)}
-                            className="rp-btn-outline text-sm"
-                        >
-                            {t('pages.overtimeRecords.approve')}
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                onClick={() => approve(row.original.id)}
+                                className="rp-btn-outline text-sm"
+                            >
+                                {t('pages.overtimeRecords.approve')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => reject(row.original.id)}
+                                className="rp-btn-outline text-sm"
+                            >
+                                {t('pages.overtimeRecords.reject')}
+                            </button>
+                        </div>
                     ) : (
                         '—'
                     ),
@@ -147,7 +160,12 @@ function Index({ records, filters }) {
                 </Button>
             </form>
 
-            <DataTable columns={columns} data={records.data ?? []} pagination={records} />
+            <DataTable
+                columns={columns}
+                data={records.data ?? []}
+                pagination={records}
+                emptyMessage={t('pages.overtimeRecords.empty')}
+            />
         </>
     );
 }

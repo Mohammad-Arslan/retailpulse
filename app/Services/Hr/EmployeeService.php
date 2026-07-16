@@ -88,7 +88,10 @@ final class EmployeeService
      */
     public function createPayload(): array
     {
-        return $this->formOptions();
+        return [
+            ...$this->formOptions(),
+            'nextCode' => $this->documentNumbers->peek('employee', 'EMP'),
+        ];
     }
 
     /**

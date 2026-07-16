@@ -7,7 +7,7 @@ import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Plus, UserCheck } from 'lucide-react';
+import { Plus, Search, UserCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -167,6 +167,15 @@ function Index({ delegations, filters, employees = [], scopes = [] }) {
             </PageHeader>
 
             <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">
+                <div className="rp-search-inset min-w-[200px] flex-1">
+                    <Search className="h-3.5 w-3.5 shrink-0 text-rp-text-muted" />
+                    <input
+                        name="search"
+                        defaultValue={filters.search ?? ''}
+                        placeholder={t('pages.hrDelegations.searchPlaceholder')}
+                        className="rp-search-input"
+                    />
+                </div>
                 <Select name="status" defaultValue={filters.status ?? ''} className="w-auto min-w-[10rem]" options={statusOptions} />
                 <Select
                     name="scope"
@@ -175,7 +184,7 @@ function Index({ delegations, filters, employees = [], scopes = [] }) {
                     options={[{ value: '', label: t('pages.hrDelegations.allScopes') }, ...scopeOptions]}
                 />
                 <Button type="submit" variant="outline">
-                    {t('common.apply')}
+                    {t('common.search')}
                 </Button>
             </form>
 

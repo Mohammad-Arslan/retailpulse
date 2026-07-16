@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Payroll;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Payroll\StoreTaxSlabRequest;
+use App\Http\Requests\Admin\Payroll\UpdateTaxSlabRequest;
 use App\Models\OrganizationEntity;
 use App\Models\TaxSlab;
 use App\Support\ListPagination;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -30,7 +33,7 @@ final class TaxSlabController extends Controller
 
         $slabs = $query->paginate($perPage)->withQueryString();
 
-        $entities = OrganizationEntity::query()
+        $legalEntities = OrganizationEntity::query()
             ->where('status', 'active')
             ->orderBy('legal_name')
             ->get(['id', 'legal_name']);
@@ -48,8 +51,35 @@ final class TaxSlabController extends Controller
                 'marginal_rate' => (string) $slab->marginal_rate,
                 'status' => $slab->status,
             ]),
-            'entities' => $entities->map(fn ($e) => ['id' => $e->id, 'name' => $e->legal_name]),
+            'legalEntities' => $legalEntities,
             'filters' => $filters,
         ]);
+    }
+
+    public function store(StoreTaxSlabRequest $request): RedirectResponse
+    {
+        $this->authorize('create', TaxSlab::class);
+
+        TaxSlab::query()->create($request->validated());
+
+        return back()->with('success', __('Tax Slab Created Successfully.'));
+    }
+
+    public function update(UpdateTaxSlabRequest $request, TaxSlab $taxSlab): RedirectResponse
+    {
+        $this->authorize('update', $taxSlab);
+
+        $taxSlab->update($request->validated());
+
+        return back()->with('success', __('Tax Slab Updated Successfully.'));
+    }
+
+    public function destroy(Request $request, TaxSlab $taxSlab): RedirectResponse
+    {
+        $this->authorize('delete', $taxSlab);
+
+        $taxSlab->delete();
+
+        return back()->with('success', __('Tax Slab Deleted Successfully.'));
     }
 }

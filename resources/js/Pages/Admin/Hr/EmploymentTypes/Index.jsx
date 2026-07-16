@@ -1,6 +1,8 @@
 import AdminFormField from '@/Components/common/AdminFormField';
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import ImportExportToolbar from '@/Components/import-export/ImportExportToolbar';
+import { useImportJobsTray } from '@/Components/import-export/ImportJobsTray';
 import Modal from '@/Components/Modal';
 import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
@@ -23,6 +25,7 @@ function emptyForm() {
 function Index({ employmentTypes, filters, legalEntities = [] }) {
     const can = useCan();
     const { t } = useTranslation();
+    const { trackJob } = useImportJobsTray();
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState(null);
     const form = useForm(emptyForm());
@@ -151,12 +154,25 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
                 title={t('pages.hrEmploymentTypes.indexTitle')}
                 description={t('pages.hrEmploymentTypes.indexDescription')}
             >
-                {can('hr.manage-settings') && (
-                    <Button variant="brand" onClick={openCreate}>
-                        <Plus className="h-4 w-4" />
-                        {t('pages.hrEmploymentTypes.createTitle')}
-                    </Button>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                    <ImportExportToolbar
+                        entityType="employment-types"
+                        entityLabel={t('pages.hrEmploymentTypes.indexTitle')}
+                        exportOptions={{
+                            filters: {
+                                search: filters.search ?? undefined,
+                                status: filters.status ?? undefined,
+                            },
+                        }}
+                        onJobStarted={trackJob}
+                    />
+                    {can('hr.manage-settings') && (
+                        <Button variant="brand" onClick={openCreate}>
+                            <Plus className="h-4 w-4" />
+                            {t('pages.hrEmploymentTypes.createTitle')}
+                        </Button>
+                    )}
+                </div>
             </PageHeader>
 
             <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">
@@ -201,6 +217,7 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
                             value={form.data.code}
                             onChange={(e) => form.setData('code', e.target.value.toLowerCase())}
                             disabled={!!editing}
+                            placeholder={t('pages.hrEmploymentTypes.fields.codePlaceholder')}
                         />
                     </AdminFormField>
                     <AdminFormField label={t('pages.hrEmploymentTypes.fields.name')} error={form.errors.name} required>
@@ -208,6 +225,7 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
                             className="rp-form-input w-full"
                             value={form.data.name}
                             onChange={(e) => form.setData('name', e.target.value)}
+                            placeholder={t('pages.hrEmploymentTypes.fields.namePlaceholder')}
                         />
                     </AdminFormField>
                     <AdminFormField label={t('pages.hrEmploymentTypes.fields.status')} error={form.errors.status}>
@@ -222,7 +240,9 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
                             {t('confirm.cancel')}
                         </Button>
                         <Button type="submit" variant="brand" disabled={form.processing}>
-                            {t('common.save')}
+                            {editing
+                                ? t('common.save')
+                                : t('pages.hrEmploymentTypes.createSubmit')}
                         </Button>
                     </div>
                 </form>
