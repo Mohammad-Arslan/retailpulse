@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Hr;
 
 use App\DTOs\Hr\CreateEmployeeData;
+use App\DTOs\Hr\TerminateEmployeeData;
 use App\DTOs\Hr\UpdateEmployeeData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Hr\StoreEmployeeRequest;
+use App\Http\Requests\Admin\Hr\TerminateEmployeeRequest;
 use App\Http\Requests\Admin\Hr\UpdateEmployeeRequest;
 use App\Models\Employee;
 use App\Models\Image;
 use App\Services\Hr\EmployeeService;
 use App\Services\ImageService;
 use App\Support\ListPagination;
+use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -87,6 +90,32 @@ final class EmployeeController extends Controller
         return redirect()
             ->route('admin.hr.employees.edit', ['employee' => $employee, 'tab' => $tab])
             ->with('success', __('Employee Updated Successfully.'));
+    }
+
+    public function terminate(TerminateEmployeeRequest $request, Employee $employee): RedirectResponse
+    {
+        $this->authorize('terminate', $employee);
+
+        try {
+            $this->employees->terminate($employee, TerminateEmployeeData::fromRequest($request));
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('Employee Terminated Successfully.'));
+    }
+
+    public function reactivate(Employee $employee): RedirectResponse
+    {
+        $this->authorize('reactivate', $employee);
+
+        try {
+            $this->employees->reactivate($employee);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('Employee Reactivated Successfully.'));
     }
 
     public function destroyImage(Employee $employee, Image $image): RedirectResponse

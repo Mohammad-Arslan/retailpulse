@@ -30,7 +30,7 @@ Define who reports to whom for leave/expense/overtime/appraisal approvals and or
 | P12-RH-FR-001 | Implemented | Each employee may have a `reporting_manager_employee_id` (direct manager). |
 | P12-RH-FR-002 | Implemented | Manager assignment shall be effective-dated; concurrent history stored. |
 | P12-RH-FR-003 | Implemented | Hierarchy shall prevent cycles (employee cannot report to self or descendant). |
-| P12-RH-FR-004 | Partial | Approval policies may resolve approver as: direct_manager | department_head | role | named_user | workflow (Phase 29). MVP: `direct_manager` + `department_head` in `ApprovalApproverResolver`; workflow stub. |
+| P12-RH-FR-004 | Partial | Approval policies may resolve approver as: direct_manager | department_head | role | named_user | workflow (Phase 29). `direct_manager` and `department_head` are implemented in `ApprovalApproverResolver`; `department_head` resolves the employee's own department's configured `head_employee_id` (see [departments.md](./departments.md)), falling back up the parent-department chain when a department has no head assigned. `role` / `named_user` / `workflow` remain stubs. |
 | P12-RH-FR-005 | Implemented | Org chart API/UI shall return tree from a root or whole entity. |
 | P12-RH-FR-006 | Implemented | Temporary delegation (acting manager) with date range shall be supported for approvals. |
 | P12-RH-FR-007 | Implemented | Hierarchy import supported (employee_code → manager_employee_code). |

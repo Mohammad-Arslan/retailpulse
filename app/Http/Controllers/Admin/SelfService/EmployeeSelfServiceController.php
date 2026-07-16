@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin\SelfService;
 use App\Http\Controllers\Controller;
 use App\Models\Payslip;
 use App\Services\Payroll\EmployeeSelfServiceService;
+use App\Support\ListPagination;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -23,10 +24,11 @@ final class EmployeeSelfServiceController extends Controller
         $this->authorize('viewOwn', Payslip::class);
 
         $user = request()->user();
-        $payslips = $this->selfService->listOwnPayslips($user);
+        $perPage = ListPagination::resolve(request()->input('per_page'));
+        $payslips = $this->selfService->listOwnPayslips($user, $perPage);
 
         return Inertia::render('Admin/SelfService/Payslips/Index', [
-            'payslips' => $payslips->map(fn (Payslip $payslip) => [
+            'payslips' => $payslips->through(fn (Payslip $payslip) => [
                 'id' => $payslip->id,
                 'payslip_number' => $payslip->payslip_number,
                 'payroll_number' => $payslip->payrollItem?->payrollRun?->payroll_number,

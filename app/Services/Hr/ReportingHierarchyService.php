@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Hr;
 
+use App\Events\EmployeeManagerChanged;
 use App\Models\ApprovalDelegation;
 use App\Models\Employee;
 use App\Models\EmployeeManagerHistory;
@@ -91,6 +92,8 @@ final class ReportingHierarchyService
             'effective_from' => $today,
             'changed_by' => $changedByUserId,
         ]);
+
+        event(new EmployeeManagerChanged($employee, $newManagerId));
     }
 
     /**

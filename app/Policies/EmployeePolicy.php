@@ -28,4 +28,14 @@ final class EmployeePolicy
     {
         return $user->can('hr.manage-employees');
     }
+
+    public function terminate(User $user, Employee $employee): bool
+    {
+        return $user->can('hr.manage-employees');
+    }
+
+    public function reactivate(User $user, Employee $employee): bool
+    {
+        return $user->can('hr.manage-employees');
+    }
 }

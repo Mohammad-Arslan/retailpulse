@@ -12,6 +12,7 @@ final readonly class CreateDepartmentData
         public int $legalEntityId,
         public string $name,
         public ?int $parentId,
+        public ?int $headEmployeeId,
         public ?int $costCentreId,
         public string $status,
     ) {}
@@ -24,6 +25,7 @@ final readonly class CreateDepartmentData
             legalEntityId: (int) $validated['legal_entity_id'],
             name: (string) $validated['name'],
             parentId: isset($validated['parent_id']) ? (int) $validated['parent_id'] : null,
+            headEmployeeId: isset($validated['head_employee_id']) ? (int) $validated['head_employee_id'] : null,
             costCentreId: isset($validated['cost_centre_id']) ? (int) $validated['cost_centre_id'] : null,
             status: (string) ($validated['status'] ?? 'active'),
         );
@@ -38,6 +40,7 @@ final readonly class CreateDepartmentData
             'legal_entity_id' => $this->legalEntityId,
             'name' => $this->name,
             'parent_id' => $this->parentId,
+            'head_employee_id' => $this->headEmployeeId,
             'cost_centre_id' => $this->costCentreId,
             'status' => $this->status,
         ];

@@ -67,7 +67,12 @@ function Index({ payslips }) {
                 title={t('pages.selfServicePayslips.indexTitle')}
                 description={t('pages.selfServicePayslips.indexDescription')}
             />
-            <DataTable columns={columns} data={payslips ?? []} />
+            <DataTable
+                columns={columns}
+                data={payslips.data ?? []}
+                pagination={payslips}
+                indexRoute="admin.self-service.payslips.index"
+            />
         </>
     );
 }

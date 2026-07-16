@@ -1,3 +1,4 @@
+import EmployeeTerminationActions from '@/Components/admin/hr/EmployeeTerminationActions';
 import PageHeader from '@/Components/common/PageHeader';
 import { Button } from '@/Components/ui/button';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
@@ -36,6 +37,7 @@ function Show(props) {
                     <Button type="button" variant="outline" asChild>
                         <Link href={route('admin.hr.employees.index')}>{t('common.back')}</Link>
                     </Button>
+                    <EmployeeTerminationActions employee={employee} />
                     {can('hr.manage-employees') && (
                         <Button variant="brand" asChild>
                             <Link

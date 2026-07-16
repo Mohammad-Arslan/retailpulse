@@ -20,12 +20,21 @@ function emptyForm(legalEntities = [], nextCode = '') {
         code: nextCode ?? '',
         name: '',
         parent_id: '',
+        head_employee_id: '',
         cost_centre_id: '',
         status: 'active',
     };
 }
 
-function Index({ departments, filters, legalEntities = [], parentOptions = [], costCentres = [], nextCode = '' }) {
+function Index({
+    departments,
+    filters,
+    legalEntities = [],
+    parentOptions = [],
+    costCentres = [],
+    employees = [],
+    nextCode = '',
+}) {
     const can = useCan();
     const { t } = useTranslation();
     const { trackJob } = useImportJobsTray();
@@ -68,6 +77,17 @@ function Index({ departments, filters, legalEntities = [], parentOptions = [], c
         [costCentres, t],
     );
 
+    const headEmployeeOptions = useMemo(
+        () => [
+            { value: '', label: t('pages.hrDepartments.fields.noHead') },
+            ...employees.map((e) => ({
+                value: String(e.id),
+                label: `${e.first_name} ${e.last_name ?? ''}`.trim() + (e.employee_code ? ` (${e.employee_code})` : ''),
+            })),
+        ],
+        [employees, t],
+    );
+
     const formStatusOptions = useMemo(
         () => [
             { value: 'active', label: t('pages.hrDepartments.statuses.active') },
@@ -91,6 +111,7 @@ function Index({ departments, filters, legalEntities = [], parentOptions = [], c
             code: row.code ?? '',
             name: row.name ?? '',
             parent_id: row.parent_id ? String(row.parent_id) : '',
+            head_employee_id: row.head_employee_id ? String(row.head_employee_id) : '',
             cost_centre_id: row.cost_centre_id ? String(row.cost_centre_id) : '',
             status: row.status ?? 'active',
         });
@@ -149,6 +170,11 @@ function Index({ departments, filters, legalEntities = [], parentOptions = [], c
                 id: 'parent',
                 header: t('pages.hrDepartments.columns.parent'),
                 cell: ({ row }) => row.original.parent_name ?? '—',
+            },
+            {
+                id: 'head',
+                header: t('pages.hrDepartments.columns.head'),
+                cell: ({ row }) => row.original.head_employee_name ?? '—',
             },
             {
                 id: 'status',
@@ -281,6 +307,19 @@ function Index({ departments, filters, legalEntities = [], parentOptions = [], c
                                 value={form.data.cost_centre_id}
                                 onChange={(value) => form.setData('cost_centre_id', value ?? '')}
                                 options={costCentreOptions}
+                                isClearable
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.hrDepartments.fields.head')}
+                            id="head_employee_id"
+                            error={form.errors.head_employee_id}
+                        >
+                            <Select
+                                id="head_employee_id"
+                                value={form.data.head_employee_id}
+                                onChange={(value) => form.setData('head_employee_id', value ?? '')}
+                                options={headEmployeeOptions}
                                 isClearable
                             />
                         </AdminFormField>

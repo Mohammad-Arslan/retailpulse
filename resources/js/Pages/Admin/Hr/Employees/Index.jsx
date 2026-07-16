@@ -135,12 +135,6 @@ function Index({ employees, filters, branches = [] }) {
                         exportOptions={{ filters: exportFilters }}
                         onJobStarted={trackJob}
                     />
-                    <ImportExportToolbar
-                        entityType="reporting-hierarchy"
-                        entityLabel={t('pages.reportingHierarchy.importLabel')}
-                        exportOptions={{ filters: exportFilters }}
-                        onJobStarted={trackJob}
-                    />
                     {can('hr.manage-employees') && (
                         <Button variant="brand" asChild>
                             <Link href={route('admin.hr.employees.create')} className="inline-flex items-center gap-2">

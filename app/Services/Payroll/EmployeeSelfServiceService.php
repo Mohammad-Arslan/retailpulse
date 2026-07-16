@@ -39,9 +39,9 @@ final class EmployeeSelfServiceService
     }
 
     /**
-     * @return Collection<int, Payslip>
+     * @return LengthAwarePaginator<int, Payslip>
      */
-    public function listOwnPayslips(User $user): Collection
+    public function listOwnPayslips(User $user, int $perPage = 15): LengthAwarePaginator
     {
         $employee = $this->resolveEmployeeForUser($user);
 
@@ -51,7 +51,7 @@ final class EmployeeSelfServiceService
                 'payrollItem.payrollRun:id,payroll_number,period_start,period_end,currency_code,status',
             ])
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate($perPage);
     }
 
     /**

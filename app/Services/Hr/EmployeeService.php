@@ -6,16 +6,18 @@ namespace App\Services\Hr;
 
 use App\DTOs\Hr\CreateEmployeeData;
 use App\DTOs\Hr\CreateHolidayCalendarAssignmentData;
+use App\DTOs\Hr\TerminateEmployeeData;
 use App\DTOs\Hr\UpdateEmployeeData;
+use App\Events\EmployeeCreated;
+use App\Events\EmployeeReactivated;
+use App\Events\EmployeeTerminated;
+use App\Events\EmployeeUpdated;
 use App\Models\Branch;
 use App\Models\CostCentre;
 use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Employee;
-use App\Models\EmployeeAssignmentHistory;
-use App\Models\EmployeeBankAccount;
 use App\Models\EmployeeBranchAssignment;
-use App\Models\EmployeeDependent;
 use App\Models\Grade;
 use App\Models\HolidayCalendar;
 use App\Models\OrganizationEntity;
@@ -24,7 +26,9 @@ use App\Repositories\Contracts\CurrencyRepositoryInterface;
 use App\Services\Accounting\DocumentNumberService;
 use App\Services\ImageService;
 use App\Support\EmployeePresenter;
+use DomainException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -200,7 +204,13 @@ final class EmployeeService
             $this->syncHolidayAssignment($employee, $data->holidayCalendarId, true);
             $this->syncImages($employee, $data->imageUploads, []);
 
-            return $employee->fresh(self::DETAIL_RELATIONS) ?? $employee;
+            $this->assignments->recordBaseline($employee, $employee->hire_date?->toDateString() ?? now()->toDateString());
+
+            $employee = $employee->fresh(self::DETAIL_RELATIONS) ?? $employee;
+
+            event(new EmployeeCreated($employee));
+
+            return $employee;
         });
     }
 
@@ -243,12 +253,56 @@ final class EmployeeService
 
             $this->syncImages($employee, $data->imageUploads, $data->removeImageIds);
 
-            return $employee->fresh(self::DETAIL_RELATIONS) ?? $employee;
+            $employee = $employee->fresh(self::DETAIL_RELATIONS) ?? $employee;
+
+            event(new EmployeeUpdated($employee));
+
+            return $employee;
+        });
+    }
+
+    public function terminate(Employee $employee, TerminateEmployeeData $data): Employee
+    {
+        if ($employee->status === 'terminated') {
+            throw new DomainException(__('Employee Is Already Terminated.'));
+        }
+
+        return DB::transaction(function () use ($employee, $data): Employee {
+            $employee->update([
+                'status' => 'terminated',
+                'termination_date' => $data->terminationDate,
+            ]);
+
+            $employee = $employee->fresh(self::DETAIL_RELATIONS) ?? $employee;
+
+            event(new EmployeeTerminated($employee));
+
+            return $employee;
+        });
+    }
+
+    public function reactivate(Employee $employee): Employee
+    {
+        if ($employee->status !== 'terminated') {
+            throw new DomainException(__('Only Terminated Employees Can Be Reactivated.'));
+        }
+
+        return DB::transaction(function () use ($employee): Employee {
+            $employee->update([
+                'status' => 'active',
+                'termination_date' => null,
+            ]);
+
+            $employee = $employee->fresh(self::DETAIL_RELATIONS) ?? $employee;
+
+            event(new EmployeeReactivated($employee));
+
+            return $employee;
         });
     }
 
     /**
-     * @param  list<array{type: string, images: list<\Illuminate\Http\UploadedFile>, cnic_front: ?\Illuminate\Http\UploadedFile, cnic_back: ?\Illuminate\Http\UploadedFile}>  $imageUploads
+     * @param  list<array{type: string, images: list<UploadedFile>, cnic_front: ?UploadedFile, cnic_back: ?UploadedFile}>  $imageUploads
      * @param  list<int>  $removeImageIds
      */
     private function syncImages(Employee $employee, array $imageUploads, array $removeImageIds): void
@@ -361,6 +415,7 @@ final class EmployeeService
                 if ($dependent !== null) {
                     $dependent->update($payload);
                     $keepDependentIds[] = $dependent->id;
+
                     continue;
                 }
             }
@@ -387,6 +442,7 @@ final class EmployeeService
                 if ($bank !== null) {
                     $bank->update($payload);
                     $keepBankIds[] = $bank->id;
+
                     continue;
                 }
             }

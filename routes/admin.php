@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\AccountingReportController;
 use App\Http\Controllers\Admin\AccountingSettingsController;
 use App\Http\Controllers\Admin\AccountMappingController;
 use App\Http\Controllers\Admin\ArAgingController;
+use App\Http\Controllers\Admin\Attendance\AttendanceRecordController;
+use App\Http\Controllers\Admin\Attendance\AttendanceSourceController;
 use App\Http\Controllers\Admin\BankAccountController;
 use App\Http\Controllers\Admin\BankReconciliationController;
 use App\Http\Controllers\Admin\BranchContextController;
@@ -30,19 +32,6 @@ use App\Http\Controllers\Admin\CustomerWalletController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\Expense\ExpenseCategoryController;
 use App\Http\Controllers\Admin\Expense\ExpenseController;
-use App\Http\Controllers\Admin\Attendance\AttendanceRecordController;
-use App\Http\Controllers\Admin\Attendance\AttendanceSourceController;
-use App\Http\Controllers\Admin\Leave\LeavePolicyController;
-use App\Http\Controllers\Admin\Leave\LeaveRequestController;
-use App\Http\Controllers\Admin\Leave\LeaveTypeController;
-use App\Http\Controllers\Admin\Overtime\OvertimePolicyController;
-use App\Http\Controllers\Admin\Overtime\OvertimeRecordController;
-use App\Http\Controllers\Admin\Payroll\PayComponentController;
-use App\Http\Controllers\Admin\Payroll\PayrollRunController;
-use App\Http\Controllers\Admin\Payroll\PayslipController;
-use App\Http\Controllers\Admin\Payroll\StatutorySchemeController;
-use App\Http\Controllers\Admin\Payroll\TaxSlabController;
-use App\Http\Controllers\Admin\SelfService\EmployeeSelfServiceController;
 use App\Http\Controllers\Admin\Expense\RecurringExpenseScheduleController;
 use App\Http\Controllers\Admin\FixedAssetController;
 use App\Http\Controllers\Admin\GoodsReceivingNoteController;
@@ -52,17 +41,27 @@ use App\Http\Controllers\Admin\Hr\DesignationController;
 use App\Http\Controllers\Admin\Hr\EmployeeController;
 use App\Http\Controllers\Admin\Hr\GradeController;
 use App\Http\Controllers\Admin\Hr\HolidayCalendarController;
-use App\Http\Controllers\Admin\Hr\OrgChartController;
 use App\Http\Controllers\Admin\Hr\HrEmploymentTypeController;
-use App\Http\Controllers\Admin\Hr\HrModulesController;
 use App\Http\Controllers\Admin\Hr\HrEntitySettingsController;
+use App\Http\Controllers\Admin\Hr\HrModulesController;
+use App\Http\Controllers\Admin\Hr\OrgChartController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\JournalEntryController;
 use App\Http\Controllers\Admin\LandedCostController;
+use App\Http\Controllers\Admin\Leave\LeavePolicyController;
+use App\Http\Controllers\Admin\Leave\LeaveRequestController;
+use App\Http\Controllers\Admin\Leave\LeaveTypeController;
 use App\Http\Controllers\Admin\LoyaltyProgramConfigController;
 use App\Http\Controllers\Admin\LoyaltyProgramController;
 use App\Http\Controllers\Admin\LoyaltyReportController;
 use App\Http\Controllers\Admin\LoyaltyTransactionController;
+use App\Http\Controllers\Admin\Overtime\OvertimePolicyController;
+use App\Http\Controllers\Admin\Overtime\OvertimeRecordController;
+use App\Http\Controllers\Admin\Payroll\PayComponentController;
+use App\Http\Controllers\Admin\Payroll\PayrollRunController;
+use App\Http\Controllers\Admin\Payroll\PayslipController;
+use App\Http\Controllers\Admin\Payroll\StatutorySchemeController;
+use App\Http\Controllers\Admin\Payroll\TaxSlabController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PettyCashController;
 use App\Http\Controllers\Admin\PoMatchController;
@@ -74,6 +73,7 @@ use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\PurchaseReturnController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SaleController;
+use App\Http\Controllers\Admin\SelfService\EmployeeSelfServiceController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\StockTransferController;
 use App\Http\Controllers\Admin\SupplierAttachmentController;
@@ -140,6 +140,10 @@ Route::middleware(['auth', 'admin', 'branch.context'])
 
         Route::middleware(['hr-module:hr'])->prefix('hr')->name('hr.')->group(function () {
             Route::resource('employees', EmployeeController::class)->except(['destroy']);
+            Route::post('employees/{employee}/terminate', [EmployeeController::class, 'terminate'])
+                ->name('employees.terminate');
+            Route::post('employees/{employee}/reactivate', [EmployeeController::class, 'reactivate'])
+                ->name('employees.reactivate');
             Route::delete('employees/{employee}/images/{image}', [EmployeeController::class, 'destroyImage'])
                 ->name('employees.images.destroy');
             Route::resource('departments', DepartmentController::class)->except(['show', 'destroy']);
@@ -217,6 +221,7 @@ Route::middleware(['auth', 'admin', 'branch.context'])
 
             Route::get('runs', [PayrollRunController::class, 'index'])->name('runs.index');
             Route::post('runs', [PayrollRunController::class, 'store'])->name('runs.store');
+            Route::get('runs/{payroll_run}', [PayrollRunController::class, 'show'])->name('runs.show');
             Route::post('runs/{payroll_run}/calculate', [PayrollRunController::class, 'calculate'])->name('runs.calculate');
             Route::post('runs/{payroll_run}/submit', [PayrollRunController::class, 'submit'])->name('runs.submit');
             Route::post('runs/{payroll_run}/approve', [PayrollRunController::class, 'approve'])->name('runs.approve');

@@ -16,7 +16,7 @@ final class UpdateDepartmentRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        foreach (['parent_id', 'cost_centre_id'] as $field) {
+        foreach (['parent_id', 'head_employee_id', 'cost_centre_id'] as $field) {
             if ($this->input($field) === '') {
                 $this->merge([$field => null]);
             }
@@ -32,6 +32,7 @@ final class UpdateDepartmentRequest extends FormRequest
             'legal_entity_id' => ['sometimes', 'required', 'integer', 'exists:organization_entities,id'],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'parent_id' => ['nullable', 'integer', 'exists:departments,id'],
+            'head_employee_id' => ['nullable', 'integer', 'exists:employees,id'],
             'cost_centre_id' => ['nullable', 'integer', 'exists:cost_centres,id'],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
         ];

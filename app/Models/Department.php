@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'code',
     'name',
     'parent_id',
+    'head_employee_id',
     'cost_centre_id',
     'status',
 ])]
@@ -27,6 +28,11 @@ class Department extends Model
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    public function head(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'head_employee_id');
     }
 
     public function children(): HasMany

@@ -21,6 +21,8 @@ final class DepartmentPresenter
             'name' => $department->name,
             'parent_id' => $department->parent_id,
             'parent_name' => $department->parent?->name,
+            'head_employee_id' => $department->head_employee_id,
+            'head_employee_name' => $department->head?->fullName(),
             'legal_entity_id' => $department->legal_entity_id,
             'legal_entity_name' => $department->legalEntity?->legal_name,
             'cost_centre_id' => $department->cost_centre_id,

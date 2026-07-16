@@ -696,6 +696,53 @@
                     "rejected": "مسترد"
                 }
             }
+        },
+        "hrEmployees": {
+            "terminate": "ملازمت ختم کریں",
+            "reactivate": "دوبارہ فعال کریں",
+            "terminateConfirmTitle": "ملازم کی ملازمت ختم کریں",
+            "terminateConfirmDescription": "اس سے {{name}} کو برخاست شدہ قرار دیا جائے گا اور آئندہ پے رول رنز سے خارج کر دیا جائے گا۔ نیچے برخاستگی کی تاریخ منتخب کریں۔",
+            "reactivateConfirmTitle": "ملازم کو دوبارہ فعال کریں",
+            "reactivateConfirmDescription": "اس سے {{name}} کو دوبارہ فعال حیثیت میں لایا جائے گا اور برخاستگی کی تاریخ ہٹا دی جائے گی۔",
+            "terminationDateHint": "صرف برخاستگی کے عمل کے ذریعے متعین کی جاتی ہے۔"
+        },
+        "hrDepartments": {
+            "fields": {
+                "head": "شعبہ کا سربراہ",
+                "noHead": "کوئی سربراہ مقرر نہیں"
+            },
+            "columns": {
+                "head": "شعبہ کا سربراہ"
+            }
+        },
+        "payrollRuns": {
+            "noBranch": "تمام برانچز",
+            "newRun": "نیا پے رول رن",
+            "createSubmit": "رن بنائیں",
+            "fields": {
+                "branch": "برانچ",
+                "periodStart": "مدت کا آغاز",
+                "periodEnd": "مدت کا اختتام",
+                "currencyCode": "کرنسی کوڈ"
+            }
+        },
+        "payrollRunShow": {
+            "title": "پے رول رن {{number}}",
+            "branch": "برانچ",
+            "empty": "اس رن کے لیے کوئی پے رول آئٹم موجود نہیں۔",
+            "download": "پے سلپ ڈاؤن لوڈ کریں",
+            "generate": "پے سلپ دوبارہ بنائیں",
+            "payslipPending": "ابھی نہیں بنائی گئی",
+            "payslipGenerated": "بن گئی",
+            "payslipEmailed": "ای میل کر دی گئی",
+            "columns": {
+                "employee": "ملازم",
+                "gross": "مجموعی تنخواہ",
+                "deductions": "کٹوتیاں",
+                "employerContributions": "آجر کی شراکتیں",
+                "netPay": "خالص تنخواہ",
+                "payslipStatus": "پے سلپ"
+            }
         }
     }
 }

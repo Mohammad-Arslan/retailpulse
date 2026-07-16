@@ -417,6 +417,13 @@
             "openAttendance": "Open Attendance Records",
             "emptyAttachments": "No Attachments Yet.",
             "orgAssignmentEffectiveFromHint": "Leave Blank To Apply Org Changes Immediately. Future Dates Schedule The Change.",
+            "terminationDateHint": "Set Only Via The Terminate Action.",
+            "terminate": "Terminate",
+            "reactivate": "Reactivate",
+            "terminateConfirmTitle": "Terminate Employee",
+            "terminateConfirmDescription": "This Will Mark {{name}} As Terminated And Exclude Them From Future Payroll Runs. Choose The Termination Date Below.",
+            "reactivateConfirmTitle": "Reactivate Employee",
+            "reactivateConfirmDescription": "This Will Restore {{name}} To Active Status And Clear The Termination Date.",
             "assignmentHistoryTitle": "Assignment History",
             "assignmentHistory": {
                 "field": "Field",
@@ -652,12 +659,15 @@
                 "parent": "Parent Department",
                 "noParent": "No Parent",
                 "costCentre": "Default Cost Centre",
-                "noCostCentre": "No Cost Centre"
+                "noCostCentre": "No Cost Centre",
+                "head": "Department Head",
+                "noHead": "No Head Assigned"
             },
             "columns": {
                 "name": "Department",
                 "legalEntity": "Legal Entity",
                 "parent": "Parent",
+                "head": "Department Head",
                 "status": "Status"
             },
             "statuses": {
@@ -1418,6 +1428,7 @@
             "indexDescription": "Draft, Approve, And Post Payroll Runs. Posting Is The Only GL Write.",
             "allEntities": "All Entities",
             "allStatuses": "All Statuses",
+            "noBranch": "All Branches",
             "draft": "Draft",
             "calculate": "Calculate",
             "submit": "Submit",
@@ -1428,6 +1439,8 @@
             "process": "Process",
             "employeeCount": "Employees",
             "totalNet": "Total Net",
+            "newRun": "New Payroll Run",
+            "createSubmit": "Create Run",
             "columns": {
                 "payrollNumber": "Payroll #",
                 "legalEntity": "Legal Entity",
@@ -1436,6 +1449,12 @@
                 "totals": "Totals",
                 "status": "Status"
             },
+            "fields": {
+                "branch": "Branch",
+                "periodStart": "Period Start",
+                "periodEnd": "Period End",
+                "currencyCode": "Currency Code"
+            },
             "statuses": {
                 "draft": "Draft",
                 "pending_approval": "Pending Approval",
@@ -1443,6 +1462,24 @@
                 "approved": "Approved",
                 "posted": "Posted",
                 "reversed": "Reversed"
+            }
+        },
+        "payrollRunShow": {
+            "title": "Payroll Run {{number}}",
+            "branch": "Branch",
+            "empty": "No Payroll Items For This Run.",
+            "download": "Download Payslip",
+            "generate": "Regenerate Payslip",
+            "payslipPending": "Not Generated",
+            "payslipGenerated": "Generated",
+            "payslipEmailed": "Emailed",
+            "columns": {
+                "employee": "Employee",
+                "gross": "Gross",
+                "deductions": "Deductions",
+                "employerContributions": "Employer Contributions",
+                "netPay": "Net Pay",
+                "payslipStatus": "Payslip"
             }
         },
         "selfServicePayslips": {

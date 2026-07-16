@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Hr;
 
+use App\Models\Employee;
 use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Validation\Rule;
 
 final class UpdateEmployeeRequest extends NormalizesNullableEmployeeForeignKeys
 {
@@ -43,11 +43,26 @@ final class UpdateEmployeeRequest extends NormalizesNullableEmployeeForeignKeys
      */
     public function rules(): array
     {
-        /** @var \App\Models\Employee|null $employee */
+        /** @var Employee|null $employee */
         $employee = $this->route('employee');
 
         $rules = $this->employeeCoreRules($employee?->id);
-        $rules['status'] = ['required', Rule::in(['active', 'inactive', 'terminated'])];
+        $currentStatus = $employee?->status;
+
+        // Termination/reactivation go through dedicated actions (EmployeeController::terminate/reactivate).
+        // The general update form may only toggle active <-> inactive, or leave status unchanged (no-op).
+        $rules['status'] = [
+            'required',
+            function (string $attribute, mixed $value, \Closure $fail) use ($currentStatus): void {
+                if ($value === $currentStatus) {
+                    return;
+                }
+
+                if (! in_array($value, ['active', 'inactive'], true)) {
+                    $fail(__('Use The Terminate Or Reactivate Action To Change This Status.'));
+                }
+            },
+        ];
 
         return $rules;
     }

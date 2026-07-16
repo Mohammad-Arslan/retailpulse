@@ -8,6 +8,7 @@ use App\DTOs\Hr\CreateDepartmentData;
 use App\DTOs\Hr\UpdateDepartmentData;
 use App\Models\CostCentre;
 use App\Models\Department;
+use App\Models\Employee;
 use App\Models\OrganizationEntity;
 use App\Repositories\Contracts\DepartmentRepositoryInterface;
 use App\Services\Accounting\DocumentNumberService;
@@ -61,6 +62,10 @@ final class DepartmentService
                 ->where('status', 'active')
                 ->orderBy('name')
                 ->get(['id', 'code', 'name']),
+            'employees' => Employee::query()
+                ->where('status', 'active')
+                ->orderBy('first_name')
+                ->get(['id', 'first_name', 'last_name', 'employee_code', 'department_id']),
             'nextCode' => $this->peekMasterCode(self::CODE_TYPE, self::CODE_PREFIX),
         ];
     }

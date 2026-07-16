@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin\Payroll;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\OrganizationEntity;
+use App\Models\PayrollItem;
 use App\Models\PayrollRun;
 use App\Services\Payroll\PayrollRunService;
 use App\Support\ListPagination;
@@ -53,10 +54,56 @@ final class PayrollRunController extends Controller
             'entities' => OrganizationEntity::query()
                 ->where('status', 'active')
                 ->orderBy('legal_name')
-                ->get(['id', 'legal_name'])
-                ->map(fn ($e) => ['id' => $e->id, 'name' => $e->legal_name]),
+                ->get(['id', 'legal_name', 'functional_currency_code'])
+                ->map(fn ($e) => ['id' => $e->id, 'name' => $e->legal_name, 'currency_code' => $e->functional_currency_code]),
             'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'filters' => $filters,
+        ]);
+    }
+
+    public function show(PayrollRun $payrollRun): Response
+    {
+        $this->authorize('view', $payrollRun);
+
+        $payrollRun->load([
+            'legalEntity:id,legal_name',
+            'branch:id,name',
+            'approvedByUser:id,name',
+            'postedByUser:id,name',
+            'items.employee:id,employee_code,first_name,last_name',
+            'items.payslip',
+        ]);
+
+        return Inertia::render('Admin/Payroll/Runs/Show', [
+            'run' => [
+                'id' => $payrollRun->id,
+                'payroll_number' => $payrollRun->payroll_number,
+                'legal_entity' => $payrollRun->legalEntity?->legal_name,
+                'branch' => $payrollRun->branch?->name,
+                'period_start' => $payrollRun->period_start?->toDateString(),
+                'period_end' => $payrollRun->period_end?->toDateString(),
+                'currency_code' => $payrollRun->currency_code,
+                'status' => $payrollRun->status,
+                'totals' => $payrollRun->totals_json,
+                'approved_by' => $payrollRun->approvedByUser?->name,
+                'posted_by' => $payrollRun->postedByUser?->name,
+                'journal_entry_id' => $payrollRun->journal_entry_id,
+            ],
+            'items' => $payrollRun->items->map(fn (PayrollItem $item) => [
+                'id' => $item->id,
+                'employee_id' => $item->employee_id,
+                'employee_code' => $item->employee?->employee_code,
+                'employee_name' => $item->employee?->fullName(),
+                'gross' => $item->gross,
+                'total_deductions' => $item->total_deductions,
+                'total_employer_contributions' => $item->total_employer_contributions,
+                'net_pay' => $item->net_pay,
+                'payslip' => $item->payslip !== null ? [
+                    'id' => $item->payslip->id,
+                    'payslip_number' => $item->payslip->payslip_number,
+                    'emailed_at' => $item->payslip->emailed_at?->toIso8601String(),
+                ] : null,
+            ])->values()->all(),
         ]);
     }
 

@@ -34,6 +34,7 @@ Provide hierarchical department (org unit) masters per legal entity for reportin
 | P12-DEPT-FR-005 | Partial | Department assignment shall support effective dating via assignment history. |
 | P12-DEPT-FR-006 | Implemented | Soft-deactivate preserves history; cannot deactivate if active employees assigned. |
 | P12-DEPT-FR-007 | Implemented | Departments are importable via the generic Import/Export wizard. |
+| P12-DEPT-FR-008 | Implemented | A department may optionally have a `head_employee_id` (nullable FK to an active employee), editable in the Departments UI and consumed by `ApprovalApproverResolver::resolveDepartmentHead` (falls back up the parent chain when unset — see [reporting-hierarchy.md](./reporting-hierarchy.md)). |
 
 ---
 
@@ -46,6 +47,7 @@ departments
 - code
 - name
 - parent_id nullable
+- head_employee_id nullable      # FK employees, nullOnDelete — approval routing (department_head strategy)
 - cost_centre_id nullable
 - status
 - timestamps

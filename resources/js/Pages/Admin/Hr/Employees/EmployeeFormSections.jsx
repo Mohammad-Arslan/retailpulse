@@ -534,25 +534,36 @@ export default function EmployeeFormSections({
                 <AdminFormField
                     label={t('pages.hrEmployees.fields.terminationDate')}
                     error={errors.termination_date}
+                    hint={t('pages.hrEmployees.terminationDateHint')}
                 >
                     <input
                         type="date"
                         className="rp-form-input"
                         value={data.termination_date}
-                        disabled={readOnly}
-                        onChange={(e) => field('termination_date', e.target.value)}
+                        disabled
+                        readOnly
                     />
                 </AdminFormField>
                 <AdminFormField label={t('pages.hrEmployees.fields.status')} error={errors.status}>
-                    <Select
-                        value={data.status}
-                        isDisabled={readOnly}
-                        options={['active', 'inactive', 'terminated'].map((s) => ({
-                            value: s,
-                            label: t(`pages.hrEmployees.statuses.${s}`),
-                        }))}
-                        onChange={(v) => field('status', v ?? 'active')}
-                    />
+                    {data.status === 'terminated' ? (
+                        <input
+                            type="text"
+                            className="rp-form-input"
+                            value={t('pages.hrEmployees.statuses.terminated')}
+                            disabled
+                            readOnly
+                        />
+                    ) : (
+                        <Select
+                            value={data.status}
+                            isDisabled={readOnly}
+                            options={['active', 'inactive'].map((s) => ({
+                                value: s,
+                                label: t(`pages.hrEmployees.statuses.${s}`),
+                            }))}
+                            onChange={(v) => field('status', v ?? 'active')}
+                        />
+                    )}
                 </AdminFormField>
                 <AdminFormField
                     label={t('pages.hrEmployees.fields.salaryStructure')}

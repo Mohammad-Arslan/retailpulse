@@ -28,6 +28,8 @@ class EmployeeBankAccount extends Model
     {
         return [
             'is_primary' => 'boolean',
+            'account_number' => 'encrypted',
+            'iban' => 'encrypted',
         ];
     }
 

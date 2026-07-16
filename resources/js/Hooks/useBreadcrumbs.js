@@ -127,6 +127,7 @@ const ROUTE_CRUMBS = {
     'Admin/Attendance/Records/Create': ['home', 'attendanceRecords', 'create'],
     'Admin/Attendance/Sources/Index': ['home', 'attendanceSources'],
     'Admin/Payroll/Runs/Index': ['home', 'payrollRuns'],
+    'Admin/Payroll/Runs/Show': ['home', 'payrollRuns', 'view'],
     'Admin/Payroll/PayComponents/Index': ['home', 'payComponents'],
     'Admin/Payroll/TaxSlabs/Index': ['home', 'taxSlabs'],
     'Admin/Payroll/StatutorySchemes/Index': ['home', 'statutorySchemes'],

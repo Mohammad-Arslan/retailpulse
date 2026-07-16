@@ -20,6 +20,7 @@ use App\Services\Hr\Concerns\GeneratesHrMasterCodes;
 use App\Support\HolidayCalendarPresenter;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 final class HolidayCalendarService
@@ -33,6 +34,7 @@ final class HolidayCalendarService
     public function __construct(
         private readonly HolidayCalendarRepositoryInterface $calendars,
         private readonly DocumentNumberService $documentNumberService,
+        private readonly HrEntitySettingsService $entitySettings,
     ) {}
 
     protected function documentNumbers(): DocumentNumberService
@@ -45,8 +47,8 @@ final class HolidayCalendarService
      * @return array{
      *     calendars: LengthAwarePaginator,
      *     filters: array<string, mixed>,
-     *     legalEntities: \Illuminate\Support\Collection,
-     *     branches: \Illuminate\Support\Collection,
+     *     legalEntities: Collection,
+     *     branches: Collection,
      *     nextCode: string
      * }
      */
@@ -66,9 +68,9 @@ final class HolidayCalendarService
      *     calendar: array<string, mixed>,
      *     dates: list<array<string, mixed>>,
      *     assignments: list<array<string, mixed>>,
-     *     legalEntities: \Illuminate\Support\Collection,
-     *     branches: \Illuminate\Support\Collection,
-     *     employees: \Illuminate\Support\Collection
+     *     legalEntities: Collection,
+     *     branches: Collection,
+     *     employees: Collection
      * }
      */
     public function showPayload(HolidayCalendar $calendar): array
@@ -152,13 +154,44 @@ final class HolidayCalendarService
         $this->appendAssignmentMatches($resolved, Branch::class, $employee->primary_branch_id, $asOf, 50);
         $this->appendAssignmentMatches($resolved, OrganizationEntity::class, $employee->legal_entity_id, $asOf, 10);
 
+        if ($resolved === [] && $employee->legal_entity_id !== null) {
+            $this->appendDefaultCalendar($resolved, $employee->legal_entity_id);
+        }
+
         usort($resolved, fn (array $a, array $b): int => ($b['priority'] ?? 0) <=> ($a['priority'] ?? 0));
 
         return $resolved;
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, OrganizationEntity>
+     * Lowest-priority fallback: hr_entity_settings.default_holiday_calendar_id for the
+     * employee's legal entity, used only when no employee/branch/entity assignment matched.
+     *
+     * @param  list<array<string, mixed>>  $resolved
+     */
+    private function appendDefaultCalendar(array &$resolved, int $legalEntityId): void
+    {
+        $calendarId = $this->entitySettings->forEntity($legalEntityId)?->default_holiday_calendar_id;
+
+        if ($calendarId === null) {
+            return;
+        }
+
+        $calendar = HolidayCalendar::query()->where('status', 'active')->find($calendarId);
+
+        if ($calendar === null) {
+            return;
+        }
+
+        $resolved[] = [
+            'calendar' => $calendar,
+            'assignment' => null,
+            'priority' => 1,
+        ];
+    }
+
+    /**
+     * @return Collection<int, OrganizationEntity>
      */
     private function activeLegalEntities()
     {
@@ -169,7 +202,7 @@ final class HolidayCalendarService
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, Branch>
+     * @return Collection<int, Branch>
      */
     private function activeBranches()
     {

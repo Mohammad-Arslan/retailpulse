@@ -40,8 +40,8 @@ final class ApprovalApproverResolver
     }
 
     /**
-     * Resolves the head of the employee's department tree (root department's first active employee).
-     * Limitation: does not distinguish formal "head" role — uses first active employee in root department.
+     * Resolves the configured head of the employee's own department, falling back up the
+     * parent chain only when a department has no head assigned.
      */
     private function resolveDepartmentHead(Employee $employee): ?Employee
     {
@@ -50,22 +50,24 @@ final class ApprovalApproverResolver
         }
 
         $department = Department::query()->find($employee->department_id);
-        if ($department === null) {
-            return null;
-        }
 
-        while ($department->parent_id !== null) {
-            $parent = Department::query()->find($department->parent_id);
-            if ($parent === null) {
-                break;
+        while ($department !== null) {
+            if ($department->head_employee_id !== null) {
+                $head = Employee::query()
+                    ->where('id', $department->head_employee_id)
+                    ->where('status', 'active')
+                    ->first();
+
+                if ($head !== null) {
+                    return $head;
+                }
             }
-            $department = $parent;
+
+            $department = $department->parent_id !== null
+                ? Department::query()->find($department->parent_id)
+                : null;
         }
 
-        return Employee::query()
-            ->where('department_id', $department->id)
-            ->where('status', 'active')
-            ->orderBy('employee_code')
-            ->first();
+        return null;
     }
 }

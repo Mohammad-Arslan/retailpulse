@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Hr;
 
+use App\Events\EmployeeSalaryStructureChanged;
+use App\Events\OrgAssignmentChanged;
 use App\Models\Employee;
 use App\Models\EmployeeAssignmentHistory;
 use Carbon\CarbonInterface;
@@ -66,15 +68,20 @@ final class EmployeeAssignmentService
         string $effectiveFrom,
         int $changedBy,
     ): void {
+        $oldValue = $employee->{$field} !== null ? (string) $employee->{$field} : null;
+        $newValueString = $newValue !== null ? (string) $newValue : null;
+
         EmployeeAssignmentHistory::query()->create([
             'employee_id' => $employee->id,
             'field_name' => $field,
-            'old_value' => $employee->{$field} !== null ? (string) $employee->{$field} : null,
-            'new_value' => $newValue !== null ? (string) $newValue : null,
+            'old_value' => $oldValue,
+            'new_value' => $newValueString,
             'effective_from' => $effectiveFrom,
             'effective_to' => null,
             'changed_by' => $changedBy ?: null,
         ]);
+
+        $this->dispatchAssignmentEvents($employee, $field, $oldValue, $newValueString, $effectiveFrom);
     }
 
     public function recordImmediateChange(
@@ -91,15 +98,58 @@ final class EmployeeAssignmentService
             ->whereNull('effective_to')
             ->update(['effective_to' => $effectiveFrom]);
 
+        $oldValueString = $oldValue !== null ? (string) $oldValue : null;
+        $newValueString = $newValue !== null ? (string) $newValue : null;
+
         EmployeeAssignmentHistory::query()->create([
             'employee_id' => $employee->id,
             'field_name' => $field,
-            'old_value' => $oldValue !== null ? (string) $oldValue : null,
-            'new_value' => $newValue !== null ? (string) $newValue : null,
+            'old_value' => $oldValueString,
+            'new_value' => $newValueString,
             'effective_from' => $effectiveFrom,
             'effective_to' => null,
             'changed_by' => $changedBy ?: null,
         ]);
+
+        $this->dispatchAssignmentEvents($employee, $field, $oldValueString, $newValueString, $effectiveFrom);
+    }
+
+    /**
+     * Write opening assignment-history rows for an employee's initial org fields on create.
+     */
+    public function recordBaseline(Employee $employee, string $effectiveFrom): void
+    {
+        foreach (self::TRACKED_FIELDS as $field) {
+            $value = $employee->{$field};
+
+            EmployeeAssignmentHistory::query()->create([
+                'employee_id' => $employee->id,
+                'field_name' => $field,
+                'old_value' => null,
+                'new_value' => $value !== null ? (string) $value : null,
+                'effective_from' => $effectiveFrom,
+                'effective_to' => null,
+                'changed_by' => (int) (Auth::id() ?? 0) ?: null,
+            ]);
+        }
+    }
+
+    private function dispatchAssignmentEvents(
+        Employee $employee,
+        string $field,
+        ?string $oldValue,
+        ?string $newValue,
+        string $effectiveFrom,
+    ): void {
+        event(new OrgAssignmentChanged($employee, $field, $oldValue, $newValue, $effectiveFrom));
+
+        if ($field === 'salary_structure_id') {
+            event(new EmployeeSalaryStructureChanged(
+                $employee,
+                $oldValue !== null ? (int) $oldValue : null,
+                $newValue !== null ? (int) $newValue : null,
+            ));
+        }
     }
 
     public function applyDueScheduledChanges(Employee $employee): void

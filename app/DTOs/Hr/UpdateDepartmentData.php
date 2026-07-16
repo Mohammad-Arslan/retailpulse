@@ -13,6 +13,8 @@ final readonly class UpdateDepartmentData
         public ?string $name,
         public ?int $parentId,
         public bool $parentIdProvided,
+        public ?int $headEmployeeId,
+        public bool $headEmployeeIdProvided,
         public ?int $costCentreId,
         public bool $costCentreIdProvided,
         public ?string $status,
@@ -29,6 +31,10 @@ final readonly class UpdateDepartmentData
                 ? (int) $validated['parent_id']
                 : null,
             parentIdProvided: array_key_exists('parent_id', $validated),
+            headEmployeeId: array_key_exists('head_employee_id', $validated) && $validated['head_employee_id'] !== null
+                ? (int) $validated['head_employee_id']
+                : null,
+            headEmployeeIdProvided: array_key_exists('head_employee_id', $validated),
             costCentreId: array_key_exists('cost_centre_id', $validated) && $validated['cost_centre_id'] !== null
                 ? (int) $validated['cost_centre_id']
                 : null,
@@ -52,6 +58,9 @@ final readonly class UpdateDepartmentData
         }
         if ($this->parentIdProvided) {
             $data['parent_id'] = $this->parentId;
+        }
+        if ($this->headEmployeeIdProvided) {
+            $data['head_employee_id'] = $this->headEmployeeId;
         }
         if ($this->costCentreIdProvided) {
             $data['cost_centre_id'] = $this->costCentreId;

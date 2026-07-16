@@ -23,7 +23,7 @@ final class DepartmentRepository implements DepartmentRepositoryInterface
         $direction = ($filters['direction'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
 
         return Department::query()
-            ->with(['parent:id,name', 'legalEntity:id,legal_name'])
+            ->with(['parent:id,name', 'legalEntity:id,legal_name', 'head:id,first_name,last_name'])
             ->when($filters['search'] ?? null, function ($q, string $search): void {
                 $q->where(function ($inner) use ($search): void {
                     $inner->where('name', 'like', "%{$search}%")
@@ -55,7 +55,7 @@ final class DepartmentRepository implements DepartmentRepositoryInterface
     {
         $department->update($attributes);
 
-        return $department->fresh(['parent', 'legalEntity', 'costCentre']) ?? $department;
+        return $department->fresh(['parent', 'legalEntity', 'costCentre', 'head']) ?? $department;
     }
 
     public function hasActiveEmployees(Department $department): bool
