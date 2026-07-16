@@ -45,7 +45,7 @@ trait ValidatesEmployeeProfilePayload
             'probation_end_date' => ['nullable', 'date'],
             'confirmation_date' => ['nullable', 'date', 'after_or_equal:hire_date'],
             'contract_end_date' => ['nullable', 'date', 'after_or_equal:hire_date'],
-            'employment_type' => ['required', Rule::in(['full_time', 'part_time', 'contract', 'hourly'])],
+            'employment_type' => ['required', 'string', 'max:64'],
             'joined_as' => ['nullable', 'string', 'max:120'],
             'default_cost_centre_id' => ['nullable', 'integer', 'exists:cost_centres,id'],
             'payment_method' => ['nullable', 'string', 'max:32'],
@@ -105,6 +105,12 @@ trait ValidatesEmployeeProfilePayload
             'branch_assignments.*.effective_to' => ['nullable', 'date', 'after_or_equal:branch_assignments.*.effective_from'],
             'branch_assignments.*.status' => ['nullable', Rule::in(['active', 'inactive'])],
             'holiday_calendar_id' => ['nullable', 'integer', 'exists:holiday_calendars,id'],
+            'org_effective_from' => ['nullable', 'array'],
+            'org_effective_from.department_id' => ['nullable', 'date'],
+            'org_effective_from.designation_id' => ['nullable', 'date'],
+            'org_effective_from.grade_id' => ['nullable', 'date'],
+            'org_effective_from.primary_branch_id' => ['nullable', 'date'],
+            'org_effective_from.salary_structure_id' => ['nullable', 'date'],
             'image_uploads' => ['nullable', 'array', 'max:10'],
             'image_uploads.*.type' => ['required', Rule::in(['cnic', 'photo', 'id_copy', 'other'])],
             'image_uploads.*.images' => ['nullable', 'array', 'max:10'],
@@ -125,6 +131,15 @@ trait ValidatesEmployeeProfilePayload
 
             if ($hire && $probation && $confirmation && $probation > $confirmation) {
                 $validator->errors()->add('probation_end_date', __('Probation End Must Be On Or Before Confirmation Date.'));
+            }
+
+            $legalEntityId = $this->input('legal_entity_id');
+            $employmentType = $this->input('employment_type');
+            if ($employmentType !== null && $employmentType !== '') {
+                $service = app(\App\Services\Hr\HrEmploymentTypeService::class);
+                if (! $service->isValidCode($legalEntityId !== null ? (int) $legalEntityId : null, (string) $employmentType)) {
+                    $validator->errors()->add('employment_type', __('The Selected Employment Type Is Invalid.'));
+                }
             }
 
             $banks = $this->input('bank_accounts', []);

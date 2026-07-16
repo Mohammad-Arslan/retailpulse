@@ -206,7 +206,34 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.hr.grades.*',
                 'keywords' => ['grades', 'bands', 'pay grade'],
             ]),
-            self::item('holidayCalendars', 'holidayCalendars', 'admin.hr.holiday-calendars.index', 'calendar-days', 'holiday_calendar', 14, [
+            self::item('employmentTypes', 'employmentTypes', 'admin.hr.employment-types.index', 'id-card', 'hr', 14, [
+                'permission' => 'hr.manage-settings',
+                'permissionsAny' => ['hr.manage-settings', 'hr.manage-org'],
+                'module' => 'hr',
+                'routePattern' => 'admin.hr.employment-types.*',
+                'keywords' => ['employment types', 'contract', 'full time'],
+            ]),
+            self::item('hrSettings', 'hrSettings', 'admin.hr.settings.index', 'settings-2', 'hr', 15, [
+                'permission' => 'hr.manage-settings',
+                'module' => 'hr',
+                'routePattern' => 'admin.hr.settings.*',
+                'keywords' => ['hr settings', 'entity defaults', 'holiday calendar default'],
+            ]),
+            self::item('orgChart', 'orgChart', 'admin.hr.org-chart.index', 'network', 'hr', 16, [
+                'permission' => 'hr.view-employees',
+                'permissionsAny' => ['hr.view-employees', 'hr.manage-org'],
+                'module' => 'hr',
+                'routePattern' => 'admin.hr.org-chart.*',
+                'keywords' => ['org chart', 'reporting hierarchy', 'manager tree'],
+            ]),
+            self::item('delegations', 'delegations', 'admin.hr.delegations.index', 'user-check', 'hr', 17, [
+                'permission' => 'hr.manage-org',
+                'permissionsAny' => ['hr.manage-org'],
+                'module' => 'hr',
+                'routePattern' => 'admin.hr.delegations.*',
+                'keywords' => ['delegation', 'acting manager', 'approval delegate'],
+            ]),
+            self::item('holidayCalendars', 'holidayCalendars', 'admin.hr.holiday-calendars.index', 'calendar-days', 'holiday_calendar', 18, [
                 'permission' => 'holiday.manage',
                 'permissionsAny' => ['holiday.manage', 'hr.view-employees'],
                 'module' => 'holiday_calendar',
@@ -254,6 +281,13 @@ final class AdminNavigationCatalog
                 'module' => 'leave',
                 'routePattern' => 'admin.leave.types.*',
                 'keywords' => ['leave type', 'annual', 'sick', 'unpaid'],
+            ]),
+            self::item('leave-policies', 'leavePolicies', 'admin.leave.policies.index', 'calendar-range', 'leave', 75, [
+                'permission' => 'leave.manage-policies',
+                'permissionsAny' => ['leave.manage-policies', 'leave.view'],
+                'module' => 'leave',
+                'routePattern' => 'admin.leave.policies.*',
+                'keywords' => ['leave policy', 'accrual', 'public holiday'],
             ]),
             self::item('leave-requests', 'leaveRequests', 'admin.leave.requests.index', 'calendar-range', 'leave', 80, [
                 'permission' => 'leave.view',

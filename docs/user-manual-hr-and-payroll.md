@@ -1,7 +1,7 @@
 # RetailPulse User Manual — HR, Expenses & Payroll
 
 **Audience:** HR managers, payroll officers, line managers, accountants, implementation consultants  
-**Version:** 1.8 (July 2026)  
+**Version:** 1.9 (July 2026)  
 **Scope:** Phase 12 — operating expenses, employees, attendance, leave, overtime, payroll runs, payslips, and employee self-service
 
 **See also:**
@@ -39,6 +39,10 @@ Section **HR & Payroll**:
 | **Departments** | `hr.manage-org` | `hr` |
 | **Designations** | `hr.manage-org` | `hr` |
 | **Grades** | `hr.manage-org` | `hr` |
+| **Employment Types** | `hr.manage-settings` | `hr` |
+| **HR Settings** | `hr.manage-settings` | `hr` |
+| **Org Chart** | `hr.view-employees` | `hr` |
+| **Approval Delegations** | `hr.manage-org` | `hr` |
 | **Holiday Calendars** | `holiday.manage` | `holiday_calendar` |
 | **Expense Categories** | `expenses.manage-categories` | `expenses` |
 | **Expenses** | `expenses.view` | `expenses` |
@@ -46,6 +50,7 @@ Section **HR & Payroll**:
 | **Attendance Sources** | `attendance.manage-sources` | `attendance` |
 | **Attendance Records** | `attendance.view` | `attendance` |
 | **Leave Types** | `leave.manage-types` | `leave` |
+| **Leave Policies** | `leave.manage-policies` | `leave` |
 | **Leave Requests** | `leave.view` | `leave` |
 | **Overtime Policies** | `overtime.manage-policies` | `overtime` |
 | **Overtime Records** | `overtime.view` | `overtime` |
@@ -83,27 +88,42 @@ Admin → **Recurring Expenses**. Schedules generate one occurrence per `period_
 
 ### 4.1 Organization masters
 
-1. Admin → **Departments** — hierarchical units per legal entity (parent cycle checks; cannot deactivate while active employees are assigned). **Code** is previewed on create (`DEPT-00001` style), assigned uniquely on save, and read-only. Same auto-code pattern on **Designations** (`DESIG-#####`) and **Grades** (`GRADE-#####`). Optional default cost centre.
-2. Admin → **Designations** — job titles; optional default grade.
-3. Admin → **Grades** — pay grades / bands with optional effective dating. **Currency** is chosen from active Accounting **Currencies** (not free text).
+1. Admin → **Departments** — hierarchical units per legal entity (parent cycle checks; cannot deactivate while active employees are assigned). **Code** is previewed on create (`DEPT-00001` style), assigned uniquely on save, and read-only. Same auto-code pattern on **Designations** (`DESIG-#####`) and **Grades** (`GRADE-#####`). Optional default cost centre. **Import / Export** toolbar on the list (`departments.import` / `departments.export`).
+2. Admin → **Designations** — job titles; optional default grade. Import/export via shared wizard (`designations.import` / `designations.export`).
+3. Admin → **Grades** — pay grades / bands with optional effective dating. **Currency** is chosen from active Accounting **Currencies** (not free text). Import/export via shared wizard (`grades.import` / `grades.export`).
+4. Admin → **Employment Types** — configurable employment categories (entity-scoped or global). Used on employee forms and validation.
+5. Admin → **HR Settings** — per legal entity: default holiday calendar, employee code sequence key, leave fiscal defaults.
 
-Permission: `hr.manage-org`.
+Permission: `hr.manage-org` (masters), `hr.manage-settings` (employment types + entity settings).
 
 ### 4.2 Employees
 
 1. Admin → **Employees** → **New Employee**. Creation is a **4-step wizard**: Basic Information → Service Info → Company Info → Bank Accounts (optional). Use **Continue** / **Back**; **Create Employee** on the last step saves and opens **Edit**.
 2. **Edit / View** uses a left **Profile Sections** rail (full page width) for: Basic, Service, Company, Dependents, Working Shifts (preferences only), National Holidays, Attendance, Attachments, Medical, Bank Accounts. **Save Changes** stays sticky at the bottom of the form.
-3. **Import / Export** on the Employees list uses the shared Import/Export wizard (permissions: `employees.import` / `employees.export`). Download the template from the wizard. Match key is **Employee Code**. Lookups use **Legal Entity** (name or tax registration), **Primary Branch Code**, and optional department / designation / grade / manager / cost centre / salary structure **codes**. Import managers before their reports. **National ID** is accepted on import (stored encrypted) and left blank on export.
-4. **Attachments:** Image uploads via the shared **Image** model (JPG/PNG/WebP). Use **Add More** to queue several upload groups in one save — each group has its own document type (Photo, CNIC, ID Copy, Other). Multi-select with preview inside a group; **CNIC** shows dedicated **Front** and **Back** slots. Marked removals apply on **Save Changes**.
-5. **Bank accounts:** When any accounts exist, exactly one must be marked **Primary**. Currency options come from active Accounting **Currencies**.
-6. Master records link legal entity, primary branch, optional department / designation / grade / reporting manager / salary structure.
-7. Changing reporting manager writes **manager history**; changing department/designation/grade writes **assignment history**.
-8. Reporting manager assignment rejects self-report and cycles.
-9. Secondary **branch assignments** (effective dates) are edited under Company Info on Edit (not during the create wizard).
+3. **Import / Export** on the Employees list uses the shared Import/Export wizard (permissions: `employees.import` / `employees.export`). A second toolbar imports **Reporting Hierarchy** only (`reporting-hierarchy.import` / `reporting-hierarchy.export`) — columns: Employee Code, Manager Employee Code, optional Effective From.
+4. **Effective-dated org changes:** On Edit → Company Info, set **Effective From** when changing department, designation, grade, or primary branch. Future-dated rows apply automatically; **Assignment History** on the employee profile shows org and manager timelines.
+5. **Attachments:** Image uploads via the shared **Image** model (JPG/PNG/WebP). Use **Add More** to queue several upload groups in one save — each group has its own document type (Photo, CNIC, ID Copy, Other). Multi-select with preview inside a group; **CNIC** shows dedicated **Front** and **Back** slots. Marked removals apply on **Save Changes**.
+6. **Bank accounts:** When any accounts exist, exactly one must be marked **Primary**. Currency options come from active Accounting **Currencies**.
+7. Master records link legal entity, primary branch, optional department / designation / grade / reporting manager / salary structure.
+8. Changing reporting manager writes **manager history**; changing department/designation/grade writes **assignment history** (with optional effective dating).
+9. Reporting manager assignment rejects self-report and cycles.
+10. Secondary **branch assignments** (effective dates) are edited under Company Info on Edit (not during the create wizard).
 
-Permission: `hr.view-employees` / `hr.manage-employees` (plus `employees.import` / `employees.export` for spreadsheet flows).
+Permission: `hr.view-employees` / `hr.manage-employees` (plus import/export permissions for spreadsheet flows).
 
-### 4.2.1 Employee import columns
+### 4.2.1 Org master import columns
+
+| Entity | Match Key | Notable Columns |
+|--------|-----------|-----------------|
+| Departments | Code | Legal Entity, Parent Code, Cost Centre Code, Status |
+| Designations | Code | Legal Entity, Grade Code, Status |
+| Grades | Code | Legal Entity, Min/Mid/Max, Currency, Effective Dates, Status |
+| Holiday Calendars | Calendar Code + Holiday Date | Flat rows: calendar metadata + one date per row |
+| Reporting Hierarchy | Employee Code | Manager Employee Code, Effective From (optional) |
+
+See [`generic-import-export.md`](generic-import-export.md) for wizard mechanics.
+
+### 4.2.2 Employee import columns
 
 | Column | Required | Notes |
 |--------|----------|-------|
@@ -112,7 +132,7 @@ Permission: `hr.view-employees` / `hr.manage-employees` (plus `employees.import`
 | Hire Date | Yes | |
 | Legal Entity | Yes | Exact legal name or tax registration no. |
 | Primary Branch Code | Yes | Branch `code` |
-| Employment Type | No | `full_time`, `part_time`, `contract`, `hourly` (default `full_time`) |
+| Employment Type | No | Code from **Employment Types** master (entity-scoped or global); defaults to first active type |
 | Status | No | `active`, `inactive`, `terminated` (default `active`) |
 | Department / Designation / Grade Code | No | Org master codes |
 | Manager Employee Code | No | Must already exist; import managers first |
@@ -123,13 +143,21 @@ Modes: **Create**, **Update**, **Upsert**. Export respects list filters (search,
 
 See also: [`generic-import-export.md`](generic-import-export.md).
 
-### 4.3 Holiday calendars
+### 4.3 Reporting hierarchy
+
+1. Admin → **Org Chart** — collapsible tree from active employees; filter by legal entity and optional root employee.
+2. Admin → **Approval Delegations** — temporary redirect of approvals from one employee to another (scope: All, Leave, Expense, Overtime) with effective dates.
+3. Leave requests populate `approval_chain_json` with the resolved direct manager (respecting active delegations).
+
+### 4.4 Holiday calendars
 
 1. Enable module key **`holiday_calendar`** on the branch HR profile (requires **HR**).
-2. Admin → **Holiday Calendars** — create calendar, add dates (unique per calendar), assign to legal entity / branch / employee with effective dates.
-3. Resolution order for a given employee/date: **employee → branch → legal entity** (higher priority wins). Leave/OT day-counting will consume this in a later wave; `HolidayResolver` is available now.
+2. Admin → **Holiday Calendars** — create calendar, add dates (unique per calendar), assign to legal entity / branch / employee with effective dates. Mark dates as **Recurring Pattern** to store month/day for annual generation (`php artisan hr:generate-recurring-holidays {year}`).
+3. **Import / Export** on the calendar list uses flat rows (calendar metadata + holiday date columns). Resolution order for a given employee/date: **employee → branch → legal entity** (higher priority wins).
+4. **Leave** day counts exclude public holidays when the active leave policy has **Exclude Public Holidays** enabled (Admin → **Leave Policies**).
+5. **Overtime** uses the `public_holiday` day-type multiplier when the active overtime policy has **Public Holiday Applies** and the date is a public holiday on the employee's resolved calendar.
 
-### 4.4 Attendance
+### 4.5 Attendance
 
 - Source-agnostic. Drivers: **POS PIN**, **Manual**; stubs for biometric / mobile / import.
 - New drivers = implement `AttendanceSourceProvider` + a config row — payroll code is untouched.
@@ -138,8 +166,9 @@ See also: [`generic-import-export.md`](generic-import-export.md).
 
 ## 5. Leave & overtime
 
-- **Leave types** seeded (Annual / Sick / Unpaid) — editable. Unpaid / over-balance leave resolves to a configured pay-component code for payroll (not a hard-coded salary cut).
-- **Overtime:** Thresholds and multipliers come only from **Overtime Policies**. Unapproved records are excluded from payroll jobs.
+- **Leave types** seeded (Annual / Sick / Unpaid) — editable. **Leave policies** configure accrual and **Exclude Public Holidays** for day counting.
+- New leave requests resolve the direct manager into the approval chain (delegations apply).
+- **Overtime:** Thresholds and multipliers come only from **Overtime Policies**. Public holidays on the employee calendar use the `public_holiday` multiplier when enabled. Unapproved records are excluded from payroll jobs.
 
 ---
 
@@ -190,6 +219,7 @@ Draft → (Calculate) → Pending Approval → Approved → Posted → Reversed
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.9 | July 2026 | Wave 1 closure: HR settings, employment types, org imports, org chart, delegations, leave holiday day count, OT public-holiday multiplier, recurring holidays command |
 | 1.8 | July 2026 | Employee import/export via shared Import/Export wizard |
 | 1.7 | July 2026 | Employee attachments: Add More for multiple document types in one save |
 | 1.6 | July 2026 | Employee attachments: multi-image + CNIC front/back previews via Image model |

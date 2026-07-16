@@ -33,11 +33,7 @@ final class EmployeeService
     /**
      * @var list<string>
      */
-    private const ASSIGNMENT_TRACKED_FIELDS = [
-        'department_id',
-        'designation_id',
-        'grade_id',
-    ];
+    private const ASSIGNMENT_TRACKED_FIELDS = EmployeeAssignmentService::TRACKED_FIELDS;
 
     /**
      * @var list<string>
@@ -68,6 +64,8 @@ final class EmployeeService
         private readonly CurrencyRepositoryInterface $currencies,
         private readonly HolidayCalendarService $holidayCalendars,
         private readonly ImageService $images,
+        private readonly HrEmploymentTypeService $employmentTypes,
+        private readonly EmployeeAssignmentService $assignments,
     ) {}
 
     /**
@@ -97,10 +95,12 @@ final class EmployeeService
      */
     public function showPayload(Employee $employee): array
     {
+        $this->assignments->applyDueScheduledChanges($employee);
         $employee->load(self::DETAIL_RELATIONS);
 
         return [
             'employee' => EmployeePresenter::detail($employee),
+            'assignmentHistory' => $this->assignments->historyForEmployee($employee),
             ...$this->formOptions($employee),
         ];
     }
@@ -110,10 +110,12 @@ final class EmployeeService
      */
     public function editPayload(Employee $employee): array
     {
+        $this->assignments->applyDueScheduledChanges($employee);
         $employee->load(self::DETAIL_RELATIONS);
 
         return [
             'employee' => EmployeePresenter::detail($employee),
+            'assignmentHistory' => $this->assignments->historyForEmployee($employee),
             ...$this->formOptions($employee),
         ];
     }
@@ -207,25 +209,7 @@ final class EmployeeService
                 }
             }
 
-            foreach (self::ASSIGNMENT_TRACKED_FIELDS as $field) {
-                if (! array_key_exists($field, $attributes)) {
-                    continue;
-                }
-
-                $old = $employee->{$field};
-                $new = $attributes[$field] !== null && $attributes[$field] !== '' ? (int) $attributes[$field] : null;
-
-                if ((string) $old !== (string) $new) {
-                    EmployeeAssignmentHistory::query()->create([
-                        'employee_id' => $employee->id,
-                        'field_name' => $field,
-                        'old_value' => $old !== null ? (string) $old : null,
-                        'new_value' => $new !== null ? (string) $new : null,
-                        'effective_from' => now()->toDateString(),
-                        'changed_by' => Auth::id(),
-                    ]);
-                }
-            }
+            $this->assignments->applyOrgChanges($employee, $attributes, $data->orgEffectiveFrom);
 
             $employee->update($attributes);
 
@@ -462,12 +446,31 @@ final class EmployeeService
             'salaryStructures' => SalaryStructure::query()->orderBy('name')->get(['id', 'name', 'code']),
             'currencies' => $this->currencies->activeOptions(),
             'holidayCalendars' => HolidayCalendar::query()->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name']),
-            'employmentTypes' => ['full_time', 'part_time', 'contract', 'hourly'],
+            'employmentTypes' => $this->employmentTypeOptions($excludeFromManagers?->legal_entity_id),
             'genders' => ['male', 'female', 'other', 'undisclosed'],
             'maritalStatuses' => ['single', 'married', 'divorced', 'widowed', 'other'],
             'attachmentTypes' => ['cnic', 'photo', 'id_copy', 'other'],
             'maxImages' => (int) config('media.max_images_per_model', 10),
             'weekDays' => [0, 1, 2, 3, 4, 5, 6],
         ];
+    }
+
+    /**
+     * @return list<array{code: string, name: string}>
+     */
+    private function employmentTypeOptions(?int $legalEntityId): array
+    {
+        $options = $this->employmentTypes->optionsForEntity($legalEntityId);
+
+        if ($options === []) {
+            return [
+                ['code' => 'full_time', 'name' => 'Full Time'],
+                ['code' => 'part_time', 'name' => 'Part Time'],
+                ['code' => 'contract', 'name' => 'Contract'],
+                ['code' => 'hourly', 'name' => 'Hourly'],
+            ];
+        }
+
+        return $options;
     }
 }

@@ -17,6 +17,9 @@ function Show({ calendar, dates = [], assignments = [], employees = [], branches
         name: '',
         holiday_type: 'public',
         is_paid: true,
+        is_recurring: false,
+        recurrence_month: '',
+        recurrence_day: '',
     });
 
     const assignForm = useForm({
@@ -120,6 +123,63 @@ function Show({ calendar, dates = [], assignments = [], employees = [], branches
                                 options={holidayTypeOptions}
                             />
                         </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.holidayCalendars.fields.isRecurring')}
+                            id="is_recurring"
+                            error={dateForm.errors.is_recurring}
+                        >
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    id="is_recurring"
+                                    type="checkbox"
+                                    checked={dateForm.data.is_recurring}
+                                    onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        dateForm.setData('is_recurring', checked);
+                                        if (checked && dateForm.data.holiday_date) {
+                                            const [, month, day] = dateForm.data.holiday_date.split('-');
+                                            dateForm.setData('recurrence_month', month ?? '');
+                                            dateForm.setData('recurrence_day', day ?? '');
+                                        }
+                                    }}
+                                />
+                                {t('pages.holidayCalendars.fields.isRecurringHint')}
+                            </label>
+                        </AdminFormField>
+                        {dateForm.data.is_recurring && (
+                            <>
+                                <AdminFormField
+                                    label={t('pages.holidayCalendars.fields.recurrenceMonth')}
+                                    id="recurrence_month"
+                                    error={dateForm.errors.recurrence_month}
+                                >
+                                    <input
+                                        id="recurrence_month"
+                                        type="number"
+                                        min="1"
+                                        max="12"
+                                        className="rp-form-input"
+                                        value={dateForm.data.recurrence_month}
+                                        onChange={(e) => dateForm.setData('recurrence_month', e.target.value)}
+                                    />
+                                </AdminFormField>
+                                <AdminFormField
+                                    label={t('pages.holidayCalendars.fields.recurrenceDay')}
+                                    id="recurrence_day"
+                                    error={dateForm.errors.recurrence_day}
+                                >
+                                    <input
+                                        id="recurrence_day"
+                                        type="number"
+                                        min="1"
+                                        max="31"
+                                        className="rp-form-input"
+                                        value={dateForm.data.recurrence_day}
+                                        onChange={(e) => dateForm.setData('recurrence_day', e.target.value)}
+                                    />
+                                </AdminFormField>
+                            </>
+                        )}
                         <div className="flex items-end">
                             <Button type="submit" variant="brand" disabled={dateForm.processing} className="w-full">
                                 {t('pages.holidayCalendars.addDate')}
@@ -138,6 +198,7 @@ function Show({ calendar, dates = [], assignments = [], employees = [], branches
                                 {t(`pages.holidayCalendars.holidayTypes.${d.holiday_type}`, {
                                     defaultValue: d.holiday_type,
                                 })}
+                                {d.is_recurring ? ` · ${t('pages.holidayCalendars.recurringBadge')}` : ''}
                                 )
                             </span>
                             {can('holiday.manage') && (

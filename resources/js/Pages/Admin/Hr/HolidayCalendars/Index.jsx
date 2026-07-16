@@ -1,6 +1,8 @@
 import AdminFormField from '@/Components/common/AdminFormField';
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import ImportExportToolbar from '@/Components/import-export/ImportExportToolbar';
+import { useImportJobsTray } from '@/Components/import-export/ImportJobsTray';
 import Modal from '@/Components/Modal';
 import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
@@ -24,6 +26,7 @@ function emptyForm() {
 function Index({ calendars, filters, legalEntities = [], branches = [] }) {
     const can = useCan();
     const { t } = useTranslation();
+    const { trackJob } = useImportJobsTray();
     const [modalOpen, setModalOpen] = useState(false);
     const form = useForm(emptyForm());
 
@@ -137,12 +140,20 @@ function Index({ calendars, filters, legalEntities = [], branches = [] }) {
                 title={t('pages.holidayCalendars.indexTitle')}
                 description={t('pages.holidayCalendars.indexDescription')}
             >
-                {can('holiday.manage') && (
-                    <Button variant="brand" onClick={openCreate}>
-                        <Plus className="h-4 w-4" />
-                        {t('pages.holidayCalendars.createTitle')}
-                    </Button>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                    <ImportExportToolbar
+                        entityType="holiday-calendars"
+                        entityLabel={t('pages.holidayCalendars.indexTitle')}
+                        exportOptions={{ filters: { search: filters.search ?? undefined, status: filters.status ?? undefined } }}
+                        onJobStarted={trackJob}
+                    />
+                    {can('holiday.manage') && (
+                        <Button variant="brand" onClick={openCreate}>
+                            <Plus className="h-4 w-4" />
+                            {t('pages.holidayCalendars.createTitle')}
+                        </Button>
+                    )}
+                </div>
             </PageHeader>
 
             <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">

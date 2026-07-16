@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'carry_forward_limit',
     'carry_forward_expiry_months',
     'proration_on_join',
+    'exclude_public_holidays',
     'effective_from',
     'effective_to',
     'status',
@@ -34,6 +35,7 @@ final class LeavePolicy extends Model
             'carry_forward_limit' => 'decimal:2',
             'carry_forward_expiry_months' => 'integer',
             'proration_on_join' => 'boolean',
+            'exclude_public_holidays' => 'boolean',
             'effective_from' => 'date',
             'effective_to' => 'date',
         ];

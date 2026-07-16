@@ -13,6 +13,9 @@ final readonly class CreateHolidayDateData
         public string $name,
         public string $holidayType,
         public bool $isPaid,
+        public bool $isRecurring = false,
+        public ?int $recurrenceMonth = null,
+        public ?int $recurrenceDay = null,
     ) {}
 
     public static function fromRequest(StoreHolidayDateRequest $request): self
@@ -24,6 +27,9 @@ final readonly class CreateHolidayDateData
             name: (string) $validated['name'],
             holidayType: (string) ($validated['holiday_type'] ?? 'public'),
             isPaid: (bool) ($validated['is_paid'] ?? true),
+            isRecurring: (bool) ($validated['is_recurring'] ?? false),
+            recurrenceMonth: isset($validated['recurrence_month']) ? (int) $validated['recurrence_month'] : null,
+            recurrenceDay: isset($validated['recurrence_day']) ? (int) $validated['recurrence_day'] : null,
         );
     }
 
@@ -37,6 +43,9 @@ final readonly class CreateHolidayDateData
             'name' => $this->name,
             'holiday_type' => $this->holidayType,
             'is_paid' => $this->isPaid,
+            'is_recurring' => $this->isRecurring,
+            'recurrence_month' => $this->recurrenceMonth,
+            'recurrence_day' => $this->recurrenceDay,
         ];
     }
 }

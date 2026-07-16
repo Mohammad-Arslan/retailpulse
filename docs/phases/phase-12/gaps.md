@@ -25,13 +25,13 @@ Status legend: **Partial** = some code exists / incomplete vs SRS · **Planned**
 
 | Area | Status | Notable Planned / Partial FRs |
 | :--- | :--- | :--- |
-| HR Core | Partial | Employment-type catalogue table, entity HR settings |
-| Employees | Partial | Profile subtables, multi-branch Implemented; org FKs Implemented; import/export via generic wizard Implemented |
-| Departments | Implemented | Import remaining Planned |
-| Designations | Implemented | Import remaining Planned |
-| Grades | Implemented | Band enforcement on payroll Pending; import Planned |
-| Reporting hierarchy | Partial | Manager + cycle + history Implemented; org chart UI / delegations Planned |
-| Holiday calendar | Implemented | Leave/OT consumption Planned (resolver ready) |
+| HR Core | Implemented | Employment-type catalogue, entity HR settings |
+| Employees | Implemented | Profile subtables, multi-branch, org FKs, import/export, effective-dated org assignments; Phase 30 vault deferred |
+| Departments | Implemented | Import/export via generic wizard |
+| Designations | Implemented | Import/export via generic wizard |
+| Grades | Implemented | Import/export; band enforcement on payroll Pending (Wave 3) |
+| Reporting hierarchy | Partial | Manager + cycle + history + org chart + delegations + import Implemented; Phase 29 workflow strategies Planned |
+| Holiday calendar | Implemented | Leave/OT consumption Implemented; roster holiday marking Wave 2 |
 
 ---
 

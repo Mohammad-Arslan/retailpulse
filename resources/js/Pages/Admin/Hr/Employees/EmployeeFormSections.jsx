@@ -129,6 +129,7 @@ export default function EmployeeFormSections({
     maxImages = 10,
     hideSecondaryBranches = false,
     showBanksOptionalHint = false,
+    assignmentHistory = [],
 }) {
     const { t } = useTranslation();
 
@@ -451,10 +452,14 @@ export default function EmployeeFormSections({
                     <Select
                         value={data.employment_type}
                         isDisabled={readOnly}
-                        options={employmentTypes.map((type) => ({
-                            value: type,
-                            label: t(`pages.hrEmployees.employmentTypes.${type}`),
-                        }))}
+                        options={employmentTypes.map((type) => {
+                            const code = typeof type === 'string' ? type : type.code;
+                            const label =
+                                typeof type === 'string'
+                                    ? t(`pages.hrEmployees.employmentTypes.${type}`)
+                                    : type.name;
+                            return { value: code, label };
+                        })}
                         onChange={(v) => field('employment_type', v ?? 'full_time')}
                     />
                 </AdminFormField>
@@ -635,6 +640,51 @@ export default function EmployeeFormSections({
                         />
                     </AdminFormField>
                 </div>
+                {!readOnly && (
+                    <AdminFormField
+                        label={t('pages.hrEmployees.fields.orgAssignmentEffectiveFrom')}
+                        error={errors.org_assignment_effective_from}
+                    >
+                        <input
+                            type="date"
+                            className="rp-form-input"
+                            value={data.org_assignment_effective_from ?? ''}
+                            onChange={(e) => field('org_assignment_effective_from', e.target.value)}
+                        />
+                        <p className="mt-1 text-xs text-rp-text-muted">
+                            {t('pages.hrEmployees.orgAssignmentEffectiveFromHint')}
+                        </p>
+                    </AdminFormField>
+                )}
+                {readOnly && assignmentHistory.length > 0 && (
+                    <div className="space-y-2">
+                        <h4 className="text-sm font-semibold">{t('pages.hrEmployees.assignmentHistoryTitle')}</h4>
+                        <div className="overflow-x-auto rounded-lg border border-rp-border">
+                            <table className="min-w-full text-sm">
+                                <thead className="bg-rp-surface-inset text-left text-xs uppercase text-rp-text-muted">
+                                    <tr>
+                                        <th className="px-3 py-2">{t('pages.hrEmployees.assignmentHistory.field')}</th>
+                                        <th className="px-3 py-2">{t('pages.hrEmployees.assignmentHistory.from')}</th>
+                                        <th className="px-3 py-2">{t('pages.hrEmployees.assignmentHistory.to')}</th>
+                                        <th className="px-3 py-2">{t('pages.hrEmployees.assignmentHistory.effectiveFrom')}</th>
+                                        <th className="px-3 py-2">{t('pages.hrEmployees.assignmentHistory.effectiveTo')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {assignmentHistory.map((row) => (
+                                        <tr key={row.id} className="border-t border-rp-border">
+                                            <td className="px-3 py-2 font-mono text-xs">{row.field_name}</td>
+                                            <td className="px-3 py-2">{row.old_value ?? '—'}</td>
+                                            <td className="px-3 py-2">{row.new_value ?? '—'}</td>
+                                            <td className="px-3 py-2">{row.effective_from ?? '—'}</td>
+                                            <td className="px-3 py-2">{row.effective_to ?? '—'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
                 {!hideSecondaryBranches && (
                     <div>
                         <div className="mb-2 flex items-center justify-between">

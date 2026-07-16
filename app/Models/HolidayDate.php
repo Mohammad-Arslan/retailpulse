@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'name',
     'holiday_type',
     'is_paid',
+    'is_recurring',
+    'recurrence_month',
+    'recurrence_day',
 ])]
 class HolidayDate extends Model
 {
@@ -25,6 +28,9 @@ class HolidayDate extends Model
         return [
             'holiday_date' => 'date',
             'is_paid' => 'boolean',
+            'is_recurring' => 'boolean',
+            'recurrence_month' => 'integer',
+            'recurrence_day' => 'integer',
         ];
     }
 

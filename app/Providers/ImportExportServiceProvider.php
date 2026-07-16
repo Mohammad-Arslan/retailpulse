@@ -12,8 +12,18 @@ use App\Services\ImportExport\Handlers\CoaExportHandler;
 use App\Services\ImportExport\Handlers\CoaImportHandler;
 use App\Services\ImportExport\Handlers\CustomerExportHandler;
 use App\Services\ImportExport\Handlers\CustomerImportHandler;
+use App\Services\ImportExport\Handlers\DepartmentExportHandler;
+use App\Services\ImportExport\Handlers\DepartmentImportHandler;
+use App\Services\ImportExport\Handlers\DesignationExportHandler;
+use App\Services\ImportExport\Handlers\DesignationImportHandler;
 use App\Services\ImportExport\Handlers\EmployeeExportHandler;
 use App\Services\ImportExport\Handlers\EmployeeImportHandler;
+use App\Services\ImportExport\Handlers\GradeExportHandler;
+use App\Services\ImportExport\Handlers\GradeImportHandler;
+use App\Services\ImportExport\Handlers\HolidayCalendarExportHandler;
+use App\Services\ImportExport\Handlers\HolidayCalendarImportHandler;
+use App\Services\ImportExport\Handlers\ReportingHierarchyExportHandler;
+use App\Services\ImportExport\Handlers\ReportingHierarchyImportHandler;
 use App\Services\ImportExport\Handlers\InventoryAdjustmentExportHandler;
 use App\Services\ImportExport\Handlers\InventoryAdjustmentImportHandler;
 use App\Services\ImportExport\Handlers\InventoryExportHandler;
@@ -51,6 +61,11 @@ final class ImportExportServiceProvider extends ServiceProvider
         ImportExportRegistry::register('products', ProductImportHandler::class, ProductExportHandler::class);
         ImportExportRegistry::register('customers', CustomerImportHandler::class, CustomerExportHandler::class);
         ImportExportRegistry::register('employees', EmployeeImportHandler::class, EmployeeExportHandler::class);
+        ImportExportRegistry::register('departments', DepartmentImportHandler::class, DepartmentExportHandler::class);
+        ImportExportRegistry::register('designations', DesignationImportHandler::class, DesignationExportHandler::class);
+        ImportExportRegistry::register('grades', GradeImportHandler::class, GradeExportHandler::class);
+        ImportExportRegistry::register('holiday-calendars', HolidayCalendarImportHandler::class, HolidayCalendarExportHandler::class);
+        ImportExportRegistry::register('reporting-hierarchy', ReportingHierarchyImportHandler::class, ReportingHierarchyExportHandler::class);
         ImportExportRegistry::register('suppliers', SupplierImportHandler::class, SupplierExportHandler::class);
         ImportExportRegistry::register(
             'supplier-price-lists',

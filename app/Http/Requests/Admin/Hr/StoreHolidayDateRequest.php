@@ -31,6 +31,9 @@ final class StoreHolidayDateRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'holiday_type' => ['nullable', Rule::in(['public', 'optional', 'company'])],
             'is_paid' => ['nullable', 'boolean'],
+            'is_recurring' => ['nullable', 'boolean'],
+            'recurrence_month' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'recurrence_day' => ['nullable', 'integer', 'min:1', 'max:31'],
         ];
     }
 }

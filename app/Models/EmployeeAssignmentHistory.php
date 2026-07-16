@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'old_value',
     'new_value',
     'effective_from',
+    'effective_to',
     'changed_by',
 ])]
 class EmployeeAssignmentHistory extends Model
@@ -27,6 +28,7 @@ class EmployeeAssignmentHistory extends Model
     {
         return [
             'effective_from' => 'date',
+            'effective_to' => 'date',
         ];
     }
 

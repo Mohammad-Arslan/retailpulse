@@ -14,6 +14,11 @@ const ENTITY_PERMISSIONS = {
     products: { import: 'products.import', export: 'products.export' },
     customers: { import: 'customers.import', export: 'customers.export' },
     employees: { import: 'employees.import', export: 'employees.export' },
+    departments: { import: 'departments.import', export: 'departments.export' },
+    designations: { import: 'designations.import', export: 'designations.export' },
+    grades: { import: 'grades.import', export: 'grades.export' },
+    'holiday-calendars': { import: 'holiday-calendars.import', export: 'holiday-calendars.export' },
+    'reporting-hierarchy': { import: 'reporting-hierarchy.import', export: 'reporting-hierarchy.export' },
     suppliers: { import: 'suppliers.import', export: 'suppliers.export' },
     'supplier-price-lists': {
         import: 'supplier-price-lists.import',

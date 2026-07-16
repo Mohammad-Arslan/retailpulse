@@ -32,6 +32,7 @@ use App\Http\Controllers\Admin\Expense\ExpenseCategoryController;
 use App\Http\Controllers\Admin\Expense\ExpenseController;
 use App\Http\Controllers\Admin\Attendance\AttendanceRecordController;
 use App\Http\Controllers\Admin\Attendance\AttendanceSourceController;
+use App\Http\Controllers\Admin\Leave\LeavePolicyController;
 use App\Http\Controllers\Admin\Leave\LeaveRequestController;
 use App\Http\Controllers\Admin\Leave\LeaveTypeController;
 use App\Http\Controllers\Admin\Overtime\OvertimePolicyController;
@@ -44,11 +45,14 @@ use App\Http\Controllers\Admin\Payroll\TaxSlabController;
 use App\Http\Controllers\Admin\SelfService\EmployeeSelfServiceController;
 use App\Http\Controllers\Admin\Expense\RecurringExpenseScheduleController;
 use App\Http\Controllers\Admin\FixedAssetController;
+use App\Http\Controllers\Admin\Hr\ApprovalDelegationController;
 use App\Http\Controllers\Admin\Hr\DepartmentController;
 use App\Http\Controllers\Admin\Hr\DesignationController;
 use App\Http\Controllers\Admin\Hr\EmployeeController;
 use App\Http\Controllers\Admin\Hr\GradeController;
-use App\Http\Controllers\Admin\Hr\HolidayCalendarController;
+use App\Http\Controllers\Admin\Hr\OrgChartController;
+use App\Http\Controllers\Admin\Hr\HrEmploymentTypeController;
+use App\Http\Controllers\Admin\Hr\HrEntitySettingsController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\JournalEntryController;
 use App\Http\Controllers\Admin\LandedCostController;
@@ -138,6 +142,11 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::resource('departments', DepartmentController::class)->except(['show', 'destroy']);
             Route::resource('designations', DesignationController::class)->except(['show', 'destroy']);
             Route::resource('grades', GradeController::class)->except(['show', 'destroy']);
+            Route::resource('employment-types', HrEmploymentTypeController::class)->only(['index', 'store', 'update']);
+            Route::get('settings', [HrEntitySettingsController::class, 'index'])->name('settings.index');
+            Route::put('settings', [HrEntitySettingsController::class, 'update'])->name('settings.update');
+            Route::get('org-chart', [OrgChartController::class, 'index'])->name('org-chart.index');
+            Route::resource('delegations', ApprovalDelegationController::class)->only(['index', 'store', 'update']);
         });
 
         Route::middleware(['hr-module:holiday_calendar'])->prefix('hr')->name('hr.')->group(function () {
@@ -165,6 +174,8 @@ Route::middleware(['auth', 'admin', 'branch.context'])
 
         Route::middleware(['hr-module:leave'])->prefix('leave')->name('leave.')->group(function () {
             Route::get('types', [LeaveTypeController::class, 'index'])->name('types.index');
+            Route::get('policies', [LeavePolicyController::class, 'index'])->name('policies.index');
+            Route::put('policies/{policy}', [LeavePolicyController::class, 'update'])->name('policies.update');
             Route::get('requests', [LeaveRequestController::class, 'index'])->name('requests.index');
             Route::get('requests/create', [LeaveRequestController::class, 'create'])->name('requests.create');
             Route::post('requests', [LeaveRequestController::class, 'store'])->name('requests.store');

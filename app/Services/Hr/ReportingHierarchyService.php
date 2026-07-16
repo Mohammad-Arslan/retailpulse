@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Hr;
 
+use App\Models\ApprovalDelegation;
 use App\Models\Employee;
 use App\Models\EmployeeManagerHistory;
 use Carbon\CarbonInterface;
@@ -38,7 +39,7 @@ final class ReportingHierarchyService
         }
     }
 
-    public function resolveManager(Employee $employee, ?CarbonInterface $date = null): ?Employee
+    public function resolveManager(Employee $employee, ?CarbonInterface $date = null, string $scope = 'all'): ?Employee
     {
         $asOf = $date ?? now();
 
@@ -52,15 +53,27 @@ final class ReportingHierarchyService
             ->orderByDesc('effective_from')
             ->first();
 
-        if ($history !== null && $history->manager_employee_id !== null) {
-            return Employee::query()->find($history->manager_employee_id);
+        $managerId = null;
+
+        if ($history !== null) {
+            $managerId = $history->manager_employee_id;
+        } elseif ($employee->reporting_manager_employee_id !== null) {
+            $managerId = $employee->reporting_manager_employee_id;
         }
 
-        if ($employee->reporting_manager_employee_id === null) {
+        if ($managerId === null) {
             return null;
         }
 
-        return Employee::query()->find($employee->reporting_manager_employee_id);
+        $manager = Employee::query()->find($managerId);
+
+        if ($manager === null) {
+            return null;
+        }
+
+        $delegate = $this->resolveActiveDelegation($manager, $scope, $asOf);
+
+        return $delegate ?? $manager;
     }
 
     public function recordManagerChange(Employee $employee, ?int $newManagerId, int $changedByUserId): void
@@ -78,5 +91,91 @@ final class ReportingHierarchyService
             'effective_from' => $today,
             'changed_by' => $changedByUserId,
         ]);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function orgChart(?int $legalEntityId = null, ?int $rootEmployeeId = null): array
+    {
+        $employees = Employee::query()
+            ->where('status', 'active')
+            ->when($legalEntityId !== null, fn ($q) => $q->where('legal_entity_id', $legalEntityId))
+            ->with([
+                'department:id,name',
+                'designation:id,name',
+            ])
+            ->orderBy('employee_code')
+            ->get(['id', 'employee_code', 'first_name', 'last_name', 'reporting_manager_employee_id', 'department_id', 'designation_id']);
+
+        $byId = $employees->keyBy('id');
+        /** @var array<int, list<int>> $childrenMap */
+        $childrenMap = [];
+
+        foreach ($employees as $employee) {
+            $managerId = $employee->reporting_manager_employee_id;
+            if ($managerId !== null && $byId->has($managerId)) {
+                $childrenMap[$managerId][] = $employee->id;
+            }
+        }
+
+        $rootIds = $employees
+            ->filter(function (Employee $employee) use ($byId): bool {
+                $managerId = $employee->reporting_manager_employee_id;
+
+                return $managerId === null || ! $byId->has($managerId);
+            })
+            ->pluck('id')
+            ->all();
+
+        if ($rootEmployeeId !== null) {
+            if (! $byId->has($rootEmployeeId)) {
+                return [];
+            }
+            $rootIds = [$rootEmployeeId];
+        }
+
+        $buildNode = function (int $employeeId) use (&$buildNode, $byId, $childrenMap): array {
+            /** @var Employee $employee */
+            $employee = $byId->get($employeeId);
+            $childIds = $childrenMap[$employeeId] ?? [];
+
+            return [
+                'id' => $employee->id,
+                'employee_code' => $employee->employee_code,
+                'name' => trim("{$employee->first_name} {$employee->last_name}"),
+                'department' => $employee->department?->name,
+                'designation' => $employee->designation?->name,
+                'children' => array_map(fn (int $id) => $buildNode($id), $childIds),
+            ];
+        };
+
+        return array_map(fn (int $id) => $buildNode($id), $rootIds);
+    }
+
+    private function resolveActiveDelegation(
+        Employee $fromEmployee,
+        string $scope,
+        CarbonInterface $date,
+    ): ?Employee {
+        $delegation = ApprovalDelegation::query()
+            ->where('from_employee_id', $fromEmployee->id)
+            ->where('status', 'active')
+            ->where('effective_from', '<=', $date->toDateString())
+            ->where(function ($q) use ($date): void {
+                $q->whereNull('effective_to')
+                    ->orWhere('effective_to', '>=', $date->toDateString());
+            })
+            ->where(function ($q) use ($scope): void {
+                $q->where('scope', 'all')->orWhere('scope', $scope);
+            })
+            ->orderByDesc('effective_from')
+            ->first();
+
+        if ($delegation === null) {
+            return null;
+        }
+
+        return Employee::query()->find($delegation->to_employee_id);
     }
 }

@@ -1,0 +1,226 @@
+import AdminFormField from '@/Components/common/AdminFormField';
+import DataTable from '@/Components/common/DataTable';
+import PageHeader from '@/Components/common/PageHeader';
+import Modal from '@/Components/Modal';
+import { Button } from '@/Components/ui/button';
+import Select from '@/Components/ui/select';
+import { withAdminLayout } from '@/HOCs/withAdminLayout';
+import { useCan } from '@/Hooks/useCan';
+import { Head, router, useForm } from '@inertiajs/react';
+import { IdCard, Plus, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+function emptyForm(legalEntities = []) {
+    return {
+        legal_entity_id: 'global',
+        code: '',
+        name: '',
+        status: 'active',
+    };
+}
+
+function Index({ employmentTypes, filters, legalEntities = [] }) {
+    const can = useCan();
+    const { t } = useTranslation();
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editing, setEditing] = useState(null);
+    const form = useForm(emptyForm(legalEntities));
+
+    const entityOptions = useMemo(
+        () => [
+            { value: 'global', label: t('pages.hrEmploymentTypes.globalScope') },
+            ...legalEntities.map((e) => ({ value: String(e.id), label: e.legal_name })),
+        ],
+        [legalEntities, t],
+    );
+
+    const statusOptions = useMemo(
+        () => [
+            { value: '', label: t('common.allStatuses') },
+            { value: 'active', label: t('pages.hrEmploymentTypes.statuses.active') },
+            { value: 'inactive', label: t('pages.hrEmploymentTypes.statuses.inactive') },
+        ],
+        [t],
+    );
+
+    const formStatusOptions = useMemo(
+        () => [
+            { value: 'active', label: t('pages.hrEmploymentTypes.statuses.active') },
+            { value: 'inactive', label: t('pages.hrEmploymentTypes.statuses.inactive') },
+        ],
+        [t],
+    );
+
+    const openCreate = () => {
+        setEditing(null);
+        form.clearErrors();
+        form.setData(emptyForm(legalEntities));
+        setModalOpen(true);
+    };
+
+    const openEdit = (row) => {
+        setEditing(row);
+        form.clearErrors();
+        form.setData({
+            legal_entity_id: row.legal_entity_id ? String(row.legal_entity_id) : 'global',
+            code: row.code,
+            name: row.name,
+            status: row.status,
+        });
+        setModalOpen(true);
+    };
+
+    const submit = (e) => {
+        e.preventDefault();
+        const payload = {
+            ...form.data,
+            legal_entity_id: form.data.legal_entity_id === 'global' ? null : form.data.legal_entity_id,
+        };
+
+        if (editing) {
+            form.transform(() => payload).put(route('admin.hr.employment-types.update', editing.id), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setModalOpen(false);
+                    form.transform((data) => data);
+                },
+            });
+        } else {
+            form.transform(() => payload).post(route('admin.hr.employment-types.store'), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setModalOpen(false);
+                    form.transform((data) => data);
+                },
+            });
+        }
+    };
+
+    const search = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        router.get(route('admin.hr.employment-types.index'), Object.fromEntries(formData), {
+            preserveState: true,
+        });
+    };
+
+    const columns = useMemo(
+        () => [
+            {
+                id: 'code',
+                header: t('pages.hrEmploymentTypes.fields.code'),
+                cell: ({ row }) => (
+                    <span className="font-mono text-sm font-semibold text-teal-600">{row.original.code}</span>
+                ),
+            },
+            {
+                id: 'name',
+                header: t('pages.hrEmploymentTypes.fields.name'),
+                accessorKey: 'name',
+            },
+            {
+                id: 'legal_entity_name',
+                header: t('pages.hrEmploymentTypes.fields.legalEntity'),
+                cell: ({ row }) => row.original.legal_entity_name ?? t('pages.hrEmploymentTypes.globalScope'),
+            },
+            {
+                id: 'status',
+                header: t('pages.hrEmploymentTypes.fields.status'),
+                cell: ({ row }) => t(`pages.hrEmploymentTypes.statuses.${row.original.status}`),
+            },
+        ],
+        [t],
+    );
+
+    return (
+        <>
+            <Head title={t('pages.hrEmploymentTypes.indexTitle')} />
+            <PageHeader
+                title={t('pages.hrEmploymentTypes.indexTitle')}
+                description={t('pages.hrEmploymentTypes.indexDescription')}
+            >
+                {can('hr.manage-settings') && (
+                    <Button type="button" className="rp-btn-primary" onClick={openCreate}>
+                        <Plus className="h-4 w-4" />
+                        {t('pages.hrEmploymentTypes.createTitle')}
+                    </Button>
+                )}
+            </PageHeader>
+
+            <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">
+                <div className="rp-search-inset min-w-[200px] flex-1">
+                    <Search className="h-3.5 w-3.5 shrink-0 text-rp-text-muted" />
+                    <input
+                        name="search"
+                        defaultValue={filters.search ?? ''}
+                        placeholder={t('pages.hrEmploymentTypes.searchPlaceholder')}
+                        className="rp-search-input"
+                    />
+                </div>
+                <Select name="status" defaultValue={filters.status ?? ''} className="w-auto min-w-[10rem]" options={statusOptions} />
+                <Button type="submit" variant="outline">
+                    {t('common.apply')}
+                </Button>
+            </form>
+
+            <DataTable
+                columns={columns}
+                data={employmentTypes.data ?? []}
+                pagination={employmentTypes}
+                emptyMessage={t('pages.hrEmploymentTypes.empty')}
+                onRowClick={can('hr.manage-settings') ? openEdit : undefined}
+            />
+
+            <Modal show={modalOpen} onClose={() => setModalOpen(false)} maxWidth="md">
+                <form onSubmit={submit} className="space-y-4 p-6">
+                    <div className="flex items-center gap-2">
+                        <IdCard className="h-5 w-5 text-teal-600" />
+                        <h2 className="text-lg font-semibold text-rp-text">
+                            {editing ? t('pages.hrEmploymentTypes.editTitle') : t('pages.hrEmploymentTypes.createTitle')}
+                        </h2>
+                    </div>
+                    <AdminFormField label={t('pages.hrEmploymentTypes.fields.legalEntity')} error={form.errors.legal_entity_id}>
+                        <Select
+                            value={form.data.legal_entity_id}
+                            options={entityOptions}
+                            onChange={(v) => form.setData('legal_entity_id', v ?? 'global')}
+                        />
+                    </AdminFormField>
+                    <AdminFormField label={t('pages.hrEmploymentTypes.fields.code')} error={form.errors.code} required>
+                        <input
+                            className="rp-input w-full font-mono"
+                            value={form.data.code}
+                            onChange={(e) => form.setData('code', e.target.value.toLowerCase())}
+                            disabled={!!editing}
+                        />
+                    </AdminFormField>
+                    <AdminFormField label={t('pages.hrEmploymentTypes.fields.name')} error={form.errors.name} required>
+                        <input
+                            className="rp-input w-full"
+                            value={form.data.name}
+                            onChange={(e) => form.setData('name', e.target.value)}
+                        />
+                    </AdminFormField>
+                    <AdminFormField label={t('pages.hrEmploymentTypes.fields.status')} error={form.errors.status}>
+                        <Select
+                            value={form.data.status}
+                            options={formStatusOptions}
+                            onChange={(v) => form.setData('status', v ?? 'active')}
+                        />
+                    </AdminFormField>
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button type="submit" disabled={form.processing}>
+                            {t('common.save')}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+        </>
+    );
+}
+
+export default withAdminLayout(Index);

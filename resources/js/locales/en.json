@@ -63,6 +63,10 @@
         "departments": "Departments",
         "designations": "Designations",
         "grades": "Grades",
+        "employmentTypes": "Employment Types",
+        "hrSettings": "HR Settings",
+        "orgChart": "Org Chart",
+        "delegations": "Approval Delegations",
         "holidayCalendars": "Holiday Calendars",
         "expenses": "Expenses",
         "expenseCategories": "Expense Categories",
@@ -70,6 +74,7 @@
         "attendanceRecords": "Attendance Records",
         "attendanceSources": "Attendance Sources",
         "leaveTypes": "Leave Types",
+        "leavePolicies": "Leave Policies",
         "leaveRequests": "Leave Requests",
         "overtimePolicies": "Overtime Policies",
         "overtimeRecords": "Overtime Records",
@@ -391,6 +396,7 @@
             "editTitle": "Edit Employee",
             "updateSubmit": "Save Changes",
             "searchPlaceholder": "Search By Name Or Code…",
+            "allEntities": "All Entities",
             "allBranches": "All Branches",
             "selectLegalEntity": "Select Legal Entity…",
             "selectBranch": "Select Branch…",
@@ -399,6 +405,15 @@
             "attendanceHint": "Late Grace And Overtime Eligibility Are Stored On The Profile.",
             "openAttendance": "Open Attendance Records",
             "emptyAttachments": "No Attachments Yet.",
+            "orgAssignmentEffectiveFromHint": "Leave Blank To Apply Org Changes Immediately. Future Dates Schedule The Change.",
+            "assignmentHistoryTitle": "Assignment History",
+            "assignmentHistory": {
+                "field": "Field",
+                "from": "From",
+                "to": "To",
+                "effectiveFrom": "Effective From",
+                "effectiveTo": "Effective To"
+            },
             "emptyDependents": "No Dependents Added.",
             "emptyBanks": "No Bank Accounts Added.",
             "addDependent": "Add Dependent",
@@ -471,6 +486,7 @@
                 "designation": "Designation",
                 "grade": "Grade",
                 "reportingManager": "Reporting Manager",
+                "orgAssignmentEffectiveFrom": "Org Assignment Effective From",
                 "salaryStructure": "Salary Structure",
                 "joinedAs": "Joined As",
                 "contractEndDate": "Contract End Date",
@@ -693,6 +709,82 @@
                 "inactive": "Inactive"
             }
         },
+        "hrEmploymentTypes": {
+            "indexTitle": "Employment Types",
+            "indexDescription": "Configure Employment Type Catalogues Per Legal Entity Or Globally.",
+            "createTitle": "New Employment Type",
+            "editTitle": "Edit Employment Type",
+            "searchPlaceholder": "Search By Code Or Name…",
+            "empty": "No Employment Types Found.",
+            "globalScope": "Global (All Entities)",
+            "fields": {
+                "code": "Code",
+                "name": "Name",
+                "legalEntity": "Legal Entity",
+                "status": "Status"
+            },
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive"
+            }
+        },
+        "hrSettings": {
+            "indexTitle": "HR Entity Settings",
+            "indexDescription": "Default Holiday Calendars, Employee Code Sequences, And Entity HR Preferences.",
+            "save": "Save Settings",
+            "fields": {
+                "legalEntity": "Legal Entity",
+                "defaultHolidayCalendar": "Default Holiday Calendar",
+                "employeeCodeSequenceKey": "Employee Code Sequence Key",
+                "leaveFiscalYearMode": "Default Leave Fiscal Year Mode",
+                "requireDefaultCostCentre": "Require Default Cost Centre On Employees"
+            },
+            "noHolidayCalendar": "None"
+        },
+        "orgChart": {
+            "indexTitle": "Org Chart",
+            "indexDescription": "View The Reporting Hierarchy As A Collapsible Tree.",
+            "hierarchyView": "Reporting Hierarchy",
+            "allRoots": "All Root Employees",
+            "empty": "No Employees Match The Selected Filters."
+        },
+        "hrDelegations": {
+            "indexTitle": "Approval Delegations",
+            "indexDescription": "Temporarily Redirect Approvals To An Acting Manager.",
+            "createTitle": "New Delegation",
+            "editTitle": "Edit Delegation",
+            "selectEmployee": "Select Employee…",
+            "allScopes": "All Scopes",
+            "fields": {
+                "fromEmployee": "From Employee",
+                "toEmployee": "To Employee",
+                "scope": "Scope",
+                "effectiveFrom": "Effective From",
+                "effectiveTo": "Effective To",
+                "status": "Status"
+            },
+            "columns": {
+                "from": "From",
+                "to": "To",
+                "scope": "Scope",
+                "effectiveFrom": "Effective From",
+                "effectiveTo": "Effective To",
+                "status": "Status"
+            },
+            "scopes": {
+                "all": "All",
+                "leave": "Leave",
+                "expense": "Expense",
+                "overtime": "Overtime"
+            },
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive"
+            }
+        },
+        "reportingHierarchy": {
+            "importLabel": "Reporting Hierarchy"
+        },
         "holidayCalendars": {
             "indexTitle": "Holiday Calendars",
             "indexDescription": "Configure Public Holidays And Calendar Assignments.",
@@ -714,8 +806,13 @@
                 "assignableType": "Assignable Type",
                 "assignable": "Assignable",
                 "effectiveFrom": "Effective From",
-                "priority": "Priority"
+                "priority": "Priority",
+                "isRecurring": "Recurring Pattern",
+                "isRecurringHint": "Repeat This Holiday Each Year",
+                "recurrenceMonth": "Recurrence Month",
+                "recurrenceDay": "Recurrence Day"
             },
+            "recurringBadge": "Recurring",
             "columns": {
                 "name": "Calendar",
                 "code": "Code",
@@ -934,6 +1031,24 @@
                 "isPaid": "Paid",
                 "affectsPayroll": "Affects Payroll",
                 "deductionComponent": "Deduction Component",
+                "status": "Status"
+            },
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive"
+            }
+        },
+        "leavePolicies": {
+            "indexTitle": "Leave Policies",
+            "indexDescription": "Accrual Rules And Day-Count Settings Per Leave Type And Legal Entity.",
+            "allStatuses": "All Statuses",
+            "scopeDefault": "Default (All Entities)",
+            "columns": {
+                "leaveType": "Leave Type",
+                "legalEntity": "Legal Entity",
+                "accrualMethod": "Accrual Method",
+                "excludePublicHolidays": "Exclude Public Holidays",
+                "effectiveFrom": "Effective From",
                 "status": "Status"
             },
             "statuses": {

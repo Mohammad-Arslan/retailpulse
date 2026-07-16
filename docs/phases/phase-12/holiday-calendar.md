@@ -30,10 +30,10 @@ Support multiple configurable holiday calendars (national, regional, branch/enti
 | P12-HOL-FR-001 | Implemented | The system shall support multiple holiday calendars per tenant with code, name, legal_entity_id nullable, branch_id nullable. |
 | P12-HOL-FR-002 | Implemented | Each calendar contains holiday dates with name, type (public / optional / company), and is_paid flag. |
 | P12-HOL-FR-003 | Implemented | Calendars are assigned to employees, branches, or entities with effective dating; most specific wins (employee > branch > entity > default). |
-| P12-HOL-FR-004 | Planned | Leave day counting shall exclude or include holidays per leave policy configuration. |
-| P12-HOL-FR-005 | Planned | Overtime engine day_type `public_holiday` shall resolve from assigned calendar. |
+| P12-HOL-FR-004 | Implemented | Leave day counting shall exclude or include holidays per leave policy configuration. |
+| P12-HOL-FR-005 | Implemented | Overtime engine day_type `public_holiday` shall resolve from assigned calendar. |
 | P12-HOL-FR-006 | Planned | Roster generation shall mark holidays. |
-| P12-HOL-FR-007 | Planned | Recurring annual holidays may be defined by month/day pattern for future years (optional generation job). |
+| P12-HOL-FR-007 | Implemented | Recurring annual holidays may be defined by month/day pattern for future years (optional generation job). |
 | P12-HOL-FR-008 | Planned | Holidays are importable (calendar + dates). |
 
 ---

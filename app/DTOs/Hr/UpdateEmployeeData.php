@@ -31,6 +31,7 @@ final readonly class UpdateEmployeeData
         public bool $holidayCalendarProvided,
         public array $imageUploads,
         public array $removeImageIds,
+        public array $orgEffectiveFrom = [],
     ) {}
 
     public static function fromRequest(UpdateEmployeeRequest $request): self
@@ -53,6 +54,7 @@ final readonly class UpdateEmployeeData
             holidayCalendarProvided: array_key_exists('holiday_calendar_id', $validated),
             imageUploads: $created->imageUploads,
             removeImageIds: $created->removeImageIds,
+            orgEffectiveFrom: array_filter($validated['org_effective_from'] ?? []),
         );
     }
 }

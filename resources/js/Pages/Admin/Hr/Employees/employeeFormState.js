@@ -216,6 +216,22 @@ export function prepareEmployeeFormPayload(data) {
         delete payload.remove_image_ids;
     }
 
+    if (data.org_assignment_effective_from) {
+        const orgEffectiveFrom = {};
+        const tracked = [
+            'department_id',
+            'designation_id',
+            'grade_id',
+            'primary_branch_id',
+            'salary_structure_id',
+        ];
+        tracked.forEach((field) => {
+            orgEffectiveFrom[field] = data.org_assignment_effective_from;
+        });
+        payload.org_effective_from = orgEffectiveFrom;
+    }
+    delete payload.org_assignment_effective_from;
+
     return payload;
 }
 
@@ -290,6 +306,7 @@ export function emptyEmployeeForm(options = {}) {
         holiday_calendar_id: '',
         image_batches: [],
         remove_image_ids: [],
+        org_assignment_effective_from: '',
         active_tab: 'basic',
         _currency_default: currencies[0]?.code ?? '',
     };
@@ -387,6 +404,7 @@ export function employeeToForm(employee) {
         holiday_calendar_id: holidays[0]?.calendar_id ? String(holidays[0].calendar_id) : '',
         image_batches: [],
         remove_image_ids: [],
+        org_assignment_effective_from: '',
         active_tab: 'basic',
     };
 }

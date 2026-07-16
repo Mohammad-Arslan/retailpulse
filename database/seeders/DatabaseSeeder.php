@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             FinancialSettingsSeeder::class,
             CurrenciesSeeder::class,
             GradeSeeder::class,
+            HrEmploymentTypeSeeder::class,
             DesignationSeeder::class,
             DepartmentSeeder::class,
             EmployeeSeeder::class,

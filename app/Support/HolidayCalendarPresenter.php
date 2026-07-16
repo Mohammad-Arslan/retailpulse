@@ -55,6 +55,9 @@ final class HolidayCalendarPresenter
             'name' => $date->name,
             'holiday_type' => $date->holiday_type,
             'is_paid' => $date->is_paid,
+            'is_recurring' => $date->is_recurring,
+            'recurrence_month' => $date->recurrence_month,
+            'recurrence_day' => $date->recurrence_day,
         ];
     }
 

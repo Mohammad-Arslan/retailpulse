@@ -6,8 +6,11 @@ namespace App\Services\Leave;
 
 use App\Models\Employee;
 use App\Models\LeaveEntitlement;
+use App\Models\LeavePolicy;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
+use App\Services\Hr\ApprovalApproverResolver;
+use App\Services\Hr\HolidayResolver;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +18,11 @@ use Illuminate\Validation\ValidationException;
 
 final class LeaveService
 {
+    public function __construct(
+        private readonly ApprovalApproverResolver $approvers,
+        private readonly HolidayResolver $holidays,
+    ) {}
+
     public function requestLeave(
         Employee $employee,
         LeaveType $leaveType,
@@ -30,7 +38,25 @@ final class LeaveService
             ]);
         }
 
-        $days = (float) $startDate->diffInDays($endDate) + 1;
+        $policy = $this->resolveLeavePolicy($employee, $leaveType, $startDate);
+        $days = $this->countLeaveDays($employee, $startDate, $endDate, $policy);
+
+        $approverUserId = $this->approvers->resolveApproverUserId(
+            'direct_manager',
+            $employee,
+            $startDate,
+            'leave',
+        );
+
+        $approvalChain = [];
+        if ($approverUserId !== null) {
+            $approvalChain[] = [
+                'action' => 'pending',
+                'approver_user_id' => $approverUserId,
+                'strategy' => 'direct_manager',
+                'at' => now()->toIso8601String(),
+            ];
+        }
 
         return LeaveRequest::query()->create([
             'employee_id' => $employee->id,
@@ -40,7 +66,7 @@ final class LeaveService
             'days' => $days,
             'reason' => $reason,
             'status' => 'pending',
-            'approval_chain_json' => [],
+            'approval_chain_json' => $approvalChain,
         ]);
     }
 
@@ -223,5 +249,48 @@ final class LeaveService
                 'status' => __('Only pending leave requests can be updated.'),
             ]);
         }
+    }
+
+    private function resolveLeavePolicy(
+        Employee $employee,
+        LeaveType $leaveType,
+        CarbonImmutable $date,
+    ): ?LeavePolicy {
+        $dateString = $date->toDateString();
+
+        return LeavePolicy::query()
+            ->where('leave_type_id', $leaveType->id)
+            ->where('status', 'active')
+            ->where('effective_from', '<=', $dateString)
+            ->where(function ($query) use ($dateString): void {
+                $query->whereNull('effective_to')
+                    ->orWhere('effective_to', '>=', $dateString);
+            })
+            ->where(function ($query) use ($employee): void {
+                $query->whereNull('legal_entity_id')
+                    ->orWhere('legal_entity_id', $employee->legal_entity_id);
+            })
+            ->get()
+            ->sortByDesc(fn (LeavePolicy $policy): int => $policy->legal_entity_id === $employee->legal_entity_id ? 1 : 0)
+            ->first();
+    }
+
+    private function countLeaveDays(
+        Employee $employee,
+        CarbonImmutable $startDate,
+        CarbonImmutable $endDate,
+        ?LeavePolicy $policy,
+    ): float {
+        $excludeHolidays = $policy?->exclude_public_holidays ?? true;
+        $days = 0.0;
+
+        for ($date = $startDate; $date->lessThanOrEqualTo($endDate); $date = $date->addDay()) {
+            if ($excludeHolidays && $this->holidays->isPublicHoliday($employee, $date)) {
+                continue;
+            }
+            $days += 1;
+        }
+
+        return $days;
     }
 }

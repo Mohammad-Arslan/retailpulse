@@ -35,6 +35,26 @@ final class ImportExportAuthorization
                 'import' => 'employees.import',
                 'export' => 'employees.export',
             ],
+            'departments' => [
+                'import' => 'departments.import',
+                'export' => 'departments.export',
+            ],
+            'designations' => [
+                'import' => 'designations.import',
+                'export' => 'designations.export',
+            ],
+            'grades' => [
+                'import' => 'grades.import',
+                'export' => 'grades.export',
+            ],
+            'holiday-calendars' => [
+                'import' => 'holiday-calendars.import',
+                'export' => 'holiday-calendars.export',
+            ],
+            'reporting-hierarchy' => [
+                'import' => 'reporting-hierarchy.import',
+                'export' => 'reporting-hierarchy.export',
+            ],
             'suppliers' => [
                 'import' => 'suppliers.import',
                 'export' => 'suppliers.export',

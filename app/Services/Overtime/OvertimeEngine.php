@@ -8,6 +8,7 @@ use App\Models\AttendanceRecord;
 use App\Models\Employee;
 use App\Models\OvertimePolicy;
 use App\Models\OvertimeRecord;
+use App\Services\Hr\HolidayResolver;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Support\Collection;
@@ -19,6 +20,10 @@ use Illuminate\Validation\ValidationException;
  */
 final class OvertimeEngine
 {
+    public function __construct(
+        private readonly HolidayResolver $holidays,
+    ) {}
+
     public const DAY_TYPE_WEEKDAY = 'weekday';
 
     public const DAY_TYPE_WEEKEND = 'weekend';
@@ -61,10 +66,18 @@ final class OvertimeEngine
             ->first();
     }
 
-    public function resolveDayType(CarbonImmutable $date, ?string $override = null): string
-    {
+    public function resolveDayType(
+        Employee $employee,
+        CarbonImmutable $date,
+        ?string $override = null,
+        ?OvertimePolicy $policy = null,
+    ): string {
         if ($override !== null && $override !== '') {
             return $override;
+        }
+
+        if (($policy?->public_holiday_applies ?? true) && $this->holidays->isPublicHoliday($employee, $date)) {
+            return self::DAY_TYPE_PUBLIC_HOLIDAY;
         }
 
         return $date->isWeekend() ? self::DAY_TYPE_WEEKEND : self::DAY_TYPE_WEEKDAY;
@@ -124,7 +137,7 @@ final class OvertimeEngine
             throw new DomainException(__('No active overtime policy found for this employee and date.'));
         }
 
-        $resolvedDayType = $this->resolveDayType($date, $dayType);
+        $resolvedDayType = $this->resolveDayType($employee, $date, $dayType, $policy);
         $multiplier = $this->resolveMultiplier($policy, $resolvedDayType);
 
         if ($multiplier === null) {
