@@ -33,7 +33,7 @@ Provide hierarchical department (org unit) masters per legal entity for reportin
 | P12-DEPT-FR-004 | Implemented | Employees may be assigned to a department (see employees.md). |
 | P12-DEPT-FR-005 | Partial | Department assignment shall support effective dating via assignment history. |
 | P12-DEPT-FR-006 | Implemented | Soft-deactivate preserves history; cannot deactivate if active employees assigned. |
-| P12-DEPT-FR-007 | Planned | Departments are importable via historical migration. |
+| P12-DEPT-FR-007 | Implemented | Departments are importable via the generic Import/Export wizard. |
 
 ---
 

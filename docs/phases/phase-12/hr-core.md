@@ -3,7 +3,7 @@
 **Gate / registry key:** `hr`  
 **Wave:** 1  
 **Depends on:** —  
-**Status (module roll-up):** Partial  
+**Status (module roll-up):** Implemented  
 **Follows:** [architecture.md](./architecture.md)
 
 Companion specs: [employees.md](./employees.md), [departments.md](./departments.md), [designations.md](./designations.md), [grades.md](./grades.md), [reporting-hierarchy.md](./reporting-hierarchy.md).
@@ -35,12 +35,12 @@ Default roles seeded and editable (Phase 1 Spatie).
 | :--- | :--- | :--- |
 | P12-HRCORE-FR-001 | Implemented | The system shall expose an independently gateable `hr` module per branch. |
 | P12-HRCORE-FR-002 | Implemented | When `hr` is disabled, all dependent module routes and nav items shall be rejected/hidden. |
-| P12-HRCORE-FR-003 | Partial | The system shall maintain configurable employment-type catalogues per legal entity (seeded baseline: full_time, part_time, contract, hourly — fully editable; not a fixed enum in business logic). |
-| P12-HRCORE-FR-004 | Planned | The system shall support HR settings per legal entity: default fiscal year for leave, default holiday calendar, default cost centre policy, and document number sequences for employee codes. |
+| P12-HRCORE-FR-003 | Implemented | The system shall maintain configurable employment-type catalogues per legal entity (seeded baseline: full_time, part_time, contract, hourly — fully editable; not a fixed enum in business logic). |
+| P12-HRCORE-FR-004 | Implemented | The system shall support HR settings per legal entity: default fiscal year for leave, default holiday calendar, default cost centre policy, and document number sequences for employee codes. |
 | P12-HRCORE-FR-005 | Implemented | Employee codes shall be issued via Phase 11 `DocumentNumberService`. |
-| P12-HRCORE-FR-006 | Planned | The system shall support org units (departments), designations, grades, and reporting hierarchy as first-class masters (see companion docs). |
+| P12-HRCORE-FR-006 | Implemented | The system shall support org units (departments), designations, grades, and reporting hierarchy as first-class masters (see companion docs). |
 | P12-HRCORE-FR-007 | Implemented | All HR create/update/deactivate actions shall be audit logged. |
-| P12-HRCORE-FR-008 | Planned | The system shall support effective-dated assignments of department, designation, grade, branch, and manager (history preserved). |
+| P12-HRCORE-FR-008 | Implemented | The system shall support effective-dated assignments of department, designation, grade, branch, and manager (history preserved). |
 | P12-HRCORE-FR-009 | Planned | Historical employee/org import shall use the migration framework ([historical-migration.md](./historical-migration.md)). |
 
 ---
@@ -48,10 +48,10 @@ Default roles seeded and editable (Phase 1 Spatie).
 ## 4. Domain model
 
 ```text
-hr_employment_types                 # Planned as first-class; today may be string on employees
+hr_employment_types                 # Implemented
 - id, legal_entity_id nullable, code, name, status, timestamps
 
-hr_entity_settings                  # Planned
+hr_entity_settings                  # Implemented
 - id, legal_entity_id
 - default_leave_fiscal_year_mode
 - default_holiday_calendar_id nullable
@@ -72,7 +72,7 @@ Org masters: see departments / designations / grades / reporting-hierarchy docs.
 ```text
 HrModuleGate / EnsureModuleEnabled   # Implemented pattern
 EmployeeService                      # see employees.md
-OrgStructureService                  # Planned — departments, designations, grades
+OrgStructureService                  # Implemented via Department/Designation/Grade services
 ```
 
 ---
@@ -116,8 +116,8 @@ org_assignment.changed
 | :--- | :--- | :--- |
 | P12-HRCORE-AC-001 | Implemented | Branch with `hr` disabled rejects employee routes and hides HR nav. |
 | P12-HRCORE-AC-002 | Implemented | Enabling `attendance` without `hr` is rejected by dependency graph. |
-| P12-HRCORE-AC-003 | Planned | Changing employment-type catalogue labels updates UI without deployment. |
-| P12-HRCORE-AC-004 | Planned | Effective-dated department reassignment preserves prior assignment history rows. |
+| P12-HRCORE-AC-003 | Implemented | Changing employment-type catalogue labels updates UI without deployment. |
+| P12-HRCORE-AC-004 | Implemented | Effective-dated department reassignment preserves prior assignment history rows. |
 
 ---
 

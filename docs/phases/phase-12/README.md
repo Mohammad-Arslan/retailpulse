@@ -108,8 +108,8 @@ Modules remain independently enableable; waves are the recommended implementatio
 | — | [architecture.md](./architecture.md) | Cross-cutting | Binding |
 | — | [module-registry.md](./module-registry.md) | Licensing / deps | Binding |
 | — | [gaps.md](./gaps.md) | Residuals | Living |
-| 1 | [hr-core.md](./hr-core.md) | `hr` | Partial |
-| 1 | [employees.md](./employees.md) | `hr` | Partial |
+| 1 | [hr-core.md](./hr-core.md) | `hr` | Implemented |
+| 1 | [employees.md](./employees.md) | `hr` | Implemented |
 | 1 | [departments.md](./departments.md) | `hr` | Implemented |
 | 1 | [designations.md](./designations.md) | `hr` | Implemented |
 | 1 | [grades.md](./grades.md) | `hr` | Implemented |

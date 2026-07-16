@@ -11,7 +11,7 @@ import { IdCard, Plus, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-function emptyForm(legalEntities = []) {
+function emptyForm() {
     return {
         legal_entity_id: 'global',
         code: '',
@@ -25,7 +25,7 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
     const { t } = useTranslation();
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState(null);
-    const form = useForm(emptyForm(legalEntities));
+    const form = useForm(emptyForm());
 
     const entityOptions = useMemo(
         () => [
@@ -55,7 +55,7 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
     const openCreate = () => {
         setEditing(null);
         form.clearErrors();
-        form.setData(emptyForm(legalEntities));
+        form.setData(emptyForm());
         setModalOpen(true);
     };
 
@@ -108,16 +108,19 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
     const columns = useMemo(
         () => [
             {
-                id: 'code',
-                header: t('pages.hrEmploymentTypes.fields.code'),
-                cell: ({ row }) => (
-                    <span className="font-mono text-sm font-semibold text-teal-600">{row.original.code}</span>
-                ),
-            },
-            {
                 id: 'name',
                 header: t('pages.hrEmploymentTypes.fields.name'),
-                accessorKey: 'name',
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-100 text-teal-600 dark:bg-teal-500/20 dark:text-teal-300">
+                            <IdCard className="h-4 w-4" />
+                        </span>
+                        <div>
+                            <div className="text-sm font-semibold text-rp-text">{row.original.name}</div>
+                            <div className="font-mono text-xs text-rp-text-muted">{row.original.code}</div>
+                        </div>
+                    </div>
+                ),
             },
             {
                 id: 'legal_entity_name',
@@ -133,6 +136,14 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
         [t],
     );
 
+    const rowActions = (row) => {
+        if (!can('hr.manage-settings')) {
+            return [];
+        }
+
+        return [{ label: t('common.edit'), type: 'edit', onClick: () => openEdit(row) }];
+    };
+
     return (
         <>
             <Head title={t('pages.hrEmploymentTypes.indexTitle')} />
@@ -141,7 +152,7 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
                 description={t('pages.hrEmploymentTypes.indexDescription')}
             >
                 {can('hr.manage-settings') && (
-                    <Button type="button" className="rp-btn-primary" onClick={openCreate}>
+                    <Button variant="brand" onClick={openCreate}>
                         <Plus className="h-4 w-4" />
                         {t('pages.hrEmploymentTypes.createTitle')}
                     </Button>
@@ -160,7 +171,7 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
                 </div>
                 <Select name="status" defaultValue={filters.status ?? ''} className="w-auto min-w-[10rem]" options={statusOptions} />
                 <Button type="submit" variant="outline">
-                    {t('common.apply')}
+                    {t('common.search')}
                 </Button>
             </form>
 
@@ -168,18 +179,15 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
                 columns={columns}
                 data={employmentTypes.data ?? []}
                 pagination={employmentTypes}
+                rowActions={rowActions}
                 emptyMessage={t('pages.hrEmploymentTypes.empty')}
-                onRowClick={can('hr.manage-settings') ? openEdit : undefined}
             />
 
             <Modal show={modalOpen} onClose={() => setModalOpen(false)} maxWidth="md">
                 <form onSubmit={submit} className="space-y-4 p-6">
-                    <div className="flex items-center gap-2">
-                        <IdCard className="h-5 w-5 text-teal-600" />
-                        <h2 className="text-lg font-semibold text-rp-text">
-                            {editing ? t('pages.hrEmploymentTypes.editTitle') : t('pages.hrEmploymentTypes.createTitle')}
-                        </h2>
-                    </div>
+                    <h3 className="text-lg font-semibold">
+                        {editing ? t('pages.hrEmploymentTypes.editTitle') : t('pages.hrEmploymentTypes.createTitle')}
+                    </h3>
                     <AdminFormField label={t('pages.hrEmploymentTypes.fields.legalEntity')} error={form.errors.legal_entity_id}>
                         <Select
                             value={form.data.legal_entity_id}
@@ -189,7 +197,7 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
                     </AdminFormField>
                     <AdminFormField label={t('pages.hrEmploymentTypes.fields.code')} error={form.errors.code} required>
                         <input
-                            className="rp-input w-full font-mono"
+                            className="rp-form-input w-full font-mono"
                             value={form.data.code}
                             onChange={(e) => form.setData('code', e.target.value.toLowerCase())}
                             disabled={!!editing}
@@ -197,7 +205,7 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
                     </AdminFormField>
                     <AdminFormField label={t('pages.hrEmploymentTypes.fields.name')} error={form.errors.name} required>
                         <input
-                            className="rp-input w-full"
+                            className="rp-form-input w-full"
                             value={form.data.name}
                             onChange={(e) => form.setData('name', e.target.value)}
                         />
@@ -211,9 +219,9 @@ function Index({ employmentTypes, filters, legalEntities = [] }) {
                     </AdminFormField>
                     <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
-                            {t('common.cancel')}
+                            {t('confirm.cancel')}
                         </Button>
-                        <Button type="submit" disabled={form.processing}>
+                        <Button type="submit" variant="brand" disabled={form.processing}>
                             {t('common.save')}
                         </Button>
                     </div>

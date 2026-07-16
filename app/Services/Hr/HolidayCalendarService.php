@@ -15,15 +15,30 @@ use App\Models\HolidayCalendarAssignment;
 use App\Models\HolidayDate;
 use App\Models\OrganizationEntity;
 use App\Repositories\Contracts\HolidayCalendarRepositoryInterface;
+use App\Services\Accounting\DocumentNumberService;
+use App\Services\Hr\Concerns\GeneratesHrMasterCodes;
 use App\Support\HolidayCalendarPresenter;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 final class HolidayCalendarService
 {
+    use GeneratesHrMasterCodes;
+
+    private const CODE_TYPE = 'holiday_calendar';
+
+    private const CODE_PREFIX = 'HOL';
+
     public function __construct(
         private readonly HolidayCalendarRepositoryInterface $calendars,
+        private readonly DocumentNumberService $documentNumberService,
     ) {}
+
+    protected function documentNumbers(): DocumentNumberService
+    {
+        return $this->documentNumberService;
+    }
 
     /**
      * @param  array<string, mixed>  $filters
@@ -31,7 +46,8 @@ final class HolidayCalendarService
      *     calendars: LengthAwarePaginator,
      *     filters: array<string, mixed>,
      *     legalEntities: \Illuminate\Support\Collection,
-     *     branches: \Illuminate\Support\Collection
+     *     branches: \Illuminate\Support\Collection,
+     *     nextCode: string
      * }
      */
     public function indexPayload(array $filters, int $perPage): array
@@ -41,6 +57,7 @@ final class HolidayCalendarService
             'filters' => $filters,
             'legalEntities' => $this->activeLegalEntities(),
             'branches' => $this->activeBranches(),
+            'nextCode' => $this->peekMasterCode(self::CODE_TYPE, self::CODE_PREFIX),
         ];
     }
 
@@ -90,7 +107,12 @@ final class HolidayCalendarService
 
     public function createCalendar(CreateHolidayCalendarData $data): HolidayCalendar
     {
-        return $this->calendars->create($data->toArray());
+        return DB::transaction(function () use ($data): HolidayCalendar {
+            $attributes = $data->toArray();
+            $attributes['code'] = $this->nextMasterCode(self::CODE_TYPE, self::CODE_PREFIX);
+
+            return $this->calendars->create($attributes);
+        });
     }
 
     public function updateCalendar(HolidayCalendar $calendar, UpdateHolidayCalendarData $data): HolidayCalendar

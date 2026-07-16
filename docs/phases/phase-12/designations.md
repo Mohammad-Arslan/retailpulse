@@ -31,7 +31,7 @@ Maintain job titles / designations used for hiring, grade banding links, apprais
 | P12-DES-FR-002 | Implemented | Designation may optionally link to a default grade_id. |
 | P12-DES-FR-003 | Implemented | Employees reference designation_id. |
 | P12-DES-FR-004 | Partial | Designations are effective-dated when reassigned on employees. |
-| P12-DES-FR-005 | Planned | Designations are importable. |
+| P12-DES-FR-005 | Implemented | Designations are importable. |
 
 ---
 

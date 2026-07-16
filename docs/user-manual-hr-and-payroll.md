@@ -1,7 +1,7 @@
 # RetailPulse User Manual — HR, Expenses & Payroll
 
 **Audience:** HR managers, payroll officers, line managers, accountants, implementation consultants  
-**Version:** 1.9 (July 2026)  
+**Version:** 1.11 (July 2026)  
 **Scope:** Phase 12 — operating expenses, employees, attendance, leave, overtime, payroll runs, payslips, and employee self-service
 
 **See also:**
@@ -41,6 +41,7 @@ Section **HR & Payroll**:
 | **Grades** | `hr.manage-org` | `hr` |
 | **Employment Types** | `hr.manage-settings` | `hr` |
 | **HR Settings** | `hr.manage-settings` | `hr` |
+| **HR Modules** | `hr.manage-settings` | `hr` |
 | **Org Chart** | `hr.view-employees` | `hr` |
 | **Approval Delegations** | `hr.manage-org` | `hr` |
 | **Holiday Calendars** | `holiday.manage` | `holiday_calendar` |
@@ -88,11 +89,11 @@ Admin → **Recurring Expenses**. Schedules generate one occurrence per `period_
 
 ### 4.1 Organization masters
 
-1. Admin → **Departments** — hierarchical units per legal entity (parent cycle checks; cannot deactivate while active employees are assigned). **Code** is previewed on create (`DEPT-00001` style), assigned uniquely on save, and read-only. Same auto-code pattern on **Designations** (`DESIG-#####`) and **Grades** (`GRADE-#####`). Optional default cost centre. **Import / Export** toolbar on the list (`departments.import` / `departments.export`).
+1. Admin → **Departments** — hierarchical units per legal entity (parent cycle checks; cannot deactivate while active employees are assigned). **Code** is previewed on create (`DEPT-00001` style), assigned uniquely on save, and read-only. Same auto-code pattern on **Designations** (`DESIG-#####`), **Grades** (`GRADE-#####`), and **Holiday Calendars** (`HOL-#####`). Optional default cost centre. **Import / Export** toolbar on the list (`departments.import` / `departments.export`).
 2. Admin → **Designations** — job titles; optional default grade. Import/export via shared wizard (`designations.import` / `designations.export`).
 3. Admin → **Grades** — pay grades / bands with optional effective dating. **Currency** is chosen from active Accounting **Currencies** (not free text). Import/export via shared wizard (`grades.import` / `grades.export`).
 4. Admin → **Employment Types** — configurable employment categories (entity-scoped or global). Used on employee forms and validation.
-5. Admin → **HR Settings** — per legal entity: default holiday calendar, employee code sequence key, leave fiscal defaults.
+5. Admin → **HR Settings** — per legal entity: default holiday calendar, **Employee Code Sequence Key** (document sequence name; default `employee` → codes like `EMP-00001`), **Leave Fiscal Year Mode** (Calendar Year / Fiscal Year / Hire Anniversary), and cost-centre requirement toggle. Create calendars first under **Holiday Calendars**, then pick one as the entity default.
 
 Permission: `hr.manage-org` (masters), `hr.manage-settings` (employment types + entity settings).
 
@@ -151,8 +152,8 @@ See also: [`generic-import-export.md`](generic-import-export.md).
 
 ### 4.4 Holiday calendars
 
-1. Enable module key **`holiday_calendar`** on the branch HR profile (requires **HR**).
-2. Admin → **Holiday Calendars** — create calendar, add dates (unique per calendar), assign to legal entity / branch / employee with effective dates. Mark dates as **Recurring Pattern** to store month/day for annual generation (`php artisan hr:generate-recurring-holidays {year}`).
+1. Enable module key **`holiday_calendar`** on the branch via Admin → **HR Modules** (requires **HR**). After enable, **Holiday Calendars** appears in the sidebar.
+2. Admin → **Holiday Calendars** — create calendar (**Code** auto-previewed as `HOL-#####`, assigned on save), add dates (unique per calendar), assign to legal entity / branch / employee with effective dates. Mark dates as **Recurring Pattern** to store month/day for annual generation (`php artisan hr:generate-recurring-holidays {year}`). Deleting a date or assignment asks for confirmation. Import may still supply an explicit calendar code per row.
 3. **Import / Export** on the calendar list uses flat rows (calendar metadata + holiday date columns). Resolution order for a given employee/date: **employee → branch → legal entity** (higher priority wins).
 4. **Leave** day counts exclude public holidays when the active leave policy has **Exclude Public Holidays** enabled (Admin → **Leave Policies**).
 5. **Overtime** uses the `public_holiday` day-type multiplier when the active overtime policy has **Public Holiday Applies** and the date is a public holiday on the employee's resolved calendar.
@@ -219,6 +220,8 @@ Draft → (Calculate) → Pending Approval → Approved → Posted → Reversed
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.11 | July 2026 | Holiday Calendar create uses auto-generated `HOL-#####` codes (same pattern as Departments) |
+| 1.10 | July 2026 | Wave 1 UI consistency: HR Settings fiscal-year Select + sequence-key hints, holiday delete confirm, list empty states / row actions aligned |
 | 1.9 | July 2026 | Wave 1 closure: HR settings, employment types, org imports, org chart, delegations, leave holiday day count, OT public-holiday multiplier, recurring holidays command |
 | 1.8 | July 2026 | Employee import/export via shared Import/Export wizard |
 | 1.7 | July 2026 | Employee attachments: Add More for multiple document types in one save |

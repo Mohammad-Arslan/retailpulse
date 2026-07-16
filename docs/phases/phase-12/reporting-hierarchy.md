@@ -40,7 +40,7 @@ Define who reports to whom for leave/expense/overtime/appraisal approvals and or
 ## 4. Domain model
 
 ```text
-# Primary link on employees.reporting_manager_employee_id (Planned)
+# Primary link on employees.reporting_manager_employee_id (Implemented)
 
 employee_manager_history
 - id, employee_id, manager_employee_id, effective_from, effective_to nullable,

@@ -32,7 +32,7 @@ Define pay grades / bands used for compensation ranges, eligibility rules (leave
 | P12-GRD-FR-003 | Implemented | Grades are effective-dated (`effective_from` / `effective_to`) for band changes. |
 | P12-GRD-FR-004 | Implemented | Employees reference grade_id; history retained on change. |
 | P12-GRD-FR-005 | Planned | Loan / advance eligibility policies may reference grade (see salary-advance, employee-loans). |
-| P12-GRD-FR-006 | Planned | Grades are importable. |
+| P12-GRD-FR-006 | Implemented | Grades are importable. |
 
 ---
 

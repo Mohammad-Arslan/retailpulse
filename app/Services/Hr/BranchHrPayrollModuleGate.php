@@ -10,7 +10,7 @@ use App\Services\Hr\Contracts\HrPayrollModuleGate;
 final class BranchHrPayrollModuleGate implements HrPayrollModuleGate
 {
     /** @var list<string> */
-    private const DEFAULT_MODULES = ['expenses', 'hr'];
+    private const DEFAULT_MODULES = ['expenses', 'hr', 'holiday_calendar'];
 
     /** @var array<int|string, list<string>> */
     private array $resolvedCache = [];

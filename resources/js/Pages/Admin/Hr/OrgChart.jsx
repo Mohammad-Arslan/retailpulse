@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function OrgNode({ node, depth = 0 }) {
+    const { t } = useTranslation();
     const [expanded, setExpanded] = useState(depth < 2);
     const hasChildren = node.children?.length > 0;
 
@@ -22,7 +23,7 @@ function OrgNode({ node, depth = 0 }) {
                         type="button"
                         onClick={() => setExpanded((v) => !v)}
                         className="mt-0.5 text-rp-text-muted hover:text-rp-text"
-                        aria-label={expanded ? 'Collapse' : 'Expand'}
+                        aria-label={expanded ? t('pages.orgChart.collapse') : t('pages.orgChart.expand')}
                     >
                         {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </button>

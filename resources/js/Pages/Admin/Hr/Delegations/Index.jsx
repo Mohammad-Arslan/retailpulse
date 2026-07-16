@@ -107,9 +107,11 @@ function Index({ delegations, filters, employees = [], scopes = [] }) {
                 id: 'from',
                 header: t('pages.hrDelegations.columns.from'),
                 cell: ({ row }) => (
-                    <div className="flex items-center gap-2">
-                        <UserCheck className="h-4 w-4 text-rp-text-muted" />
-                        <span className="text-sm">{row.original.from_employee}</span>
+                    <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300">
+                            <UserCheck className="h-4 w-4" />
+                        </span>
+                        <span className="text-sm font-semibold text-rp-text">{row.original.from_employee}</span>
                     </div>
                 ),
             },
@@ -140,19 +142,17 @@ function Index({ delegations, filters, employees = [], scopes = [] }) {
                 cell: ({ row }) =>
                     t(`pages.hrDelegations.statuses.${row.original.status}`, { defaultValue: row.original.status }),
             },
-            {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) =>
-                    can('hr.manage-org') ? (
-                        <Button type="button" variant="ghost" size="sm" onClick={() => openEdit(row.original)}>
-                            {t('common.edit')}
-                        </Button>
-                    ) : null,
-            },
         ],
-        [can, t],
+        [t],
     );
+
+    const rowActions = (row) => {
+        if (!can('hr.manage-org')) {
+            return [];
+        }
+
+        return [{ label: t('common.edit'), type: 'edit', onClick: () => openEdit(row) }];
+    };
 
     return (
         <>
@@ -168,19 +168,30 @@ function Index({ delegations, filters, employees = [], scopes = [] }) {
 
             <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">
                 <Select name="status" defaultValue={filters.status ?? ''} className="w-auto min-w-[10rem]" options={statusOptions} />
-                <Select name="scope" defaultValue={filters.scope ?? ''} className="w-auto min-w-[10rem]" options={[{ value: '', label: t('pages.hrDelegations.allScopes') }, ...scopeOptions]} />
+                <Select
+                    name="scope"
+                    defaultValue={filters.scope ?? ''}
+                    className="w-auto min-w-[10rem]"
+                    options={[{ value: '', label: t('pages.hrDelegations.allScopes') }, ...scopeOptions]}
+                />
                 <Button type="submit" variant="outline">
                     {t('common.apply')}
                 </Button>
             </form>
 
-            <DataTable columns={columns} data={delegations.data ?? []} pagination={delegations} />
+            <DataTable
+                columns={columns}
+                data={delegations.data ?? []}
+                pagination={delegations}
+                rowActions={rowActions}
+                emptyMessage={t('pages.hrDelegations.empty')}
+            />
 
             <Modal show={modalOpen} onClose={() => setModalOpen(false)} maxWidth="lg">
                 <form onSubmit={submit} className="space-y-4 p-6">
-                    <h2 className="text-lg font-semibold text-rp-text">
+                    <h3 className="text-lg font-semibold">
                         {editing ? t('pages.hrDelegations.editTitle') : t('pages.hrDelegations.createTitle')}
-                    </h2>
+                    </h3>
                     <AdminFormField label={t('pages.hrDelegations.fields.fromEmployee')} error={form.errors.from_employee_id}>
                         <Select
                             value={form.data.from_employee_id}
@@ -199,17 +210,27 @@ function Index({ delegations, filters, employees = [], scopes = [] }) {
                         <Select value={form.data.scope} options={scopeOptions} onChange={(v) => form.setData('scope', v ?? 'leave')} />
                     </AdminFormField>
                     <AdminFormField label={t('pages.hrDelegations.fields.effectiveFrom')} error={form.errors.effective_from}>
-                        <input type="date" className="rp-input w-full" value={form.data.effective_from} onChange={(e) => form.setData('effective_from', e.target.value)} />
+                        <input
+                            type="date"
+                            className="rp-form-input w-full"
+                            value={form.data.effective_from}
+                            onChange={(e) => form.setData('effective_from', e.target.value)}
+                        />
                     </AdminFormField>
                     <AdminFormField label={t('pages.hrDelegations.fields.effectiveTo')} error={form.errors.effective_to}>
-                        <input type="date" className="rp-input w-full" value={form.data.effective_to} onChange={(e) => form.setData('effective_to', e.target.value)} />
+                        <input
+                            type="date"
+                            className="rp-form-input w-full"
+                            value={form.data.effective_to}
+                            onChange={(e) => form.setData('effective_to', e.target.value)}
+                        />
                     </AdminFormField>
                     <AdminFormField label={t('pages.hrDelegations.fields.status')} error={form.errors.status}>
                         <Select value={form.data.status} options={formStatusOptions} onChange={(v) => form.setData('status', v ?? 'active')} />
                     </AdminFormField>
                     <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
-                            {t('common.cancel')}
+                            {t('confirm.cancel')}
                         </Button>
                         <Button type="submit" variant="brand" disabled={form.processing}>
                             {t('common.save')}

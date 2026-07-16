@@ -1,4 +1,5 @@
 import AdminFormField from '@/Components/common/AdminFormField';
+import { useConfirm } from '@/Components/common/ConfirmDialogProvider';
 import PageHeader from '@/Components/common/PageHeader';
 import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
@@ -11,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 function Show({ calendar, dates = [], assignments = [], employees = [], branches = [], legalEntities = [] }) {
     const { t } = useTranslation();
     const can = useCan();
+    const confirm = useConfirm();
 
     const dateForm = useForm({
         holiday_date: '',
@@ -61,6 +63,45 @@ function Show({ calendar, dates = [], assignments = [], employees = [], branches
         }
         return legalEntities.map((e) => ({ value: String(e.id), label: e.legal_name }));
     }, [assignForm.data.assignable_type, branches, employees, legalEntities]);
+
+    const assignableTypeLabel = (type) =>
+        t(`pages.holidayCalendars.assignTypes.${type === 'legal_entity' ? 'legalEntity' : type}`, {
+            defaultValue: type,
+        });
+
+    const deleteDate = async (date) => {
+        const confirmed = await confirm({
+            title: t('confirm.deleteTitle'),
+            description: t('pages.holidayCalendars.confirmDeleteDate', { name: date.name }),
+            confirmLabel: t('common.delete'),
+            cancelLabel: t('confirm.cancel'),
+            variant: 'destructive',
+        });
+        if (!confirmed) {
+            return;
+        }
+        router.delete(route('admin.hr.holiday-calendars.dates.destroy', [calendar.id, date.id]), {
+            preserveScroll: true,
+        });
+    };
+
+    const deleteAssignment = async (assignment) => {
+        const confirmed = await confirm({
+            title: t('confirm.deleteTitle'),
+            description: t('pages.holidayCalendars.confirmDeleteAssignment', {
+                name: assignment.assignable_label,
+            }),
+            confirmLabel: t('common.delete'),
+            cancelLabel: t('confirm.cancel'),
+            variant: 'destructive',
+        });
+        if (!confirmed) {
+            return;
+        }
+        router.delete(route('admin.hr.holiday-calendars.assignments.destroy', [calendar.id, assignment.id]), {
+            preserveScroll: true,
+        });
+    };
 
     return (
         <>
@@ -202,18 +243,9 @@ function Show({ calendar, dates = [], assignments = [], employees = [], branches
                                 )
                             </span>
                             {can('holiday.manage') && (
-                                <button
-                                    type="button"
-                                    className="text-xs text-red-600 hover:underline"
-                                    onClick={() =>
-                                        router.delete(
-                                            route('admin.hr.holiday-calendars.dates.destroy', [calendar.id, d.id]),
-                                            { preserveScroll: true },
-                                        )
-                                    }
-                                >
+                                <Button type="button" variant="ghost" size="sm" className="text-red-600" onClick={() => deleteDate(d)}>
                                     {t('common.delete')}
-                                </button>
+                                </Button>
                             )}
                         </li>
                     ))}
@@ -301,25 +333,19 @@ function Show({ calendar, dates = [], assignments = [], employees = [], branches
                     {assignments.map((a) => (
                         <li key={a.id} className="flex items-center justify-between p-3 text-sm">
                             <span>
-                                {a.assignable_label} ({a.assignable_type}) — {a.effective_from}
+                                {a.assignable_label} ({assignableTypeLabel(a.assignable_type)}) — {a.effective_from}
                                 {a.effective_to ? ` → ${a.effective_to}` : ''}
                             </span>
                             {can('holiday.manage') && (
-                                <button
+                                <Button
                                     type="button"
-                                    className="text-xs text-red-600 hover:underline"
-                                    onClick={() =>
-                                        router.delete(
-                                            route('admin.hr.holiday-calendars.assignments.destroy', [
-                                                calendar.id,
-                                                a.id,
-                                            ]),
-                                            { preserveScroll: true },
-                                        )
-                                    }
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-red-600"
+                                    onClick={() => deleteAssignment(a)}
                                 >
                                     {t('common.delete')}
-                                </button>
+                                </Button>
                             )}
                         </li>
                     ))}

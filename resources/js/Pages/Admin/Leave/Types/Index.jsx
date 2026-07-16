@@ -41,7 +41,7 @@ function Index({ types, filters }) {
                             <CalendarDays className="h-4 w-4" />
                         </span>
                         <div>
-                            <div className="text-sm font-semibold text-rp-text-primary">
+                            <div className="text-sm font-semibold text-rp-text">
                                 {row.original.name ?? '—'}
                             </div>
                             <div className="text-xs text-rp-text-muted">{row.original.code ?? '—'}</div>
@@ -107,7 +107,12 @@ function Index({ types, filters }) {
                 </Button>
             </form>
 
-            <DataTable columns={columns} data={types.data ?? []} pagination={types} />
+            <DataTable
+                columns={columns}
+                data={types.data ?? []}
+                pagination={types}
+                emptyMessage={t('pages.leaveTypes.empty')}
+            />
         </>
     );
 }

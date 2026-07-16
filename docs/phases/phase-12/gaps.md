@@ -41,7 +41,7 @@ Status legend: **Partial** = some code exists / incomplete vs SRS · **Planned**
 | :--- | :--- | :--- |
 | Attendance | Implemented | Late/early vs roster, policies, historical import (Planned) |
 | Shifts & roster | Planned | Entire module |
-| Leave | Partial | Holiday-aware day count, half-day, encashment |
+| Leave | Partial | Public-holiday day count Implemented; half-day, encashment, weekend exclusion Planned |
 | Leave policies | Partial | Encashment, eligibility JSON, accrual scheduler hardening |
 | Leave fiscal year | Partial | Year-end carry/expire/encash job |
 | Overtime | Implemented | Roster/holiday integration, comp-off (Planned) |

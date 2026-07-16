@@ -219,21 +219,27 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.hr.settings.*',
                 'keywords' => ['hr settings', 'entity defaults', 'holiday calendar default'],
             ]),
-            self::item('orgChart', 'orgChart', 'admin.hr.org-chart.index', 'network', 'hr', 16, [
+            self::item('hrModules', 'hrModules', 'admin.hr.modules.index', 'boxes', 'hr', 16, [
+                'permission' => 'hr.manage-settings',
+                'module' => 'hr',
+                'routePattern' => 'admin.hr.modules.*',
+                'keywords' => ['hr modules', 'holiday calendar module', 'leave module', 'attendance module'],
+            ]),
+            self::item('orgChart', 'orgChart', 'admin.hr.org-chart.index', 'network', 'hr', 17, [
                 'permission' => 'hr.view-employees',
                 'permissionsAny' => ['hr.view-employees', 'hr.manage-org'],
                 'module' => 'hr',
                 'routePattern' => 'admin.hr.org-chart.*',
                 'keywords' => ['org chart', 'reporting hierarchy', 'manager tree'],
             ]),
-            self::item('delegations', 'delegations', 'admin.hr.delegations.index', 'user-check', 'hr', 17, [
+            self::item('delegations', 'delegations', 'admin.hr.delegations.index', 'user-check', 'hr', 18, [
                 'permission' => 'hr.manage-org',
                 'permissionsAny' => ['hr.manage-org'],
                 'module' => 'hr',
                 'routePattern' => 'admin.hr.delegations.*',
                 'keywords' => ['delegation', 'acting manager', 'approval delegate'],
             ]),
-            self::item('holidayCalendars', 'holidayCalendars', 'admin.hr.holiday-calendars.index', 'calendar-days', 'holiday_calendar', 18, [
+            self::item('holidayCalendars', 'holidayCalendars', 'admin.hr.holiday-calendars.index', 'calendar-days', 'holiday_calendar', 19, [
                 'permission' => 'holiday.manage',
                 'permissionsAny' => ['holiday.manage', 'hr.view-employees'],
                 'module' => 'holiday_calendar',

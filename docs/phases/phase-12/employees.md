@@ -3,7 +3,7 @@
 **Gate / registry key:** `hr`  
 **Wave:** 1  
 **Depends on:** `hr`  
-**Status (module roll-up):** Partial  
+**Status (module roll-up):** Implemented  
 **Follows:** [architecture.md](./architecture.md)
 
 ---
@@ -44,7 +44,7 @@ Maintain the employee master record: identity, employment lifecycle, pay structu
 | P12-EMP-FR-011 | Implemented | Employee shall support reporting_manager_employee_id (see reporting-hierarchy). |
 | P12-EMP-FR-012 | Implemented | Personal data (name, CNIC/national ID, addresses, contacts, emergency contacts) shall be stored as configurable profile fields / subtables. |
 | P12-EMP-FR-013 | Partial | Document attachments (contract, ID copies) use Phase 30 document vault when available; until then configurable disk storage. |
-| P12-EMP-FR-014 | Partial | Effective-dated salary structure and org assignments shall be retained historically. |
+| P12-EMP-FR-014 | Implemented | Effective-dated salary structure and org assignments shall be retained historically. |
 | P12-EMP-FR-015 | Implemented | Probation end date and confirmation date shall be supported fields. |
 | P12-EMP-FR-016 | Implemented | Multi-branch assignment (secondary branches) shall be supported for attendance/roster. |
 | P12-EMP-FR-017 | Implemented | Employee import (CSV/XLSX) validates and commits via the shared Import/Export wizard (`employees` entity). |
@@ -86,7 +86,7 @@ employee_attachments                        # Implemented (local disk until Phas
 employee_branch_assignments                 # Implemented
 employee_shift_preferences                  # Implemented (prefs only; no roster)
 
-employee_assignment_history                 # Partial — org field changes recorded
+employee_assignment_history                 # Implemented — org + salary_structure field changes with effective_to
 - id, employee_id, field_or_type, old_value, new_value, effective_from, changed_by, timestamps
 ```
 

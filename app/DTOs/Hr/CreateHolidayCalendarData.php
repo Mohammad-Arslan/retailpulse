@@ -9,7 +9,6 @@ use App\Http\Requests\Admin\Hr\StoreHolidayCalendarRequest;
 final readonly class CreateHolidayCalendarData
 {
     public function __construct(
-        public string $code,
         public string $name,
         public ?int $legalEntityId,
         public ?int $branchId,
@@ -21,7 +20,6 @@ final readonly class CreateHolidayCalendarData
         $validated = $request->validated();
 
         return new self(
-            code: (string) $validated['code'],
             name: (string) $validated['name'],
             legalEntityId: isset($validated['legal_entity_id']) ? (int) $validated['legal_entity_id'] : null,
             branchId: isset($validated['branch_id']) ? (int) $validated['branch_id'] : null,
@@ -35,7 +33,6 @@ final readonly class CreateHolidayCalendarData
     public function toArray(): array
     {
         return [
-            'code' => $this->code,
             'name' => $this->name,
             'legal_entity_id' => $this->legalEntityId,
             'branch_id' => $this->branchId,

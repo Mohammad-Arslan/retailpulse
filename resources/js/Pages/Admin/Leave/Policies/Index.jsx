@@ -54,7 +54,10 @@ function Index({ policies, filters }) {
             {
                 id: 'accrualMethod',
                 header: t('pages.leavePolicies.columns.accrualMethod'),
-                cell: ({ row }) => row.original.accrual_method,
+                cell: ({ row }) =>
+                    t(`pages.leavePolicies.accrualMethods.${row.original.accrual_method}`, {
+                        defaultValue: row.original.accrual_method,
+                    }),
             },
             {
                 id: 'excludePublicHolidays',
@@ -90,7 +93,12 @@ function Index({ policies, filters }) {
                 </Button>
             </form>
 
-            <DataTable columns={columns} data={policies.data ?? []} pagination={policies} />
+            <DataTable
+                columns={columns}
+                data={policies.data ?? []}
+                pagination={policies}
+                emptyMessage={t('pages.leavePolicies.empty')}
+            />
         </>
     );
 }

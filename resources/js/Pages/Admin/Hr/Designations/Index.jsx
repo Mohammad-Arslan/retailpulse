@@ -130,7 +130,7 @@ function Index({ designations, filters, legalEntities = [], grades = [], nextCod
             },
             {
                 id: 'entity',
-                header: t('pages.hrDepartments.columns.legalEntity'),
+                header: t('pages.hrDesignations.columns.legalEntity'),
                 cell: ({ row }) => row.original.legal_entity_name ?? '—',
             },
             {

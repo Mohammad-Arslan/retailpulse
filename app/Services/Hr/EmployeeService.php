@@ -66,6 +66,7 @@ final class EmployeeService
         private readonly ImageService $images,
         private readonly HrEmploymentTypeService $employmentTypes,
         private readonly EmployeeAssignmentService $assignments,
+        private readonly HrEntitySettingsService $entitySettings,
     ) {}
 
     /**
@@ -161,8 +162,18 @@ final class EmployeeService
     {
         return DB::transaction(function () use ($data): Employee {
             $attributes = $data->employee;
+            $sequenceKey = 'employee';
+            $legalEntityId = isset($attributes['legal_entity_id']) ? (int) $attributes['legal_entity_id'] : null;
+            if ($legalEntityId !== null) {
+                $entitySetting = $this->entitySettings->forEntity($legalEntityId);
+                $configuredKey = $entitySetting?->employee_code_sequence_key;
+                if (is_string($configuredKey) && $configuredKey !== '') {
+                    $sequenceKey = $configuredKey;
+                }
+            }
+
             $code = $this->documentNumbers->next(
-                'employee',
+                $sequenceKey,
                 'EMP',
                 isset($attributes['primary_branch_id']) ? (int) $attributes['primary_branch_id'] : null,
             );

@@ -39,7 +39,7 @@ Manage leave types, entitlements, and requests with approval, balance updates, a
 | P12-LV-FR-005 | Implemented | Approval updates entitlement `used_days`. |
 | P12-LV-FR-006 | Implemented | Unpaid / over-balance leave feeds payroll as a configured deduction component (not hardcoded reduction). |
 | P12-LV-FR-007 | Partial | Approval chain configurable (`approval_chain_json`); full workflow = Phase 29. |
-| P12-LV-FR-008 | Planned | Day count shall respect weekend/holiday exclusion per policy + holiday calendar. |
+| P12-LV-FR-008 | Partial | Day count respects public-holiday exclusion per leave policy + holiday calendar; weekend exclusion remains Wave 2. |
 | P12-LV-FR-009 | Planned | Half-day / hourly leave units when policy allows. |
 | P12-LV-FR-010 | Planned | Encashment requests convert balance to pay component (see leave-policies). |
 | P12-LV-FR-011 | Planned | Carry-forward processing at fiscal year boundary (see leave-fiscal-year). |
@@ -121,7 +121,7 @@ leave.encashment_posted          # Planned — may map to payroll adjustment, no
 | :--- | :--- | :--- |
 | P12-LV-AC-001 | Implemented | Approval increments used_days and reduces remaining. |
 | P12-LV-AC-002 | Implemented | Unpaid leave appears as deduction component in payroll run. |
-| P12-LV-AC-003 | Planned | Leave spanning public holiday excludes holiday when policy configured. |
+| P12-LV-AC-003 | Implemented | Leave spanning public holiday excludes holiday when policy configured. |
 | P12-LV-AC-004 | Implemented | Cancelled request does not consume balance. |
 
 ---

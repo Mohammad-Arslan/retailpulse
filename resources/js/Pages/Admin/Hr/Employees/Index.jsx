@@ -24,7 +24,7 @@ function Index({ employees, filters, branches = [] }) {
 
     const statusOptions = useMemo(
         () => [
-            { value: '', label: t('common.all') },
+            { value: '', label: t('common.allStatuses') },
             { value: 'active', label: t('pages.hrEmployees.statuses.active') },
             { value: 'inactive', label: t('pages.hrEmployees.statuses.inactive') },
             { value: 'terminated', label: t('pages.hrEmployees.statuses.terminated') },
@@ -101,6 +101,26 @@ function Index({ employees, filters, branches = [] }) {
         [t],
     );
 
+    const rowActions = (row) => {
+        const actions = [
+            {
+                label: t('common.view'),
+                type: 'view',
+                onClick: () => router.visit(route('admin.hr.employees.show', row.id)),
+            },
+        ];
+
+        if (can('hr.manage-employees')) {
+            actions.push({
+                label: t('common.edit'),
+                type: 'edit',
+                onClick: () => router.visit(route('admin.hr.employees.edit', row.id)),
+            });
+        }
+
+        return actions;
+    };
+
     return (
         <>
             <Head title={t('pages.hrEmployees.indexTitle')} />
@@ -156,11 +176,17 @@ function Index({ employees, filters, branches = [] }) {
                     options={branchOptions}
                 />
                 <Button type="submit" variant="outline">
-                    {t('common.apply')}
+                    {t('common.search')}
                 </Button>
             </form>
 
-            <DataTable columns={columns} data={employees.data ?? []} pagination={employees} />
+            <DataTable
+                columns={columns}
+                data={employees.data ?? []}
+                pagination={employees}
+                rowActions={rowActions}
+                emptyMessage={t('pages.hrEmployees.empty')}
+            />
         </>
     );
 }

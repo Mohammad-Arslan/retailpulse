@@ -14,13 +14,21 @@ final class StoreHolidayCalendarRequest extends FormRequest
         return $this->user()?->can('holiday.manage') ?? false;
     }
 
+    protected function prepareForValidation(): void
+    {
+        foreach (['legal_entity_id', 'branch_id'] as $field) {
+            if ($this->input($field) === '') {
+                $this->merge([$field => null]);
+            }
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'max:64', 'unique:holiday_calendars,code'],
             'name' => ['required', 'string', 'max:255'],
             'legal_entity_id' => ['nullable', 'integer', 'exists:organization_entities,id'],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],

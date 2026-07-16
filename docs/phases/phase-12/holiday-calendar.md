@@ -34,7 +34,7 @@ Support multiple configurable holiday calendars (national, regional, branch/enti
 | P12-HOL-FR-005 | Implemented | Overtime engine day_type `public_holiday` shall resolve from assigned calendar. |
 | P12-HOL-FR-006 | Planned | Roster generation shall mark holidays. |
 | P12-HOL-FR-007 | Implemented | Recurring annual holidays may be defined by month/day pattern for future years (optional generation job). |
-| P12-HOL-FR-008 | Planned | Holidays are importable (calendar + dates). |
+| P12-HOL-FR-008 | Implemented | Holidays are importable (calendar + dates). |
 
 ---
 
@@ -101,8 +101,8 @@ Used by leave/OT recalculation listeners if needed.
 | ID | Status | Criterion |
 | :--- | :--- | :--- |
 | P12-HOL-AC-001 | Implemented | Employee on Branch A calendar sees Branch A holidays, not Branch B. |
-| P12-HOL-AC-002 | Planned | Leave request spanning a public holiday excludes that day when policy says so. |
-| P12-HOL-AC-003 | Planned | Overtime on a configured public holiday uses public_holiday multiplier. |
+| P12-HOL-AC-002 | Implemented | Leave request spanning a public holiday excludes that day when policy says so. |
+| P12-HOL-AC-003 | Implemented | Overtime on a configured public holiday uses public_holiday multiplier. |
 | P12-HOL-AC-004 | Implemented | Duplicate date in same calendar rejected. |
 
 ---

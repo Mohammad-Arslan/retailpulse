@@ -65,6 +65,7 @@
         "grades": "Grades",
         "employmentTypes": "Employment Types",
         "hrSettings": "HR Settings",
+        "hrModules": "HR Modules",
         "orgChart": "Org Chart",
         "delegations": "Approval Delegations",
         "holidayCalendars": "Holiday Calendars",
@@ -147,6 +148,16 @@
             "fixed_assets": "Fixed Assets",
             "intercompany": "Intercompany",
             "credit_notes": "Credit Notes"
+        },
+        "hrModules": {
+            "expenses": "Expenses",
+            "hr": "HR",
+            "holiday_calendar": "Holiday Calendar",
+            "attendance": "Attendance",
+            "leave": "Leave",
+            "overtime": "Overtime",
+            "payroll": "Payroll",
+            "employee_self_service": "Employee Self-Service"
         },
         "allStatuses": "All Statuses",
         "allSuppliers": "All Suppliers",
@@ -398,6 +409,7 @@
             "searchPlaceholder": "Search By Name Or Code…",
             "allEntities": "All Entities",
             "allBranches": "All Branches",
+            "empty": "No Employees Found.",
             "selectLegalEntity": "Select Legal Entity…",
             "selectBranch": "Select Branch…",
             "shiftHint": "Default Shift Preferences Only. Full Rosters Will Connect Here In A Later Module.",
@@ -669,6 +681,7 @@
             },
             "columns": {
                 "name": "Designation",
+                "legalEntity": "Legal Entity",
                 "defaultGrade": "Default Grade",
                 "status": "Status"
             },
@@ -739,14 +752,39 @@
                 "leaveFiscalYearMode": "Default Leave Fiscal Year Mode",
                 "requireDefaultCostCentre": "Require Default Cost Centre On Employees"
             },
-            "noHolidayCalendar": "None"
+            "noHolidayCalendar": "None",
+            "placeholders": {
+                "employeeCodeSequenceKey": "employee"
+            },
+            "hints": {
+                "defaultHolidayCalendar": "Used As The Entity Default When An Employee Has No Calendar Assignment. Create Calendars Under Holiday Calendars First.",
+                "employeeCodeSequenceKey": "Document Sequence Key For Auto Employee Codes. Leave Blank Or Use employee To Generate Codes Like EMP-00001.",
+                "leaveFiscalYearMode": "Default Basis For Leave Accrual Year Boundaries On This Entity."
+            },
+            "fiscalYearModes": {
+                "calendarYear": "Calendar Year",
+                "fiscalYear": "Fiscal Year",
+                "hireAnniversary": "Hire Anniversary"
+            }
+        },
+        "hrModules": {
+            "indexTitle": "HR Modules",
+            "indexDescription": "Enable Or Disable HR, Holiday Calendar, Leave, Attendance, And Payroll Features Per Branch.",
+            "modulesTitle": "Enabled Modules",
+            "modulesHint": "Holiday Calendars Appear In The Sidebar Only When Holiday Calendar Is Enabled For The Active Branch.",
+            "selectBranchHint": "Select A Branch To Manage Its HR Modules.",
+            "alwaysOn": "Always On",
+            "requires": "Requires: {{modules}}",
+            "save": "Save Modules"
         },
         "orgChart": {
             "indexTitle": "Org Chart",
             "indexDescription": "View The Reporting Hierarchy As A Collapsible Tree.",
             "hierarchyView": "Reporting Hierarchy",
             "allRoots": "All Root Employees",
-            "empty": "No Employees Match The Selected Filters."
+            "empty": "No Employees Match The Selected Filters.",
+            "expand": "Expand",
+            "collapse": "Collapse"
         },
         "hrDelegations": {
             "indexTitle": "Approval Delegations",
@@ -755,6 +793,7 @@
             "editTitle": "Edit Delegation",
             "selectEmployee": "Select Employee…",
             "allScopes": "All Scopes",
+            "empty": "No Approval Delegations Found.",
             "fields": {
                 "fromEmployee": "From Employee",
                 "toEmployee": "To Employee",
@@ -796,9 +835,13 @@
             "assignmentsTitle": "Calendar Assignments",
             "addDate": "Add Date",
             "addAssignment": "Add Assignment",
+            "confirmDeleteDate": "Delete Holiday {{name}}?",
+            "confirmDeleteAssignment": "Remove Assignment For {{name}}?",
             "fields": {
                 "code": "Code",
+                "codeAutoHint": "Generated Automatically.",
                 "name": "Name",
+                "namePlaceholder": "Enter Calendar Name",
                 "date": "Date",
                 "dateName": "Holiday Name",
                 "holidayType": "Holiday Type",
@@ -1024,6 +1067,7 @@
             "indexDescription": "Configured Leave Categories Used For Entitlements And Requests.",
             "searchPlaceholder": "Search By Name Or Code…",
             "allStatuses": "All Statuses",
+            "empty": "No Leave Types Found.",
             "paid": "Paid",
             "unpaid": "Unpaid",
             "columns": {
@@ -1043,6 +1087,7 @@
             "indexDescription": "Accrual Rules And Day-Count Settings Per Leave Type And Legal Entity.",
             "allStatuses": "All Statuses",
             "scopeDefault": "Default (All Entities)",
+            "empty": "No Leave Policies Found.",
             "columns": {
                 "leaveType": "Leave Type",
                 "legalEntity": "Legal Entity",
@@ -1050,6 +1095,11 @@
                 "excludePublicHolidays": "Exclude Public Holidays",
                 "effectiveFrom": "Effective From",
                 "status": "Status"
+            },
+            "accrualMethods": {
+                "fixed_annual": "Fixed Annual",
+                "monthly_accrual": "Monthly Accrual",
+                "per_worked_hours": "Per Worked Hours"
             },
             "statuses": {
                 "active": "Active",
