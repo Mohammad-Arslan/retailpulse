@@ -68,7 +68,7 @@ final class Phase12Block3AttendanceTest extends TestCase
         $this->enableAttendanceModules();
 
         $service = app(AttendanceService::class);
-        $service->registerProvider('fake', new FakeAttendanceProvider());
+        $service->registerProvider('fake', new FakeAttendanceProvider);
 
         $source = AttendanceSource::query()->create([
             'driver' => 'fake',
@@ -145,7 +145,8 @@ final class Phase12Block3AttendanceTest extends TestCase
 
         $this->actingAsBranchAdmin()
             ->get(route('admin.attendance.records.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
 
         BranchHrProfile::query()->where('branch_id', $this->branch->id)->update([
             'hr_enabled_modules' => ['hr', 'attendance'],

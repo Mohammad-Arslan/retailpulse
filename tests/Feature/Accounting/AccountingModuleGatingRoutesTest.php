@@ -56,85 +56,94 @@ final class AccountingModuleGatingRoutesTest extends TestCase
         return $this->actingAs($this->admin)->withSession(['branch_id' => $this->branch->id]);
     }
 
-    public function test_core_only_branch_gets_403_on_cost_centres_index(): void
+    public function test_core_only_branch_redirects_with_error_on_cost_centres_index(): void
     {
         $this->setEnabledModules(['core']);
 
         $this->actingAsBranchAdmin()
             ->get(route('admin.accounting.cost-centres.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
-    public function test_core_only_branch_gets_403_on_bank_reconciliation_index(): void
+    public function test_core_only_branch_redirects_with_error_on_bank_reconciliation_index(): void
     {
         $this->setEnabledModules(['core']);
 
         $this->actingAsBranchAdmin()
             ->get(route('admin.accounting.reconciliation.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
-    public function test_core_only_branch_gets_403_on_bank_accounts_index(): void
+    public function test_core_only_branch_redirects_with_error_on_bank_accounts_index(): void
     {
         $this->setEnabledModules(['core']);
 
         $this->actingAsBranchAdmin()
             ->get(route('admin.accounting.bank-accounts.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
-    public function test_core_only_branch_gets_403_on_petty_cash_index(): void
+    public function test_core_only_branch_redirects_with_error_on_petty_cash_index(): void
     {
         $this->setEnabledModules(['core']);
 
         $this->actingAsBranchAdmin()
             ->get(route('admin.accounting.petty-cash.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
-    public function test_core_only_branch_gets_403_on_cheques_index(): void
+    public function test_core_only_branch_redirects_with_error_on_cheques_index(): void
     {
         $this->setEnabledModules(['core']);
 
         $this->actingAsBranchAdmin()
             ->get(route('admin.accounting.cheques.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
-    public function test_core_only_branch_gets_403_on_fixed_assets_index(): void
+    public function test_core_only_branch_redirects_with_error_on_fixed_assets_index(): void
     {
         $this->setEnabledModules(['core']);
 
         $this->actingAsBranchAdmin()
             ->get(route('admin.accounting.fixed-assets.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
-    public function test_core_only_branch_gets_403_on_credit_notes_index(): void
+    public function test_core_only_branch_redirects_with_error_on_credit_notes_index(): void
     {
         $this->setEnabledModules(['core']);
 
         $this->actingAsBranchAdmin()
             ->get(route('admin.accounting.credit-notes.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
-    public function test_core_only_branch_gets_403_on_tax_types_index(): void
+    public function test_core_only_branch_redirects_with_error_on_tax_types_index(): void
     {
         $this->setEnabledModules(['core']);
 
         $this->actingAsBranchAdmin()
             ->get(route('admin.accounting.tax-types.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
-    public function test_core_only_branch_gets_403_on_currencies_index(): void
+    public function test_core_only_branch_redirects_with_error_on_currencies_index(): void
     {
         $this->setEnabledModules(['core']);
 
         $this->actingAsBranchAdmin()
             ->get(route('admin.accounting.currencies.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
     public function test_core_only_branch_can_access_chart_of_accounts(): void
@@ -186,13 +195,14 @@ final class AccountingModuleGatingRoutesTest extends TestCase
             ->assertOk();
     }
 
-    public function test_enabling_credit_notes_alone_without_ar_ap_still_gets_403(): void
+    public function test_enabling_credit_notes_alone_without_ar_ap_still_redirects_with_error(): void
     {
         $this->setEnabledModules(['core', 'credit_notes']);
 
         $this->actingAsBranchAdmin()
             ->get(route('admin.accounting.credit-notes.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
     public function test_enabling_credit_notes_with_ar_ap_allows_access(): void

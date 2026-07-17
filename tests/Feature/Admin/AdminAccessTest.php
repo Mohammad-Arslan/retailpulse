@@ -32,7 +32,8 @@ final class AdminAccessTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('admin.users.create'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
     public function test_super_admin_can_create_user_with_role(): void

@@ -9,6 +9,7 @@ import { syncCsrfToken } from '@/lib/csrf';
 import { createInertiaApp, router } from '@inertiajs/react';
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
+import { toast } from 'sonner';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -16,6 +17,32 @@ const pages = import.meta.glob('./Pages/**/*.{jsx,tsx}');
 
 router.on('success', (event) => {
     syncCsrfToken(event.detail.page.props?.csrf_token);
+});
+
+// Safety net: a response Inertia can't render inline (no X-Inertia header — e.g. a raw error
+// page) otherwise shows a jarring full-page modal with the response in an iframe. Everything the
+// backend can anticipate (permission/module denials) already redirects back with a flash toast
+// instead of reaching this point — this only catches what slips through that.
+router.on('invalid', (event) => {
+    const status = event.detail.response?.status;
+
+    if (status === 419) {
+        event.preventDefault();
+        toast.error('Your session has expired. Reloading the page…');
+        window.location.reload();
+        return;
+    }
+
+    if (status === 403) {
+        event.preventDefault();
+        toast.error('You do not have permission to access this page.');
+        return;
+    }
+
+    if (typeof status === 'number' && status >= 500) {
+        event.preventDefault();
+        toast.error('Something went wrong on our end. Please try again.');
+    }
 });
 
 createInertiaApp({

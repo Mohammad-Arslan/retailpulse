@@ -47,14 +47,15 @@ final class WarehouseCrudTest extends TestCase
         ]);
     }
 
-    public function test_user_without_view_permission_gets_403_on_index(): void
+    public function test_user_without_view_permission_gets_redirected_with_error_on_index(): void
     {
         $user = User::factory()->create(['is_active' => true]);
         $user->assignRole('cashier');
 
         $this->actingAs($user)
             ->get(route('admin.warehouses.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
     public function test_branch_manager_can_create_second_warehouse(): void

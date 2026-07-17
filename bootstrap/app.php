@@ -25,7 +25,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Laravel\Ai\Exceptions\InsufficientCreditsException;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -61,16 +61,21 @@ return Application::configure(basePath: dirname(__DIR__))
             || $request->ajax()
             || str_contains((string) $request->header('Accept'), 'text/event-stream');
 
-        // Laravel's own Handler::prepareException() converts a status-less AuthorizationException
-        // into AccessDeniedHttpException *before* renderable callbacks are checked, so a callback
-        // typed to AuthorizationException here would never actually match — it must be typed to
-        // the converted exception instead.
-        $exceptions->renderable(function (AccessDeniedHttpException $e, Request $request) use ($wantsJson) {
-            $message = $e->getMessage();
-
-            if ($message !== 'No Employee Record Is Linked To This User Account.') {
+        // Every 403 source ends up implementing HttpExceptionInterface: a status-less
+        // AuthorizationException (policy/gate denial) is converted to AccessDeniedHttpException by
+        // Laravel's own Handler::prepareException() before renderables run, and abort(403) (used by
+        // EnsureAdminAccess, EnsureHrModuleEnabled, EnsureAccountingModuleEnabled, EnsurePosAccess,
+        // etc.) throws a plain HttpException — so typing against the interface and filtering on
+        // status code catches every 403 uniformly instead of one hardcoded exception/message.
+        // Without this, an admin/Inertia request that hits any of those denials falls through to
+        // Laravel's default HTML error page, which Inertia can't render inline — the client shows a
+        // jarring full-page modal instead of the intended redirect-back-with-toast experience.
+        $exceptions->renderable(function (HttpExceptionInterface $e, Request $request) use ($wantsJson) {
+            if ($e->getStatusCode() !== 403) {
                 return null;
             }
+
+            $message = $e->getMessage() !== '' ? $e->getMessage() : __('You do not have permission to access this page.');
 
             if ($wantsJson($request) && ! $request->header('X-Inertia')) {
                 return response()->json(['message' => $message], 403);

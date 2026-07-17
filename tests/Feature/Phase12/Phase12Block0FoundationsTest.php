@@ -93,7 +93,7 @@ final class Phase12Block0FoundationsTest extends TestCase
         $this->assertTrue((new BranchHrPayrollModuleGate)->isEnabled('overtime', $this->branch->id));
     }
 
-    public function test_hr_disabled_returns_403_on_employees_index(): void
+    public function test_hr_disabled_redirects_with_error_on_employees_index(): void
     {
         BranchHrProfile::query()->create([
             'branch_id' => $this->branch->id,
@@ -102,7 +102,8 @@ final class Phase12Block0FoundationsTest extends TestCase
 
         $this->actingAsBranchAdmin()
             ->get(route('admin.hr.employees.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
     }
 
     public function test_phase12_permissions_and_roles_are_seeded(): void
