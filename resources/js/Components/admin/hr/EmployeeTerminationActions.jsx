@@ -1,6 +1,5 @@
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -15,6 +14,12 @@ import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * AlertDialogAction renders Radix's DialogPrimitive.Close under the hood, which closes the
+ * dialog synchronously on click regardless of request outcome. Using a plain Button here
+ * instead keeps the dialog open until the request actually resolves, so a rejected
+ * termination/reactivation isn't silently swallowed by an already-unmounted dialog.
+ */
 export default function EmployeeTerminationActions({ employee }) {
     const { t } = useTranslation();
     const can = useCan();
@@ -32,14 +37,18 @@ export default function EmployeeTerminationActions({ employee }) {
             router.post(
                 route('admin.hr.employees.reactivate', employee.id),
                 {},
-                { preserveScroll: true, onFinish: () => setProcessing(false) },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => setOpen(false),
+                    onFinish: () => setProcessing(false),
+                },
             );
         };
 
         return (
-            <AlertDialog>
+            <AlertDialog open={open} onOpenChange={setOpen}>
                 <AlertDialogTrigger asChild>
-                    <Button type="button" variant="outline" disabled={processing}>
+                    <Button type="button" variant="outline">
                         {t('pages.hrEmployees.reactivate')}
                     </Button>
                 </AlertDialogTrigger>
@@ -51,10 +60,12 @@ export default function EmployeeTerminationActions({ employee }) {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>{t('confirm.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction onClick={reactivate}>
+                        <AlertDialogCancel type="button" disabled={processing}>
+                            {t('confirm.cancel')}
+                        </AlertDialogCancel>
+                        <Button type="button" onClick={reactivate} disabled={processing}>
                             {t('pages.hrEmployees.reactivate')}
-                        </AlertDialogAction>
+                        </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -105,10 +116,12 @@ export default function EmployeeTerminationActions({ employee }) {
                         />
                     </div>
                     <AlertDialogFooter>
-                        <AlertDialogCancel type="button">{t('confirm.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction type="submit" disabled={processing}>
+                        <AlertDialogCancel type="button" disabled={processing}>
+                            {t('confirm.cancel')}
+                        </AlertDialogCancel>
+                        <Button type="submit" variant="destructive" disabled={processing}>
                             {t('pages.hrEmployees.terminate')}
-                        </AlertDialogAction>
+                        </Button>
                     </AlertDialogFooter>
                 </form>
             </AlertDialogContent>

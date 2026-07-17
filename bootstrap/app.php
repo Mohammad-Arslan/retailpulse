@@ -16,7 +16,6 @@ use App\Jobs\Procurement\PriceListExpiryAlertJob;
 use App\Jobs\Procurement\SupplierPerformanceScoringJob;
 use App\Jobs\RecalculateLoyaltyTiersJob;
 use App\Jobs\SendOverdueRemindersJob;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -26,6 +25,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Laravel\Ai\Exceptions\InsufficientCreditsException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -61,7 +61,11 @@ return Application::configure(basePath: dirname(__DIR__))
             || $request->ajax()
             || str_contains((string) $request->header('Accept'), 'text/event-stream');
 
-        $exceptions->renderable(function (AuthorizationException $e, Request $request) use ($wantsJson) {
+        // Laravel's own Handler::prepareException() converts a status-less AuthorizationException
+        // into AccessDeniedHttpException *before* renderable callbacks are checked, so a callback
+        // typed to AuthorizationException here would never actually match — it must be typed to
+        // the converted exception instead.
+        $exceptions->renderable(function (AccessDeniedHttpException $e, Request $request) use ($wantsJson) {
             $message = $e->getMessage();
 
             if ($message !== 'No Employee Record Is Linked To This User Account.') {

@@ -14,6 +14,7 @@ function Index({ payslips }) {
             {
                 id: 'payslipNumber',
                 header: t('pages.selfServicePayslips.columns.payslipNumber'),
+                enableSorting: false,
                 cell: ({ row }) => (
                     <div className="flex items-center gap-3">
                         <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300">
@@ -28,16 +29,19 @@ function Index({ payslips }) {
             {
                 id: 'payrollNumber',
                 header: t('pages.selfServicePayslips.columns.payrollNumber'),
+                enableSorting: false,
                 cell: ({ row }) => row.original.payroll_number ?? '—',
             },
             {
                 id: 'period',
                 header: t('pages.selfServicePayslips.columns.period'),
+                enableSorting: false,
                 cell: ({ row }) => `${row.original.period_start ?? '—'} → ${row.original.period_end ?? '—'}`,
             },
             {
                 id: 'netPay',
                 header: t('pages.selfServicePayslips.columns.netPay'),
+                enableSorting: false,
                 cell: ({ row }) =>
                     row.original.net_pay != null
                         ? `${Number(row.original.net_pay).toLocaleString()} ${row.original.currency_code ?? ''}`
@@ -46,6 +50,7 @@ function Index({ payslips }) {
             {
                 id: 'actions',
                 header: '',
+                enableSorting: false,
                 cell: ({ row }) => (
                     <Link
                         href={route('admin.self-service.payslips.download', { payslip: row.original.id })}
