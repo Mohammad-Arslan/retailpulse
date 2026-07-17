@@ -60,7 +60,12 @@ final class LeaveRequestController extends Controller
                 'is_paid' => $leaveRequest->leaveType?->is_paid,
                 'start_date' => $leaveRequest->start_date?->toDateString(),
                 'end_date' => $leaveRequest->end_date?->toDateString(),
+                'duration_type' => $leaveRequest->duration_type,
+                'session' => $leaveRequest->session,
+                'start_time' => $leaveRequest->start_time,
+                'end_time' => $leaveRequest->end_time,
                 'days' => (float) $leaveRequest->days,
+                'deduct_from_balance' => $leaveRequest->deduct_from_balance,
                 'reason' => $leaveRequest->reason,
                 'status' => $leaveRequest->status,
             ]),
@@ -98,6 +103,10 @@ final class LeaveRequestController extends Controller
             startDate: CarbonImmutable::parse($data['start_date']),
             endDate: CarbonImmutable::parse($data['end_date']),
             reason: $data['reason'] ?? null,
+            durationType: $data['duration_type'] ?? 'full_day',
+            session: $data['session'] ?? null,
+            startTime: $data['start_time'] ?? null,
+            endTime: $data['end_time'] ?? null,
         );
 
         return redirect()

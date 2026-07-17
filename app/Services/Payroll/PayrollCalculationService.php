@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Payroll;
 
 use App\Models\Employee;
+use App\Models\LeaveEncashment;
 use App\Models\LeaveRequest;
 use App\Models\PayComponent;
 use App\Models\PayrollItem;
@@ -158,6 +159,15 @@ final class PayrollCalculationService
         // Step 3 — Unpaid leave deductions via LeaveService
         $leaveLines = $this->buildLeaveDeductionLines($employee, $periodStart, $periodEnd, $componentAmounts, $sequence);
         foreach ($leaveLines as $line) {
+            $lineData[] = $line;
+            $sequence += 10;
+        }
+
+        // Step 3b — Approved leave encashments → earning component via LeaveType.payroll_encashment_component_code
+        $encashmentLines = $this->buildLeaveEncashmentLines($employee, $periodStart, $periodEnd, $componentAmounts, $sequence);
+        foreach ($encashmentLines as $line) {
+            $code = $line['component_snapshot_json']['code'];
+            $componentAmounts[$code] = bcadd($componentAmounts[$code] ?? '0.0000', $line['amount'], 4);
             $lineData[] = $line;
             $sequence += 10;
         }
@@ -354,7 +364,7 @@ final class PayrollCalculationService
         foreach ($leaveRequests as $request) {
             try {
                 $componentCode = $this->leaveService->resolvePayrollDeductionComponent($employee, $request);
-            } catch (\DomainException) {
+            } catch (DomainException) {
                 continue;
             }
 
@@ -401,6 +411,92 @@ final class PayrollCalculationService
                     'type' => $component->type,
                     'calculation_type' => $component->calculation_type,
                     'leave_days' => $totalDays,
+                    'basis_code' => $basisCode,
+                    'daily_rate' => $dailyRate,
+                    'account_mapping_key' => $component->account_mapping_key,
+                ],
+                'amount' => $amount,
+                'sequence' => $sequence,
+            ];
+            $sequence += 10;
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Approved leave encashments (scoped to this run's period via `approved_at`, mirroring
+     * how leave deduction lines are scoped by leave_requests.start_date) posted as an earning
+     * against LeaveType.payroll_encashment_component_code.
+     *
+     * @param  array<string, string>  $componentAmounts
+     * @return list<array<string, mixed>>
+     */
+    private function buildLeaveEncashmentLines(
+        Employee $employee,
+        CarbonImmutable $start,
+        CarbonImmutable $end,
+        array $componentAmounts,
+        int $startSequence,
+    ): array {
+        $encashments = LeaveEncashment::query()
+            ->where('employee_id', $employee->id)
+            ->where('status', 'approved')
+            ->whereBetween('approved_at', [$start->startOfDay(), $end->endOfDay()])
+            ->get();
+
+        if ($encashments->isEmpty()) {
+            return [];
+        }
+
+        $daysByCode = [];
+
+        foreach ($encashments as $encashment) {
+            $componentCode = $encashment->payroll_component_code;
+
+            if ($componentCode === null) {
+                continue;
+            }
+
+            $daysByCode[$componentCode] = bcadd(
+                $daysByCode[$componentCode] ?? '0.0000',
+                (string) $encashment->days,
+                4,
+            );
+        }
+
+        if (empty($daysByCode)) {
+            return [];
+        }
+
+        $lines = [];
+        $sequence = $startSequence;
+
+        foreach ($daysByCode as $componentCode => $totalDays) {
+            $component = PayComponent::query()
+                ->with('basisComponent')
+                ->where('code', $componentCode)
+                ->where('status', 'active')
+                ->first();
+
+            if ($component === null) {
+                continue;
+            }
+
+            $daysInMonth = (string) max(1, (int) config('payroll.leave_days_in_month', 30));
+            $basisCode = $component->basisComponent?->code ?? (string) config('payroll.default_basis_component_code', 'BASIC');
+            $basisAmount = $componentAmounts[$basisCode] ?? '0.0000';
+            $dailyRate = bcdiv($basisAmount, $daysInMonth, 8);
+            $amount = bcmul($dailyRate, $totalDays, 4);
+
+            $lines[] = [
+                'pay_component_id' => $component->id,
+                'component_snapshot_json' => [
+                    'code' => $component->code,
+                    'name' => $component->name,
+                    'type' => $component->type,
+                    'calculation_type' => $component->calculation_type,
+                    'encashed_days' => $totalDays,
                     'basis_code' => $basisCode,
                     'daily_rate' => $dailyRate,
                     'account_mapping_key' => $component->account_mapping_key,
@@ -515,7 +611,7 @@ final class PayrollCalculationService
         $yearStart = CarbonImmutable::parse($run->period_start)->startOfYear()->toDateString();
 
         $previousItems = PayrollItem::query()
-            ->whereHas('payrollRun', function ($q) use ($employee, $run, $yearStart): void {
+            ->whereHas('payrollRun', function ($q) use ($run, $yearStart): void {
                 $q->where('legal_entity_id', $run->legal_entity_id)
                     ->whereIn('status', ['draft', 'pending_approval', 'approved', 'posted'])
                     ->whereNotNull('totals_json')

@@ -1,5 +1,7 @@
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import ImportExportToolbar from '@/Components/import-export/ImportExportToolbar';
+import { useImportJobsTray } from '@/Components/import-export/ImportJobsTray';
 import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
@@ -12,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 function Index({ records, filters }) {
     const can = useCan();
     const { t } = useTranslation();
+    const { trackJob } = useImportJobsTray();
 
     const search = (e) => {
         e.preventDefault();
@@ -92,10 +95,18 @@ function Index({ records, filters }) {
             {
                 id: 'status',
                 header: t('pages.attendanceRecords.columns.status'),
-                cell: ({ row }) =>
-                    t(`pages.attendanceRecords.statuses.${row.original.status}`, {
-                        defaultValue: row.original.status,
-                    }),
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-2">
+                        {t(`pages.attendanceRecords.statuses.${row.original.status}`, {
+                            defaultValue: row.original.status,
+                        })}
+                        {row.original.is_historical && (
+                            <span className="rounded-full bg-rp-surface-muted px-2 py-0.5 text-xs text-rp-text-muted">
+                                {t('pages.attendanceRecords.historical')}
+                            </span>
+                        )}
+                    </div>
+                ),
             },
         ],
         [t],
@@ -108,14 +119,22 @@ function Index({ records, filters }) {
                 title={t('pages.attendanceRecords.indexTitle')}
                 description={t('pages.attendanceRecords.indexDescription')}
             >
-                {can('attendance.record') && (
-                    <Button variant="brand" asChild>
-                        <Link href={route('admin.attendance.records.create')} className="inline-flex items-center gap-2">
-                            <Plus className="h-4 w-4" />
-                            {t('pages.attendanceRecords.manualClockTitle')}
-                        </Link>
-                    </Button>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                    <ImportExportToolbar
+                        entityType="attendance"
+                        entityLabel={t('pages.attendanceRecords.indexTitle')}
+                        exportOptions={{ filters: { status: filters.status ?? undefined } }}
+                        onJobStarted={trackJob}
+                    />
+                    {can('attendance.record') && (
+                        <Button variant="brand" asChild>
+                            <Link href={route('admin.attendance.records.create')} className="inline-flex items-center gap-2">
+                                <Plus className="h-4 w-4" />
+                                {t('pages.attendanceRecords.manualClockTitle')}
+                            </Link>
+                        </Button>
+                    )}
+                </div>
             </PageHeader>
 
             <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">

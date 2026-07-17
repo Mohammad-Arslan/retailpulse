@@ -77,6 +77,8 @@
         "leaveTypes": "Leave Types",
         "leavePolicies": "Leave Policies",
         "leaveRequests": "Leave Requests",
+        "leaveEncashments": "Leave Encashments",
+        "leaveYearEndRuns": "Leave Year-End Runs",
         "overtimePolicies": "Overtime Policies",
         "overtimeRecords": "Overtime Records",
         "payComponents": "Pay Components",
@@ -768,7 +770,9 @@
                 "defaultHolidayCalendar": "Default Holiday Calendar",
                 "employeeCodeSequenceKey": "Employee Code Sequence Key",
                 "leaveFiscalYearMode": "Default Leave Fiscal Year Mode",
-                "requireDefaultCostCentre": "Require Default Cost Centre On Employees"
+                "requireDefaultCostCentre": "Require Default Cost Centre On Employees",
+                "workHoursPerDay": "Work Hours Per Day",
+                "weekendDays": "Weekend Days"
             },
             "noHolidayCalendar": "None",
             "placeholders": {
@@ -777,12 +781,23 @@
             "hints": {
                 "defaultHolidayCalendar": "Used As The Entity Default When An Employee Has No Calendar Assignment. Create Calendars Under Holiday Calendars First.",
                 "employeeCodeSequenceKey": "Document Sequence Key For Auto Employee Codes. Leave Blank Or Use employee To Generate Codes Like EMP-00001.",
-                "leaveFiscalYearMode": "Default Basis For Leave Accrual Year Boundaries On This Entity."
+                "leaveFiscalYearMode": "Default Basis For Leave Accrual Year Boundaries On This Entity.",
+                "workHoursPerDay": "Used To Convert Short Leave Hours Into Days (Hours ÷ Work Hours Per Day).",
+                "weekendDays": "Days Excluded From Leave Day Counts When A Policy Has Exclude Weekends Enabled."
             },
             "fiscalYearModes": {
                 "calendarYear": "Calendar Year",
                 "fiscalYear": "Fiscal Year",
                 "hireAnniversary": "Hire Anniversary"
+            },
+            "weekdays": {
+                "0": "Sunday",
+                "1": "Monday",
+                "2": "Tuesday",
+                "3": "Wednesday",
+                "4": "Thursday",
+                "5": "Friday",
+                "6": "Saturday"
             }
         },
         "hrModules": {
@@ -1067,6 +1082,7 @@
             "openRecordPlaceholder": "Optional — Leave Blank To Use Latest Open Record",
             "saveRecord": "Save Record",
             "empty": "No Attendance Records Found.",
+            "historical": "Historical",
             "columns": {
                 "employee": "Employee",
                 "branch": "Branch",
@@ -1109,6 +1125,7 @@
                 "isPaid": "Paid",
                 "affectsPayroll": "Affects Payroll",
                 "deductionComponent": "Deduction Component",
+                "encashmentComponent": "Encashment Component",
                 "status": "Status"
             },
             "fields": {
@@ -1122,6 +1139,8 @@
                 "affectsPayrollHint": "Trigger Payroll Deduction When Taken",
                 "deductionComponent": "Deduction Component Code",
                 "deductionComponentPlaceholder": "e.g. UNPAID_LEAVE",
+                "encashmentComponent": "Encashment Component Code",
+                "encashmentComponentPlaceholder": "e.g. LEAVE_ENCASHMENT",
                 "status": "Status"
             },
             "statuses": {
@@ -1144,6 +1163,7 @@
                 "accrualMethod": "Accrual Method",
                 "accrualRate": "Accrual Rate",
                 "excludePublicHolidays": "Exclude Public Holidays",
+                "excludeWeekends": "Exclude Weekends",
                 "effectiveFrom": "Effective From",
                 "status": "Status"
             },
@@ -1164,9 +1184,29 @@
                 "prorationOnJoinHint": "Prorate Accrual When An Employee Joins Mid-Period",
                 "excludePublicHolidays": "Exclude Public Holidays",
                 "excludePublicHolidaysHint": "Do Not Count Public Holidays In Leave Day Totals",
+                "excludeWeekends": "Exclude Weekends",
+                "excludeWeekendsHint": "Do Not Count Weekend Days In Leave Day Totals",
+                "shortLeaveMaxHours": "Short Leave Max Hours",
+                "shortLeaveMaxHoursPlaceholder": "Optional — e.g. 3",
+                "shortLeaveMaxRequestsPerMonth": "Short Leave Max Requests / Month",
+                "shortLeaveMaxRequestsPerMonthPlaceholder": "Optional — e.g. 4",
+                "outStationDeductsBalance": "Out Station Deducts Balance",
+                "outStationDeductsBalanceHint": "Deduct Out Station Requests From The Leave Balance (Default: No)",
+                "encashmentAllowed": "Allow Encashment",
+                "encashmentAllowedHint": "Employees May Convert Unused Leave Days Into A Payroll Payout",
+                "encashmentMaxDays": "Encashment Max Days",
+                "encashmentMaxDaysPlaceholder": "Optional — e.g. 10",
+                "encashmentRequiresApproval": "Encashment Requires Approval",
+                "encashmentRequiresApprovalHint": "Require Manager Approval Before Payout (Recommended)",
+                "yearEndExcessDisposition": "Year-End Excess Disposition",
+                "yearEndExcessDispositionHint": "What Happens To Balance Above The Carry Forward Limit At Year-End.",
                 "effectiveFrom": "Effective From",
                 "effectiveTo": "Effective To",
                 "status": "Status"
+            },
+            "yearEndExcessDispositions": {
+                "expire": "Expire (Use It Or Lose It)",
+                "encash": "Encash Automatically"
             },
             "accrualMethods": {
                 "fixed_annual": "Fixed Annual",
@@ -1196,6 +1236,7 @@
                 "employee": "Employee",
                 "leaveType": "Leave Type",
                 "dates": "Dates",
+                "duration": "Duration",
                 "days": "Days",
                 "status": "Status"
             },
@@ -1204,6 +1245,55 @@
                 "leaveType": "Leave Type",
                 "startDate": "Start Date",
                 "endDate": "End Date",
+                "durationType": "Duration Type",
+                "session": "Session",
+                "startTime": "Start Time",
+                "endTime": "End Time",
+                "reason": "Reason"
+            },
+            "durationTypes": {
+                "full_day": "Full Day",
+                "half_day": "Half Day",
+                "short_leave": "Short Leave",
+                "out_station": "Out Station"
+            },
+            "sessions": {
+                "morning": "Morning",
+                "afternoon": "Afternoon"
+            },
+            "statuses": {
+                "pending": "Pending",
+                "approved": "Approved",
+                "rejected": "Rejected",
+                "cancelled": "Cancelled"
+            }
+        },
+        "leaveEncashments": {
+            "indexTitle": "Leave Encashments",
+            "indexDescription": "Convert Unused Leave Balance Into A Payroll Payout.",
+            "createTitle": "New Leave Encashment",
+            "createDescription": "Request A Leave Encashment On Behalf Of An Employee.",
+            "searchPlaceholder": "Search By Employee Name Or Code…",
+            "allStatuses": "All Statuses",
+            "selectEmployee": "Select Employee…",
+            "selectLeaveType": "Select Leave Type…",
+            "submitRequest": "Submit Request",
+            "approve": "Approve",
+            "reject": "Reject",
+            "cancel": "Cancel",
+            "empty": "No Leave Encashments Found.",
+            "reasonPlaceholder": "Optional — Note For Approvers…",
+            "columns": {
+                "employee": "Employee",
+                "leaveType": "Leave Type",
+                "days": "Days",
+                "createdAt": "Requested On",
+                "status": "Status"
+            },
+            "fields": {
+                "employee": "Employee",
+                "leaveType": "Leave Type",
+                "days": "Days To Encash",
                 "reason": "Reason"
             },
             "statuses": {
@@ -1211,6 +1301,21 @@
                 "approved": "Approved",
                 "rejected": "Rejected",
                 "cancelled": "Cancelled"
+            }
+        },
+        "leaveYearEndRuns": {
+            "indexTitle": "Leave Year-End Runs",
+            "indexDescription": "Audit Trail Of Carry-Forward, Expiry, And Automatic Encashment At Leave Year-End.",
+            "empty": "No Leave Year-End Runs Yet.",
+            "entityWide": "Entity-Wide",
+            "columns": {
+                "scope": "Legal Entity",
+                "period": "Period",
+                "entitlementsProcessed": "Entitlements Processed",
+                "carriedForward": "Carried Forward",
+                "expired": "Expired",
+                "encashed": "Encashed",
+                "executedAt": "Executed At"
             }
         },
         "overtimePolicies": {
@@ -4099,6 +4204,8 @@
         "overtimeRecords": "Overtime Records",
         "leaveTypes": "Leave Types",
         "leaveRequests": "Leave Requests",
+        "leaveEncashments": "Leave Encashments",
+        "leaveYearEndRuns": "Leave Year-End Runs",
         "attendanceRecords": "Attendance Records",
         "attendanceSources": "Attendance Sources",
         "payrollRuns": "Payroll Runs",

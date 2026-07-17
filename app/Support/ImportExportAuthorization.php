@@ -15,6 +15,10 @@ final class ImportExportAuthorization
     public static function permissionsFor(string $entityType): array
     {
         return match ($entityType) {
+            'attendance' => [
+                'import' => 'attendance.import',
+                'export' => 'attendance.export',
+            ],
             'inventory' => [
                 'import' => 'inventory.import-opening-stock',
                 'export' => 'inventory.reports',

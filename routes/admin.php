@@ -48,9 +48,11 @@ use App\Http\Controllers\Admin\Hr\OrgChartController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\JournalEntryController;
 use App\Http\Controllers\Admin\LandedCostController;
+use App\Http\Controllers\Admin\Leave\LeaveEncashmentController;
 use App\Http\Controllers\Admin\Leave\LeavePolicyController;
 use App\Http\Controllers\Admin\Leave\LeaveRequestController;
 use App\Http\Controllers\Admin\Leave\LeaveTypeController;
+use App\Http\Controllers\Admin\Leave\LeaveYearEndRunController;
 use App\Http\Controllers\Admin\LoyaltyProgramConfigController;
 use App\Http\Controllers\Admin\LoyaltyProgramController;
 use App\Http\Controllers\Admin\LoyaltyReportController;
@@ -193,6 +195,13 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::post('requests', [LeaveRequestController::class, 'store'])->name('requests.store');
             Route::post('requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('requests.approve');
             Route::post('requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('requests.reject');
+            Route::get('encashments', [LeaveEncashmentController::class, 'index'])->name('encashments.index');
+            Route::get('encashments/create', [LeaveEncashmentController::class, 'create'])->name('encashments.create');
+            Route::post('encashments', [LeaveEncashmentController::class, 'store'])->name('encashments.store');
+            Route::post('encashments/{leaveEncashment}/approve', [LeaveEncashmentController::class, 'approve'])->name('encashments.approve');
+            Route::post('encashments/{leaveEncashment}/reject', [LeaveEncashmentController::class, 'reject'])->name('encashments.reject');
+            Route::post('encashments/{leaveEncashment}/cancel', [LeaveEncashmentController::class, 'cancel'])->name('encashments.cancel');
+            Route::get('year-end-runs', [LeaveYearEndRunController::class, 'index'])->name('year-end-runs.index');
         });
 
         Route::middleware(['hr-module:overtime'])->prefix('overtime')->name('overtime.')->group(function () {

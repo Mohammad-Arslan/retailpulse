@@ -302,6 +302,20 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.leave.requests.*',
                 'keywords' => ['leave request', 'time off', 'vacation', 'absence'],
             ]),
+            self::item('leave-encashments', 'leaveEncashments', 'admin.leave.encashments.index', 'coins', 'leave', 85, [
+                'permission' => 'leave.view',
+                'permissionsAny' => ['leave.view', 'leave.request-encashment', 'leave.approve-encashment'],
+                'module' => 'leave',
+                'routePattern' => 'admin.leave.encashments.*',
+                'keywords' => ['leave encashment', 'cash out leave', 'unused leave payout'],
+            ]),
+            self::item('leave-year-end-runs', 'leaveYearEndRuns', 'admin.leave.year-end-runs.index', 'calendar-range', 'leave', 87, [
+                'permission' => 'leave.view',
+                'permissionsAny' => ['leave.view'],
+                'module' => 'leave',
+                'routePattern' => 'admin.leave.year-end-runs.*',
+                'keywords' => ['leave year end', 'carry forward', 'expiry', 'fiscal year close'],
+            ]),
             self::item('overtime-policies', 'overtimePolicies', 'admin.overtime.policies.index', 'scale', 'overtime', 90, [
                 'permission' => 'overtime.manage-policies',
                 'permissionsAny' => ['overtime.manage-policies', 'overtime.view'],

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Services\ImportExport\Handlers\AttendanceExportHandler;
+use App\Services\ImportExport\Handlers\AttendanceImportHandler;
 use App\Services\ImportExport\Handlers\BrandExportHandler;
 use App\Services\ImportExport\Handlers\BrandImportHandler;
 use App\Services\ImportExport\Handlers\CategoryExportHandler;
@@ -24,8 +26,6 @@ use App\Services\ImportExport\Handlers\GradeExportHandler;
 use App\Services\ImportExport\Handlers\GradeImportHandler;
 use App\Services\ImportExport\Handlers\HolidayCalendarExportHandler;
 use App\Services\ImportExport\Handlers\HolidayCalendarImportHandler;
-use App\Services\ImportExport\Handlers\ReportingHierarchyExportHandler;
-use App\Services\ImportExport\Handlers\ReportingHierarchyImportHandler;
 use App\Services\ImportExport\Handlers\InventoryAdjustmentExportHandler;
 use App\Services\ImportExport\Handlers\InventoryAdjustmentImportHandler;
 use App\Services\ImportExport\Handlers\InventoryExportHandler;
@@ -34,6 +34,8 @@ use App\Services\ImportExport\Handlers\OpeningBalanceExportHandler;
 use App\Services\ImportExport\Handlers\OpeningBalanceImportHandler;
 use App\Services\ImportExport\Handlers\ProductExportHandler;
 use App\Services\ImportExport\Handlers\ProductImportHandler;
+use App\Services\ImportExport\Handlers\ReportingHierarchyExportHandler;
+use App\Services\ImportExport\Handlers\ReportingHierarchyImportHandler;
 use App\Services\ImportExport\Handlers\SupplierExportHandler;
 use App\Services\ImportExport\Handlers\SupplierImportHandler;
 use App\Services\ImportExport\Handlers\SupplierPriceListExportHandler;
@@ -57,6 +59,7 @@ final class ImportExportServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        ImportExportRegistry::register('attendance', AttendanceImportHandler::class, AttendanceExportHandler::class);
         ImportExportRegistry::register('categories', CategoryImportHandler::class, CategoryExportHandler::class);
         ImportExportRegistry::register('brands', BrandImportHandler::class, BrandExportHandler::class);
         ImportExportRegistry::register('units', UnitImportHandler::class, UnitExportHandler::class);

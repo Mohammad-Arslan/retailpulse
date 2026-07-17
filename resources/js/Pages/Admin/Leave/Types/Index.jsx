@@ -18,6 +18,7 @@ function emptyForm() {
         is_paid: true,
         affects_payroll: false,
         payroll_deduction_component_code: '',
+        payroll_encashment_component_code: '',
         status: 'active',
     };
 }
@@ -65,6 +66,7 @@ function Index({ types, filters }) {
             is_paid: !!row.is_paid,
             affects_payroll: !!row.affects_payroll,
             payroll_deduction_component_code: row.payroll_deduction_component_code ?? '',
+            payroll_encashment_component_code: row.payroll_encashment_component_code ?? '',
             status: row.status ?? 'active',
         });
         setModalOpen(true);
@@ -130,6 +132,11 @@ function Index({ types, filters }) {
                 id: 'deductionComponent',
                 header: t('pages.leaveTypes.columns.deductionComponent'),
                 cell: ({ row }) => row.original.payroll_deduction_component_code ?? '—',
+            },
+            {
+                id: 'encashmentComponent',
+                header: t('pages.leaveTypes.columns.encashmentComponent'),
+                cell: ({ row }) => row.original.payroll_encashment_component_code ?? '—',
             },
             {
                 id: 'status',
@@ -253,6 +260,19 @@ function Index({ types, filters }) {
                                 form.setData('payroll_deduction_component_code', e.target.value)
                             }
                             placeholder={t('pages.leaveTypes.fields.deductionComponentPlaceholder')}
+                        />
+                    </AdminFormField>
+                    <AdminFormField
+                        label={t('pages.leaveTypes.fields.encashmentComponent')}
+                        error={form.errors.payroll_encashment_component_code}
+                    >
+                        <input
+                            className="rp-form-input w-full font-mono"
+                            value={form.data.payroll_encashment_component_code}
+                            onChange={(e) =>
+                                form.setData('payroll_encashment_component_code', e.target.value)
+                            }
+                            placeholder={t('pages.leaveTypes.fields.encashmentComponentPlaceholder')}
                         />
                     </AdminFormField>
                     <AdminFormField label={t('pages.leaveTypes.fields.status')} error={form.errors.status}>

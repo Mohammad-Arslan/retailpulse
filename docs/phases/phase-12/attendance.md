@@ -38,7 +38,7 @@ Capture and adjust employee attendance through source-agnostic providers (POS PI
 | P12-ATT-FR-007 | Planned | Late / early / absence flags resolved against shift assignment when `shifts_roster` enabled. |
 | P12-ATT-FR-008 | Planned | Configurable grace minutes and break rules per shift/policy. |
 | P12-ATT-FR-009 | Planned | Daily attendance summary feed for payroll (worked minutes, OT candidate minutes). |
-| P12-ATT-FR-010 | Planned | Historical attendance import via migration framework. |
+| P12-ATT-FR-010 | Implemented | Historical attendance import via the generic import/export framework (`attendance` entity, `AttendanceImportHandler`/`AttendanceExportHandler`, registered in `ImportExportRegistry` alongside Employees/Departments/etc.). Writes directly to `attendance_records` flagged `is_historical`, bypassing the live `AttendanceService` provider pipeline (same "no live side effects" pattern as historical sales import). Permissions: `attendance.import`, `attendance.export`. |
 | P12-ATT-FR-011 | Implemented | New drivers require interface + config row only — no payroll code changes. |
 
 ---
@@ -58,6 +58,7 @@ attendance_records
 - clock_in / clock_out nullable
 - worked_minutes
 - status                          # open / closed / adjusted
+- is_historical                   # true for rows created via the historical import handler
 - adjusted_by nullable / adjustment_reason nullable
 - timestamps
 

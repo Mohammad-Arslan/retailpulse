@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'clock_out',
     'worked_minutes',
     'status',
+    'is_historical',
     'adjusted_by',
     'adjustment_reason',
 ])]
@@ -30,6 +31,7 @@ final class AttendanceRecord extends Model
             'clock_in' => 'datetime',
             'clock_out' => 'datetime',
             'worked_minutes' => 'integer',
+            'is_historical' => 'boolean',
         ];
     }
 

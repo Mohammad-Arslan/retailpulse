@@ -20,6 +20,10 @@ final class StoreLeaveTypeRequest extends FormRequest
             $this->merge(['payroll_deduction_component_code' => null]);
         }
 
+        if ($this->input('payroll_encashment_component_code') === '') {
+            $this->merge(['payroll_encashment_component_code' => null]);
+        }
+
         if ($this->has('code')) {
             $this->merge(['code' => strtoupper(trim((string) $this->input('code')))]);
         }
@@ -44,6 +48,7 @@ final class StoreLeaveTypeRequest extends FormRequest
             'is_paid' => ['boolean'],
             'affects_payroll' => ['boolean'],
             'payroll_deduction_component_code' => ['nullable', 'string', 'max:64'],
+            'payroll_encashment_component_code' => ['nullable', 'string', 'max:64'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
         ];
     }

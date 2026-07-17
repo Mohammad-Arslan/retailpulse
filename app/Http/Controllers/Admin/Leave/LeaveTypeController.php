@@ -43,6 +43,7 @@ final class LeaveTypeController extends Controller
                 'is_paid' => $type->is_paid,
                 'affects_payroll' => $type->affects_payroll,
                 'payroll_deduction_component_code' => $type->payroll_deduction_component_code,
+                'payroll_encashment_component_code' => $type->payroll_encashment_component_code,
                 'status' => $type->status,
             ]),
             'filters' => $filters,

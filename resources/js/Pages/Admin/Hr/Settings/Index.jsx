@@ -9,6 +9,8 @@ import { Settings2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6];
+
 function Index({ entities = [], holidayCalendars = [] }) {
     const { t } = useTranslation();
     const can = useCan();
@@ -28,8 +30,21 @@ function Index({ entities = [], holidayCalendars = [] }) {
         settings_json: {
             default_leave_fiscal_year_mode: activeEntity?.settings_json?.default_leave_fiscal_year_mode ?? 'calendar_year',
             require_default_cost_centre: activeEntity?.settings_json?.require_default_cost_centre ?? false,
+            work_hours_per_day: activeEntity?.settings_json?.work_hours_per_day ?? 8,
+            weekend_days: activeEntity?.settings_json?.weekend_days ?? [0, 6],
         },
     });
+
+    const weekdayOptions = useMemo(
+        () => WEEKDAYS.map((day) => ({ value: day, label: t(`pages.hrSettings.weekdays.${day}`) })),
+        [t],
+    );
+
+    const toggleWeekendDay = (day) => {
+        const current = form.data.settings_json.weekend_days ?? [];
+        const next = current.includes(day) ? current.filter((d) => d !== day) : [...current, day];
+        form.setData('settings_json', { ...form.data.settings_json, weekend_days: next });
+    };
 
     const entityOptions = useMemo(
         () => entities.map((e) => ({ value: String(e.legal_entity_id), label: e.legal_entity_name })),
@@ -68,6 +83,8 @@ function Index({ entities = [], holidayCalendars = [] }) {
             settings_json: {
                 default_leave_fiscal_year_mode: entity.settings_json?.default_leave_fiscal_year_mode ?? 'calendar_year',
                 require_default_cost_centre: entity.settings_json?.require_default_cost_centre ?? false,
+                work_hours_per_day: entity.settings_json?.work_hours_per_day ?? 8,
+                weekend_days: entity.settings_json?.weekend_days ?? [0, 6],
             },
         });
         form.clearErrors();
@@ -165,6 +182,48 @@ function Index({ entities = [], holidayCalendars = [] }) {
                         />
                         {t('pages.hrSettings.fields.requireDefaultCostCentre')}
                     </label>
+
+                    <AdminFormField
+                        label={t('pages.hrSettings.fields.workHoursPerDay')}
+                        id="work_hours_per_day"
+                        error={form.errors['settings_json.work_hours_per_day']}
+                        hint={t('pages.hrSettings.hints.workHoursPerDay')}
+                    >
+                        <input
+                            id="work_hours_per_day"
+                            type="number"
+                            step="0.5"
+                            min="1"
+                            max="24"
+                            className="rp-form-input w-full"
+                            value={form.data.settings_json.work_hours_per_day}
+                            onChange={(e) =>
+                                form.setData('settings_json', {
+                                    ...form.data.settings_json,
+                                    work_hours_per_day: e.target.value,
+                                })
+                            }
+                        />
+                    </AdminFormField>
+
+                    <AdminFormField
+                        label={t('pages.hrSettings.fields.weekendDays')}
+                        error={form.errors['settings_json.weekend_days']}
+                        hint={t('pages.hrSettings.hints.weekendDays')}
+                    >
+                        <div className="flex flex-wrap gap-3">
+                            {weekdayOptions.map((option) => (
+                                <label key={option.value} className="flex items-center gap-1.5 text-sm text-rp-text">
+                                    <input
+                                        type="checkbox"
+                                        checked={(form.data.settings_json.weekend_days ?? []).includes(option.value)}
+                                        onChange={() => toggleWeekendDay(option.value)}
+                                    />
+                                    {option.label}
+                                </label>
+                            ))}
+                        </div>
+                    </AdminFormField>
 
                     {can('hr.manage-settings') && (
                         <div className="flex justify-end pt-2">

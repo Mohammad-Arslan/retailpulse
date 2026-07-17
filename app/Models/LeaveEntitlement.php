@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'fiscal_year_id',
     'accrued_days',
     'used_days',
+    'encashed_days',
     'carried_forward_days',
 ])]
 final class LeaveEntitlement extends Model
@@ -27,6 +28,7 @@ final class LeaveEntitlement extends Model
         return [
             'accrued_days' => 'decimal:2',
             'used_days' => 'decimal:2',
+            'encashed_days' => 'decimal:2',
             'carried_forward_days' => 'decimal:2',
         ];
     }
@@ -54,7 +56,8 @@ final class LeaveEntitlement extends Model
         return Attribute::get(function (): float {
             return (float) $this->accrued_days
                 + (float) $this->carried_forward_days
-                - (float) $this->used_days;
+                - (float) $this->used_days
+                - (float) $this->encashed_days;
         });
     }
 }

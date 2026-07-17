@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin\Hr;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 final class UpdateHrEntitySettingsRequest extends FormRequest
 {
@@ -26,6 +25,9 @@ final class UpdateHrEntitySettingsRequest extends FormRequest
             'settings_json' => ['nullable', 'array'],
             'settings_json.default_leave_fiscal_year_mode' => ['nullable', 'string', 'max:32'],
             'settings_json.require_default_cost_centre' => ['nullable', 'boolean'],
+            'settings_json.work_hours_per_day' => ['nullable', 'numeric', 'min:1', 'max:24'],
+            'settings_json.weekend_days' => ['nullable', 'array', 'max:7'],
+            'settings_json.weekend_days.*' => ['integer', 'min:0', 'max:6'],
         ];
     }
 

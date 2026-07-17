@@ -24,6 +24,14 @@ function emptyForm() {
         carry_forward_expiry_months: '',
         proration_on_join: false,
         exclude_public_holidays: true,
+        exclude_weekends: true,
+        short_leave_max_hours: '',
+        short_leave_max_requests_per_month: '',
+        out_station_deducts_balance: false,
+        encashment_allowed: false,
+        encashment_max_days: '',
+        encashment_requires_approval: true,
+        year_end_excess_disposition: 'expire',
         effective_from: '',
         effective_to: '',
         status: 'active',
@@ -115,6 +123,17 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
                     : '',
             proration_on_join: !!row.proration_on_join,
             exclude_public_holidays: !!row.exclude_public_holidays,
+            exclude_weekends: row.exclude_weekends !== false,
+            short_leave_max_hours: row.short_leave_max_hours ?? '',
+            short_leave_max_requests_per_month:
+                row.short_leave_max_requests_per_month !== null && row.short_leave_max_requests_per_month !== undefined
+                    ? String(row.short_leave_max_requests_per_month)
+                    : '',
+            out_station_deducts_balance: !!row.out_station_deducts_balance,
+            encashment_allowed: !!row.encashment_allowed,
+            encashment_max_days: row.encashment_max_days ?? '',
+            encashment_requires_approval: row.encashment_requires_approval !== false,
+            year_end_excess_disposition: row.year_end_excess_disposition ?? 'expire',
             effective_from: row.effective_from ?? '',
             effective_to: row.effective_to ?? '',
             status: row.status ?? 'active',
@@ -178,6 +197,11 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
                 cell: ({ row }) => (
                     <ExcludeHolidayToggle row={row.original} canEdit={can('leave.manage-policies')} />
                 ),
+            },
+            {
+                id: 'excludeWeekends',
+                header: t('pages.leavePolicies.columns.excludeWeekends'),
+                cell: ({ row }) => (row.original.exclude_weekends ? t('common.yes') : t('common.no')),
             },
             {
                 id: 'effectiveFrom',
@@ -405,6 +429,137 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
                                 />
                                 {t('pages.leavePolicies.fields.excludePublicHolidaysHint')}
                             </label>
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.leavePolicies.fields.excludeWeekends')}
+                            id="exclude_weekends"
+                            error={form.errors.exclude_weekends}
+                        >
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    id="exclude_weekends"
+                                    type="checkbox"
+                                    checked={!!form.data.exclude_weekends}
+                                    onChange={(e) => form.setData('exclude_weekends', e.target.checked)}
+                                />
+                                {t('pages.leavePolicies.fields.excludeWeekendsHint')}
+                            </label>
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.leavePolicies.fields.shortLeaveMaxHours')}
+                            id="short_leave_max_hours"
+                            error={form.errors.short_leave_max_hours}
+                        >
+                            <input
+                                id="short_leave_max_hours"
+                                type="number"
+                                step="0.25"
+                                min="0.25"
+                                max="24"
+                                value={form.data.short_leave_max_hours}
+                                onChange={(e) => form.setData('short_leave_max_hours', e.target.value)}
+                                placeholder={t('pages.leavePolicies.fields.shortLeaveMaxHoursPlaceholder')}
+                                className="rp-form-input"
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.leavePolicies.fields.shortLeaveMaxRequestsPerMonth')}
+                            id="short_leave_max_requests_per_month"
+                            error={form.errors.short_leave_max_requests_per_month}
+                        >
+                            <input
+                                id="short_leave_max_requests_per_month"
+                                type="number"
+                                min="1"
+                                max="31"
+                                value={form.data.short_leave_max_requests_per_month}
+                                onChange={(e) => form.setData('short_leave_max_requests_per_month', e.target.value)}
+                                placeholder={t('pages.leavePolicies.fields.shortLeaveMaxRequestsPerMonthPlaceholder')}
+                                className="rp-form-input"
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.leavePolicies.fields.outStationDeductsBalance')}
+                            id="out_station_deducts_balance"
+                            error={form.errors.out_station_deducts_balance}
+                        >
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    id="out_station_deducts_balance"
+                                    type="checkbox"
+                                    checked={!!form.data.out_station_deducts_balance}
+                                    onChange={(e) => form.setData('out_station_deducts_balance', e.target.checked)}
+                                />
+                                {t('pages.leavePolicies.fields.outStationDeductsBalanceHint')}
+                            </label>
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.leavePolicies.fields.encashmentAllowed')}
+                            id="encashment_allowed"
+                            error={form.errors.encashment_allowed}
+                        >
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    id="encashment_allowed"
+                                    type="checkbox"
+                                    checked={!!form.data.encashment_allowed}
+                                    onChange={(e) => form.setData('encashment_allowed', e.target.checked)}
+                                />
+                                {t('pages.leavePolicies.fields.encashmentAllowedHint')}
+                            </label>
+                        </AdminFormField>
+                        {form.data.encashment_allowed && (
+                            <>
+                                <AdminFormField
+                                    label={t('pages.leavePolicies.fields.encashmentMaxDays')}
+                                    id="encashment_max_days"
+                                    error={form.errors.encashment_max_days}
+                                >
+                                    <input
+                                        id="encashment_max_days"
+                                        type="number"
+                                        step="0.25"
+                                        min="0.25"
+                                        value={form.data.encashment_max_days}
+                                        onChange={(e) => form.setData('encashment_max_days', e.target.value)}
+                                        placeholder={t('pages.leavePolicies.fields.encashmentMaxDaysPlaceholder')}
+                                        className="rp-form-input"
+                                    />
+                                </AdminFormField>
+                                <AdminFormField
+                                    label={t('pages.leavePolicies.fields.encashmentRequiresApproval')}
+                                    id="encashment_requires_approval"
+                                    error={form.errors.encashment_requires_approval}
+                                >
+                                    <label className="flex items-center gap-2 text-sm">
+                                        <input
+                                            id="encashment_requires_approval"
+                                            type="checkbox"
+                                            checked={!!form.data.encashment_requires_approval}
+                                            onChange={(e) =>
+                                                form.setData('encashment_requires_approval', e.target.checked)
+                                            }
+                                        />
+                                        {t('pages.leavePolicies.fields.encashmentRequiresApprovalHint')}
+                                    </label>
+                                </AdminFormField>
+                            </>
+                        )}
+                        <AdminFormField
+                            label={t('pages.leavePolicies.fields.yearEndExcessDisposition')}
+                            id="year_end_excess_disposition"
+                            error={form.errors.year_end_excess_disposition}
+                            hint={t('pages.leavePolicies.fields.yearEndExcessDispositionHint')}
+                        >
+                            <Select
+                                id="year_end_excess_disposition"
+                                value={form.data.year_end_excess_disposition}
+                                onChange={(value) => form.setData('year_end_excess_disposition', value ?? 'expire')}
+                                options={[
+                                    { value: 'expire', label: t('pages.leavePolicies.yearEndExcessDispositions.expire') },
+                                    { value: 'encash', label: t('pages.leavePolicies.yearEndExcessDispositions.encash') },
+                                ]}
+                            />
                         </AdminFormField>
                     </div>
                     <div className="flex justify-end gap-2 pt-2">

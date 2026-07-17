@@ -72,6 +72,25 @@ function Index({ requests, filters }) {
                 cell: ({ row }) => `${row.original.start_date ?? '—'} → ${row.original.end_date ?? '—'}`,
             },
             {
+                id: 'duration',
+                header: t('pages.leaveRequests.columns.duration'),
+                cell: ({ row }) => {
+                    const type = t(`pages.leaveRequests.durationTypes.${row.original.duration_type}`, {
+                        defaultValue: row.original.duration_type,
+                    });
+                    if (row.original.duration_type === 'half_day' && row.original.session) {
+                        const session = t(`pages.leaveRequests.sessions.${row.original.session}`, {
+                            defaultValue: row.original.session,
+                        });
+                        return `${type} (${session})`;
+                    }
+                    if (row.original.duration_type === 'short_leave' && row.original.start_time) {
+                        return `${type} (${row.original.start_time}–${row.original.end_time})`;
+                    }
+                    return type;
+                },
+            },
+            {
                 id: 'days',
                 header: t('pages.leaveRequests.columns.days'),
                 cell: ({ row }) => row.original.days ?? '—',

@@ -13,7 +13,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'leave_type_id',
     'start_date',
     'end_date',
+    'duration_type',
+    'session',
+    'start_time',
+    'end_time',
     'days',
+    'deduct_from_balance',
     'reason',
     'status',
     'approval_chain_json',
@@ -29,6 +34,7 @@ final class LeaveRequest extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'days' => 'decimal:2',
+            'deduct_from_balance' => 'boolean',
             'approval_chain_json' => 'array',
         ];
     }

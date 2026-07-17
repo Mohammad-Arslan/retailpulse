@@ -63,6 +63,7 @@ final class AttendanceRecordController extends Controller
                 'clock_out' => $record->clock_out?->toDateTimeString(),
                 'worked_minutes' => $record->worked_minutes,
                 'status' => $record->status,
+                'is_historical' => $record->is_historical,
             ]),
             'filters' => $filters,
         ]);

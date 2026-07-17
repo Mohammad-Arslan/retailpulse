@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 const ENTITY_PERMISSIONS = {
+    attendance: { import: 'attendance.import', export: 'attendance.export' },
     categories: { import: 'products.import', export: 'products.export' },
     brands: { import: 'products.import', export: 'products.export' },
     units: { import: 'products.import', export: 'products.export' },

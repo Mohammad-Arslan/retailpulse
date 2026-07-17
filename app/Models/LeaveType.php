@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'is_paid',
     'affects_payroll',
     'payroll_deduction_component_code',
+    'payroll_encashment_component_code',
     'status',
 ])]
 final class LeaveType extends Model
@@ -42,5 +43,10 @@ final class LeaveType extends Model
     public function requests(): HasMany
     {
         return $this->hasMany(LeaveRequest::class);
+    }
+
+    public function encashments(): HasMany
+    {
+        return $this->hasMany(LeaveEncashment::class);
     }
 }

@@ -39,9 +39,9 @@ Manage leave types, entitlements, and requests with approval, balance updates, a
 | P12-LV-FR-005 | Implemented | Approval updates entitlement `used_days`. |
 | P12-LV-FR-006 | Implemented | Unpaid / over-balance leave feeds payroll as a configured deduction component (not hardcoded reduction). |
 | P12-LV-FR-007 | Partial | Approval chain configurable (`approval_chain_json`); full workflow = Phase 29. |
-| P12-LV-FR-008 | Partial | Day count respects public-holiday exclusion per leave policy + holiday calendar; weekend exclusion remains Wave 2. |
-| P12-LV-FR-009 | Planned | Half-day / hourly leave units when policy allows. |
-| P12-LV-FR-010 | Planned | Encashment requests convert balance to pay component (see leave-policies). |
+| P12-LV-FR-008 | Implemented | Day count respects public-holiday exclusion per leave policy + holiday calendar, and weekend exclusion (`leave_policies.exclude_weekends`, default true) using per-legal-entity configurable weekend days (`HrEntitySetting.settings_json.weekend_days`, default Sat/Sun) — not every customer's weekend falls on the same days. |
+| P12-LV-FR-009 | Implemented | `duration_type` (`full_day` / `half_day` / `short_leave` / `out_station`) on every request. Half day: single date, requires `session` (morning/afternoon), always 0.5 days. Short leave: single date, requires `start_time`/`end_time`, counts as `hours ÷ work_hours_per_day` (per legal entity, `HrEntitySetting.settings_json.work_hours_per_day`, default 8) — capped per policy by `short_leave_max_hours` and `short_leave_max_requests_per_month` (nullable = unlimited; the monthly quota counts `pending` + `approved` requests). Out Station: full-day equivalent for attendance/approval, but only deducts from the leave balance when the resolved policy's `out_station_deducts_balance` is enabled — the resolved flag is snapshotted onto the request as `deduct_from_balance` at submission time so a later policy change never changes the outcome of an already-submitted request. |
+| P12-LV-FR-010 | Implemented | Encashment requests convert balance to a payroll earning component (see leave-policies). `LeaveEncashmentService` handles request/approve/reject/cancel with the same double-spend protections as leave requests (per-employee row lock during request, entitlement row lock during approve/cancel). |
 | P12-LV-FR-011 | Planned | Carry-forward processing at fiscal year boundary (see leave-fiscal-year). |
 | P12-LV-FR-012 | Planned | Historical leave balance and request import. |
 | P12-LV-FR-013 | Implemented | Leave module gated behind `leave` requiring `hr`. |
@@ -60,14 +60,25 @@ leave_entitlements
   remaining_days (derived)
 
 leave_requests
-- id, employee_id, leave_type_id, start_date, end_date, days, reason,
+- id, employee_id, leave_type_id, start_date, end_date,
+  duration_type (full_day / half_day / short_leave / out_station, default full_day),
+  session (morning / afternoon, half_day only), start_time, end_time (short_leave only),
+  days, deduct_from_balance (snapshotted at submission), reason,
   status (pending / approved / rejected / cancelled),
   approval_chain_json, timestamps
 
-# Planned
+leave_policies (additions)
+- short_leave_max_hours nullable, short_leave_max_requests_per_month nullable,
+  out_station_deducts_balance (default false),
+  exclude_weekends (default true)
+
+hr_entity_settings.settings_json (additions)
+- work_hours_per_day (default 8), weekend_days (default [0, 6] = Sun/Sat)
+
 leave_encashments
-- id, employee_id, leave_type_id, fiscal_year_id, days, amount,
-  payroll_run_id nullable, status, timestamps
+- id, employee_id, leave_type_id, leave_policy_id, fiscal_year_id nullable,
+  days, payroll_component_code, reason, status, approved_at,
+  approval_chain_json, timestamps
 ```
 
 Policies table: [leave-policies.md](./leave-policies.md).

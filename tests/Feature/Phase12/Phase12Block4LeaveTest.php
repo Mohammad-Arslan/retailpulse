@@ -63,7 +63,7 @@ final class Phase12Block4LeaveTest extends TestCase
     {
         $employee = $this->createEmployee();
         $leaveType = $this->createLeaveType([
-            'code' => 'ANNUAL',
+            'code' => 'ANNUAL-TEST-'.uniqid(),
             'name' => 'Annual Leave',
             'is_paid' => true,
             'affects_payroll' => false,
@@ -107,7 +107,7 @@ final class Phase12Block4LeaveTest extends TestCase
     {
         $employee = $this->createEmployee();
         $leaveType = $this->createLeaveType([
-            'code' => 'UNPAID',
+            'code' => 'UNPAID-TEST-'.uniqid(),
             'name' => 'Unpaid Leave',
             'is_paid' => false,
             'affects_payroll' => true,
