@@ -1,6 +1,8 @@
 import AdminFormField from '@/Components/common/AdminFormField';
 import DataTable from '@/Components/common/DataTable';
+import ModalHeader from '@/Components/common/ModalHeader';
 import PageHeader from '@/Components/common/PageHeader';
+import ScrollArea from '@/Components/common/ScrollArea';
 import Modal from '@/Components/Modal';
 import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
@@ -280,11 +282,14 @@ function Index({ policies, filters, legalEntities = [], branches = [] }) {
                 emptyMessage={t('pages.overtimePolicies.empty')}
             />
 
-            <Modal show={modalOpen} onClose={() => setModalOpen(false)} maxWidth="2xl">
-                <form onSubmit={submit} className="space-y-4 p-6">
-                    <h3 className="text-lg font-semibold">
-                        {editing ? t('pages.overtimePolicies.editTitle') : t('pages.overtimePolicies.createTitle')}
-                    </h3>
+            <Modal show={modalOpen} onClose={() => setModalOpen(false)} maxWidth="3xl">
+                <ModalHeader
+                    icon={Scale}
+                    title={editing ? t('pages.overtimePolicies.editTitle') : t('pages.overtimePolicies.createTitle')}
+                    description={t('pages.overtimePolicies.indexDescription')}
+                    onClose={() => setModalOpen(false)}
+                />
+                <ScrollArea as="form" onSubmit={submit} className="max-h-[75vh] space-y-5 overflow-y-auto p-6">
                     <div className="grid gap-4 sm:grid-cols-2">
                         <AdminFormField
                             label={t('pages.overtimePolicies.fields.legalEntity')}
@@ -380,11 +385,12 @@ function Index({ policies, filters, legalEntities = [], branches = [] }) {
                             label={t('pages.overtimePolicies.fields.restDayApplies')}
                             error={form.errors.rest_day_applies}
                         >
-                            <label className="flex items-center gap-2 text-sm">
+                            <label className="rp-checkbox-label">
                                 <input
                                     type="checkbox"
                                     checked={!!form.data.rest_day_applies}
                                     onChange={(e) => form.setData('rest_day_applies', e.target.checked)}
+                                    className="accent-teal-600"
                                 />
                                 {t('pages.overtimePolicies.fields.restDayAppliesHint')}
                             </label>
@@ -393,11 +399,12 @@ function Index({ policies, filters, legalEntities = [], branches = [] }) {
                             label={t('pages.overtimePolicies.fields.publicHolidayApplies')}
                             error={form.errors.public_holiday_applies}
                         >
-                            <label className="flex items-center gap-2 text-sm">
+                            <label className="rp-checkbox-label">
                                 <input
                                     type="checkbox"
                                     checked={!!form.data.public_holiday_applies}
                                     onChange={(e) => form.setData('public_holiday_applies', e.target.checked)}
+                                    className="accent-teal-600"
                                 />
                                 {t('pages.overtimePolicies.fields.publicHolidayAppliesHint')}
                             </label>
@@ -419,8 +426,8 @@ function Index({ policies, filters, legalEntities = [], branches = [] }) {
                         </AdminFormField>
                     </div>
 
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-rp-text-primary">
+                    <div className="space-y-2 border-t border-rp-border pt-4">
+                        <h4 className="rp-section-title">
                             {t('pages.overtimePolicies.fields.multipliers')}
                         </h4>
                         {form.errors.multipliers && (
@@ -434,7 +441,10 @@ function Index({ policies, filters, legalEntities = [], branches = [] }) {
                                     compensation_type: 'cash',
                                 };
                                 return (
-                                    <div key={dayType} className="space-y-2 rounded-lg border border-rp-border p-3">
+                                    <div
+                                        key={dayType}
+                                        className="space-y-2 rounded-xl border border-rp-border bg-rp-surface-inset/40 p-3.5"
+                                    >
                                         <AdminFormField
                                             label={t(`pages.overtimePolicies.dayTypes.${dayType}`)}
                                             error={
@@ -472,7 +482,7 @@ function Index({ policies, filters, legalEntities = [], branches = [] }) {
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-2">
+                    <div className="flex justify-end gap-2 border-t border-rp-border pt-4">
                         <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
                             {t('confirm.cancel')}
                         </Button>
@@ -480,7 +490,7 @@ function Index({ policies, filters, legalEntities = [], branches = [] }) {
                             {editing ? t('common.save') : t('pages.overtimePolicies.createSubmit')}
                         </Button>
                     </div>
-                </form>
+                </ScrollArea>
             </Modal>
         </>
     );

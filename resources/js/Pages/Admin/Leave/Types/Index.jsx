@@ -1,6 +1,8 @@
 import AdminFormField from '@/Components/common/AdminFormField';
 import DataTable from '@/Components/common/DataTable';
+import ModalHeader from '@/Components/common/ModalHeader';
 import PageHeader from '@/Components/common/PageHeader';
+import ScrollArea from '@/Components/common/ScrollArea';
 import Modal from '@/Components/Modal';
 import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
@@ -208,128 +210,139 @@ function Index({ types, filters }) {
                 emptyMessage={t('pages.leaveTypes.empty')}
             />
 
-            <Modal show={modalOpen} onClose={() => setModalOpen(false)} maxWidth="md">
-                <form onSubmit={submit} className="space-y-4 p-6">
-                    <h3 className="text-lg font-semibold">
-                        {editing ? t('pages.leaveTypes.editTitle') : t('pages.leaveTypes.createTitle')}
-                    </h3>
-                    <AdminFormField label={t('pages.leaveTypes.fields.code')} error={form.errors.code} required>
-                        <input
-                            className="rp-form-input w-full font-mono"
-                            value={form.data.code}
-                            onChange={(e) => form.setData('code', e.target.value.toUpperCase())}
-                            disabled={!!editing}
-                            placeholder={t('pages.leaveTypes.fields.codePlaceholder')}
-                            required
-                        />
-                    </AdminFormField>
-                    <AdminFormField label={t('pages.leaveTypes.fields.name')} error={form.errors.name} required>
-                        <input
-                            className="rp-form-input w-full"
-                            value={form.data.name}
-                            onChange={(e) => form.setData('name', e.target.value)}
-                            placeholder={t('pages.leaveTypes.fields.namePlaceholder')}
-                            required
-                        />
-                    </AdminFormField>
-                    <AdminFormField label={t('pages.leaveTypes.fields.isPaid')} error={form.errors.is_paid}>
-                        <label className="flex items-center gap-2 text-sm">
+            <Modal show={modalOpen} onClose={() => setModalOpen(false)} maxWidth="2xl">
+                <ModalHeader
+                    icon={CalendarDays}
+                    title={editing ? t('pages.leaveTypes.editTitle') : t('pages.leaveTypes.createTitle')}
+                    description={t('pages.leaveTypes.indexDescription')}
+                    onClose={() => setModalOpen(false)}
+                />
+                <ScrollArea as="form" onSubmit={submit} className="max-h-[75vh] space-y-5 overflow-y-auto p-6">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <AdminFormField label={t('pages.leaveTypes.fields.code')} error={form.errors.code} required>
+                            <input
+                                className="rp-form-input w-full font-mono"
+                                value={form.data.code}
+                                onChange={(e) => form.setData('code', e.target.value.toUpperCase())}
+                                disabled={!!editing}
+                                placeholder={t('pages.leaveTypes.fields.codePlaceholder')}
+                                required
+                            />
+                        </AdminFormField>
+                        <AdminFormField label={t('pages.leaveTypes.fields.name')} error={form.errors.name} required>
+                            <input
+                                className="rp-form-input w-full"
+                                value={form.data.name}
+                                onChange={(e) => form.setData('name', e.target.value)}
+                                placeholder={t('pages.leaveTypes.fields.namePlaceholder')}
+                                required
+                            />
+                        </AdminFormField>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="rp-checkbox-label rounded-lg border border-rp-border p-3">
                             <input
                                 type="checkbox"
                                 checked={!!form.data.is_paid}
                                 onChange={(e) => form.setData('is_paid', e.target.checked)}
+                                className="accent-teal-600"
                             />
                             {t('pages.leaveTypes.fields.isPaidHint')}
                         </label>
-                    </AdminFormField>
-                    <AdminFormField
-                        label={t('pages.leaveTypes.fields.affectsPayroll')}
-                        error={form.errors.affects_payroll}
-                    >
-                        <label className="flex items-center gap-2 text-sm">
+                        <label className="rp-checkbox-label rounded-lg border border-rp-border p-3">
                             <input
                                 type="checkbox"
                                 checked={!!form.data.affects_payroll}
                                 onChange={(e) => form.setData('affects_payroll', e.target.checked)}
+                                className="accent-teal-600"
                             />
                             {t('pages.leaveTypes.fields.affectsPayrollHint')}
                         </label>
-                    </AdminFormField>
-                    <AdminFormField
-                        label={t('pages.leaveTypes.fields.deductionComponent')}
-                        error={form.errors.payroll_deduction_component_code}
-                    >
-                        <input
-                            className="rp-form-input w-full font-mono"
-                            value={form.data.payroll_deduction_component_code}
-                            onChange={(e) =>
-                                form.setData('payroll_deduction_component_code', e.target.value)
-                            }
-                            placeholder={t('pages.leaveTypes.fields.deductionComponentPlaceholder')}
-                        />
-                    </AdminFormField>
-                    <AdminFormField
-                        label={t('pages.leaveTypes.fields.encashmentComponent')}
-                        error={form.errors.payroll_encashment_component_code}
-                    >
-                        <input
-                            className="rp-form-input w-full font-mono"
-                            value={form.data.payroll_encashment_component_code}
-                            onChange={(e) =>
-                                form.setData('payroll_encashment_component_code', e.target.value)
-                            }
-                            placeholder={t('pages.leaveTypes.fields.encashmentComponentPlaceholder')}
-                        />
-                    </AdminFormField>
-                    <AdminFormField
-                        label={t('pages.leaveTypes.fields.allowLeaveClaim')}
-                        error={form.errors.allow_leave_claim}
-                    >
-                        <label className="flex items-center gap-2 text-sm">
-                            <input
-                                type="checkbox"
-                                checked={!!form.data.allow_leave_claim}
-                                onChange={(e) => form.setData('allow_leave_claim', e.target.checked)}
-                            />
-                            {t('pages.leaveTypes.fields.allowLeaveClaimHint')}
-                        </label>
-                    </AdminFormField>
-                    <AdminFormField
-                        label={t('pages.leaveTypes.fields.allowCashClaim')}
-                        error={form.errors.allow_cash_claim}
-                    >
-                        <label className="flex items-center gap-2 text-sm">
-                            <input
-                                type="checkbox"
-                                checked={!!form.data.allow_cash_claim}
-                                onChange={(e) => form.setData('allow_cash_claim', e.target.checked)}
-                            />
-                            {t('pages.leaveTypes.fields.allowCashClaimHint')}
-                        </label>
-                    </AdminFormField>
-                    {form.data.allow_cash_claim && (
-                        <AdminFormField
-                            label={t('pages.leaveTypes.fields.toilPayoutComponent')}
-                            error={form.errors.payroll_toil_payout_component_code}
-                        >
-                            <input
-                                className="rp-form-input w-full font-mono"
-                                value={form.data.payroll_toil_payout_component_code}
-                                onChange={(e) =>
-                                    form.setData('payroll_toil_payout_component_code', e.target.value)
-                                }
-                                placeholder={t('pages.leaveTypes.fields.toilPayoutComponentPlaceholder')}
+                    </div>
+
+                    <div className="space-y-3 border-t border-rp-border pt-4">
+                        <h4 className="rp-section-title">{t('pages.leaveTypes.sections.payroll')}</h4>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <AdminFormField
+                                label={t('pages.leaveTypes.fields.deductionComponent')}
+                                error={form.errors.payroll_deduction_component_code}
+                            >
+                                <input
+                                    className="rp-form-input w-full font-mono"
+                                    value={form.data.payroll_deduction_component_code}
+                                    onChange={(e) =>
+                                        form.setData('payroll_deduction_component_code', e.target.value)
+                                    }
+                                    placeholder={t('pages.leaveTypes.fields.deductionComponentPlaceholder')}
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leaveTypes.fields.encashmentComponent')}
+                                error={form.errors.payroll_encashment_component_code}
+                            >
+                                <input
+                                    className="rp-form-input w-full font-mono"
+                                    value={form.data.payroll_encashment_component_code}
+                                    onChange={(e) =>
+                                        form.setData('payroll_encashment_component_code', e.target.value)
+                                    }
+                                    placeholder={t('pages.leaveTypes.fields.encashmentComponentPlaceholder')}
+                                />
+                            </AdminFormField>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 border-t border-rp-border pt-4">
+                        <h4 className="rp-section-title">{t('pages.leaveTypes.sections.toil')}</h4>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <label className="rp-checkbox-label rounded-lg border border-rp-border p-3">
+                                <input
+                                    type="checkbox"
+                                    checked={!!form.data.allow_leave_claim}
+                                    onChange={(e) => form.setData('allow_leave_claim', e.target.checked)}
+                                    className="accent-teal-600"
+                                />
+                                {t('pages.leaveTypes.fields.allowLeaveClaimHint')}
+                            </label>
+                            <label className="rp-checkbox-label rounded-lg border border-rp-border p-3">
+                                <input
+                                    type="checkbox"
+                                    checked={!!form.data.allow_cash_claim}
+                                    onChange={(e) => form.setData('allow_cash_claim', e.target.checked)}
+                                    className="accent-teal-600"
+                                />
+                                {t('pages.leaveTypes.fields.allowCashClaimHint')}
+                            </label>
+                        </div>
+                        {form.data.allow_cash_claim && (
+                            <AdminFormField
+                                label={t('pages.leaveTypes.fields.toilPayoutComponent')}
+                                error={form.errors.payroll_toil_payout_component_code}
+                            >
+                                <input
+                                    className="rp-form-input w-full font-mono"
+                                    value={form.data.payroll_toil_payout_component_code}
+                                    onChange={(e) =>
+                                        form.setData('payroll_toil_payout_component_code', e.target.value)
+                                    }
+                                    placeholder={t('pages.leaveTypes.fields.toilPayoutComponentPlaceholder')}
+                                />
+                            </AdminFormField>
+                        )}
+                    </div>
+
+                    <div className="border-t border-rp-border pt-4">
+                        <AdminFormField label={t('pages.leaveTypes.fields.status')} error={form.errors.status}>
+                            <Select
+                                value={form.data.status}
+                                options={formStatusOptions}
+                                onChange={(v) => form.setData('status', v ?? 'active')}
                             />
                         </AdminFormField>
-                    )}
-                    <AdminFormField label={t('pages.leaveTypes.fields.status')} error={form.errors.status}>
-                        <Select
-                            value={form.data.status}
-                            options={formStatusOptions}
-                            onChange={(v) => form.setData('status', v ?? 'active')}
-                        />
-                    </AdminFormField>
-                    <div className="flex justify-end gap-2 pt-2">
+                    </div>
+
+                    <div className="flex justify-end gap-2 border-t border-rp-border pt-4">
                         <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
                             {t('confirm.cancel')}
                         </Button>
@@ -337,7 +350,7 @@ function Index({ types, filters }) {
                             {editing ? t('common.save') : t('pages.leaveTypes.createSubmit')}
                         </Button>
                     </div>
-                </form>
+                </ScrollArea>
             </Modal>
         </>
     );

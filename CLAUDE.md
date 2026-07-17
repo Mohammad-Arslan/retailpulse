@@ -114,6 +114,10 @@ resources/js/
 
 Tailwind 4 is configured via CSS (`resources/css/app.css`) using OKLch color variables and `@plugin` directives — there is no `tailwind.config.js`. Shadcn component config lives in `components.json`.
 
+#### Modal vs. dedicated page
+
+Use a **modal** for simple config/master-data managed from an index page with a "create/edit → stay on the list" workflow (Leave Types, Leave Policies, Overtime Policies) — field count alone is not a reason to prefer a page; a well-sectioned 2-column modal handles 15–20 fields fine. Use a **dedicated page** for standalone transactions a user navigates to (Leave Request, TOIL Claim, Sales), forms needing tabs or repeatable rows/file uploads, or when a contextual "how this works" panel adds value. On a dedicated page laid out as form + info panel, Cancel/Submit buttons go **inside the form card itself** (bottom, right-aligned) — not in a separate row below the grid, which right-aligns under the info panel instead and visually detaches the buttons from the form. Any scrollable region (long modal bodies, lists) must use `ScrollArea` from `@/Components/common/ScrollArea` — never raw `overflow-y-auto` on a bare element, which renders the native unstyled scrollbar. Primary buttons (`variant="brand"` / `.rp-btn-primary`) are black by default with teal on hover, never solid teal at rest — enforced centrally in `resources/js/Components/ui/button.jsx`, don't override per-page. Full styling standard is in `.cursor/rules/retailpulse-frontend.mdc`.
+
 ### Route Organization
 
 ```

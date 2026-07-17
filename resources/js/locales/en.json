@@ -1099,6 +1099,7 @@
                 "status": "Status"
             },
             "fields": {
+                "sectionTitle": "Clock Details",
                 "employee": "Employee",
                 "branch": "Branch",
                 "action": "Action",
@@ -1113,6 +1114,11 @@
                 "open": "Open",
                 "closed": "Closed",
                 "adjusted": "Adjusted"
+            },
+            "infoPanel": {
+                "title": "Manual Clock Entries",
+                "tip1": "Use this when an employee forgot to clock in/out, or for branches without a biometric or POS attendance source.",
+                "tip2": "Clock Out requires the ID of the matching open record — leave it blank to close the employee's most recent open record automatically."
             }
         },
         "leaveTypes": {
@@ -1158,6 +1164,10 @@
             "statuses": {
                 "active": "Active",
                 "inactive": "Inactive"
+            },
+            "sections": {
+                "payroll": "Payroll Integration",
+                "toil": "TOIL Redemption"
             }
         },
         "leavePolicies": {
@@ -1228,6 +1238,12 @@
             "statuses": {
                 "active": "Active",
                 "inactive": "Inactive"
+            },
+            "sections": {
+                "accrual": "Accrual Rules",
+                "dayCounting": "Day Counting",
+                "encashment": "Encashment",
+                "scheduleAndStatus": "Schedule & Status"
             }
         },
         "leaveRequests": {
@@ -1257,6 +1273,7 @@
                 "status": "Status"
             },
             "fields": {
+                "sectionTitle": "Request Details",
                 "employee": "Employee",
                 "leaveType": "Leave Type",
                 "startDate": "Start Date",
@@ -1282,6 +1299,13 @@
                 "approved": "Approved",
                 "rejected": "Rejected",
                 "cancelled": "Cancelled"
+            },
+            "infoPanel": {
+                "title": "Duration Types",
+                "fullDay": "Full Day — the standard option, deducts a full day per date in the range.",
+                "halfDay": "Half Day — a single date, always 0.5 days; pick a morning or afternoon session.",
+                "shortLeave": "Short Leave — a single date with a start/end time, counted in hours converted to days.",
+                "outStation": "Out Station — a full-day equivalent that only deducts from the balance if the resolved policy allows it."
             }
         },
         "leaveEncashments": {
@@ -1307,6 +1331,7 @@
                 "status": "Status"
             },
             "fields": {
+                "sectionTitle": "Encashment Details",
                 "employee": "Employee",
                 "leaveType": "Leave Type",
                 "days": "Days To Encash",
@@ -1317,6 +1342,12 @@
                 "approved": "Approved",
                 "rejected": "Rejected",
                 "cancelled": "Cancelled"
+            },
+            "infoPanel": {
+                "title": "How This Works",
+                "step1": "The requested days are held against the employee's leave balance so they can't be taken as leave and encashed at the same time.",
+                "step2": "An approver reviews the request and approves or rejects it.",
+                "step3": "Once approved, the payout is picked up automatically by the next payroll run."
             }
         },
         "leaveYearEndRuns": {
@@ -1440,6 +1471,7 @@
                 "status": "Status"
             },
             "fields": {
+                "sectionTitle": "Claim Details",
                 "employee": "Employee",
                 "hours": "Hours To Claim",
                 "reason": "Reason"
@@ -1449,6 +1481,12 @@
                 "approved": "Approved",
                 "rejected": "Rejected",
                 "cancelled": "Cancelled"
+            },
+            "infoPanel": {
+                "title": "How This Works",
+                "step1": "The requested hours are held against the employee's available TOIL balance so they can't be claimed twice elsewhere.",
+                "step2": "An approver reviews the request and approves or rejects it.",
+                "step3": "Once approved, the payout is picked up automatically by the next payroll run."
             }
         },
         "payComponents": {

@@ -5,6 +5,7 @@ export default function AdminFormField({
     id,
     error,
     hint,
+    required = false,
     children,
     className = '',
 }) {
@@ -13,6 +14,7 @@ export default function AdminFormField({
             {label && (
                 <label htmlFor={id} className="rp-form-label">
                     {label}
+                    {required && <span className="ml-0.5 text-rose-500">*</span>}
                 </label>
             )}
             {children}

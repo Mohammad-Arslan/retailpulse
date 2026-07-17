@@ -211,22 +211,24 @@ export default function Edit({ branch, operationalOptions, warehouseOptions = []
                             error={errors.weekend_days}
                             hint={t('pages.branches.hints.weekendDays')}
                         >
-                            <label className="mb-2 flex items-center gap-2 text-sm text-rp-text">
+                            <label className="rp-checkbox-label mb-2">
                                 <input
                                     type="checkbox"
                                     checked={data.weekend_days !== null}
                                     onChange={(e) => setData('weekend_days', e.target.checked ? [] : null)}
+                                    className="accent-teal-600"
                                 />
                                 {t('pages.branches.overrideWeekendDays')}
                             </label>
                             {data.weekend_days !== null && (
                                 <div className="flex flex-wrap gap-3">
                                     {WEEKDAYS.map((day) => (
-                                        <label key={day} className="flex items-center gap-1.5 text-sm text-rp-text">
+                                        <label key={day} className="rp-checkbox-label">
                                             <input
                                                 type="checkbox"
                                                 checked={(data.weekend_days ?? []).includes(day)}
                                                 onChange={() => toggleWeekendDay(day)}
+                                                className="accent-teal-600"
                                             />
                                             {t(`pages.hrSettings.weekdays.${day}`)}
                                         </label>

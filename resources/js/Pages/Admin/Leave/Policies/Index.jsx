@@ -1,6 +1,8 @@
 import AdminFormField from '@/Components/common/AdminFormField';
 import DataTable from '@/Components/common/DataTable';
+import ModalHeader from '@/Components/common/ModalHeader';
 import PageHeader from '@/Components/common/PageHeader';
+import ScrollArea from '@/Components/common/ScrollArea';
 import Modal from '@/Components/Modal';
 import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
@@ -253,11 +255,14 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
                 emptyMessage={t('pages.leavePolicies.empty')}
             />
 
-            <Modal show={modalOpen} onClose={() => setModalOpen(false)} maxWidth="lg">
-                <form onSubmit={submit} className="space-y-4 p-6">
-                    <h3 className="text-lg font-semibold">
-                        {editing ? t('pages.leavePolicies.editTitle') : t('pages.leavePolicies.createTitle')}
-                    </h3>
+            <Modal show={modalOpen} onClose={() => setModalOpen(false)} maxWidth="3xl">
+                <ModalHeader
+                    icon={CalendarRange}
+                    title={editing ? t('pages.leavePolicies.editTitle') : t('pages.leavePolicies.createTitle')}
+                    description={t('pages.leavePolicies.indexDescription')}
+                    onClose={() => setModalOpen(false)}
+                />
+                <ScrollArea as="form" onSubmit={submit} className="max-h-[75vh] space-y-5 overflow-y-auto p-6">
                     <div className="grid gap-4 sm:grid-cols-2">
                         <AdminFormField
                             label={t('pages.leavePolicies.fields.leaveType')}
@@ -285,231 +290,183 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
                                 isClearable
                             />
                         </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.accrualMethod')}
-                            id="accrual_method"
-                            error={form.errors.accrual_method}
-                            required
-                        >
-                            <Select
+                    </div>
+
+                    <div className="space-y-3 border-t border-rp-border pt-4">
+                        <h4 className="rp-section-title">{t('pages.leavePolicies.sections.accrual')}</h4>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.accrualMethod')}
                                 id="accrual_method"
-                                value={form.data.accrual_method}
-                                onChange={(value) => form.setData('accrual_method', value ?? 'monthly_accrual')}
-                                options={accrualMethodOptions}
-                            />
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.accrualRate')}
-                            id="accrual_rate"
-                            error={form.errors.accrual_rate}
-                            required
-                        >
-                            <input
-                                id="accrual_rate"
-                                type="number"
-                                step="0.0001"
-                                min="0"
-                                value={form.data.accrual_rate}
-                                onChange={(e) => form.setData('accrual_rate', e.target.value)}
-                                placeholder={t('pages.leavePolicies.fields.accrualRatePlaceholder')}
-                                className="rp-form-input"
+                                error={form.errors.accrual_method}
                                 required
-                            />
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.maxBalance')}
-                            id="max_balance"
-                            error={form.errors.max_balance}
-                        >
-                            <input
-                                id="max_balance"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={form.data.max_balance}
-                                onChange={(e) => form.setData('max_balance', e.target.value)}
-                                placeholder={t('pages.leavePolicies.fields.maxBalancePlaceholder')}
-                                className="rp-form-input"
-                            />
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.carryForwardLimit')}
-                            id="carry_forward_limit"
-                            error={form.errors.carry_forward_limit}
-                        >
-                            <input
-                                id="carry_forward_limit"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={form.data.carry_forward_limit}
-                                onChange={(e) => form.setData('carry_forward_limit', e.target.value)}
-                                placeholder={t('pages.leavePolicies.fields.carryForwardLimitPlaceholder')}
-                                className="rp-form-input"
-                            />
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.carryForwardExpiryMonths')}
-                            id="carry_forward_expiry_months"
-                            error={form.errors.carry_forward_expiry_months}
-                        >
-                            <input
-                                id="carry_forward_expiry_months"
-                                type="number"
-                                min="0"
-                                max="120"
-                                value={form.data.carry_forward_expiry_months}
-                                onChange={(e) => form.setData('carry_forward_expiry_months', e.target.value)}
-                                placeholder={t('pages.leavePolicies.fields.carryForwardExpiryMonthsPlaceholder')}
-                                className="rp-form-input"
-                            />
-                        </AdminFormField>
-                        <AdminFormField label={t('pages.leavePolicies.fields.status')} id="status" error={form.errors.status}>
-                            <Select
-                                id="status"
-                                value={form.data.status}
-                                onChange={(value) => form.setData('status', value ?? 'active')}
-                                options={formStatusOptions}
-                            />
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.effectiveFrom')}
-                            id="effective_from"
-                            error={form.errors.effective_from}
-                            required
-                        >
-                            <input
-                                id="effective_from"
-                                type="date"
-                                value={form.data.effective_from}
-                                onChange={(e) => form.setData('effective_from', e.target.value)}
-                                className="rp-form-input"
-                                required
-                            />
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.effectiveTo')}
-                            id="effective_to"
-                            error={form.errors.effective_to}
-                        >
-                            <input
-                                id="effective_to"
-                                type="date"
-                                value={form.data.effective_to}
-                                onChange={(e) => form.setData('effective_to', e.target.value)}
-                                className="rp-form-input"
-                            />
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.prorationOnJoin')}
-                            id="proration_on_join"
-                            error={form.errors.proration_on_join}
-                        >
-                            <label className="flex items-center gap-2 text-sm">
-                                <input
-                                    id="proration_on_join"
-                                    type="checkbox"
-                                    checked={!!form.data.proration_on_join}
-                                    onChange={(e) => form.setData('proration_on_join', e.target.checked)}
+                            >
+                                <Select
+                                    id="accrual_method"
+                                    value={form.data.accrual_method}
+                                    onChange={(value) => form.setData('accrual_method', value ?? 'monthly_accrual')}
+                                    options={accrualMethodOptions}
                                 />
-                                {t('pages.leavePolicies.fields.prorationOnJoinHint')}
-                            </label>
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.excludePublicHolidays')}
-                            id="exclude_public_holidays"
-                            error={form.errors.exclude_public_holidays}
-                        >
-                            <label className="flex items-center gap-2 text-sm">
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.accrualRate')}
+                                id="accrual_rate"
+                                error={form.errors.accrual_rate}
+                                required
+                            >
                                 <input
-                                    id="exclude_public_holidays"
+                                    id="accrual_rate"
+                                    type="number"
+                                    step="0.0001"
+                                    min="0"
+                                    value={form.data.accrual_rate}
+                                    onChange={(e) => form.setData('accrual_rate', e.target.value)}
+                                    placeholder={t('pages.leavePolicies.fields.accrualRatePlaceholder')}
+                                    className="rp-form-input"
+                                    required
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.maxBalance')}
+                                id="max_balance"
+                                error={form.errors.max_balance}
+                            >
+                                <input
+                                    id="max_balance"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={form.data.max_balance}
+                                    onChange={(e) => form.setData('max_balance', e.target.value)}
+                                    placeholder={t('pages.leavePolicies.fields.maxBalancePlaceholder')}
+                                    className="rp-form-input"
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.carryForwardLimit')}
+                                id="carry_forward_limit"
+                                error={form.errors.carry_forward_limit}
+                            >
+                                <input
+                                    id="carry_forward_limit"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={form.data.carry_forward_limit}
+                                    onChange={(e) => form.setData('carry_forward_limit', e.target.value)}
+                                    placeholder={t('pages.leavePolicies.fields.carryForwardLimitPlaceholder')}
+                                    className="rp-form-input"
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.carryForwardExpiryMonths')}
+                                id="carry_forward_expiry_months"
+                                error={form.errors.carry_forward_expiry_months}
+                            >
+                                <input
+                                    id="carry_forward_expiry_months"
+                                    type="number"
+                                    min="0"
+                                    max="120"
+                                    value={form.data.carry_forward_expiry_months}
+                                    onChange={(e) => form.setData('carry_forward_expiry_months', e.target.value)}
+                                    placeholder={t('pages.leavePolicies.fields.carryForwardExpiryMonthsPlaceholder')}
+                                    className="rp-form-input"
+                                />
+                            </AdminFormField>
+                        </div>
+                        <label className="rp-checkbox-label rounded-lg border border-rp-border p-3">
+                            <input
+                                type="checkbox"
+                                checked={!!form.data.proration_on_join}
+                                onChange={(e) => form.setData('proration_on_join', e.target.checked)}
+                                className="accent-teal-600"
+                            />
+                            {t('pages.leavePolicies.fields.prorationOnJoinHint')}
+                        </label>
+                    </div>
+
+                    <div className="space-y-3 border-t border-rp-border pt-4">
+                        <h4 className="rp-section-title">{t('pages.leavePolicies.sections.dayCounting')}</h4>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <label className="rp-checkbox-label rounded-lg border border-rp-border p-3">
+                                <input
                                     type="checkbox"
                                     checked={!!form.data.exclude_public_holidays}
                                     onChange={(e) => form.setData('exclude_public_holidays', e.target.checked)}
+                                    className="accent-teal-600"
                                 />
                                 {t('pages.leavePolicies.fields.excludePublicHolidaysHint')}
                             </label>
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.excludeWeekends')}
-                            id="exclude_weekends"
-                            error={form.errors.exclude_weekends}
-                        >
-                            <label className="flex items-center gap-2 text-sm">
+                            <label className="rp-checkbox-label rounded-lg border border-rp-border p-3">
                                 <input
-                                    id="exclude_weekends"
                                     type="checkbox"
                                     checked={!!form.data.exclude_weekends}
                                     onChange={(e) => form.setData('exclude_weekends', e.target.checked)}
+                                    className="accent-teal-600"
                                 />
                                 {t('pages.leavePolicies.fields.excludeWeekendsHint')}
                             </label>
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.shortLeaveMaxHours')}
-                            id="short_leave_max_hours"
-                            error={form.errors.short_leave_max_hours}
-                        >
-                            <input
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.shortLeaveMaxHours')}
                                 id="short_leave_max_hours"
-                                type="number"
-                                step="0.25"
-                                min="0.25"
-                                max="24"
-                                value={form.data.short_leave_max_hours}
-                                onChange={(e) => form.setData('short_leave_max_hours', e.target.value)}
-                                placeholder={t('pages.leavePolicies.fields.shortLeaveMaxHoursPlaceholder')}
-                                className="rp-form-input"
-                            />
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.shortLeaveMaxRequestsPerMonth')}
-                            id="short_leave_max_requests_per_month"
-                            error={form.errors.short_leave_max_requests_per_month}
-                        >
-                            <input
+                                error={form.errors.short_leave_max_hours}
+                            >
+                                <input
+                                    id="short_leave_max_hours"
+                                    type="number"
+                                    step="0.25"
+                                    min="0.25"
+                                    max="24"
+                                    value={form.data.short_leave_max_hours}
+                                    onChange={(e) => form.setData('short_leave_max_hours', e.target.value)}
+                                    placeholder={t('pages.leavePolicies.fields.shortLeaveMaxHoursPlaceholder')}
+                                    className="rp-form-input"
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.shortLeaveMaxRequestsPerMonth')}
                                 id="short_leave_max_requests_per_month"
-                                type="number"
-                                min="1"
-                                max="31"
-                                value={form.data.short_leave_max_requests_per_month}
-                                onChange={(e) => form.setData('short_leave_max_requests_per_month', e.target.value)}
-                                placeholder={t('pages.leavePolicies.fields.shortLeaveMaxRequestsPerMonthPlaceholder')}
-                                className="rp-form-input"
+                                error={form.errors.short_leave_max_requests_per_month}
+                            >
+                                <input
+                                    id="short_leave_max_requests_per_month"
+                                    type="number"
+                                    min="1"
+                                    max="31"
+                                    value={form.data.short_leave_max_requests_per_month}
+                                    onChange={(e) => form.setData('short_leave_max_requests_per_month', e.target.value)}
+                                    placeholder={t('pages.leavePolicies.fields.shortLeaveMaxRequestsPerMonthPlaceholder')}
+                                    className="rp-form-input"
+                                />
+                            </AdminFormField>
+                        </div>
+                        <label className="rp-checkbox-label rounded-lg border border-rp-border p-3">
+                            <input
+                                type="checkbox"
+                                checked={!!form.data.out_station_deducts_balance}
+                                onChange={(e) => form.setData('out_station_deducts_balance', e.target.checked)}
+                                className="accent-teal-600"
                             />
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.outStationDeductsBalance')}
-                            id="out_station_deducts_balance"
-                            error={form.errors.out_station_deducts_balance}
-                        >
-                            <label className="flex items-center gap-2 text-sm">
-                                <input
-                                    id="out_station_deducts_balance"
-                                    type="checkbox"
-                                    checked={!!form.data.out_station_deducts_balance}
-                                    onChange={(e) => form.setData('out_station_deducts_balance', e.target.checked)}
-                                />
-                                {t('pages.leavePolicies.fields.outStationDeductsBalanceHint')}
-                            </label>
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.encashmentAllowed')}
-                            id="encashment_allowed"
-                            error={form.errors.encashment_allowed}
-                        >
-                            <label className="flex items-center gap-2 text-sm">
-                                <input
-                                    id="encashment_allowed"
-                                    type="checkbox"
-                                    checked={!!form.data.encashment_allowed}
-                                    onChange={(e) => form.setData('encashment_allowed', e.target.checked)}
-                                />
-                                {t('pages.leavePolicies.fields.encashmentAllowedHint')}
-                            </label>
-                        </AdminFormField>
+                            {t('pages.leavePolicies.fields.outStationDeductsBalanceHint')}
+                        </label>
+                    </div>
+
+                    <div className="space-y-3 border-t border-rp-border pt-4">
+                        <h4 className="rp-section-title">{t('pages.leavePolicies.sections.encashment')}</h4>
+                        <label className="rp-checkbox-label rounded-lg border border-rp-border p-3">
+                            <input
+                                type="checkbox"
+                                checked={!!form.data.encashment_allowed}
+                                onChange={(e) => form.setData('encashment_allowed', e.target.checked)}
+                                className="accent-teal-600"
+                            />
+                            {t('pages.leavePolicies.fields.encashmentAllowedHint')}
+                        </label>
                         {form.data.encashment_allowed && (
-                            <>
+                            <div className="grid gap-4 sm:grid-cols-2">
                                 <AdminFormField
                                     label={t('pages.leavePolicies.fields.encashmentMaxDays')}
                                     id="encashment_max_days"
@@ -526,43 +483,80 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
                                         className="rp-form-input"
                                     />
                                 </AdminFormField>
-                                <AdminFormField
-                                    label={t('pages.leavePolicies.fields.encashmentRequiresApproval')}
-                                    id="encashment_requires_approval"
-                                    error={form.errors.encashment_requires_approval}
-                                >
-                                    <label className="flex items-center gap-2 text-sm">
-                                        <input
-                                            id="encashment_requires_approval"
-                                            type="checkbox"
-                                            checked={!!form.data.encashment_requires_approval}
-                                            onChange={(e) =>
-                                                form.setData('encashment_requires_approval', e.target.checked)
-                                            }
-                                        />
-                                        {t('pages.leavePolicies.fields.encashmentRequiresApprovalHint')}
-                                    </label>
-                                </AdminFormField>
-                            </>
+                                <label className="rp-checkbox-label self-end rounded-lg border border-rp-border p-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={!!form.data.encashment_requires_approval}
+                                        onChange={(e) =>
+                                            form.setData('encashment_requires_approval', e.target.checked)
+                                        }
+                                        className="accent-teal-600"
+                                    />
+                                    {t('pages.leavePolicies.fields.encashmentRequiresApprovalHint')}
+                                </label>
+                            </div>
                         )}
-                        <AdminFormField
-                            label={t('pages.leavePolicies.fields.yearEndExcessDisposition')}
-                            id="year_end_excess_disposition"
-                            error={form.errors.year_end_excess_disposition}
-                            hint={t('pages.leavePolicies.fields.yearEndExcessDispositionHint')}
-                        >
-                            <Select
-                                id="year_end_excess_disposition"
-                                value={form.data.year_end_excess_disposition}
-                                onChange={(value) => form.setData('year_end_excess_disposition', value ?? 'expire')}
-                                options={[
-                                    { value: 'expire', label: t('pages.leavePolicies.yearEndExcessDispositions.expire') },
-                                    { value: 'encash', label: t('pages.leavePolicies.yearEndExcessDispositions.encash') },
-                                ]}
-                            />
-                        </AdminFormField>
                     </div>
-                    <div className="flex justify-end gap-2 pt-2">
+
+                    <div className="space-y-3 border-t border-rp-border pt-4">
+                        <h4 className="rp-section-title">{t('pages.leavePolicies.sections.scheduleAndStatus')}</h4>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.effectiveFrom')}
+                                id="effective_from"
+                                error={form.errors.effective_from}
+                                required
+                            >
+                                <input
+                                    id="effective_from"
+                                    type="date"
+                                    value={form.data.effective_from}
+                                    onChange={(e) => form.setData('effective_from', e.target.value)}
+                                    className="rp-form-input"
+                                    required
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.effectiveTo')}
+                                id="effective_to"
+                                error={form.errors.effective_to}
+                            >
+                                <input
+                                    id="effective_to"
+                                    type="date"
+                                    value={form.data.effective_to}
+                                    onChange={(e) => form.setData('effective_to', e.target.value)}
+                                    className="rp-form-input"
+                                />
+                            </AdminFormField>
+                            <AdminFormField label={t('pages.leavePolicies.fields.status')} id="status" error={form.errors.status}>
+                                <Select
+                                    id="status"
+                                    value={form.data.status}
+                                    onChange={(value) => form.setData('status', value ?? 'active')}
+                                    options={formStatusOptions}
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.yearEndExcessDisposition')}
+                                id="year_end_excess_disposition"
+                                error={form.errors.year_end_excess_disposition}
+                                hint={t('pages.leavePolicies.fields.yearEndExcessDispositionHint')}
+                            >
+                                <Select
+                                    id="year_end_excess_disposition"
+                                    value={form.data.year_end_excess_disposition}
+                                    onChange={(value) => form.setData('year_end_excess_disposition', value ?? 'expire')}
+                                    options={[
+                                        { value: 'expire', label: t('pages.leavePolicies.yearEndExcessDispositions.expire') },
+                                        { value: 'encash', label: t('pages.leavePolicies.yearEndExcessDispositions.encash') },
+                                    ]}
+                                />
+                            </AdminFormField>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 border-t border-rp-border pt-4">
                         <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
                             {t('confirm.cancel')}
                         </Button>
@@ -570,7 +564,7 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
                             {editing ? t('common.save') : t('pages.leavePolicies.createSubmit')}
                         </Button>
                     </div>
-                </form>
+                </ScrollArea>
             </Modal>
         </>
     );

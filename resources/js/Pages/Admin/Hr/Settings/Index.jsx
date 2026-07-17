@@ -169,7 +169,7 @@ function Index({ entities = [], holidayCalendars = [] }) {
                         />
                     </AdminFormField>
 
-                    <label className="flex items-center gap-2 text-sm text-rp-text">
+                    <label className="rp-checkbox-label">
                         <input
                             type="checkbox"
                             checked={!!form.data.settings_json.require_default_cost_centre}
@@ -179,6 +179,7 @@ function Index({ entities = [], holidayCalendars = [] }) {
                                     require_default_cost_centre: e.target.checked,
                                 })
                             }
+                            className="accent-teal-600"
                         />
                         {t('pages.hrSettings.fields.requireDefaultCostCentre')}
                     </label>
@@ -213,11 +214,12 @@ function Index({ entities = [], holidayCalendars = [] }) {
                     >
                         <div className="flex flex-wrap gap-3">
                             {weekdayOptions.map((option) => (
-                                <label key={option.value} className="flex items-center gap-1.5 text-sm text-rp-text">
+                                <label key={option.value} className="rp-checkbox-label">
                                     <input
                                         type="checkbox"
                                         checked={(form.data.settings_json.weekend_days ?? []).includes(option.value)}
                                         onChange={() => toggleWeekendDay(option.value)}
+                                        className="accent-teal-600"
                                     />
                                     {option.label}
                                 </label>

@@ -15,7 +15,7 @@ function OrgNode({ node, depth = 0 }) {
     return (
         <div className="ml-0">
             <div
-                className="flex items-start gap-2 rounded-lg border border-rp-border bg-rp-surface px-3 py-2"
+                className="flex items-start gap-2 rounded-lg border border-rp-border bg-rp-surface px-3 py-2 transition hover:border-teal-300 hover:bg-rp-surface-inset/40"
                 style={{ marginLeft: depth * 20 }}
             >
                 {hasChildren ? (
@@ -109,11 +109,11 @@ function OrgChart({ tree = [], filters = {}, legalEntities = [], employees = [] 
             </form>
 
             {tree.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-rp-border p-8 text-center text-sm text-rp-text-muted">
+                <div className="rounded-xl border border-dashed border-rp-border p-8 text-center text-sm text-rp-text-muted">
                     {t('pages.orgChart.empty')}
                 </div>
             ) : (
-                <div className="space-y-2">
+                <div className="rp-card space-y-2">
                     {tree.map((node) => (
                         <OrgNode key={node.id} node={node} />
                     ))}

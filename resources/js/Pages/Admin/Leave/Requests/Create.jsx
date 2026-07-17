@@ -1,9 +1,12 @@
 import AdminFormField from '@/Components/common/AdminFormField';
+import FormCard from '@/Components/common/FormCard';
+import FormInfoPanel from '@/Components/common/FormInfoPanel';
 import PageHeader from '@/Components/common/PageHeader';
 import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { CalendarRange } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -101,142 +104,171 @@ function Create({ employees, leaveTypes }) {
                 </Link>
             </PageHeader>
 
-            <form onSubmit={submit} className="mx-auto max-w-2xl space-y-6">
-                <div className="rp-card space-y-4 p-6">
-                    <AdminFormField
-                        label={t('pages.leaveRequests.fields.employee')}
-                        id="employee_id"
-                        error={errors.employee_id}
-                    >
-                        <Select
+            <form onSubmit={submit} className="w-full space-y-5">
+                <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+                    <FormCard className="max-w-none w-full space-y-4 xl:col-span-2">
+                        <h3 className="rp-section-title border-b border-rp-border pb-3">
+                            {t('pages.leaveRequests.fields.sectionTitle')}
+                        </h3>
+
+                        <AdminFormField
+                            label={t('pages.leaveRequests.fields.employee')}
                             id="employee_id"
-                            value={data.employee_id}
-                            onChange={(value) => setData('employee_id', value ?? '')}
-                            options={employeeOptions}
-                        />
-                    </AdminFormField>
-
-                    <AdminFormField
-                        label={t('pages.leaveRequests.fields.leaveType')}
-                        id="leave_type_id"
-                        error={errors.leave_type_id}
-                    >
-                        <Select
-                            id="leave_type_id"
-                            value={data.leave_type_id}
-                            onChange={(value) => setData('leave_type_id', value ?? '')}
-                            options={leaveTypeOptions}
-                        />
-                    </AdminFormField>
-
-                    <AdminFormField
-                        label={t('pages.leaveRequests.fields.durationType')}
-                        id="duration_type"
-                        error={errors.duration_type}
-                    >
-                        <Select
-                            id="duration_type"
-                            value={data.duration_type}
-                            onChange={onDurationTypeChange}
-                            options={durationTypeOptions}
-                        />
-                    </AdminFormField>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <AdminFormField
-                            label={t('pages.leaveRequests.fields.startDate')}
-                            id="start_date"
-                            error={errors.start_date}
-                        >
-                            <input
-                                id="start_date"
-                                type="date"
-                                value={data.start_date}
-                                onChange={(e) => onStartDateChange(e.target.value)}
-                                className="rp-form-input"
-                            />
-                        </AdminFormField>
-                        <AdminFormField
-                            label={t('pages.leaveRequests.fields.endDate')}
-                            id="end_date"
-                            error={errors.end_date}
-                        >
-                            <input
-                                id="end_date"
-                                type="date"
-                                value={data.end_date}
-                                onChange={(e) => setData('end_date', e.target.value)}
-                                disabled={isSingleDate}
-                                className="rp-form-input disabled:opacity-60"
-                            />
-                        </AdminFormField>
-                    </div>
-
-                    {data.duration_type === 'half_day' && (
-                        <AdminFormField
-                            label={t('pages.leaveRequests.fields.session')}
-                            id="session"
-                            error={errors.session}
+                            error={errors.employee_id}
+                            required
                         >
                             <Select
-                                id="session"
-                                value={data.session}
-                                onChange={(value) => setData('session', value ?? '')}
-                                options={sessionOptions}
+                                id="employee_id"
+                                value={data.employee_id}
+                                onChange={(value) => setData('employee_id', value ?? '')}
+                                options={employeeOptions}
                             />
                         </AdminFormField>
-                    )}
 
-                    {data.duration_type === 'short_leave' && (
                         <div className="grid gap-4 sm:grid-cols-2">
                             <AdminFormField
-                                label={t('pages.leaveRequests.fields.startTime')}
-                                id="start_time"
-                                error={errors.start_time}
+                                label={t('pages.leaveRequests.fields.leaveType')}
+                                id="leave_type_id"
+                                error={errors.leave_type_id}
+                                required
                             >
-                                <input
-                                    id="start_time"
-                                    type="time"
-                                    value={data.start_time}
-                                    onChange={(e) => setData('start_time', e.target.value)}
-                                    className="rp-form-input"
+                                <Select
+                                    id="leave_type_id"
+                                    value={data.leave_type_id}
+                                    onChange={(value) => setData('leave_type_id', value ?? '')}
+                                    options={leaveTypeOptions}
                                 />
                             </AdminFormField>
+
                             <AdminFormField
-                                label={t('pages.leaveRequests.fields.endTime')}
-                                id="end_time"
-                                error={errors.end_time}
+                                label={t('pages.leaveRequests.fields.durationType')}
+                                id="duration_type"
+                                error={errors.duration_type}
+                                required
                             >
-                                <input
-                                    id="end_time"
-                                    type="time"
-                                    value={data.end_time}
-                                    onChange={(e) => setData('end_time', e.target.value)}
-                                    className="rp-form-input"
+                                <Select
+                                    id="duration_type"
+                                    value={data.duration_type}
+                                    onChange={onDurationTypeChange}
+                                    options={durationTypeOptions}
                                 />
                             </AdminFormField>
                         </div>
-                    )}
 
-                    <AdminFormField label={t('pages.leaveRequests.fields.reason')} id="reason" error={errors.reason}>
-                        <textarea
-                            id="reason"
-                            value={data.reason}
-                            onChange={(e) => setData('reason', e.target.value)}
-                            rows={3}
-                            className="rp-form-input"
-                            placeholder={t('pages.leaveRequests.reasonPlaceholder')}
-                        />
-                    </AdminFormField>
-                </div>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <AdminFormField
+                                label={t('pages.leaveRequests.fields.startDate')}
+                                id="start_date"
+                                error={errors.start_date}
+                                required
+                            >
+                                <input
+                                    id="start_date"
+                                    type="date"
+                                    value={data.start_date}
+                                    onChange={(e) => onStartDateChange(e.target.value)}
+                                    className="rp-form-input"
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leaveRequests.fields.endDate')}
+                                id="end_date"
+                                error={errors.end_date}
+                                required={!isSingleDate}
+                            >
+                                <input
+                                    id="end_date"
+                                    type="date"
+                                    value={data.end_date}
+                                    onChange={(e) => setData('end_date', e.target.value)}
+                                    disabled={isSingleDate}
+                                    className="rp-form-input disabled:opacity-60"
+                                />
+                            </AdminFormField>
+                        </div>
 
-                <div className="flex justify-end gap-3">
-                    <Button type="button" variant="outline" asChild>
-                        <Link href={route('admin.leave.requests.index')}>{t('confirm.cancel')}</Link>
-                    </Button>
-                    <Button type="submit" variant="brand" disabled={processing}>
-                        {t('pages.leaveRequests.submitRequest')}
-                    </Button>
+                        {data.duration_type === 'half_day' && (
+                            <AdminFormField
+                                label={t('pages.leaveRequests.fields.session')}
+                                id="session"
+                                error={errors.session}
+                                required
+                            >
+                                <Select
+                                    id="session"
+                                    value={data.session}
+                                    onChange={(value) => setData('session', value ?? '')}
+                                    options={sessionOptions}
+                                />
+                            </AdminFormField>
+                        )}
+
+                        {data.duration_type === 'short_leave' && (
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <AdminFormField
+                                    label={t('pages.leaveRequests.fields.startTime')}
+                                    id="start_time"
+                                    error={errors.start_time}
+                                    required
+                                >
+                                    <input
+                                        id="start_time"
+                                        type="time"
+                                        value={data.start_time}
+                                        onChange={(e) => setData('start_time', e.target.value)}
+                                        className="rp-form-input"
+                                    />
+                                </AdminFormField>
+                                <AdminFormField
+                                    label={t('pages.leaveRequests.fields.endTime')}
+                                    id="end_time"
+                                    error={errors.end_time}
+                                    required
+                                >
+                                    <input
+                                        id="end_time"
+                                        type="time"
+                                        value={data.end_time}
+                                        onChange={(e) => setData('end_time', e.target.value)}
+                                        className="rp-form-input"
+                                    />
+                                </AdminFormField>
+                            </div>
+                        )}
+
+                        <AdminFormField label={t('pages.leaveRequests.fields.reason')} id="reason" error={errors.reason}>
+                            <textarea
+                                id="reason"
+                                value={data.reason}
+                                onChange={(e) => setData('reason', e.target.value)}
+                                rows={3}
+                                className="rp-form-input"
+                                placeholder={t('pages.leaveRequests.reasonPlaceholder')}
+                            />
+                        </AdminFormField>
+
+                        <div className="flex justify-end gap-3 border-t border-rp-border pt-4">
+                            <Button type="button" variant="outline" asChild>
+                                <Link href={route('admin.leave.requests.index')}>{t('confirm.cancel')}</Link>
+                            </Button>
+                            <Button type="submit" variant="brand" disabled={processing}>
+                                {t('pages.leaveRequests.submitRequest')}
+                            </Button>
+                        </div>
+                    </FormCard>
+
+                    <FormInfoPanel
+                        icon={CalendarRange}
+                        title={t('pages.leaveRequests.infoPanel.title')}
+                        className="xl:col-span-1"
+                    >
+                        <ul>
+                            <li>{t('pages.leaveRequests.infoPanel.fullDay')}</li>
+                            <li>{t('pages.leaveRequests.infoPanel.halfDay')}</li>
+                            <li>{t('pages.leaveRequests.infoPanel.shortLeave')}</li>
+                            <li>{t('pages.leaveRequests.infoPanel.outStation')}</li>
+                        </ul>
+                    </FormInfoPanel>
                 </div>
             </form>
         </>

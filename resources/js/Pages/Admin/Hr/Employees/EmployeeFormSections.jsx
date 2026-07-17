@@ -875,11 +875,12 @@ export default function EmployeeFormSections({
                                 }}
                             />
                         </AdminFormField>
-                        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                        <label className="rp-checkbox-label sm:col-span-2">
                             <input
                                 type="checkbox"
                                 checked={!!row.is_emergency_contact}
                                 disabled={readOnly}
+                                className="accent-teal-600"
                                 onChange={(e) => {
                                     const next = [...data.dependents];
                                     next[index] = {
@@ -950,7 +951,7 @@ export default function EmployeeFormSections({
                         {weekDays.map((day) => {
                             const selected = (data.shift?.rest_days ?? []).includes(day);
                             return (
-                                <label key={day} className="inline-flex items-center gap-1 text-sm">
+                                <label key={day} className="rp-checkbox-label">
                                     <input
                                         type="checkbox"
                                         checked={selected}
@@ -964,6 +965,7 @@ export default function EmployeeFormSections({
                                                     : current.filter((d) => d !== day),
                                             });
                                         }}
+                                        className="accent-teal-600"
                                     />
                                     {t(`pages.hrEmployees.weekDays.${day}`)}
                                 </label>
@@ -976,7 +978,7 @@ export default function EmployeeFormSections({
                     hint={t('pages.hrEmployees.hints.weekendDaysOverride')}
                     className="sm:col-span-2"
                 >
-                    <label className="mb-2 flex items-center gap-2 text-sm text-rp-text">
+                    <label className="rp-checkbox-label mb-2">
                         <input
                             type="checkbox"
                             checked={!!data.shift?.weekend_days_enabled}
@@ -988,6 +990,7 @@ export default function EmployeeFormSections({
                                     weekend_days: e.target.checked ? (data.shift?.weekend_days ?? []) : [],
                                 })
                             }
+                            className="accent-teal-600"
                         />
                         {t('pages.hrEmployees.overrideWeekendDaysToggle')}
                     </label>
@@ -996,7 +999,7 @@ export default function EmployeeFormSections({
                             {weekDays.map((day) => {
                                 const selected = (data.shift?.weekend_days ?? []).includes(day);
                                 return (
-                                    <label key={day} className="inline-flex items-center gap-1 text-sm">
+                                    <label key={day} className="rp-checkbox-label">
                                         <input
                                             type="checkbox"
                                             checked={selected}
@@ -1010,6 +1013,7 @@ export default function EmployeeFormSections({
                                                         : current.filter((d) => d !== day),
                                                 });
                                             }}
+                                            className="accent-teal-600"
                                         />
                                         {t(`pages.hrEmployees.weekDays.${day}`)}
                                     </label>
@@ -1080,11 +1084,12 @@ export default function EmployeeFormSections({
                         }
                     />
                 </AdminFormField>
-                <label className="flex items-center gap-2 self-end text-sm">
+                <label className="rp-checkbox-label self-end">
                     <input
                         type="checkbox"
                         checked={!!data.profile?.overtime_eligible}
                         disabled={readOnly}
+                        className="accent-teal-600"
                         onChange={(e) =>
                             setData('profile', {
                                 ...data.profile,
@@ -1284,11 +1289,12 @@ export default function EmployeeFormSections({
                                 }}
                             />
                         </AdminFormField>
-                        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                        <label className="rp-checkbox-label sm:col-span-2">
                             <input
                                 type="checkbox"
                                 checked={!!row.is_primary}
                                 disabled={readOnly}
+                                className="accent-teal-600"
                                 onChange={(e) => {
                                     const next = data.bank_accounts.map((b, i) => ({
                                         ...b,
