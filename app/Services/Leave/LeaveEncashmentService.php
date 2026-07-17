@@ -27,6 +27,12 @@ final class LeaveEncashmentService
     ): LeaveEncashment {
         $this->leaveService->assertLeaveTypeActive($leaveType);
 
+        if ($leaveType->code === 'TOIL') {
+            throw ValidationException::withMessages([
+                'leave_type_id' => __('TOIL balances are cashed out via the TOIL cash claim flow, not generic leave encashment.'),
+            ]);
+        }
+
         if ($days <= 0) {
             throw ValidationException::withMessages([
                 'days' => __('Encashment days must be greater than zero.'),

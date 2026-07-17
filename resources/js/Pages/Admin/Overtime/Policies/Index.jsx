@@ -12,11 +12,13 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const DAY_TYPES = ['weekday', 'weekend', 'rest_day', 'public_holiday'];
+const COMPENSATION_TYPES = ['cash', 'toil', 'employee_choice'];
 
 function defaultMultipliers() {
     return DAY_TYPES.map((day_type) => ({
         day_type,
         multiplier: day_type === 'weekday' ? '1.5' : '2',
+        compensation_type: 'cash',
     }));
 }
 
@@ -28,6 +30,7 @@ function emptyForm() {
         weekly_threshold_minutes: '2880',
         rest_day_applies: false,
         public_holiday_applies: true,
+        toil_expiry_months: '',
         effective_from: new Date().toISOString().slice(0, 10),
         effective_to: '',
         status: 'active',
@@ -104,7 +107,7 @@ function Index({ policies, filters, legalEntities = [], branches = [] }) {
     const openEdit = (row) => {
         setEditing(row);
         form.clearErrors();
-        const byType = Object.fromEntries((row.multipliers ?? []).map((m) => [m.day_type, m.multiplier]));
+        const byType = Object.fromEntries((row.multipliers ?? []).map((m) => [m.day_type, m]));
         form.setData({
             legal_entity_id: row.legal_entity_id ? String(row.legal_entity_id) : '',
             branch_id: row.branch_id ? String(row.branch_id) : '',
@@ -112,22 +115,24 @@ function Index({ policies, filters, legalEntities = [], branches = [] }) {
             weekly_threshold_minutes: row.weekly_threshold_minutes != null ? String(row.weekly_threshold_minutes) : '',
             rest_day_applies: !!row.rest_day_applies,
             public_holiday_applies: !!row.public_holiday_applies,
+            toil_expiry_months: row.toil_expiry_months != null ? String(row.toil_expiry_months) : '',
             effective_from: row.effective_from ?? '',
             effective_to: row.effective_to ?? '',
             status: row.status ?? 'active',
             priority: String(row.priority ?? 100),
             multipliers: DAY_TYPES.map((day_type) => ({
                 day_type,
-                multiplier: byType[day_type] != null ? String(byType[day_type]) : '',
+                multiplier: byType[day_type]?.multiplier != null ? String(byType[day_type].multiplier) : '',
+                compensation_type: byType[day_type]?.compensation_type ?? 'cash',
             })),
         });
         setModalOpen(true);
     };
 
-    const setMultiplier = (dayType, value) => {
+    const setMultiplier = (dayType, field, value) => {
         form.setData(
             'multipliers',
-            form.data.multipliers.map((row) => (row.day_type === dayType ? { ...row, multiplier: value } : row)),
+            form.data.multipliers.map((row) => (row.day_type === dayType ? { ...row, [field]: value } : row)),
         );
     };
 
@@ -198,6 +203,11 @@ function Index({ policies, filters, legalEntities = [], branches = [] }) {
                                     defaultValue: item.day_type,
                                 })}
                                 : {item.multiplier}x
+                                {item.compensation_type && item.compensation_type !== 'cash' && (
+                                    <span className="ml-1 text-xs text-rp-text-muted">
+                                        ({t(`pages.overtimePolicies.compensationTypes.${item.compensation_type}`)})
+                                    </span>
+                                )}
                             </div>
                         ))}
                         {(row.original.multipliers ?? []).length === 0 && '—'}
@@ -392,6 +402,21 @@ function Index({ policies, filters, legalEntities = [], branches = [] }) {
                                 {t('pages.overtimePolicies.fields.publicHolidayAppliesHint')}
                             </label>
                         </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.overtimePolicies.fields.toilExpiryMonths')}
+                            error={form.errors.toil_expiry_months}
+                            hint={t('pages.overtimePolicies.fields.toilExpiryMonthsHint')}
+                        >
+                            <input
+                                type="number"
+                                min="1"
+                                max="120"
+                                className="rp-form-input"
+                                value={form.data.toil_expiry_months}
+                                onChange={(e) => form.setData('toil_expiry_months', e.target.value)}
+                                placeholder={t('pages.overtimePolicies.fields.toilExpiryMonthsPlaceholder')}
+                            />
+                        </AdminFormField>
                     </div>
 
                     <div className="space-y-2">
@@ -406,27 +431,42 @@ function Index({ policies, filters, legalEntities = [], branches = [] }) {
                                 const row = form.data.multipliers.find((m) => m.day_type === dayType) ?? {
                                     day_type: dayType,
                                     multiplier: '',
+                                    compensation_type: 'cash',
                                 };
                                 return (
-                                    <AdminFormField
-                                        key={dayType}
-                                        label={t(`pages.overtimePolicies.dayTypes.${dayType}`)}
-                                        error={
-                                            form.errors[`multipliers.${index}.multiplier`] ||
-                                            form.errors[`multipliers.${index}.day_type`]
-                                        }
-                                        required
-                                    >
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="0.0001"
-                                            className="rp-form-input"
-                                            value={row.multiplier}
-                                            onChange={(e) => setMultiplier(dayType, e.target.value)}
+                                    <div key={dayType} className="space-y-2 rounded-lg border border-rp-border p-3">
+                                        <AdminFormField
+                                            label={t(`pages.overtimePolicies.dayTypes.${dayType}`)}
+                                            error={
+                                                form.errors[`multipliers.${index}.multiplier`] ||
+                                                form.errors[`multipliers.${index}.day_type`]
+                                            }
                                             required
-                                        />
-                                    </AdminFormField>
+                                        >
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.0001"
+                                                className="rp-form-input"
+                                                value={row.multiplier}
+                                                onChange={(e) => setMultiplier(dayType, 'multiplier', e.target.value)}
+                                                required
+                                            />
+                                        </AdminFormField>
+                                        <AdminFormField
+                                            label={t('pages.overtimePolicies.fields.compensationType')}
+                                            error={form.errors[`multipliers.${index}.compensation_type`]}
+                                        >
+                                            <Select
+                                                value={row.compensation_type}
+                                                options={COMPENSATION_TYPES.map((type) => ({
+                                                    value: type,
+                                                    label: t(`pages.overtimePolicies.compensationTypes.${type}`),
+                                                }))}
+                                                onChange={(v) => setMultiplier(dayType, 'compensation_type', v ?? 'cash')}
+                                            />
+                                        </AdminFormField>
+                                    </div>
                                 );
                             })}
                         </div>

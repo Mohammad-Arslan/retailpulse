@@ -6,7 +6,7 @@ import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, router } from '@inertiajs/react';
 import { Search, Timer } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Index({ records, filters }) {
@@ -31,10 +31,6 @@ function Index({ records, filters }) {
         ],
         [t],
     );
-
-    const approve = (id) => {
-        router.post(route('admin.overtime.records.approve', id));
-    };
 
     const reject = (id) => {
         router.post(route('admin.overtime.records.reject', id));
@@ -95,6 +91,16 @@ function Index({ records, filters }) {
                 cell: ({ row }) => row.original.pay_units ?? '—',
             },
             {
+                id: 'compensationChoice',
+                header: t('pages.overtimeRecords.columns.compensationChoice'),
+                cell: ({ row }) =>
+                    row.original.compensation_choice
+                        ? t(`pages.overtimeRecords.compensationChoices.${row.original.compensation_choice}`, {
+                              defaultValue: row.original.compensation_choice,
+                          })
+                        : '—',
+            },
+            {
                 id: 'status',
                 header: t('pages.overtimeRecords.columns.status'),
                 cell: ({ row }) =>
@@ -107,22 +113,7 @@ function Index({ records, filters }) {
                 header: t('common.actions'),
                 cell: ({ row }) =>
                     row.original.status === 'pending' && can('overtime.approve') ? (
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                type="button"
-                                onClick={() => approve(row.original.id)}
-                                className="rp-btn-outline text-sm"
-                            >
-                                {t('pages.overtimeRecords.approve')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => reject(row.original.id)}
-                                className="rp-btn-outline text-sm"
-                            >
-                                {t('pages.overtimeRecords.reject')}
-                            </button>
-                        </div>
+                        <ApproveRejectActions record={row.original} onReject={reject} />
                     ) : (
                         '—'
                     ),
@@ -167,6 +158,53 @@ function Index({ records, filters }) {
                 emptyMessage={t('pages.overtimeRecords.empty')}
             />
         </>
+    );
+}
+
+function ApproveRejectActions({ record, onReject }) {
+    const { t } = useTranslation();
+    const requiresChoice = record.compensation_type === 'employee_choice';
+    const [choice, setChoice] = useState('');
+    const [processing, setProcessing] = useState(false);
+
+    const approve = () => {
+        if (requiresChoice && !choice) {
+            return;
+        }
+        setProcessing(true);
+        router.post(
+            route('admin.overtime.records.approve', record.id),
+            requiresChoice ? { compensation_choice: choice } : {},
+            { onFinish: () => setProcessing(false) },
+        );
+    };
+
+    return (
+        <div className="flex flex-wrap items-center gap-2">
+            {requiresChoice && (
+                <Select
+                    value={choice}
+                    onChange={(v) => setChoice(v ?? '')}
+                    className="w-auto min-w-[9rem]"
+                    options={[
+                        { value: '', label: t('pages.overtimeRecords.selectCompensationChoice') },
+                        { value: 'cash', label: t('pages.overtimeRecords.compensationChoices.cash') },
+                        { value: 'toil', label: t('pages.overtimeRecords.compensationChoices.toil') },
+                    ]}
+                />
+            )}
+            <button
+                type="button"
+                onClick={approve}
+                disabled={processing || (requiresChoice && !choice)}
+                className="rp-btn-outline text-sm disabled:opacity-50"
+            >
+                {t('pages.overtimeRecords.approve')}
+            </button>
+            <button type="button" onClick={() => onReject(record.id)} className="rp-btn-outline text-sm">
+                {t('pages.overtimeRecords.reject')}
+            </button>
+        </div>
     );
 }
 

@@ -39,7 +39,7 @@ Manage leave types, entitlements, and requests with approval, balance updates, a
 | P12-LV-FR-005 | Implemented | Approval updates entitlement `used_days`. |
 | P12-LV-FR-006 | Implemented | Unpaid / over-balance leave feeds payroll as a configured deduction component (not hardcoded reduction). |
 | P12-LV-FR-007 | Partial | Approval chain configurable (`approval_chain_json`); full workflow = Phase 29. |
-| P12-LV-FR-008 | Implemented | Day count respects public-holiday exclusion per leave policy + holiday calendar, and weekend exclusion (`leave_policies.exclude_weekends`, default true) using per-legal-entity configurable weekend days (`HrEntitySetting.settings_json.weekend_days`, default Sat/Sun) — not every customer's weekend falls on the same days. |
+| P12-LV-FR-008 | Implemented | Day count respects public-holiday exclusion per leave policy + holiday calendar, and weekend exclusion (`leave_policies.exclude_weekends`, default true) using configurable weekly off-days resolved through a 3-level hierarchy — employee override (`EmployeeShiftPreference.weekend_days`, HR-configurable per employee) → branch default (`Branch.weekend_days`) → legal-entity default (`HrEntitySetting.settings_json.weekend_days`) → `[0, 6]` (Sun/Sat) if nothing is configured. An empty array is a valid, deliberate "no weekly off day" setting at any level (e.g. a departmental-store branch that trades every day), not treated as unset. |
 | P12-LV-FR-009 | Implemented | `duration_type` (`full_day` / `half_day` / `short_leave` / `out_station`) on every request. Half day: single date, requires `session` (morning/afternoon), always 0.5 days. Short leave: single date, requires `start_time`/`end_time`, counts as `hours ÷ work_hours_per_day` (per legal entity, `HrEntitySetting.settings_json.work_hours_per_day`, default 8) — capped per policy by `short_leave_max_hours` and `short_leave_max_requests_per_month` (nullable = unlimited; the monthly quota counts `pending` + `approved` requests). Out Station: full-day equivalent for attendance/approval, but only deducts from the leave balance when the resolved policy's `out_station_deducts_balance` is enabled — the resolved flag is snapshotted onto the request as `deduct_from_balance` at submission time so a later policy change never changes the outcome of an already-submitted request. |
 | P12-LV-FR-010 | Implemented | Encashment requests convert balance to a payroll earning component (see leave-policies). `LeaveEncashmentService` handles request/approve/reject/cancel with the same double-spend protections as leave requests (per-employee row lock during request, entitlement row lock during approve/cancel). |
 | P12-LV-FR-011 | Planned | Carry-forward processing at fiscal year boundary (see leave-fiscal-year). |
@@ -73,7 +73,18 @@ leave_policies (additions)
   exclude_weekends (default true)
 
 hr_entity_settings.settings_json (additions)
-- work_hours_per_day (default 8), weekend_days (default [0, 6] = Sun/Sat)
+- work_hours_per_day (default 8), weekend_days (default [0, 6] = Sun/Sat; legal-entity-wide default)
+
+branches (additions)
+- weekend_days nullable — branch-level weekly off-days default, overrides the legal-entity default
+  when set (including an explicit empty array); falls through to it when null
+
+employee_shift_preferences (additions)
+- weekend_days_enabled (default false), weekend_days nullable — HR-configurable per-employee
+  weekly off-days override for leave day-counting. Deliberately separate from the existing
+  `rest_days` field, which drives overtime rest-day-premium detection only (see toil.md /
+  overtime.md) and is populated by default for every employee, so it cannot double as an
+  unset-vs-explicitly-empty signal for this override.
 
 leave_encashments
 - id, employee_id, leave_type_id, leave_policy_id, fiscal_year_id nullable,
@@ -139,4 +150,4 @@ leave.encashment_posted          # Planned — may map to payroll adjustment, no
 
 ## 11. Out of scope / deferred hooks
 
-* Comp-off auto-generation from OT — optional link to overtime module later.
+* ~~Comp-off auto-generation from OT — optional link to overtime module later.~~ Implemented — see [toil.md](./toil.md). The `TOIL` leave type is a balance source routed through `ToilLedgerService`/`ToilClaimService`, not `LeaveEntitlement`; `LeaveService` detects `leaveType.code === 'TOIL'` and delegates accordingly.

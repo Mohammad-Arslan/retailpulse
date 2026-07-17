@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'start_time',
     'end_time',
     'rest_days',
+    'weekend_days_enabled',
+    'weekend_days',
     'notes',
 ])]
 class EmployeeShiftPreference extends Model
@@ -25,6 +27,8 @@ class EmployeeShiftPreference extends Model
     {
         return [
             'rest_days' => 'array',
+            'weekend_days_enabled' => 'boolean',
+            'weekend_days' => 'array',
         ];
     }
 

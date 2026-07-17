@@ -7,6 +7,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'employee_id',
@@ -47,5 +49,15 @@ final class LeaveRequest extends Model
     public function leaveType(): BelongsTo
     {
         return $this->belongsTo(LeaveType::class);
+    }
+
+    public function reschedules(): HasMany
+    {
+        return $this->hasMany(LeaveRequestReschedule::class);
+    }
+
+    public function toilClaim(): HasOne
+    {
+        return $this->hasOne(ToilClaim::class);
     }
 }

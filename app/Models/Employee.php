@@ -127,6 +127,21 @@ class Employee extends Model
         return $this->hasOne(EmployeeShiftPreference::class);
     }
 
+    public function toilBalance(): HasOne
+    {
+        return $this->hasOne(ToilBalance::class);
+    }
+
+    public function toilLedgerEntries(): HasMany
+    {
+        return $this->hasMany(ToilLedgerEntry::class);
+    }
+
+    public function toilClaims(): HasMany
+    {
+        return $this->hasMany(ToilClaim::class);
+    }
+
     public function dependents(): HasMany
     {
         return $this->hasMany(EmployeeDependent::class)->orderBy('sort_order');

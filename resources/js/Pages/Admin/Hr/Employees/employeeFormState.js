@@ -167,6 +167,11 @@ export function prepareEmployeeFormPayload(data) {
         overtime_eligible: payload.profile?.overtime_eligible ? 1 : 0,
     };
 
+    payload.shift = {
+        ...(payload.shift ?? {}),
+        weekend_days_enabled: payload.shift?.weekend_days_enabled ? 1 : 0,
+    };
+
     payload.dependents = (payload.dependents ?? []).map((row) => ({
         ...row,
         is_emergency_contact: row.is_emergency_contact ? 1 : 0,
@@ -290,6 +295,8 @@ export function emptyEmployeeForm(options = {}) {
             start_time: '',
             end_time: '',
             rest_days: [],
+            weekend_days_enabled: false,
+            weekend_days: [],
             notes: '',
         },
         medical: {
@@ -364,6 +371,8 @@ export function employeeToForm(employee) {
             start_time: employee.shift?.start_time ?? '',
             end_time: employee.shift?.end_time ?? '',
             rest_days: employee.shift?.rest_days ?? [],
+            weekend_days_enabled: employee.shift?.weekend_days_enabled ?? false,
+            weekend_days: employee.shift?.weekend_days ?? [],
             notes: employee.shift?.notes ?? '',
         },
         medical: {

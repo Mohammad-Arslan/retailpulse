@@ -36,6 +36,7 @@ final class BranchService
                 'currency' => $data->currency,
                 'timezone' => $data->timezone,
                 'operating_hours' => $data->operatingHours,
+                'weekend_days' => $data->weekendDays,
                 'receipt_footer' => $data->receiptFooter,
                 'is_active' => $data->isActive,
             ]);
@@ -61,6 +62,7 @@ final class BranchService
                 'timezone' => $data->timezone,
                 'picking_strategy' => $data->pickingStrategy,
                 'operating_hours' => $data->operatingHours,
+                'weekend_days' => $data->weekendDays,
                 'receipt_footer' => $data->receiptFooter,
                 'is_active' => $data->isActive,
                 'cutover_date' => $data->cutoverDate,

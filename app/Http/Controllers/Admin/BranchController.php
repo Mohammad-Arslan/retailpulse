@@ -109,6 +109,7 @@ final class BranchController extends Controller
                 'timezone' => $branch->timezone,
                 'picking_strategy' => $branch->picking_strategy?->value ?? 'fifo',
                 'operating_hours' => $branch->operating_hours ?? OperatingHours::defaults(),
+                'weekend_days' => $branch->weekend_days,
                 'receipt_footer' => $branch->receipt_footer,
                 'is_active' => $branch->is_active,
                 'cutover_date' => $branch->cutover_date?->format('Y-m-d\TH:i'),

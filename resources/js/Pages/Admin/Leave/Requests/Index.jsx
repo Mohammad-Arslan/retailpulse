@@ -1,17 +1,21 @@
+import AdminFormField from '@/Components/common/AdminFormField';
 import DataTable from '@/Components/common/DataTable';
 import PageHeader from '@/Components/common/PageHeader';
+import Modal from '@/Components/Modal';
 import { Button } from '@/Components/ui/button';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { CalendarRange, Plus, Search } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Index({ requests, filters }) {
     const can = useCan();
     const { t } = useTranslation();
+    const [rescheduling, setRescheduling] = useState(null);
+    const rescheduleForm = useForm({ new_start_date: '', new_end_date: '', reason: '' });
 
     const search = (e) => {
         e.preventDefault();
@@ -27,6 +31,24 @@ function Index({ requests, filters }) {
 
     const reject = (id) => {
         router.post(route('admin.leave.requests.reject', id));
+    };
+
+    const openReschedule = (row) => {
+        setRescheduling(row);
+        rescheduleForm.clearErrors();
+        rescheduleForm.setData({
+            new_start_date: row.start_date ?? '',
+            new_end_date: row.end_date ?? '',
+            reason: '',
+        });
+    };
+
+    const submitReschedule = (e) => {
+        e.preventDefault();
+        rescheduleForm.post(route('admin.leave.requests.reschedule', rescheduling.id), {
+            preserveScroll: true,
+            onSuccess: () => setRescheduling(null),
+        });
     };
 
     const statusOptions = useMemo(
@@ -123,6 +145,16 @@ function Index({ requests, filters }) {
                             >
                                 {t('pages.leaveRequests.reject')}
                             </button>
+                            {row.original.leave_type_code === 'TOIL' && (
+                                <button
+                                    type="button"
+                                    onClick={() => openReschedule(row.original)}
+                                    className="rp-btn-outline text-sm"
+                                >
+                                    {t('pages.leaveRequests.reschedule')}
+                                    {row.original.reschedule_count > 0 && ` (${row.original.reschedule_count})`}
+                                </button>
+                            )}
                         </div>
                     ) : (
                         '—'
@@ -176,6 +208,62 @@ function Index({ requests, filters }) {
                 pagination={requests}
                 emptyMessage={t('pages.leaveRequests.empty')}
             />
+
+            <Modal show={rescheduling !== null} onClose={() => setRescheduling(null)} maxWidth="md">
+                <form onSubmit={submitReschedule} className="space-y-4 p-6">
+                    <h3 className="text-lg font-semibold">{t('pages.leaveRequests.rescheduleTitle')}</h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <AdminFormField
+                            label={t('pages.leaveRequests.fields.startDate')}
+                            id="new_start_date"
+                            error={rescheduleForm.errors.new_start_date}
+                        >
+                            <input
+                                id="new_start_date"
+                                type="date"
+                                value={rescheduleForm.data.new_start_date}
+                                onChange={(e) => rescheduleForm.setData('new_start_date', e.target.value)}
+                                className="rp-form-input"
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.leaveRequests.fields.endDate')}
+                            id="new_end_date"
+                            error={rescheduleForm.errors.new_end_date}
+                        >
+                            <input
+                                id="new_end_date"
+                                type="date"
+                                value={rescheduleForm.data.new_end_date}
+                                onChange={(e) => rescheduleForm.setData('new_end_date', e.target.value)}
+                                className="rp-form-input"
+                            />
+                        </AdminFormField>
+                    </div>
+                    <AdminFormField
+                        label={t('pages.leaveRequests.fields.reason')}
+                        id="reschedule_reason"
+                        error={rescheduleForm.errors.reason}
+                    >
+                        <textarea
+                            id="reschedule_reason"
+                            value={rescheduleForm.data.reason}
+                            onChange={(e) => rescheduleForm.setData('reason', e.target.value)}
+                            rows={3}
+                            className="rp-form-input"
+                            placeholder={t('pages.leaveRequests.reschedulePlaceholder')}
+                        />
+                    </AdminFormField>
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button type="button" variant="outline" onClick={() => setRescheduling(null)}>
+                            {t('confirm.cancel')}
+                        </Button>
+                        <Button type="submit" variant="brand" disabled={rescheduleForm.processing}>
+                            {t('pages.leaveRequests.rescheduleSubmit')}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
         </>
     );
 }

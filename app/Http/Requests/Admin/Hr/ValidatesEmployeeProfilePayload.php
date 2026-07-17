@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Hr;
 
+use App\Services\Hr\HrEmploymentTypeService;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -68,6 +69,9 @@ trait ValidatesEmployeeProfilePayload
             'shift.end_time' => ['nullable', 'date_format:H:i'],
             'shift.rest_days' => ['nullable', 'array'],
             'shift.rest_days.*' => ['integer', 'between:0,6'],
+            'shift.weekend_days_enabled' => ['nullable', 'boolean'],
+            'shift.weekend_days' => ['nullable', 'array', 'max:7'],
+            'shift.weekend_days.*' => ['integer', 'between:0,6'],
             'shift.notes' => ['nullable', 'string', 'max:2000'],
             'medical' => ['nullable', 'array'],
             'medical.blood_group' => ['nullable', 'string', 'max:16'],
@@ -136,7 +140,7 @@ trait ValidatesEmployeeProfilePayload
             $legalEntityId = $this->input('legal_entity_id');
             $employmentType = $this->input('employment_type');
             if ($employmentType !== null && $employmentType !== '') {
-                $service = app(\App\Services\Hr\HrEmploymentTypeService::class);
+                $service = app(HrEmploymentTypeService::class);
                 if (! $service->isValidCode($legalEntityId !== null ? (int) $legalEntityId : null, (string) $employmentType)) {
                     $validator->errors()->add('employment_type', __('The Selected Employment Type Is Invalid.'));
                 }
@@ -165,6 +169,16 @@ trait ValidatesEmployeeProfilePayload
                 FILTER_NULL_ON_FAILURE,
             ) ?? false;
             $this->merge(['profile' => $profile]);
+        }
+
+        $shift = $this->input('shift');
+        if (is_array($shift) && array_key_exists('weekend_days_enabled', $shift)) {
+            $shift['weekend_days_enabled'] = filter_var(
+                $shift['weekend_days_enabled'],
+                FILTER_VALIDATE_BOOLEAN,
+                FILTER_NULL_ON_FAILURE,
+            ) ?? false;
+            $this->merge(['shift' => $shift]);
         }
 
         $banks = $this->input('bank_accounts');

@@ -35,8 +35,8 @@ Calculate and approve overtime from configurable thresholds and multipliers — 
 | P12-OT-FR-005 | Implemented | Unapproved overtime is excluded from payroll; approved OT maps to `overtime_expense` pay component. |
 | P12-OT-FR-006 | Implemented | Changing multiplier/threshold via config affects next run without deployment. |
 | P12-OT-FR-007 | Planned | Integration with shifts_roster for planned shift length as threshold basis. |
-| P12-OT-FR-008 | Planned | Integration with holiday_calendar for public_holiday day_type. |
-| P12-OT-FR-009 | Planned | Comp-off alternative to paid OT when policy selects. |
+| P12-OT-FR-008 | Implemented | `OvertimeEngine::resolveDayType()` already consulted `HolidayResolver::isPublicHoliday()` via `public_holiday_applies` — corrected from a stale "Planned" status found while working on FR-009 below; not itself part of this pass's changes. |
+| P12-OT-FR-009 | Implemented | TOIL (comp-off) alternative to paid OT, selected per `overtime_multipliers.compensation_type` (`cash` / `toil` / `employee_choice`). Rest-day detection now actually wires `OvertimePolicy.rest_day_applies` + `EmployeeShiftPreference.rest_days` into `resolveDayType()` (previously present in schema/fillable but never consulted — verified dead prior to this change). For `employee_choice`, the approving manager records the employee's cash/toil decision as part of the single-step approve action (`compensation_choice`); it is persisted on the `OvertimeRecord` at approval time and never re-evaluated if the policy config changes later. See [toil.md](./toil.md) for the full TOIL ledger/claim design. |
 
 ---
 

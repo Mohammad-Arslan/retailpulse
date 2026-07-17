@@ -9,6 +9,8 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 
+const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6];
+
 export default function Create({
     defaultOperatingHours,
     operationalOptions,
@@ -24,10 +26,17 @@ export default function Create({
         currency: defaults.currency,
         timezone: defaults.timezone,
         operating_hours: defaultOperatingHours,
+        weekend_days: null,
         receipt_footer: '',
         is_active: true,
         initial_warehouse_id: defaultInitialWarehouseId,
     });
+
+    const toggleWeekendDay = (day) => {
+        const current = data.weekend_days ?? [];
+        const next = current.includes(day) ? current.filter((d) => d !== day) : [...current, day];
+        setData('weekend_days', next);
+    };
 
     const { suggestedCode, loading } = useBranchCodeSuggestion({
         name: data.name,
@@ -165,6 +174,34 @@ export default function Create({
                                     setData('receipt_footer', e.target.value)
                                 }
                             />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.branches.fields.weekendDays')}
+                            error={errors.weekend_days}
+                            hint={t('pages.branches.hints.weekendDays')}
+                        >
+                            <label className="mb-2 flex items-center gap-2 text-sm text-rp-text">
+                                <input
+                                    type="checkbox"
+                                    checked={data.weekend_days !== null}
+                                    onChange={(e) => setData('weekend_days', e.target.checked ? [] : null)}
+                                />
+                                {t('pages.branches.overrideWeekendDays')}
+                            </label>
+                            {data.weekend_days !== null && (
+                                <div className="flex flex-wrap gap-3">
+                                    {WEEKDAYS.map((day) => (
+                                        <label key={day} className="flex items-center gap-1.5 text-sm text-rp-text">
+                                            <input
+                                                type="checkbox"
+                                                checked={(data.weekend_days ?? []).includes(day)}
+                                                onChange={() => toggleWeekendDay(day)}
+                                            />
+                                            {t(`pages.hrSettings.weekdays.${day}`)}
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
                         </AdminFormField>
                     </FormCard>
                 </div>

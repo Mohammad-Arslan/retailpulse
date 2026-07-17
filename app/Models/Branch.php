@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'receipt_footer',
     'is_active',
     'cutover_date',
+    'weekend_days',
 ])]
 class Branch extends Model
 {
@@ -33,6 +34,7 @@ class Branch extends Model
             'operating_hours' => 'array',
             'is_active' => 'boolean',
             'cutover_date' => 'datetime',
+            'weekend_days' => 'array',
         ];
     }
 

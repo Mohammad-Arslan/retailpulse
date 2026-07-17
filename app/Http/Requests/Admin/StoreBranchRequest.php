@@ -30,6 +30,8 @@ final class StoreBranchRequest extends FormRequest
             'operating_hours.*.open' => ['nullable', 'date_format:H:i'],
             'operating_hours.*.close' => ['nullable', 'date_format:H:i'],
             'operating_hours.*.closed' => ['boolean'],
+            'weekend_days' => ['nullable', 'array', 'max:7'],
+            'weekend_days.*' => ['integer', 'min:0', 'max:6'],
             'receipt_footer' => ['nullable', 'string', 'max:2000'],
             'is_active' => ['boolean'],
             'initial_warehouse_id' => [

@@ -15,6 +15,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'affects_payroll',
     'payroll_deduction_component_code',
     'payroll_encashment_component_code',
+    'allow_leave_claim',
+    'allow_cash_claim',
+    'payroll_toil_payout_component_code',
     'status',
 ])]
 final class LeaveType extends Model
@@ -27,6 +30,8 @@ final class LeaveType extends Model
         return [
             'is_paid' => 'boolean',
             'affects_payroll' => 'boolean',
+            'allow_leave_claim' => 'boolean',
+            'allow_cash_claim' => 'boolean',
         ];
     }
 

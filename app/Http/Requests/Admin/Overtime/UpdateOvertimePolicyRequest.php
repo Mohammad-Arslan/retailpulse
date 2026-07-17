@@ -17,7 +17,7 @@ final class UpdateOvertimePolicyRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        foreach (['legal_entity_id', 'branch_id', 'weekly_threshold_minutes', 'effective_to'] as $field) {
+        foreach (['legal_entity_id', 'branch_id', 'weekly_threshold_minutes', 'toil_expiry_months', 'effective_to'] as $field) {
             if ($this->input($field) === '') {
                 $this->merge([$field => null]);
             }
@@ -44,6 +44,7 @@ final class UpdateOvertimePolicyRequest extends FormRequest
             'weekly_threshold_minutes' => ['nullable', 'integer', 'min:0'],
             'rest_day_applies' => ['boolean'],
             'public_holiday_applies' => ['boolean'],
+            'toil_expiry_months' => ['nullable', 'integer', 'min:1', 'max:120'],
             'effective_from' => ['required', 'date'],
             'effective_to' => ['nullable', 'date', 'after_or_equal:effective_from'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
@@ -61,6 +62,7 @@ final class UpdateOvertimePolicyRequest extends FormRequest
                 'distinct',
             ],
             'multipliers.*.multiplier' => ['required', 'numeric', 'min:0'],
+            'multipliers.*.compensation_type' => ['required', 'string', Rule::in(['cash', 'toil', 'employee_choice'])],
         ];
     }
 }

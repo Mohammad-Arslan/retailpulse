@@ -12,6 +12,7 @@ use App\Services\Hr\HolidayResolver;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -22,7 +23,10 @@ final class OvertimeEngine
 {
     public function __construct(
         private readonly HolidayResolver $holidays,
+        private readonly ToilLedgerService $toilLedger,
     ) {}
+
+    private const COMPENSATION_CHOICES = ['cash', 'toil'];
 
     public const DAY_TYPE_WEEKDAY = 'weekday';
 
@@ -80,7 +84,23 @@ final class OvertimeEngine
             return self::DAY_TYPE_PUBLIC_HOLIDAY;
         }
 
+        if (($policy?->rest_day_applies ?? false) && $this->isEmployeeRestDay($employee, $date)) {
+            return self::DAY_TYPE_REST_DAY;
+        }
+
         return $date->isWeekend() ? self::DAY_TYPE_WEEKEND : self::DAY_TYPE_WEEKDAY;
+    }
+
+    private function isEmployeeRestDay(Employee $employee, CarbonImmutable $date): bool
+    {
+        $employee->loadMissing('shiftPreference');
+        $restDays = $employee->shiftPreference?->rest_days ?? [];
+
+        if (! is_array($restDays) || $restDays === []) {
+            return false;
+        }
+
+        return in_array($date->dayOfWeek, array_map('intval', $restDays), true);
     }
 
     public function resolveMultiplier(OvertimePolicy $policy, string $dayType): ?string
@@ -170,16 +190,51 @@ final class OvertimeEngine
         return $record->fresh(['employee', 'policy']) ?? $record;
     }
 
-    public function approveRecord(OvertimeRecord $record, int $approvedByUserId): OvertimeRecord
+    public function approveRecord(OvertimeRecord $record, int $approvedByUserId, ?string $compensationChoice = null): OvertimeRecord
     {
         $this->assertPending($record);
 
-        $record->update([
-            'status' => 'approved',
-            'approved_by' => $approvedByUserId,
-        ]);
+        $record->loadMissing(['employee', 'policy.multipliers']);
+        $multiplier = $record->policy?->multipliers->firstWhere('day_type', $record->day_type);
+        $compensationType = $multiplier?->compensation_type ?? 'cash';
 
-        return $record->fresh(['employee', 'policy']) ?? $record;
+        $resolvedChoice = match ($compensationType) {
+            'toil' => 'toil',
+            'employee_choice' => $this->assertValidCompensationChoice($compensationChoice),
+            default => 'cash',
+        };
+
+        return DB::transaction(function () use ($record, $approvedByUserId, $resolvedChoice): OvertimeRecord {
+            $record->update([
+                'status' => 'approved',
+                'approved_by' => $approvedByUserId,
+                'compensation_choice' => $resolvedChoice,
+            ]);
+
+            $hours = round(((float) $record->overtime_minutes / 60) * (float) $record->resolved_multiplier, 2);
+
+            if ($resolvedChoice === 'toil' && $hours > 0) {
+                $expiryMonths = $record->policy?->toil_expiry_months;
+                $expiresAt = $expiryMonths !== null
+                    ? CarbonImmutable::parse($record->date)->addMonths((int) $expiryMonths)
+                    : null;
+
+                $this->toilLedger->credit($record->employee, $record, $hours, $expiresAt, $approvedByUserId);
+            }
+
+            return $record->fresh(['employee', 'policy']) ?? $record;
+        });
+    }
+
+    private function assertValidCompensationChoice(?string $choice): string
+    {
+        if (! in_array($choice, self::COMPENSATION_CHOICES, true)) {
+            throw ValidationException::withMessages([
+                'compensation_choice' => __('This overtime record requires the employee\'s cash or TOIL choice before it can be approved.'),
+            ]);
+        }
+
+        return $choice;
     }
 
     public function rejectRecord(OvertimeRecord $record, int $rejectedByUserId): OvertimeRecord

@@ -971,6 +971,53 @@ export default function EmployeeFormSections({
                         })}
                     </div>
                 </AdminFormField>
+                <AdminFormField
+                    label={t('pages.hrEmployees.fields.weekendDaysOverride')}
+                    hint={t('pages.hrEmployees.hints.weekendDaysOverride')}
+                    className="sm:col-span-2"
+                >
+                    <label className="mb-2 flex items-center gap-2 text-sm text-rp-text">
+                        <input
+                            type="checkbox"
+                            checked={!!data.shift?.weekend_days_enabled}
+                            disabled={readOnly}
+                            onChange={(e) =>
+                                setData('shift', {
+                                    ...data.shift,
+                                    weekend_days_enabled: e.target.checked,
+                                    weekend_days: e.target.checked ? (data.shift?.weekend_days ?? []) : [],
+                                })
+                            }
+                        />
+                        {t('pages.hrEmployees.overrideWeekendDaysToggle')}
+                    </label>
+                    {!!data.shift?.weekend_days_enabled && (
+                        <div className="flex flex-wrap gap-2">
+                            {weekDays.map((day) => {
+                                const selected = (data.shift?.weekend_days ?? []).includes(day);
+                                return (
+                                    <label key={day} className="inline-flex items-center gap-1 text-sm">
+                                        <input
+                                            type="checkbox"
+                                            checked={selected}
+                                            disabled={readOnly}
+                                            onChange={(e) => {
+                                                const current = data.shift?.weekend_days ?? [];
+                                                setData('shift', {
+                                                    ...data.shift,
+                                                    weekend_days: e.target.checked
+                                                        ? [...current, day]
+                                                        : current.filter((d) => d !== day),
+                                                });
+                                            }}
+                                        />
+                                        {t(`pages.hrEmployees.weekDays.${day}`)}
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    )}
+                </AdminFormField>
                 <AdminFormField label={t('pages.hrEmployees.fields.notes')} className="sm:col-span-2">
                     <textarea
                         className="rp-form-input min-h-24"

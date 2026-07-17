@@ -91,6 +91,8 @@ final class RoleSeeder extends Seeder
         'overtime.view',
         'overtime.approve',
         'overtime.manage-policies',
+        'toil.request-cash-claim',
+        'toil.approve-cash-claim',
         'expenses.view',
         'expenses.create',
         'expenses.approve',
@@ -134,6 +136,7 @@ final class RoleSeeder extends Seeder
         'leave.approve-encashment',
         'overtime.view',
         'overtime.approve',
+        'toil.approve-cash-claim',
         'expenses.view',
         'expenses.approve',
         'selfservice.view-own',
@@ -147,6 +150,7 @@ final class RoleSeeder extends Seeder
         'leave.view',
         'leave.request',
         'leave.request-encashment',
+        'toil.request-cash-claim',
         'attendance.view',
     ];
 

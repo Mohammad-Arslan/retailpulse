@@ -116,6 +116,8 @@ final class EmployeePresenter
                 'start_time' => $shift?->start_time ? substr((string) $shift->start_time, 0, 5) : '',
                 'end_time' => $shift?->end_time ? substr((string) $shift->end_time, 0, 5) : '',
                 'rest_days' => $shift?->rest_days ?? [],
+                'weekend_days_enabled' => (bool) ($shift?->weekend_days_enabled ?? false),
+                'weekend_days' => $shift?->weekend_days ?? [],
                 'notes' => $shift?->notes,
             ],
             'dependents' => $employee->dependents->map(fn (EmployeeDependent $d) => [

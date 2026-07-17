@@ -7,6 +7,7 @@ namespace Tests\Feature\Phase12;
 use App\Models\Branch;
 use App\Models\BranchHrProfile;
 use App\Models\Employee;
+use App\Models\EmployeeShiftPreference;
 use App\Models\HrEntitySetting;
 use App\Models\LeavePolicy;
 use App\Models\LeaveType;
@@ -124,6 +125,132 @@ final class Phase12Wave2LeaveWeekendExclusionTest extends TestCase
         );
 
         $this->assertSame(7.0, (float) $request->days);
+    }
+
+    public function test_branch_weekend_days_override_the_legal_entity_default(): void
+    {
+        HrEntitySetting::query()->create([
+            'legal_entity_id' => $this->entity->id,
+            'settings_json' => ['weekend_days' => [0, 6]], // Sun + Sat
+        ]);
+        $this->branch->update(['weekend_days' => [5, 6]]); // Friday + Saturday
+
+        $this->createPolicy(['exclude_weekends' => true]);
+        $employee = $this->createEmployee();
+
+        // 2026-07-20 Mon → 2026-07-26 Sun: Friday 24th + Saturday 25th are the branch weekend.
+        $service = app(LeaveService::class);
+        $request = $service->requestLeave(
+            employee: $employee,
+            leaveType: $this->leaveType,
+            startDate: CarbonImmutable::parse('2026-07-20'),
+            endDate: CarbonImmutable::parse('2026-07-26'),
+        );
+
+        $this->assertSame(5.0, (float) $request->days);
+    }
+
+    public function test_branch_with_empty_weekend_days_means_no_weekly_off_day(): void
+    {
+        HrEntitySetting::query()->create([
+            'legal_entity_id' => $this->entity->id,
+            'settings_json' => ['weekend_days' => [0, 6]],
+        ]);
+        // Departmental-store-style branch: trades every day, no weekly off.
+        $this->branch->update(['weekend_days' => []]);
+
+        $this->createPolicy(['exclude_weekends' => true]);
+        $employee = $this->createEmployee();
+
+        $service = app(LeaveService::class);
+        $request = $service->requestLeave(
+            employee: $employee,
+            leaveType: $this->leaveType,
+            startDate: CarbonImmutable::parse('2026-07-20'),
+            endDate: CarbonImmutable::parse('2026-07-26'),
+        );
+
+        $this->assertSame(7.0, (float) $request->days);
+    }
+
+    public function test_employee_override_takes_precedence_over_branch_and_entity_defaults(): void
+    {
+        HrEntitySetting::query()->create([
+            'legal_entity_id' => $this->entity->id,
+            'settings_json' => ['weekend_days' => [0, 6]],
+        ]);
+        $this->branch->update(['weekend_days' => [5, 6]]);
+
+        $this->createPolicy(['exclude_weekends' => true]);
+        $employee = $this->createEmployee();
+
+        // HR configures this specific employee's weekly off day as Tuesday only.
+        EmployeeShiftPreference::query()->create([
+            'employee_id' => $employee->id,
+            'weekend_days_enabled' => true,
+            'weekend_days' => [2],
+        ]);
+
+        // 2026-07-20 Mon → 2026-07-26 Sun: only Tuesday 21st is off for this employee.
+        $service = app(LeaveService::class);
+        $request = $service->requestLeave(
+            employee: $employee,
+            leaveType: $this->leaveType,
+            startDate: CarbonImmutable::parse('2026-07-20'),
+            endDate: CarbonImmutable::parse('2026-07-26'),
+        );
+
+        $this->assertSame(6.0, (float) $request->days);
+    }
+
+    public function test_employee_override_with_empty_weekend_days_means_this_employee_has_no_weekly_off(): void
+    {
+        $this->branch->update(['weekend_days' => [0, 6]]);
+        $this->createPolicy(['exclude_weekends' => true]);
+        $employee = $this->createEmployee();
+
+        EmployeeShiftPreference::query()->create([
+            'employee_id' => $employee->id,
+            'weekend_days_enabled' => true,
+            'weekend_days' => [],
+        ]);
+
+        $service = app(LeaveService::class);
+        $request = $service->requestLeave(
+            employee: $employee,
+            leaveType: $this->leaveType,
+            startDate: CarbonImmutable::parse('2026-07-20'),
+            endDate: CarbonImmutable::parse('2026-07-26'),
+        );
+
+        $this->assertSame(7.0, (float) $request->days);
+    }
+
+    public function test_shift_preference_row_without_override_enabled_falls_through_to_branch_default(): void
+    {
+        $this->branch->update(['weekend_days' => [5]]); // Friday only
+
+        $this->createPolicy(['exclude_weekends' => true]);
+        $employee = $this->createEmployee();
+
+        // Row exists (e.g. OT rest-day config was saved) but the leave override toggle is off.
+        EmployeeShiftPreference::query()->create([
+            'employee_id' => $employee->id,
+            'rest_days' => [3],
+            'weekend_days_enabled' => false,
+            'weekend_days' => null,
+        ]);
+
+        // 2026-07-20 Mon → 2026-07-26 Sun: only Friday 24th is off (branch default), not Wednesday.
+        $service = app(LeaveService::class);
+        $request = $service->requestLeave(
+            employee: $employee,
+            leaveType: $this->leaveType,
+            startDate: CarbonImmutable::parse('2026-07-20'),
+            endDate: CarbonImmutable::parse('2026-07-26'),
+        );
+
+        $this->assertSame(6.0, (float) $request->days);
     }
 
     private function createPolicy(array $overrides = []): LeavePolicy

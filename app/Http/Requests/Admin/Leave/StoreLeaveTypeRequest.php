@@ -24,6 +24,10 @@ final class StoreLeaveTypeRequest extends FormRequest
             $this->merge(['payroll_encashment_component_code' => null]);
         }
 
+        if ($this->input('payroll_toil_payout_component_code') === '') {
+            $this->merge(['payroll_toil_payout_component_code' => null]);
+        }
+
         if ($this->has('code')) {
             $this->merge(['code' => strtoupper(trim((string) $this->input('code')))]);
         }
@@ -34,6 +38,14 @@ final class StoreLeaveTypeRequest extends FormRequest
 
         if (! $this->has('affects_payroll')) {
             $this->merge(['affects_payroll' => false]);
+        }
+
+        if (! $this->has('allow_leave_claim')) {
+            $this->merge(['allow_leave_claim' => false]);
+        }
+
+        if (! $this->has('allow_cash_claim')) {
+            $this->merge(['allow_cash_claim' => false]);
         }
     }
 
@@ -49,6 +61,9 @@ final class StoreLeaveTypeRequest extends FormRequest
             'affects_payroll' => ['boolean'],
             'payroll_deduction_component_code' => ['nullable', 'string', 'max:64'],
             'payroll_encashment_component_code' => ['nullable', 'string', 'max:64'],
+            'allow_leave_claim' => ['boolean'],
+            'allow_cash_claim' => ['boolean'],
+            'payroll_toil_payout_component_code' => ['nullable', 'string', 'max:64'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
         ];
     }

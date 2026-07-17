@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'overtime_policy_id',
     'day_type',
     'multiplier',
+    'compensation_type',
 ])]
 final class OvertimeMultiplier extends Model
 {

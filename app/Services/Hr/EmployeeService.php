@@ -371,6 +371,8 @@ final class EmployeeService
         }
 
         if ($shift !== null) {
+            $weekendDaysEnabled = (bool) ($shift['weekend_days_enabled'] ?? false);
+
             $employee->shiftPreference()->updateOrCreate(
                 ['employee_id' => $employee->id],
                 [
@@ -378,6 +380,10 @@ final class EmployeeService
                     'start_time' => $shift['start_time'] ?: null,
                     'end_time' => $shift['end_time'] ?: null,
                     'rest_days' => $shift['rest_days'] ?? [],
+                    'weekend_days_enabled' => $weekendDaysEnabled,
+                    'weekend_days' => $weekendDaysEnabled
+                        ? array_values(array_map('intval', $shift['weekend_days'] ?? []))
+                        : null,
                     'notes' => $shift['notes'] ?? null,
                 ],
             );

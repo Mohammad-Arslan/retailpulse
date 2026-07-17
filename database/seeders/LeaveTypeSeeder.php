@@ -36,6 +36,16 @@ final class LeaveTypeSeeder extends Seeder
                 'payroll_deduction_component_code' => 'UNPAID_LEAVE',
                 'status' => 'active',
             ],
+            [
+                'code' => 'TOIL',
+                'name' => 'Time Off In Lieu',
+                'is_paid' => true,
+                'affects_payroll' => false,
+                'payroll_deduction_component_code' => null,
+                'allow_leave_claim' => true,
+                'allow_cash_claim' => true,
+                'status' => 'active',
+            ],
         ];
 
         foreach ($defaults as $type) {
@@ -46,6 +56,8 @@ final class LeaveTypeSeeder extends Seeder
                     'is_paid' => $type['is_paid'],
                     'affects_payroll' => $type['affects_payroll'],
                     'payroll_deduction_component_code' => $type['payroll_deduction_component_code'],
+                    'allow_leave_claim' => $type['allow_leave_claim'] ?? true,
+                    'allow_cash_claim' => $type['allow_cash_claim'] ?? false,
                     'status' => $type['status'],
                 ],
             );

@@ -9,9 +9,11 @@ use App\Models\HrEntitySetting;
 use App\Models\LeaveEntitlement;
 use App\Models\LeavePolicy;
 use App\Models\LeaveRequest;
+use App\Models\LeaveRequestReschedule;
 use App\Models\LeaveType;
 use App\Services\Hr\ApprovalApproverResolver;
 use App\Services\Hr\HolidayResolver;
+use App\Services\Overtime\ToilClaimService;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -23,9 +25,12 @@ final class LeaveService
 
     private const DEFAULT_WORK_HOURS_PER_DAY = 8.0;
 
+    private const TOIL_LEAVE_TYPE_CODE = 'TOIL';
+
     public function __construct(
         private readonly ApprovalApproverResolver $approvers,
         private readonly HolidayResolver $holidays,
+        private readonly ToilClaimService $toilClaims,
     ) {}
 
     public function requestLeave(
@@ -41,6 +46,12 @@ final class LeaveService
     ): LeaveRequest {
         $this->assertLeaveTypeActive($leaveType);
         $this->assertValidDurationType($durationType);
+
+        if ($leaveType->code === self::TOIL_LEAVE_TYPE_CODE && ! $leaveType->allow_leave_claim) {
+            throw ValidationException::withMessages([
+                'leave_type_id' => __('TOIL leave claims are disabled for this leave type.'),
+            ]);
+        }
 
         if ($endDate->lessThan($startDate)) {
             throw ValidationException::withMessages([
@@ -91,9 +102,11 @@ final class LeaveService
                 $this->assertWithinShortLeaveCaps($employee, $leaveType, $policy, (string) $startTime, (string) $endTime, $startDate);
             }
 
-            $deductFromBalance = $durationType === 'out_station'
-                ? ($policy?->out_station_deducts_balance ?? false)
-                : true;
+            $isToil = $leaveType->code === self::TOIL_LEAVE_TYPE_CODE;
+
+            $deductFromBalance = $isToil || $durationType !== 'out_station'
+                ? true
+                : ($policy?->out_station_deducts_balance ?? false);
 
             $approverUserId = $this->approvers->resolveApproverUserId(
                 'direct_manager',
@@ -112,7 +125,7 @@ final class LeaveService
                 ];
             }
 
-            return LeaveRequest::query()->create([
+            $request = LeaveRequest::query()->create([
                 'employee_id' => $employee->id,
                 'leave_type_id' => $leaveType->id,
                 'start_date' => $startDate->toDateString(),
@@ -127,6 +140,16 @@ final class LeaveService
                 'status' => 'pending',
                 'approval_chain_json' => $approvalChain,
             ]);
+
+            if ($isToil) {
+                // TOIL is a balance source, not a duration type: full/half/short-leave
+                // day-counting above is unchanged — only the balance it draws from
+                // differs, so the computed `days` is converted to hours here.
+                $hours = round($days * $this->resolveWorkHoursPerDay($employee), 2);
+                $this->toilClaims->holdForLeaveClaim($employee, $request, $hours);
+            }
+
+            return $request;
         });
     }
 
@@ -135,9 +158,13 @@ final class LeaveService
         $this->assertPending($request);
 
         return DB::transaction(function () use ($request, $approvedByUserId): LeaveRequest {
-            $request->loadMissing(['employee', 'leaveType']);
+            $request->loadMissing(['employee', 'leaveType', 'toilClaim']);
 
-            if ($request->deduct_from_balance) {
+            if ($request->leaveType?->code === self::TOIL_LEAVE_TYPE_CODE) {
+                if ($request->toilClaim !== null) {
+                    $this->toilClaims->approve($request->toilClaim, $approvedByUserId);
+                }
+            } elseif ($request->deduct_from_balance) {
                 $entitlement = $this->resolveEntitlement(
                     $request->employee,
                     $request->leaveType,
@@ -166,29 +193,41 @@ final class LeaveService
     {
         $this->assertPending($request);
 
-        $chain = is_array($request->approval_chain_json) ? $request->approval_chain_json : [];
-        $chain[] = [
-            'action' => 'rejected',
-            'by_user_id' => $rejectedByUserId,
-            'at' => now()->toIso8601String(),
-            'reason' => $reason,
-        ];
+        return DB::transaction(function () use ($request, $rejectedByUserId, $reason): LeaveRequest {
+            $request->loadMissing(['leaveType', 'toilClaim']);
 
-        $request->update([
-            'status' => 'rejected',
-            'approval_chain_json' => $chain,
-        ]);
+            if ($request->leaveType?->code === self::TOIL_LEAVE_TYPE_CODE && $request->toilClaim !== null) {
+                $this->toilClaims->reject($request->toilClaim, $rejectedByUserId, $reason);
+            }
 
-        return $request->fresh(['employee', 'leaveType']) ?? $request;
+            $chain = is_array($request->approval_chain_json) ? $request->approval_chain_json : [];
+            $chain[] = [
+                'action' => 'rejected',
+                'by_user_id' => $rejectedByUserId,
+                'at' => now()->toIso8601String(),
+                'reason' => $reason,
+            ];
+
+            $request->update([
+                'status' => 'rejected',
+                'approval_chain_json' => $chain,
+            ]);
+
+            return $request->fresh(['employee', 'leaveType']) ?? $request;
+        });
     }
 
     public function cancel(LeaveRequest $request, int $cancelledByUserId): LeaveRequest
     {
         if ($request->status === 'approved') {
             return DB::transaction(function () use ($request, $cancelledByUserId): LeaveRequest {
-                $request->loadMissing(['employee', 'leaveType']);
+                $request->loadMissing(['employee', 'leaveType', 'toilClaim']);
 
-                if ($request->deduct_from_balance) {
+                if ($request->leaveType?->code === self::TOIL_LEAVE_TYPE_CODE) {
+                    if ($request->toilClaim !== null) {
+                        $this->toilClaims->cancel($request->toilClaim, $cancelledByUserId);
+                    }
+                } elseif ($request->deduct_from_balance) {
                     $entitlement = $this->resolveEntitlement(
                         $request->employee,
                         $request->leaveType,
@@ -215,19 +254,83 @@ final class LeaveService
 
         $this->assertPending($request);
 
-        $chain = is_array($request->approval_chain_json) ? $request->approval_chain_json : [];
-        $chain[] = [
-            'action' => 'cancelled',
-            'by_user_id' => $cancelledByUserId,
-            'at' => now()->toIso8601String(),
-        ];
+        return DB::transaction(function () use ($request, $cancelledByUserId): LeaveRequest {
+            $request->loadMissing(['leaveType', 'toilClaim']);
 
-        $request->update([
-            'status' => 'cancelled',
-            'approval_chain_json' => $chain,
-        ]);
+            if ($request->leaveType?->code === self::TOIL_LEAVE_TYPE_CODE && $request->toilClaim !== null) {
+                $this->toilClaims->cancel($request->toilClaim, $cancelledByUserId);
+            }
 
-        return $request->fresh(['employee', 'leaveType']) ?? $request;
+            $chain = is_array($request->approval_chain_json) ? $request->approval_chain_json : [];
+            $chain[] = [
+                'action' => 'cancelled',
+                'by_user_id' => $cancelledByUserId,
+                'at' => now()->toIso8601String(),
+            ];
+
+            $request->update([
+                'status' => 'cancelled',
+                'approval_chain_json' => $chain,
+            ]);
+
+            return $request->fresh(['employee', 'leaveType']) ?? $request;
+        });
+    }
+
+    /**
+     * Manager reschedule of a pending TOIL leave request. Only the dates
+     * change — `days` (and therefore the TOIL hold already placed on the
+     * ledger) is deliberately left untouched, so a reschedule-then-approve
+     * flow can never double-touch the balance. Every reschedule is recorded
+     * as an immutable audit row rather than silently overwriting the dates.
+     */
+    public function reschedule(
+        LeaveRequest $request,
+        CarbonImmutable $newStartDate,
+        CarbonImmutable $newEndDate,
+        int $changedByUserId,
+        ?string $reason = null,
+    ): LeaveRequest {
+        $this->assertPending($request);
+
+        $request->loadMissing('leaveType');
+
+        if ($request->leaveType?->code !== self::TOIL_LEAVE_TYPE_CODE) {
+            throw ValidationException::withMessages([
+                'leave_type_id' => __('Only TOIL leave requests can be rescheduled.'),
+            ]);
+        }
+
+        if ($newEndDate->lessThan($newStartDate)) {
+            throw ValidationException::withMessages([
+                'new_end_date' => __('The new end date must be on or after the new start date.'),
+            ]);
+        }
+
+        if (in_array($request->duration_type, ['half_day', 'short_leave'], true) && ! $newStartDate->isSameDay($newEndDate)) {
+            throw ValidationException::withMessages([
+                'new_end_date' => __('Half day and short leave requests must be for a single date.'),
+            ]);
+        }
+
+        return DB::transaction(function () use ($request, $newStartDate, $newEndDate, $changedByUserId, $reason): LeaveRequest {
+            LeaveRequestReschedule::query()->create([
+                'leave_request_id' => $request->id,
+                'old_start_date' => $request->start_date,
+                'old_end_date' => $request->end_date,
+                'new_start_date' => $newStartDate->toDateString(),
+                'new_end_date' => $newEndDate->toDateString(),
+                'changed_by' => $changedByUserId,
+                'reason' => $reason,
+            ]);
+
+            $request->update([
+                'start_date' => $newStartDate->toDateString(),
+                'end_date' => $newEndDate->toDateString(),
+            ]);
+
+            return $request->fresh(['employee', 'leaveType', 'reschedules']) ?? $request;
+        });
     }
 
     public function resolvePayrollDeductionComponent(Employee $employee, LeaveRequest $request): ?string
@@ -351,7 +454,7 @@ final class LeaveService
         return round($hours / $workHoursPerDay, 4);
     }
 
-    private function resolveWorkHoursPerDay(Employee $employee): float
+    public function resolveWorkHoursPerDay(Employee $employee): float
     {
         $setting = HrEntitySetting::query()
             ->where('legal_entity_id', $employee->legal_entity_id)
@@ -463,17 +566,37 @@ final class LeaveService
     }
 
     /**
+     * Resolves the weekly off-days used to exclude weekends from leave day counts.
+     *
+     * Fallback chain (most specific wins): employee override (HR-configured per employee,
+     * on `EmployeeShiftPreference`) → branch default → legal-entity default
+     * (`HrEntitySetting.settings_json.weekend_days`) → [0, 6] (Sun/Sat) if nothing is configured.
+     * An empty array at any level is a valid, deliberate "no weekly off day" configuration
+     * (e.g. a departmental store branch that trades every day) — it is not treated as "unset".
+     *
      * @return list<int> Carbon day-of-week values (0=Sunday … 6=Saturday)
      */
     private function resolveWeekendDays(Employee $employee): array
     {
+        $employee->loadMissing('shiftPreference', 'primaryBranch');
+
+        $shiftPreference = $employee->shiftPreference;
+        if ($shiftPreference?->weekend_days_enabled) {
+            return array_values(array_map('intval', $shiftPreference->weekend_days ?? []));
+        }
+
+        $branchWeekendDays = $employee->primaryBranch?->weekend_days;
+        if (is_array($branchWeekendDays)) {
+            return array_values(array_map('intval', $branchWeekendDays));
+        }
+
         $setting = HrEntitySetting::query()
             ->where('legal_entity_id', $employee->legal_entity_id)
             ->first();
 
         $configured = $setting?->settings_json['weekend_days'] ?? null;
 
-        if (is_array($configured) && $configured !== []) {
+        if (is_array($configured)) {
             return array_values(array_map('intval', $configured));
         }
 

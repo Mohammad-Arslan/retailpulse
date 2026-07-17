@@ -44,7 +44,7 @@ Status legend: **Partial** = some code exists / incomplete vs SRS · **Planned**
 | Leave | Partial | Public-holiday day count, duration types (full/half/short-leave/out-station), encashment, weekend exclusion Implemented; year-end carry/expire/encash job Planned |
 | Leave policies | Partial | Encashment Implemented; eligibility JSON, accrual scheduler hardening Planned |
 | Leave fiscal year | Partial | Year-end carry/expire/encash job Implemented; carry-forward expiry_months (separate from the carry cap) Planned |
-| Overtime | Implemented | Roster/holiday integration, comp-off (Planned) |
+| Overtime | Implemented | Roster integration Planned; comp-off/TOIL — earning, leave claims, cash claims, and manager reschedule all Implemented, see [toil.md](./toil.md) |
 
 ---
 

@@ -121,6 +121,7 @@ Modules remain independently enableable; waves are the recommended implementatio
 | 2 | [leave-policies.md](./leave-policies.md) | `leave` | Partial |
 | 2 | [leave-fiscal-year.md](./leave-fiscal-year.md) | `leave` | Partial |
 | 2 | [overtime.md](./overtime.md) | `overtime` | Implemented |
+| 2 | [toil.md](./toil.md) | `overtime` + `leave` | Implemented |
 | 3 | [payroll-core.md](./payroll-core.md) | `payroll` | Partial |
 | 3 | [payroll-scheduling.md](./payroll-scheduling.md) | `payroll` | Planned |
 | 3 | [payroll-adjustments.md](./payroll-adjustments.md) | `payroll_adjustments` | Planned |

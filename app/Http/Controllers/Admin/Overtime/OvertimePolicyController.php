@@ -30,7 +30,7 @@ final class OvertimePolicyController extends Controller
             ->with([
                 'legalEntity:id,legal_name',
                 'branch:id,name,code',
-                'multipliers:id,overtime_policy_id,day_type,multiplier',
+                'multipliers:id,overtime_policy_id,day_type,multiplier,compensation_type',
             ])
             ->when($filters['status'] ?? null, fn ($q, string $status) => $q->where('status', $status))
             ->orderBy($filters['sort'] ?? 'priority', $filters['direction'] ?? 'asc');
@@ -49,6 +49,7 @@ final class OvertimePolicyController extends Controller
                 'weekly_threshold_minutes' => $policy->weekly_threshold_minutes,
                 'rest_day_applies' => $policy->rest_day_applies,
                 'public_holiday_applies' => $policy->public_holiday_applies,
+                'toil_expiry_months' => $policy->toil_expiry_months,
                 'effective_from' => $policy->effective_from?->toDateString(),
                 'effective_to' => $policy->effective_to?->toDateString(),
                 'priority' => $policy->priority,
@@ -57,6 +58,7 @@ final class OvertimePolicyController extends Controller
                     'id' => $multiplier->id,
                     'day_type' => $multiplier->day_type,
                     'multiplier' => (string) $multiplier->multiplier,
+                    'compensation_type' => $multiplier->compensation_type,
                 ])->values()->all(),
             ]),
             'filters' => $filters,
@@ -104,7 +106,7 @@ final class OvertimePolicyController extends Controller
     }
 
     /**
-     * @param  list<array{day_type: string, multiplier: mixed}>  $multipliers
+     * @param  list<array{day_type: string, multiplier: mixed, compensation_type: string}>  $multipliers
      */
     private function syncMultipliers(OvertimePolicy $policy, array $multipliers): void
     {
@@ -114,6 +116,7 @@ final class OvertimePolicyController extends Controller
             $policy->multipliers()->create([
                 'day_type' => $row['day_type'],
                 'multiplier' => $row['multiplier'],
+                'compensation_type' => $row['compensation_type'],
             ]);
         }
     }

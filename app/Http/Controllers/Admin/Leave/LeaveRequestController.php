@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Leave;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Leave\RescheduleLeaveRequestRequest;
 use App\Http\Requests\Admin\Leave\StoreLeaveRequestRequest;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
@@ -15,6 +16,7 @@ use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,6 +37,7 @@ final class LeaveRequestController extends Controller
             ->with([
                 'employee:id,first_name,last_name,employee_code',
                 'leaveType:id,code,name,is_paid',
+                'reschedules' => fn ($q) => $q->orderByDesc('created_at'),
             ])
             ->when($filters['search'] ?? null, function ($q, string $search): void {
                 $q->where(function ($inner) use ($search): void {
@@ -68,6 +71,7 @@ final class LeaveRequestController extends Controller
                 'deduct_from_balance' => $leaveRequest->deduct_from_balance,
                 'reason' => $leaveRequest->reason,
                 'status' => $leaveRequest->status,
+                'reschedule_count' => $leaveRequest->reschedules->count(),
             ]),
             'filters' => $filters,
         ]);
@@ -138,5 +142,28 @@ final class LeaveRequestController extends Controller
         }
 
         return back()->with('success', __('Leave Request Rejected Successfully.'));
+    }
+
+    public function reschedule(RescheduleLeaveRequestRequest $request, LeaveRequest $leaveRequest): RedirectResponse
+    {
+        $this->authorize('reschedule', $leaveRequest);
+
+        $data = $request->validated();
+
+        try {
+            $this->leaveService->reschedule(
+                request: $leaveRequest,
+                newStartDate: CarbonImmutable::parse($data['new_start_date']),
+                newEndDate: CarbonImmutable::parse($data['new_end_date']),
+                changedByUserId: (int) $request->user()->id,
+                reason: $data['reason'] ?? null,
+            );
+        } catch (ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first());
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('Leave Request Rescheduled Successfully.'));
     }
 }

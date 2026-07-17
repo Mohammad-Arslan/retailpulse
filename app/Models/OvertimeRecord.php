@@ -7,6 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'employee_id',
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'overtime_minutes',
     'day_type',
     'resolved_multiplier',
+    'compensation_choice',
     'overtime_policy_id',
     'approved_by',
     'status',
@@ -47,5 +49,10 @@ final class OvertimeRecord extends Model
     public function approvedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function toilLedgerEntries(): HasMany
+    {
+        return $this->hasMany(ToilLedgerEntry::class);
     }
 }

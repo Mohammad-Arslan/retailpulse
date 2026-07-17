@@ -59,6 +59,7 @@ use App\Http\Controllers\Admin\LoyaltyReportController;
 use App\Http\Controllers\Admin\LoyaltyTransactionController;
 use App\Http\Controllers\Admin\Overtime\OvertimePolicyController;
 use App\Http\Controllers\Admin\Overtime\OvertimeRecordController;
+use App\Http\Controllers\Admin\Overtime\ToilCashClaimController;
 use App\Http\Controllers\Admin\Payroll\PayComponentController;
 use App\Http\Controllers\Admin\Payroll\PayrollRunController;
 use App\Http\Controllers\Admin\Payroll\PayslipController;
@@ -195,6 +196,7 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::post('requests', [LeaveRequestController::class, 'store'])->name('requests.store');
             Route::post('requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('requests.approve');
             Route::post('requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('requests.reject');
+            Route::post('requests/{leaveRequest}/reschedule', [LeaveRequestController::class, 'reschedule'])->name('requests.reschedule');
             Route::get('encashments', [LeaveEncashmentController::class, 'index'])->name('encashments.index');
             Route::get('encashments/create', [LeaveEncashmentController::class, 'create'])->name('encashments.create');
             Route::post('encashments', [LeaveEncashmentController::class, 'store'])->name('encashments.store');
@@ -211,6 +213,12 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::get('records', [OvertimeRecordController::class, 'index'])->name('records.index');
             Route::post('records/{overtimeRecord}/approve', [OvertimeRecordController::class, 'approve'])->name('records.approve');
             Route::post('records/{overtimeRecord}/reject', [OvertimeRecordController::class, 'reject'])->name('records.reject');
+            Route::get('toil-claims', [ToilCashClaimController::class, 'index'])->name('toil-claims.index');
+            Route::get('toil-claims/create', [ToilCashClaimController::class, 'create'])->name('toil-claims.create');
+            Route::post('toil-claims', [ToilCashClaimController::class, 'store'])->name('toil-claims.store');
+            Route::post('toil-claims/{toilClaim}/approve', [ToilCashClaimController::class, 'approve'])->name('toil-claims.approve');
+            Route::post('toil-claims/{toilClaim}/reject', [ToilCashClaimController::class, 'reject'])->name('toil-claims.reject');
+            Route::post('toil-claims/{toilClaim}/cancel', [ToilCashClaimController::class, 'cancel'])->name('toil-claims.cancel');
         });
 
         Route::middleware(['hr-module:payroll'])->prefix('payroll')->name('payroll.')->group(function () {

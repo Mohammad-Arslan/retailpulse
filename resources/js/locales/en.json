@@ -79,6 +79,7 @@
         "leaveRequests": "Leave Requests",
         "leaveEncashments": "Leave Encashments",
         "leaveYearEndRuns": "Leave Year-End Runs",
+        "toilClaims": "TOIL Cash Claims",
         "overtimePolicies": "Overtime Policies",
         "overtimeRecords": "Overtime Records",
         "payComponents": "Pay Components",
@@ -533,6 +534,7 @@
                 "startTime": "Start Time",
                 "endTime": "End Time",
                 "restDays": "Rest Days",
+                "weekendDaysOverride": "Weekly Off Days (Leave Calculation)",
                 "notes": "Notes",
                 "holidayCalendar": "Holiday Calendar",
                 "attendanceGraceMinutes": "Late Grace (Minutes)",
@@ -549,6 +551,10 @@
                 "secondaryBranches": "Secondary Branch Assignments",
                 "effectiveFrom": "Effective From",
                 "effectiveTo": "Effective To"
+            },
+            "overrideWeekendDaysToggle": "Override for this employee",
+            "hints": {
+                "weekendDaysOverride": "Independent from Rest Days above (which are for overtime rest-day detection). Falls back to the branch, then legal-entity, weekly off-days default when not overridden. Leave every day unchecked if this employee has no weekly day off (e.g. a departmental store role)."
             },
             "placeholders": {
                 "title": "Enter Title",
@@ -783,7 +789,7 @@
                 "employeeCodeSequenceKey": "Document Sequence Key For Auto Employee Codes. Leave Blank Or Use employee To Generate Codes Like EMP-00001.",
                 "leaveFiscalYearMode": "Default Basis For Leave Accrual Year Boundaries On This Entity.",
                 "workHoursPerDay": "Used To Convert Short Leave Hours Into Days (Hours ÷ Work Hours Per Day).",
-                "weekendDays": "Days Excluded From Leave Day Counts When A Policy Has Exclude Weekends Enabled."
+                "weekendDays": "Entity-wide default. Days excluded from leave day counts when a policy has exclude weekends enabled. Individual branches (Branches → Edit) and employees (Employees → Shifts tab) can override this default."
             },
             "fiscalYearModes": {
                 "calendarYear": "Calendar Year",
@@ -1141,6 +1147,12 @@
                 "deductionComponentPlaceholder": "e.g. UNPAID_LEAVE",
                 "encashmentComponent": "Encashment Component Code",
                 "encashmentComponentPlaceholder": "e.g. LEAVE_ENCASHMENT",
+                "allowLeaveClaim": "Allow Leave Claim",
+                "allowLeaveClaimHint": "Employees May Redeem This Balance As A Leave Request (TOIL Only)",
+                "allowCashClaim": "Allow Cash Claim",
+                "allowCashClaimHint": "Employees May Redeem This Balance As A Payroll Payout (TOIL Only)",
+                "toilPayoutComponent": "TOIL Payout Component Code",
+                "toilPayoutComponentPlaceholder": "e.g. TOIL_PAYOUT",
                 "status": "Status"
             },
             "statuses": {
@@ -1230,6 +1242,10 @@
             "submitRequest": "Submit Request",
             "approve": "Approve",
             "reject": "Reject",
+            "reschedule": "Reschedule",
+            "rescheduleTitle": "Reschedule TOIL Leave Request",
+            "reschedulePlaceholder": "Optional — Why Are The Dates Changing…",
+            "rescheduleSubmit": "Save New Dates",
             "empty": "No Leave Requests Found.",
             "reasonPlaceholder": "Optional — Note For Approvers…",
             "columns": {
@@ -1361,7 +1377,16 @@
                 "restDayAppliesHint": "Use Rest Day Multiplier On Rest Days",
                 "publicHolidayApplies": "Public Holiday Applies",
                 "publicHolidayAppliesHint": "Use Public Holiday Multiplier On Public Holidays",
-                "multipliers": "Day Type Multipliers"
+                "multipliers": "Day Type Multipliers",
+                "compensationType": "Compensation",
+                "toilExpiryMonths": "TOIL Expiry (Months)",
+                "toilExpiryMonthsHint": "How Long Credited TOIL Hours Remain Claimable Before Expiring. Blank = Never Expires.",
+                "toilExpiryMonthsPlaceholder": "Optional — e.g. 6"
+            },
+            "compensationTypes": {
+                "cash": "Cash",
+                "toil": "TOIL",
+                "employee_choice": "Employee Choice"
             }
         },
         "overtimeRecords": {
@@ -1371,6 +1396,7 @@
             "allStatuses": "All Statuses",
             "approve": "Approve",
             "reject": "Reject",
+            "selectCompensationChoice": "Select Cash Or TOIL…",
             "empty": "No Overtime Records Found.",
             "columns": {
                 "employee": "Employee",
@@ -1380,12 +1406,49 @@
                 "dayType": "Day Type",
                 "multiplier": "Multiplier",
                 "payUnits": "Pay Units",
+                "compensationChoice": "Compensation",
                 "status": "Status"
+            },
+            "compensationChoices": {
+                "cash": "Cash",
+                "toil": "TOIL"
             },
             "statuses": {
                 "pending": "Pending",
                 "approved": "Approved",
                 "rejected": "Rejected"
+            }
+        },
+        "toilClaims": {
+            "indexTitle": "TOIL Cash Claims",
+            "indexDescription": "Convert Banked TOIL Hours Into A Payroll Payout.",
+            "createTitle": "New TOIL Cash Claim",
+            "createDescription": "Request A TOIL Cash Claim On Behalf Of An Employee.",
+            "searchPlaceholder": "Search By Employee Name Or Code…",
+            "allStatuses": "All Statuses",
+            "selectEmployee": "Select Employee…",
+            "submitRequest": "Submit Request",
+            "approve": "Approve",
+            "reject": "Reject",
+            "cancel": "Cancel",
+            "empty": "No TOIL Cash Claims Found.",
+            "reasonPlaceholder": "Optional — Note For Approvers…",
+            "columns": {
+                "employee": "Employee",
+                "hours": "Hours",
+                "createdAt": "Requested On",
+                "status": "Status"
+            },
+            "fields": {
+                "employee": "Employee",
+                "hours": "Hours To Claim",
+                "reason": "Reason"
+            },
+            "statuses": {
+                "pending": "Pending",
+                "approved": "Approved",
+                "rejected": "Rejected",
+                "cancelled": "Cancelled"
             }
         },
         "payComponents": {
@@ -1923,7 +1986,12 @@
                 "warehouseName": "Warehouse name",
                 "warehouseCode": "Warehouse code",
                 "pickingStrategy": "Picking strategy (FIFO / FEFO)",
-                "cutoverDate": "Go-live cutover date"
+                "cutoverDate": "Go-live cutover date",
+                "weekendDays": "Weekly Off Days"
+            },
+            "overrideWeekendDays": "Override the legal entity's default weekly off days for this branch",
+            "hints": {
+                "weekendDays": "Used for leave day-counting when a leave policy excludes weekends. Falls back to the legal entity default (Admin → HR Settings) when not overridden here. Leave every day unchecked for branches that trade every day (no weekly off), e.g. a departmental store."
             },
             "cutoverHint": "Live POS sale deductions are blocked until this date. Imports and manual adjustments are unaffected.",
             "operationalDefaultsHint": "Pre-selected from Admin → Settings → General. Choose from the configured currency and timezone lists.",
@@ -4206,6 +4274,7 @@
         "leaveRequests": "Leave Requests",
         "leaveEncashments": "Leave Encashments",
         "leaveYearEndRuns": "Leave Year-End Runs",
+        "toilClaims": "TOIL Cash Claims",
         "attendanceRecords": "Attendance Records",
         "attendanceSources": "Attendance Sources",
         "payrollRuns": "Payroll Runs",

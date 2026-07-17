@@ -147,4 +147,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('accounting:process-depreciation')->monthlyOn(1, '05:00');
         $schedule->command('expenses:process-recurring')->dailyAt('06:00');
         $schedule->command('leave:process-year-end')->dailyAt('01:30');
+        $schedule->command('toil:expire-credits')->dailyAt('02:00');
+        $schedule->command('toil:reconcile-balances')->dailyAt('02:15');
     })->create();

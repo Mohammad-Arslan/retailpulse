@@ -13,6 +13,7 @@ use App\Models\PayrollItemLine;
 use App\Models\PayrollRun;
 use App\Models\SalaryStructure;
 use App\Models\SalaryStructureComponent;
+use App\Models\ToilClaim;
 use App\Services\Leave\LeaveService;
 use App\Services\Overtime\OvertimeEngine;
 use Carbon\CarbonImmutable;
@@ -166,6 +167,15 @@ final class PayrollCalculationService
         // Step 3b — Approved leave encashments → earning component via LeaveType.payroll_encashment_component_code
         $encashmentLines = $this->buildLeaveEncashmentLines($employee, $periodStart, $periodEnd, $componentAmounts, $sequence);
         foreach ($encashmentLines as $line) {
+            $code = $line['component_snapshot_json']['code'];
+            $componentAmounts[$code] = bcadd($componentAmounts[$code] ?? '0.0000', $line['amount'], 4);
+            $lineData[] = $line;
+            $sequence += 10;
+        }
+
+        // Step 3c — Approved TOIL cash claims → earning component via LeaveType.payroll_toil_payout_component_code
+        $toilCashLines = $this->buildToilCashClaimLines($employee, $periodStart, $periodEnd, $componentAmounts, $sequence);
+        foreach ($toilCashLines as $line) {
             $code = $line['component_snapshot_json']['code'];
             $componentAmounts[$code] = bcadd($componentAmounts[$code] ?? '0.0000', $line['amount'], 4);
             $lineData[] = $line;
@@ -499,6 +509,99 @@ final class PayrollCalculationService
                     'encashed_days' => $totalDays,
                     'basis_code' => $basisCode,
                     'daily_rate' => $dailyRate,
+                    'account_mapping_key' => $component->account_mapping_key,
+                ],
+                'amount' => $amount,
+                'sequence' => $sequence,
+            ];
+            $sequence += 10;
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Approved TOIL cash claims (scoped to this run's period via `approved_at`,
+     * same convention as leave encashment lines) posted as an earning against
+     * LeaveType.payroll_toil_payout_component_code. Hours are converted to an
+     * amount via the same daily-rate formula as leave encashment, further
+     * divided by the employee's configured work_hours_per_day (Leave module
+     * setting) to get an hourly rate — no second rate table to maintain.
+     *
+     * @param  array<string, string>  $componentAmounts
+     * @return list<array<string, mixed>>
+     */
+    private function buildToilCashClaimLines(
+        Employee $employee,
+        CarbonImmutable $start,
+        CarbonImmutable $end,
+        array $componentAmounts,
+        int $startSequence,
+    ): array {
+        $claims = ToilClaim::query()
+            ->where('employee_id', $employee->id)
+            ->where('claim_type', 'cash')
+            ->where('status', 'approved')
+            ->whereBetween('approved_at', [$start->startOfDay(), $end->endOfDay()])
+            ->get();
+
+        if ($claims->isEmpty()) {
+            return [];
+        }
+
+        $hoursByCode = [];
+
+        foreach ($claims as $claim) {
+            $componentCode = $claim->payroll_component_code;
+
+            if ($componentCode === null) {
+                continue;
+            }
+
+            $hoursByCode[$componentCode] = bcadd(
+                $hoursByCode[$componentCode] ?? '0.0000',
+                (string) $claim->hours,
+                4,
+            );
+        }
+
+        if (empty($hoursByCode)) {
+            return [];
+        }
+
+        $lines = [];
+        $sequence = $startSequence;
+        $workHoursPerDay = max(0.01, $this->leaveService->resolveWorkHoursPerDay($employee));
+
+        foreach ($hoursByCode as $componentCode => $totalHours) {
+            $component = PayComponent::query()
+                ->with('basisComponent')
+                ->where('code', $componentCode)
+                ->where('status', 'active')
+                ->first();
+
+            if ($component === null) {
+                continue;
+            }
+
+            $daysInMonth = (string) max(1, (int) config('payroll.leave_days_in_month', 30));
+            $basisCode = $component->basisComponent?->code ?? (string) config('payroll.default_basis_component_code', 'BASIC');
+            $basisAmount = $componentAmounts[$basisCode] ?? '0.0000';
+            $dailyRate = bcdiv($basisAmount, $daysInMonth, 8);
+            $hourlyRate = bcdiv($dailyRate, (string) $workHoursPerDay, 8);
+            $amount = bcmul($hourlyRate, $totalHours, 4);
+
+            $lines[] = [
+                'pay_component_id' => $component->id,
+                'component_snapshot_json' => [
+                    'code' => $component->code,
+                    'name' => $component->name,
+                    'type' => $component->type,
+                    'calculation_type' => $component->calculation_type,
+                    'toil_hours' => $totalHours,
+                    'basis_code' => $basisCode,
+                    'daily_rate' => $dailyRate,
+                    'hourly_rate' => $hourlyRate,
                     'account_mapping_key' => $component->account_mapping_key,
                 ],
                 'amount' => $amount,

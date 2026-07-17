@@ -216,6 +216,8 @@ final class PermissionSeeder extends Seeder
             ['name' => 'overtime.view', 'description' => 'View overtime records'],
             ['name' => 'overtime.approve', 'description' => 'Approve overtime'],
             ['name' => 'overtime.manage-policies', 'description' => 'Manage overtime policies'],
+            ['name' => 'toil.request-cash-claim', 'description' => 'Request TOIL cash claims'],
+            ['name' => 'toil.approve-cash-claim', 'description' => 'Approve TOIL cash claims'],
             ['name' => 'payroll.view', 'description' => 'View payroll runs'],
             ['name' => 'payroll.process', 'description' => 'Generate and process payroll runs'],
             ['name' => 'payroll.approve', 'description' => 'Approve payroll runs'],

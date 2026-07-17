@@ -19,6 +19,9 @@ function emptyForm() {
         affects_payroll: false,
         payroll_deduction_component_code: '',
         payroll_encashment_component_code: '',
+        allow_leave_claim: true,
+        allow_cash_claim: false,
+        payroll_toil_payout_component_code: '',
         status: 'active',
     };
 }
@@ -67,6 +70,9 @@ function Index({ types, filters }) {
             affects_payroll: !!row.affects_payroll,
             payroll_deduction_component_code: row.payroll_deduction_component_code ?? '',
             payroll_encashment_component_code: row.payroll_encashment_component_code ?? '',
+            allow_leave_claim: row.allow_leave_claim !== false,
+            allow_cash_claim: !!row.allow_cash_claim,
+            payroll_toil_payout_component_code: row.payroll_toil_payout_component_code ?? '',
             status: row.status ?? 'active',
         });
         setModalOpen(true);
@@ -275,6 +281,47 @@ function Index({ types, filters }) {
                             placeholder={t('pages.leaveTypes.fields.encashmentComponentPlaceholder')}
                         />
                     </AdminFormField>
+                    <AdminFormField
+                        label={t('pages.leaveTypes.fields.allowLeaveClaim')}
+                        error={form.errors.allow_leave_claim}
+                    >
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={!!form.data.allow_leave_claim}
+                                onChange={(e) => form.setData('allow_leave_claim', e.target.checked)}
+                            />
+                            {t('pages.leaveTypes.fields.allowLeaveClaimHint')}
+                        </label>
+                    </AdminFormField>
+                    <AdminFormField
+                        label={t('pages.leaveTypes.fields.allowCashClaim')}
+                        error={form.errors.allow_cash_claim}
+                    >
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={!!form.data.allow_cash_claim}
+                                onChange={(e) => form.setData('allow_cash_claim', e.target.checked)}
+                            />
+                            {t('pages.leaveTypes.fields.allowCashClaimHint')}
+                        </label>
+                    </AdminFormField>
+                    {form.data.allow_cash_claim && (
+                        <AdminFormField
+                            label={t('pages.leaveTypes.fields.toilPayoutComponent')}
+                            error={form.errors.payroll_toil_payout_component_code}
+                        >
+                            <input
+                                className="rp-form-input w-full font-mono"
+                                value={form.data.payroll_toil_payout_component_code}
+                                onChange={(e) =>
+                                    form.setData('payroll_toil_payout_component_code', e.target.value)
+                                }
+                                placeholder={t('pages.leaveTypes.fields.toilPayoutComponentPlaceholder')}
+                            />
+                        </AdminFormField>
+                    )}
                     <AdminFormField label={t('pages.leaveTypes.fields.status')} error={form.errors.status}>
                         <Select
                             value={form.data.status}

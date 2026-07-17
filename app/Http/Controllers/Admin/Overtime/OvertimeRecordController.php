@@ -32,6 +32,7 @@ final class OvertimeRecordController extends Controller
             ->with([
                 'employee:id,first_name,last_name,employee_code',
                 'policy:id,daily_threshold_minutes',
+                'policy.multipliers:id,overtime_policy_id,day_type,compensation_type',
             ])
             ->when($filters['search'] ?? null, function ($q, string $search): void {
                 $q->whereHas('employee', function ($employee) use ($search): void {
@@ -46,18 +47,24 @@ final class OvertimeRecordController extends Controller
         $records = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('Admin/Overtime/Records/Index', [
-            'records' => $records->through(fn (OvertimeRecord $record) => [
-                'id' => $record->id,
-                'employee' => $record->employee?->fullName(),
-                'employee_code' => $record->employee?->employee_code,
-                'date' => $record->date?->toDateString(),
-                'regular_minutes' => $record->regular_minutes,
-                'overtime_minutes' => $record->overtime_minutes,
-                'day_type' => $record->day_type,
-                'resolved_multiplier' => (string) $record->resolved_multiplier,
-                'pay_units' => $this->overtimeEngine->calculatePayUnits($record),
-                'status' => $record->status,
-            ]),
+            'records' => $records->through(function (OvertimeRecord $record) {
+                $multiplier = $record->policy?->multipliers?->firstWhere('day_type', $record->day_type);
+
+                return [
+                    'id' => $record->id,
+                    'employee' => $record->employee?->fullName(),
+                    'employee_code' => $record->employee?->employee_code,
+                    'date' => $record->date?->toDateString(),
+                    'regular_minutes' => $record->regular_minutes,
+                    'overtime_minutes' => $record->overtime_minutes,
+                    'day_type' => $record->day_type,
+                    'resolved_multiplier' => (string) $record->resolved_multiplier,
+                    'pay_units' => $this->overtimeEngine->calculatePayUnits($record),
+                    'compensation_type' => $multiplier?->compensation_type,
+                    'compensation_choice' => $record->compensation_choice,
+                    'status' => $record->status,
+                ];
+            }),
             'filters' => $filters,
         ]);
     }
@@ -67,7 +74,11 @@ final class OvertimeRecordController extends Controller
         $this->authorize('approve', $overtimeRecord);
 
         try {
-            $this->overtimeEngine->approveRecord($overtimeRecord, (int) $request->user()->id);
+            $this->overtimeEngine->approveRecord(
+                $overtimeRecord,
+                (int) $request->user()->id,
+                $request->input('compensation_choice'),
+            );
         } catch (ValidationException $e) {
             return back()->with('error', collect($e->errors())->flatten()->first());
         } catch (DomainException $e) {
