@@ -86,6 +86,7 @@ final class RoleSeeder extends Seeder
         'leave.approve',
         'leave.manage-types',
         'leave.manage-policies',
+        'leave.manage-entitlements',
         'leave.request-encashment',
         'leave.approve-encashment',
         'overtime.view',

@@ -42,7 +42,7 @@ Status legend: **Partial** = some code exists / incomplete vs SRS · **Planned**
 | Attendance | Implemented | Historical import Implemented; late/early vs roster, policies (Planned) |
 | Shifts & roster | Planned | Entire module |
 | Leave | Partial | Public-holiday day count, duration types (full/half/short-leave/out-station), encashment, weekend exclusion Implemented; year-end carry/expire/encash job Planned |
-| Leave policies | Partial | Encashment Implemented; eligibility JSON, accrual scheduler hardening Planned |
+| Leave policies | Partial | Encashment + accrual engine (fixed_annual/monthly_accrual/per_worked_hours, `leave:process-accrual`) + Leave Entitlements admin page Implemented; eligibility JSON, negative-balance flag, notice/consecutive-day limits, configurable day-count basis Planned |
 | Leave fiscal year | Partial | Year-end carry/expire/encash job Implemented; carry-forward expiry_months (separate from the carry cap) Planned |
 | Overtime | Implemented | Roster integration Planned; comp-off/TOIL — earning, leave claims, cash claims, and manager reschedule all Implemented, see [toil.md](./toil.md) |
 

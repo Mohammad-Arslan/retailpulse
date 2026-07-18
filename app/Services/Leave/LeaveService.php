@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Leave;
 
+use App\Models\AttendanceRecord;
 use App\Models\Employee;
+use App\Models\FiscalYear;
 use App\Models\HrEntitySetting;
 use App\Models\LeaveEntitlement;
 use App\Models\LeavePolicy;
@@ -374,15 +376,173 @@ final class LeaveService
             return $entitlement;
         }
 
+        $hireDate = $employee->hire_date !== null ? CarbonImmutable::parse($employee->hire_date) : CarbonImmutable::now();
+        $policy = $this->resolveLeavePolicy($employee, $leaveType, $hireDate);
+        $initialGrant = 0.0;
+
+        if ($policy !== null && $policy->accrual_method === 'fixed_annual') {
+            $initialGrant = $policy->proration_on_join
+                ? $this->proratedFixedAnnualGrant($employee, (float) $policy->accrual_rate, $hireDate)
+                : (float) $policy->accrual_rate;
+        }
+
         return LeaveEntitlement::query()->create([
             'employee_id' => $employee->id,
             'leave_type_id' => $leaveType->id,
             'fiscal_year_id' => $fiscalYearId,
-            'accrued_days' => 0,
+            'accrued_days' => $initialGrant,
             'used_days' => 0,
             'encashed_days' => 0,
             'carried_forward_days' => 0,
+            'accrual_last_run_on' => $hireDate->toDateString(),
         ]);
+    }
+
+    /**
+     * Prorates a fixed_annual grant for a new hire, based on how much of the current
+     * fiscal-year period remains from the hire date (calendar-day basis). In
+     * hire_anniversary mode the employee's "year" begins exactly at the hire date, so
+     * there is never a mid-year joiner — the full amount is always granted.
+     */
+    private function proratedFixedAnnualGrant(Employee $employee, float $accrualRate, CarbonImmutable $hireDate): float
+    {
+        $setting = HrEntitySetting::query()->where('legal_entity_id', $employee->legal_entity_id)->first();
+        $mode = $setting?->settings_json['default_leave_fiscal_year_mode'] ?? null;
+        $mode = in_array($mode, ['calendar_year', 'fiscal_year', 'hire_anniversary'], true) ? $mode : 'calendar_year';
+
+        if ($mode === 'hire_anniversary') {
+            return $accrualRate;
+        }
+
+        if ($mode === 'fiscal_year') {
+            $fiscalYear = FiscalYear::query()
+                ->where('legal_entity_id', $employee->legal_entity_id)
+                ->where('start_date', '<=', $hireDate->toDateString())
+                ->where('end_date', '>=', $hireDate->toDateString())
+                ->first();
+
+            if ($fiscalYear === null) {
+                return $accrualRate;
+            }
+
+            $periodStart = CarbonImmutable::parse($fiscalYear->start_date);
+            $periodEnd = CarbonImmutable::parse($fiscalYear->end_date);
+        } else {
+            $periodStart = CarbonImmutable::create($hireDate->year, 1, 1);
+            $periodEnd = CarbonImmutable::create($hireDate->year, 12, 31);
+        }
+
+        $totalDays = $periodStart->diffInDays($periodEnd) + 1;
+        $remainingDays = $hireDate->diffInDays($periodEnd) + 1;
+
+        if ($totalDays <= 0) {
+            return $accrualRate;
+        }
+
+        return round(($remainingDays / $totalDays) * $accrualRate, 2);
+    }
+
+    /**
+     * Posts due monthly_accrual/per_worked_hours accrual for every active employee's
+     * entitlements as of the given date. fixed_annual is skipped entirely — it is
+     * granted once at first-hire (resolveEntitlement) and re-granted at year-end
+     * (LeaveFiscalYearService::closeEntitlement), never incrementally here.
+     *
+     * @return array{processed: int, total_granted: float}
+     */
+    public function processAccrual(CarbonImmutable $asOf): array
+    {
+        $entitlements = LeaveEntitlement::query()
+            ->whereHas('employee', fn ($query) => $query->where('status', 'active'))
+            ->with(['employee', 'leaveType'])
+            ->get();
+
+        $processed = 0;
+        $totalGranted = 0.0;
+
+        foreach ($entitlements as $entitlement) {
+            $employee = $entitlement->employee;
+            $leaveType = $entitlement->leaveType;
+
+            if ($employee === null || $leaveType === null) {
+                continue;
+            }
+
+            $policy = $this->resolveLeavePolicy($employee, $leaveType, $asOf);
+
+            if ($policy === null || $policy->accrual_method === 'fixed_annual') {
+                continue;
+            }
+
+            $granted = $this->postAccrualForEntitlement($entitlement->id, $employee, $policy, $asOf);
+
+            if ($granted > 0.0) {
+                $processed++;
+                $totalGranted += $granted;
+            }
+        }
+
+        return ['processed' => $processed, 'total_granted' => round($totalGranted, 2)];
+    }
+
+    private function postAccrualForEntitlement(
+        int $entitlementId,
+        Employee $employee,
+        LeavePolicy $policy,
+        CarbonImmutable $asOf,
+    ): float {
+        return DB::transaction(function () use ($entitlementId, $employee, $policy, $asOf): float {
+            /** @var LeaveEntitlement|null $locked */
+            $locked = LeaveEntitlement::query()->whereKey($entitlementId)->lockForUpdate()->first();
+
+            if ($locked === null) {
+                return 0.0;
+            }
+
+            $lastRun = $locked->accrual_last_run_on !== null
+                ? CarbonImmutable::parse($locked->accrual_last_run_on)
+                : ($employee->hire_date !== null ? CarbonImmutable::parse($employee->hire_date) : $asOf);
+
+            $grant = 0.0;
+            $nextRunOn = $lastRun;
+
+            if ($policy->accrual_method === 'monthly_accrual') {
+                $months = $lastRun->diffInMonths($asOf);
+
+                if ($months >= 1) {
+                    $grant = $months * (float) $policy->accrual_rate;
+                    $nextRunOn = $lastRun->addMonths($months);
+                }
+            } elseif ($policy->accrual_method === 'per_worked_hours') {
+                $minutes = (int) AttendanceRecord::query()
+                    ->where('employee_id', $employee->id)
+                    ->where('status', 'closed')
+                    ->where('clock_in', '>', $lastRun)
+                    ->where('clock_in', '<=', $asOf)
+                    ->sum('worked_minutes');
+
+                $grant = ($minutes / 60) * (float) $policy->accrual_rate;
+                $nextRunOn = $asOf;
+            }
+
+            if ($grant <= 0.0 && $nextRunOn->equalTo($lastRun)) {
+                return 0.0;
+            }
+
+            $maxBalance = $policy->max_balance !== null ? (float) $policy->max_balance : null;
+            $newAccrued = (float) $locked->accrued_days + $grant;
+
+            if ($maxBalance !== null) {
+                $newAccrued = min($newAccrued, $maxBalance);
+            }
+
+            $locked->update([
+                'accrued_days' => round($newAccrued, 2),
+                'accrual_last_run_on' => $nextRunOn->toDateString(),
+            ]);
+
+            return $grant;
+        });
     }
 
     public function findEntitlement(

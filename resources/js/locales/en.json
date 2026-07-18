@@ -79,6 +79,7 @@
         "leaveRequests": "Leave Requests",
         "leaveEncashments": "Leave Encashments",
         "leaveYearEndRuns": "Leave Year-End Runs",
+        "leaveEntitlements": "Leave Entitlements",
         "toilClaims": "TOIL Cash Claims",
         "overtimePolicies": "Overtime Policies",
         "overtimeRecords": "Overtime Records",
@@ -1363,6 +1364,30 @@
                 "expired": "Expired",
                 "encashed": "Encashed",
                 "executedAt": "Executed At"
+            }
+        },
+        "leaveEntitlements": {
+            "indexTitle": "Leave Entitlements",
+            "indexDescription": "View And Manually Adjust Employee Leave Balances.",
+            "searchPlaceholder": "Search By Employee Name Or Code…",
+            "allLeaveTypes": "All Leave Types",
+            "empty": "No Leave Entitlements Found.",
+            "adjust": "Adjust",
+            "adjustTitle": "Adjust Leave Entitlement",
+            "adjustHint": "Adjustments are recorded in the audit log with the previous value, actor, and timestamp.",
+            "columns": {
+                "employee": "Employee",
+                "leaveType": "Leave Type",
+                "accrued": "Accrued",
+                "used": "Used",
+                "carriedForward": "Carried Forward",
+                "encashed": "Encashed",
+                "remaining": "Remaining",
+                "lastAccrual": "Last Accrual"
+            },
+            "fields": {
+                "accruedDays": "Accrued Days",
+                "carriedForwardDays": "Carried Forward Days"
             }
         },
         "overtimePolicies": {
@@ -4312,6 +4337,7 @@
         "leaveRequests": "Leave Requests",
         "leaveEncashments": "Leave Encashments",
         "leaveYearEndRuns": "Leave Year-End Runs",
+        "leaveEntitlements": "Leave Entitlements",
         "toilClaims": "TOIL Cash Claims",
         "attendanceRecords": "Attendance Records",
         "attendanceSources": "Attendance Sources",

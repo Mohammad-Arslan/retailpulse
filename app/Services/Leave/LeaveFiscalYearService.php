@@ -262,11 +262,16 @@ final class LeaveFiscalYearService
 
         $totalCarried = $carryFromAvailable + $pendingHold;
 
+        // fixed_annual re-grants the full rate for the new period in this same reset —
+        // never prorated here, proration only ever applies to a brand-new hire's first grant.
+        $nextAccrued = $policy->accrual_method === 'fixed_annual' ? (float) $policy->accrual_rate : 0.0;
+
         $entitlement->update([
-            'accrued_days' => 0,
+            'accrued_days' => $nextAccrued,
             'used_days' => 0,
             'encashed_days' => 0,
             'carried_forward_days' => $totalCarried,
+            'accrual_last_run_on' => $periodEnd->toDateString(),
         ]);
 
         return LeaveYearEndLine::query()->create([

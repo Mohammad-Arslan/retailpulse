@@ -211,6 +211,7 @@ final class PermissionSeeder extends Seeder
             ['name' => 'leave.approve', 'description' => 'Approve leave requests'],
             ['name' => 'leave.manage-types', 'description' => 'Manage leave types'],
             ['name' => 'leave.manage-policies', 'description' => 'Manage leave policies'],
+            ['name' => 'leave.manage-entitlements', 'description' => 'View and manually adjust leave entitlement balances'],
             ['name' => 'leave.request-encashment', 'description' => 'Request leave encashment'],
             ['name' => 'leave.approve-encashment', 'description' => 'Approve leave encashment requests'],
             ['name' => 'overtime.view', 'description' => 'View overtime records'],

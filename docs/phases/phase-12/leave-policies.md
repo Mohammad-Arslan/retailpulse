@@ -19,6 +19,7 @@ Define configurable accrual, proration, carry-forward, encashment, and eligibili
 | Permission | Use |
 | :--- | :--- |
 | `leave.manage-policies` | CRUD policies |
+| `leave.manage-entitlements` | View and manually adjust an employee's leave entitlement balance (Admin → Leave Entitlements) |
 
 ---
 
@@ -29,12 +30,12 @@ Define configurable accrual, proration, carry-forward, encashment, and eligibili
 | P12-LVP-FR-001 | Implemented | Leave policies exist per leave_type + legal_entity (nullable = default) with effective dating. |
 | P12-LVP-FR-002 | Implemented | Accrual methods supported: `fixed_annual`, `monthly_accrual`, `per_worked_hours`. |
 | P12-LVP-FR-003 | Implemented | Fields: accrual_rate, max_balance, carry_forward_limit, carry_forward_expiry_months, proration_on_join. |
-| P12-LVP-FR-004 | Planned | Pro-rata accrual on join/exit shall use configurable day-count basis (calendar / working days). |
+| P12-LVP-FR-004 | Partial | Pro-rata accrual on join is implemented for `fixed_annual` policies on calendar-day basis (see FR-009); a configurable `day_count_basis` (calendar vs. working days) and exit-side proration remain Planned. |
 | P12-LVP-FR-005 | Implemented | Encashment policy: `encashment_allowed`, `encashment_max_days` (nullable = unlimited), `encashment_requires_approval`. Rate resolution reuses the existing leave-deduction daily-rate mechanism (`LeaveType.payroll_encashment_component_code` → `PayComponent` → `basisComponent` → `config('payroll.leave_days_in_month')`) rather than a separate basic/gross literal, so there is exactly one config-driven day-rate formula for both leave deductions and leave encashment. |
 | P12-LVP-FR-006 | Planned | Gender / grade / employment-type eligibility filters as optional policy JSON. |
 | P12-LVP-FR-007 | Planned | Negative balance allowed flag (advances against future accrual). |
 | P12-LVP-FR-008 | Planned | Minimum notice days and max consecutive days configurable. |
-| P12-LVP-FR-009 | Partial | Accrual job runs on schedule for monthly_accrual / per_worked_hours (foundation may accrue on demand). |
+| P12-LVP-FR-009 | Implemented | Accrual is posted for all three methods: `fixed_annual` grants the full `accrual_rate` once — at a new hire's first-ever entitlement (`LeaveService::resolveEntitlement()`, prorated when `proration_on_join` is true) and again at each year-end rollover (`LeaveFiscalYearService::closeEntitlement()`, never prorated there). `monthly_accrual` and `per_worked_hours` are posted by the daily-scheduled `leave:process-accrual` command (`LeaveService::processAccrual()`), which tracks progress per entitlement via `accrual_last_run_on` so a run is never double-counted; `per_worked_hours` sums `attendance_records.worked_minutes` for closed records in the elapsed window. All grants are capped at the policy's `max_balance` when set. |
 
 ---
 
@@ -57,7 +58,15 @@ leave_policies
 
 # Planned extensions
 - eligibility_json, allow_negative_balance, min_notice_days,
-  max_consecutive_days, day_count_basis
+  max_consecutive_days, day_count_basis (configurable calendar/working-day
+  toggle — accrual proration today is always calendar-day)
+
+leave_entitlements (addition)
+- accrual_last_run_on nullable date — tracks the point up to which
+  monthly_accrual/per_worked_hours have been posted for this entitlement, so
+  the daily accrual command never double-counts a month or a worked-hours
+  window. Not meaningfully used by fixed_annual (a one-shot grant), set for
+  data consistency anyway.
 
 leave_types (addition)
 - payroll_encashment_component_code nullable — payment-side counterpart of
@@ -80,9 +89,11 @@ leave_entitlements (addition)
 ## 5. Services & interfaces
 
 ```text
-LeavePolicyResolver
-LeaveAccrualService
-LeaveEncashmentService          # Planned
+LeaveService::resolveLeavePolicy()      # policy resolution (most-specific-active-wins)
+LeaveService::resolveEntitlement()      # entitlement creation; grants fixed_annual on new hire
+LeaveService::processAccrual()          # monthly_accrual / per_worked_hours, called by leave:process-accrual (daily)
+LeaveFiscalYearService::closeEntitlement()  # re-grants fixed_annual at year-end, see leave-fiscal-year.md
+LeaveEncashmentService                  # Implemented — see leave.md
 ```
 
 ---
@@ -111,6 +122,7 @@ leave.accrual_posted
 ## 9. Reports / ESS touchpoints
 
 * Policy summary for auditors.
+* Admin → Leave Entitlements: view accrued/used/carried-forward/encashed/remaining per employee+leave type, with manual adjustment (`accrued_days`/`carried_forward_days`) for opening balances and corrections. No dedicated adjustment ledger — audit trail is the existing generic `AuditObserver` (before/after/actor/timestamp) already registered on `LeaveEntitlement`.
 
 ---
 
@@ -121,7 +133,7 @@ leave.accrual_posted
 | P12-LVP-AC-001 | Implemented | Changing accrual_rate via UI affects next accrual without deployment. |
 | P12-LVP-AC-002 | Implemented | Effective-dated policy: prior entitlements already accrued not retro-rewritten. |
 | P12-LVP-AC-003 | Implemented | Encashment creates a payroll earning line via `PayrollCalculationService::buildLeaveEncashmentLines()` (mirrors `buildLeaveDeductionLines()`), scoped to the run's period by `leave_encashments.approved_at`. |
-| P12-LVP-AC-004 | Planned | Joiner mid-year gets prorated fixed_annual entitlement when proration_on_join true. |
+| P12-LVP-AC-004 | Implemented | Joiner mid-year gets a prorated fixed_annual entitlement when proration_on_join is true (calendar-day basis; `hire_anniversary` fiscal mode is never prorated since the employee's "year" begins at the hire date). |
 
 ---
 

@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'used_days',
     'encashed_days',
     'carried_forward_days',
+    'accrual_last_run_on',
 ])]
 final class LeaveEntitlement extends Model
 {
@@ -30,6 +31,7 @@ final class LeaveEntitlement extends Model
             'used_days' => 'decimal:2',
             'encashed_days' => 'decimal:2',
             'carried_forward_days' => 'decimal:2',
+            'accrual_last_run_on' => 'date',
         ];
     }
 

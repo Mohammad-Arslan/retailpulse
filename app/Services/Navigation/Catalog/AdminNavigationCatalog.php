@@ -316,6 +316,12 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.leave.year-end-runs.*',
                 'keywords' => ['leave year end', 'carry forward', 'expiry', 'fiscal year close'],
             ]),
+            self::item('leave-entitlements', 'leaveEntitlements', 'admin.leave.entitlements.index', 'calendar-clock', 'leave', 87, [
+                'permissionsAny' => ['leave.manage-entitlements', 'leave.view'],
+                'module' => 'leave',
+                'routePattern' => 'admin.leave.entitlements.*',
+                'keywords' => ['leave balance', 'leave accrual', 'entitlement adjustment'],
+            ]),
             self::item('toil-claims', 'toilClaims', 'admin.overtime.toil-claims.index', 'coins', 'overtime', 88, [
                 'permission' => 'overtime.view',
                 'permissionsAny' => ['overtime.view', 'toil.request-cash-claim', 'toil.approve-cash-claim'],

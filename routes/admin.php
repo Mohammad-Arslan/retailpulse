@@ -49,6 +49,7 @@ use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\JournalEntryController;
 use App\Http\Controllers\Admin\LandedCostController;
 use App\Http\Controllers\Admin\Leave\LeaveEncashmentController;
+use App\Http\Controllers\Admin\Leave\LeaveEntitlementController;
 use App\Http\Controllers\Admin\Leave\LeavePolicyController;
 use App\Http\Controllers\Admin\Leave\LeaveRequestController;
 use App\Http\Controllers\Admin\Leave\LeaveTypeController;
@@ -204,6 +205,8 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::post('encashments/{leaveEncashment}/reject', [LeaveEncashmentController::class, 'reject'])->name('encashments.reject');
             Route::post('encashments/{leaveEncashment}/cancel', [LeaveEncashmentController::class, 'cancel'])->name('encashments.cancel');
             Route::get('year-end-runs', [LeaveYearEndRunController::class, 'index'])->name('year-end-runs.index');
+            Route::get('entitlements', [LeaveEntitlementController::class, 'index'])->name('entitlements.index');
+            Route::put('entitlements/{entitlement}', [LeaveEntitlementController::class, 'update'])->name('entitlements.update');
         });
 
         Route::middleware(['hr-module:overtime'])->prefix('overtime')->name('overtime.')->group(function () {
