@@ -21,6 +21,8 @@ All gaps identified in the v3.0 review have been addressed. Key additions:
 
 Sections marked **New in v4.0** throughout were added in this revision.
 
+> **This SRS defines *what* RetailPulse must do.** For *how* the system is architected to deliver it durably — multi-tenancy strategy, module boundaries, layering, audit trail, workflow engine, integration strategy, API strategy, plugin architecture, security principles, coding standards, and frontend architecture — see the authoritative [Architecture Decision Records](./architecture/README.md). Where an implementation detail here and an ADR appear to disagree, the ADR governs unless it has been formally updated.
+
 ---
 
 ## Table of Contents

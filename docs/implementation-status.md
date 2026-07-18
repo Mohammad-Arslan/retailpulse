@@ -341,4 +341,4 @@ Module engine, gift cards, e-commerce, mobile, BI, multi-tenancy, workflow.
 
 ---
 
-*Document generated from codebase audit. For the full specification of each phase, see [docs/phases/](./phases/README.md). For the full requirements, see [docs/srs.md](./srs.md).*
+*Document generated from codebase audit. For the full specification of each phase, see [docs/phases/](./phases/README.md). For the full requirements, see [docs/srs.md](./srs.md). For the authoritative architecture decisions behind how this is all built, see [docs/architecture/](./architecture/README.md).*

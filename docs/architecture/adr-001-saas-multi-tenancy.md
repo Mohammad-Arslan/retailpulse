@@ -4,6 +4,8 @@ Status: Accepted
 
 Date: 2026-07-18
 
+Related: [ADR-002 Modular Architecture](./adr-002-modular-architecture.md) · [ADR-010 Security Principles](./adr-010-security-principles.md) · [Phase 28 — SaaS Multi-Tenancy](../phases/phase-28-saas-multitenancy.md)
+
 ---
 
 # Context
@@ -70,6 +72,18 @@ Phase 29 will implement:
 - Cross-Tenant Data Protection
 
 After Phase 29, tenant isolation becomes mandatory.
+
+---
+
+# Current State in Codebase
+
+As of this writing (pre-Phase-28), the "Before Phase 29" prep strategy above is already underway: 11 migrations include a nullable `tenant_id` column (e.g. `extend_users_table`, `create_branches_table`, `create_product_catalog_tables`, `create_products_tables`) added ahead of schedule so the columns don't require a disruptive backfill later. There is:
+
+- No `tenants` table yet.
+- No `TenantContext`, `TenantScope`, or `SetTenantContext` middleware yet.
+- No tenant filtering enforced anywhere.
+
+This is expected and correct per the phase strategy below — do not treat the presence of `tenant_id` columns as evidence that isolation is enforced, and do not add tenant-filtering logic ahead of Phase 28/29 without an explicit decision to pull that scope forward.
 
 ---
 

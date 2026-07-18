@@ -4,6 +4,8 @@ This folder breaks the [SRS](../srs.md) into sequential, shippable phases. Each 
 
 **Principle:** Complete and stabilize each phase before starting the next. Phase 1 is the security and identity foundation; every later module depends on it.
 
+**Architecture:** Phase docs describe *what* ships in a given slice of scope. The cross-phase architectural contract every phase must honor — module boundaries, layering, events, audit trail, tenancy, security, API/integration strategy, frontend patterns — lives in [docs/architecture/](../architecture/README.md) and is authoritative when a phase doc's implementation detail conflicts with it.
+
 | Phase | Document | SRS Sections | Summary |
 | :--- | :--- | :--- | :--- |
 | **1** | [phase-01-super-admin-auth-rbac.md](./phase-01-super-admin-auth-rbac.md) | 3.1, 3.2, 4.3 (partial), 4.4 (partial) | Super Admin login, Breeze (Inertia + React) auth, Spatie RBAC, user/role/permission management |

@@ -57,6 +57,16 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
+## RetailPulse Documentation
+
+RetailPulse is a multi-branch retail ERP built on this Laravel base. Key docs:
+
+- [docs/srs.md](docs/srs.md) — full requirements specification
+- [docs/phases/](docs/phases/README.md) — phase-by-phase delivery roadmap
+- [docs/architecture/](docs/architecture/README.md) — **authoritative architecture decision records.** Read this before making any architectural change (new modules, tenancy, events, API surface, frontend patterns) — it takes precedence over ad hoc implementation choices.
+- [docs/implementation-status.md](docs/implementation-status.md) — current build status by phase
+- `CLAUDE.md` (repo root) — command reference and condensed architecture summary for AI coding agents
+
 ## Local AI (Ollama)
 
 RetailPulse can call a **local** Ollama model through the Laravel AI SDK (`laravel/ai`). The browser never talks to Ollama directly — only the Laravel backend does.

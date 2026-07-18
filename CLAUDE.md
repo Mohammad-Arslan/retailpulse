@@ -53,6 +53,8 @@ php artisan tinker                  # REPL for debugging
 
 ## Architecture
 
+> **Authoritative source:** The summary below is a condensed orientation for quick reference. The binding architectural decisions — multi-tenancy strategy, module boundaries, layered backend pattern, domain events, audit trail, workflow engine, integration/API strategy, plugin architecture, security principles, coding standards, and frontend architecture — live in [docs/architecture/](docs/architecture/README.md) as Architecture Decision Records (ADRs). **Read the relevant ADR before making an architectural change** (new tables, new modules, new cross-cutting concerns, new API surfaces, new frontend patterns). If anything below conflicts with an ADR, the ADR wins.
+
 ### Stack
 
 - **Backend:** Laravel 13 (PHP 8.3+), Eloquent ORM, Sanctum auth, Spatie RBAC
