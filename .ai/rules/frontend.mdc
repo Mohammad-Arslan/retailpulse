@@ -1,0 +1,96 @@
+---
+description: React + Inertia pages — layouts, forms, DataTable, i18n, permissions, performance
+globs: resources/js/**/*.{js,jsx},resources/js/locales/**/*.json
+alwaysApply: false
+---
+
+# Frontend
+
+Implements: ADR-004, ADR-012. WHY: `docs/architecture/adr-004-frontend-architecture.md`. Visual tokens/checklists → `ui.mdc`. RBAC details → `permissions.mdc`.
+
+## Inertia (strict)
+
+- No client-side router — `<Link href={route('...')}>` or `router.get/post/put/delete`
+- Page data from Laravel props only — no REST CRUD hydration for normal admin pages
+- Forms: `useForm` from `@inertiajs/react`; submit to named Laravel routes
+- Pages: `resources/js/Pages/Admin/{Resource}/{Action}.jsx` matching `Inertia::render()` path
+- No Redux / Zustand / React Query for standard CRUD
+
+## Page layout
+
+```jsx
+import { withAdminLayout } from '@/HOCs/withAdminLayout';
+import { useCan } from '@/Hooks/useCan';
+import { useTranslation } from 'react-i18next';
+
+function Index({ items, filters }) {
+    const can = useCan();
+    const { t } = useTranslation();
+    // ...
+}
+export default withAdminLayout(Index);
+```
+
+- Register breadcrumbs in `resources/js/Hooks/useBreadcrumbs.js` + `breadcrumbs.*` keys in `en.json`
+- POS/checkout: dedicated layouts — not `withAdminLayout`
+
+## Modal vs dedicated page
+
+- **Modal:** simple config/master-data from an index (“create/edit → stay on list”); no tabs/repeatable rows/file uploads/wizards. Field count alone ≠ page.
+- **Page:** standalone transactions, tabs, repeatable rows, uploads, or valuable `FormInfoPanel` context.
+
+Styling checklists → `ui.mdc`.
+
+## Component hierarchy
+
+| Directory | Owns |
+| :--- | :--- |
+| `Components/ui/` | shadcn primitives — no domain knowledge |
+| `Components/common/` | PageHeader, FormCard, DataTable, ModalHeader, ScrollArea, … |
+| `Components/admin/` | Domain widgets (pickers, form field sets) |
+
+Move generics down toward `ui/`; keep domain awareness in `admin/`.
+
+## i18n
+
+- Every user-visible string via `useTranslation()` + `resources/js/locales/en.json`
+- **Keys:** camelCase (`pages.suppliers.createTitle`) — not snake_case / kebab-case / TitleCase keys
+- **English values:** Title Case for labels, nav, buttons, placeholders, options (`New Supplier`, `Purchase Orders`)
+- Namespaces: `nav.*`, `pages.{resource}.*`, `common.*`, `confirm.*`, `breadcrumbs.*`
+- Map dynamic API enums through helpers (e.g. `resources/js/lib/procurementI18n.js`) — never render raw `snake_case`
+
+## Permissions in UI
+
+```jsx
+const can = useCan();
+{can('products.create') && <Link … />}
+```
+
+- Mirror backend Policies; never treat UI hiding as security (see `permissions.mdc`)
+
+## Data tables & filters
+
+- `DataTable` + `ListPagination`; filters/sort via Inertia query-string visits (server-driven)
+- Controllers pass `filters` from `ListPagination::filters()`; input `name`s must match those keys
+- `onSubmit` → `router.get(route('...'), Object.fromEntries(form), { preserveState: true })`
+
+## Select (`@/Components/ui/select`)
+
+- `onChange` receives **value** (`string | null`), not a DOM event
+- ✅ `onChange={(value) => form.setData('field', value ?? '')}`
+
+## AJAX exceptions (allowed)
+
+- Debounced search pickers (`axios.get(route('admin.product-variants.search'))`)
+- Import/export job tray, Echo subscriptions — keep in existing hooks/components
+
+## Performance
+
+- Lazy-load large rare bundles; extract shared components; keep client state minimal
+- Prefer server-computed derived data as props over recomputing on every render
+- Memoize only where render cost is proven — not by default
+
+## Imports
+
+- Alias `@/` → `resources/js/`
+- Do not add a second UI library or CSS framework

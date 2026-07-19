@@ -56,7 +56,7 @@ Instead:
 
 ### Running tests
 
-`composer test` / `php artisan test` (whole suite or `--filter=TestName` / a specific directory) before considering backend work done; `./vendor/bin/pint` before considering it committed. **Note:** per repository convention (`.cursor/rules/retailpulse-core.mdc`), an AI coding agent does not run the test suite itself unless explicitly asked — it states what to run and lets the user execute it. This is a workflow rule about who presses the button, not an exemption from the coverage expectations above.
+`composer test` / `php artisan test` (whole suite or `--filter=TestName` / a specific directory) before considering backend work done; `./vendor/bin/pint` before considering it committed. **Note:** per repository convention (`.ai/rules/architecture.mdc` / `testing.mdc`), an AI coding agent does not run the test suite itself unless explicitly asked — it states what to run and lets the user execute it. This is a workflow rule about who presses the button, not an exemption from the coverage expectations above.
 
 ## Trade-offs
 

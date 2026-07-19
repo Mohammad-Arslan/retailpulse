@@ -6,7 +6,7 @@ Date: 2026-07-19
 
 Related: [ADR-003 Backend Architecture](./adr-003-backend-architecture.md) · [ADR-005 Domain Events](./adr-005-domain-events.md) · [ADR-004 Frontend Architecture](./adr-004-frontend-architecture.md) · [ADR-013 Testing Strategy](./adr-013-testing-strategy.md)
 
-Implementation-level coding conventions (PHP class shape, controller patterns, file-placement checklists, frontend page patterns) live in `.cursor/rules/*.mdc`, which implement this ADR. This document states the standards; the Cursor rules state exactly how to satisfy them in code.
+Implementation-level coding conventions (PHP class shape, controller patterns, file-placement checklists, frontend page patterns) live in `.ai/rules/*.mdc`, which implement this ADR. This document states the standards; those rules state exactly how to satisfy them in code.
 
 ---
 

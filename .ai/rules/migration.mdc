@@ -1,0 +1,53 @@
+---
+description: Migration standards — naming, expand-first, tenant_id, FKs, rollback safety
+globs: database/migrations/**/*.php
+alwaysApply: false
+---
+
+# Migrations
+
+Implements: ADR-015, ADR-001. Schema policy detail → `database.mdc`. WHY: those ADRs.
+
+## Agent rule
+
+Do **not** run migrations automatically against shared/production databases. The user applies them deliberately (`php artisan migrate`).
+
+## Naming
+
+- One migration per logical schema change
+- Laravel style: `{timestamp}_{imperative_description}.php`  
+  e.g. `create_purchase_orders_table`, `add_tenant_id_to_products_table`
+- Do not bundle unrelated domain schema changes in one file
+
+## Schema evolution (expand-then-contract)
+
+For live tables with data:
+
+1. Add new column / table (expand)
+2. Backfill
+3. Later migration drops old column (contract)
+
+Never a single non-additive rename/drop that breaks code deployed a moment earlier than the migration.
+
+## Required checklist per new table / column
+
+1. **Classify `tenant_id`** (see `database.mdc` / ADR-001) — Category 2 business data gets nullable indexed `tenant_id` now
+2. **FKs** with `constrained()` + explicit `cascadeOnDelete` / `nullOnDelete` / restrict
+3. **Indexes** on FKs, filter/sort columns, `tenant_id` / `branch_id` in the **same** migration
+4. **Soft delete** (`deleted_at`) for business/reporting tables unless append-only or transient infra
+5. **Enums** as string columns aligned with `app/Enums/`
+
+## Rollback safety
+
+- `down()` must reverse the migration safely or be explicitly empty only when irreversible by design (document why in a comment)
+- Prefer additive changes that can roll back by dropping the new column/table
+- Do not destroy historical financial data in `down()` casually
+
+## Historical / data migrations
+
+- Historical import paths write finalized state without re-firing side effects (no stock deduction, no webhooks) — ADR-011
+- Keep data backfills idempotent where practical
+
+## Current tenancy state
+
+No `TenantScope` yet. Adding `tenant_id` is prep only — do not invent filtering middleware in the same change unless Phase 28/29 work is explicitly in scope.

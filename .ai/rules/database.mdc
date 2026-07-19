@@ -1,0 +1,68 @@
+---
+description: Database standards — naming, FKs, indexes, tenant_id, soft deletes, audit
+globs: app/Models/**/*.php,database/**/*.php
+alwaysApply: false
+---
+
+# Database
+
+Implements: ADR-015, ADR-001, ADR-011, ADR-014. WHY: those ADRs. Migration authoring checklist → `migration.mdc`.
+
+## Naming
+
+- Tables: `snake_case`, plural (`purchase_orders`)
+- Columns: `snake_case`; FKs `{singular}_id`; booleans `is_` / `has_` prefix
+- Pivots: alphabetical singular pair (`branch_user`) unless the pivot is its own entity (then a domain name)
+- Status-like columns: backed string enums in `app/Enums/`, stored as strings — not opaque integers
+
+## Foreign keys
+
+Every relationship column uses `constrained()` with explicit delete behavior:
+
+| Behavior | When |
+| :--- | :--- |
+| `cascadeOnDelete()` | Child meaningless without parent (`sale_items` → `sale`) |
+| `nullOnDelete()` | Optional reference; child survives |
+| Restrict (default) | Parent delete must fail while children exist (financial history) |
+
+Never bare unconstrained integer “FKs.”
+
+## Indexes
+
+In the **same** migration that adds the column, index:
+
+- Every foreign key
+- Frequent filter/sort columns
+- `tenant_id`, `branch_id`, and other scoping columns
+
+## Nullable policy
+
+Nullable only when “no value” is a valid business state. Do not use null to avoid deciding a default.
+
+Exception: `tenant_id` may be nullable **pre-Phase-28** as schema prep only (ADR-001).
+
+## `tenant_id` classification (required before create)
+
+1. **Tenant-owned business data** → nullable indexed `tenant_id`
+2. **Tenant root** (orgs, branches, tenant users) → `tenant_id`
+3. **Platform infrastructure** (jobs, cache, sessions, …) → no `tenant_id`
+4. **Global reference** (countries, currencies, UoM, …) → no `tenant_id`
+5. **Pivot** → `tenant_id` only if independently queried as a business entity
+
+**Current state:** no `tenants` table / `TenantScope` / tenant middleware yet. Do not add ad hoc tenant filtering ahead of Phase 28/29. Presence of `tenant_id` ≠ isolation enforced.
+
+## Soft deletes & immutability
+
+- Business/reporting tables: `deleted_at` (soft delete) by default
+- Append-only ledgers (e.g. `stock_movements`): insert only — no updates/deletes (not even soft)
+- Finalized financial/HR rows: **reversal/adjustment records**, never in-place edits (ADR-011)
+
+## Audit
+
+- Register financial, HR/payroll, security-sensitive, and tenant-owned business models on `AuditObserver` in `AppServiceProvider` (+ relevant audit type lists)
+- Do not invent per-feature history tables — extend the universal `audit_logs` mechanism
+
+## Models
+
+- Relationships, casts, scopes only — business rules live in Services
+- Prefer existing `InventoryService` / domain services for stock and money mutations

@@ -13,8 +13,8 @@ If you're new to RetailPulse — human contributor or AI coding agent — read i
 5. **[roadmap-philosophy.md](./roadmap-philosophy.md)** — how the phase roadmap works, if you're planning or sequencing new scope.
 6. **`srs.md`** — the full requirements specification, if you need the detailed *what* for a specific module.
 7. **`phases/`** — the phase-by-phase delivery plan, for the concrete schema/service/API design of a specific slice of scope.
-8. **`.cursor/rules/*.mdc`** (repo root `.cursor/rules/`) — implementation-level coding conventions once you know *what* you're building and *why*.
-9. **`CLAUDE.md`** (repo root) — if you are an AI coding agent, this is your operational onboarding guide: what order to read things in, and how to behave once you start writing code.
+8. **[`.ai/rules/*.mdc`](../.ai/README.md)** — implementation-level coding conventions once you know *what* you're building and *why* (Cursor loads these via `.cursor/rules` → `.ai/rules`).
+9. **`CLAUDE.md` / `AGENTS.md`** (repo root) — if you are an AI coding agent, these are your operational onboarding guides: what order to read things in, and how to behave once you start writing code.
 
 ## What lives where
 
@@ -23,6 +23,7 @@ If you're new to RetailPulse — human contributor or AI coding agent — read i
 | [vision.md](./vision.md) | Why does RetailPulse exist? What is it becoming over the next decade? |
 | [principles.md](./principles.md) | What engineering principles are non-negotiable, regardless of module? |
 | [architecture/](./architecture/README.md) | What are the binding architectural decisions (ADRs), and why? |
+| [`.ai/rules/`](../.ai/README.md) | How should code be written inside those decisions? |
 | [roadmap-philosophy.md](./roadmap-philosophy.md) | How does the roadmap evolve? How is technical debt managed? |
 | `srs.md` | What must the system do, per module, per SRS section? |
 | `phases/` | What ships in each phase, with what schema, services, and acceptance criteria? |

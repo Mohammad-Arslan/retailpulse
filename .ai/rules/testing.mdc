@@ -1,0 +1,48 @@
+---
+description: Testing standards — unit, feature, integration, coverage; agents do not run tests
+globs: tests/**/*.php
+alwaysApply: false
+---
+
+# Testing
+
+Implements: ADR-013. WHY: `docs/architecture/adr-013-testing-strategy.md`.
+
+## Agent rule
+
+Do **not** execute `php artisan test`, `composer test`, `npm test`, or CI test commands unless the user explicitly asks. After changes, **state** the suggested filter/path for the user to run.
+
+(This is also restated in `architecture.mdc` so it applies outside `tests/`.)
+
+## Pyramid
+
+| Type | Path | Use for |
+| :--- | :--- | :--- |
+| **Unit** | `tests/Unit/` | Pure logic isolable from DB/framework. If it needs `RefreshDatabase`/RBAC seeds, it is a Feature test. |
+| **Feature** | `tests/Feature/` | **Primary** coverage — Service business rules, HTTP contracts, RBAC boundaries |
+| **Integration** | `tests/Integration/` | Cross-module flows via events/services (e.g. loyalty cart→sale→points) |
+| **Browser** | (not standard yet) | Add deliberately for high-value journeys only (Dusk/Playwright) — not blanket E2E |
+| **Performance** | targeted | Known risky paths only (invoice sequence locks, bulk import, N+1 hotspots) — ADR-014 |
+| **Security** | Feature-shaped | Negative tests: Policy denial, token ability bounds, webhook signature failure, (post-Phase-28) tenant isolation |
+
+## Writing tests
+
+- Every Service business rule gets Feature coverage of **boundary conditions**, not only the happy path
+- Shared setup → `tests/Concerns/` traits (`SeedsRbac`, …) — do not copy-paste seed blocks
+- Bug fix → regression test that fails before / passes after
+- Do not add tests unless the user asks (repo workflow) — when asked, follow this ADR
+
+## Coverage expectations
+
+- No gameable “percentage only” mindset before Phase 16 CI gates
+- Rule-based bar: each business rule has boundary tests; financial/audit workflows keep existing suite green
+- Phase 16 may add a Services/Repositories/DTOs line-coverage floor — that is a backstop, not a substitute for rule tests
+
+## Commands (for the user)
+
+```bash
+composer test
+php artisan test --filter=TestName
+php artisan test tests/Feature/SomeDomain
+./vendor/bin/pint
+```

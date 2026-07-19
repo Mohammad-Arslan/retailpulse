@@ -1,0 +1,77 @@
+---
+description: Laravel layering — controllers, FormRequests, services, repositories, DTOs
+globs: app/**/*.php,routes/**/*.php,config/**/*.php,bootstrap/**/*.php
+alwaysApply: false
+---
+
+# Backend
+
+Implements: ADR-003, ADR-012. WHY: `docs/architecture/adr-003-backend-architecture.md`. Auth → `permissions.mdc` / `security.mdc`. Schema → `database.mdc` / `migration.mdc`. Events → `events.mdc`.
+
+## Layering (strict)
+
+```
+Route → Middleware → Controller → FormRequest → Service → Repository → Model
+                                         ↓
+                                       DTO
+```
+
+| Layer | Owns | Must not |
+| :--- | :--- | :--- |
+| **Controller** | Auth call, one service call, Inertia/JSON response | Queries, validation rules, business rules |
+| **FormRequest** | Shape/format validation; `authorize()` → Policy | Cross-entity business invariants |
+| **Service** | Business rules, `DB::transaction`, domain events | Raw HTTP/`Request` objects; Eloquent query sprawl |
+| **Repository** | Persistence/queries (interface + Eloquent impl) | Business “whether” rules |
+| **DTO** | Typed data across layers | Leaking Request/Eloquent shapes |
+| **Presenter** | Shape models for Inertia/API (`app/Support/*Presenter.php`) | Business logic |
+| **Model** | Relations, casts, scopes | Feature business rules (AuditObserver is the sanctioned exception) |
+
+## PHP conventions
+
+- `declare(strict_types=1);` on every new PHP file
+- `final class` for controllers, services, repositories, policies, FormRequests
+- Constructor DI via `private readonly` promoted properties — no `app()`/`resolve()` for collaborators inside methods
+- Bind new repository interfaces in `AppServiceProvider::register()` like existing bindings
+- Enums: `app/Enums/` backed string enums; extend existing enums (e.g. `StockMovementReason`) — never parallel string literals
+- Inventory mutations: `InventoryService` only; fire `InventoryStockChanged` from the service layer
+
+## Controllers (Admin + Inertia)
+
+```php
+$this->authorize('viewAny', Product::class);
+$filters = ListPagination::filters($request, ['search', 'sort', 'direction']);
+return Inertia::render('Admin/Products/Index', [
+    'products' => $paginator,
+    'filters' => $filters,
+]);
+```
+
+- Page path mirrors file: `Admin/Products/Index` → `resources/js/Pages/Admin/Products/Index.jsx`
+- Mutations: `RedirectResponse` + `->with('success', __('...'))`
+- Branch-scoped lists: `BranchContext` / `BranchContextService::accessibleBranchIds()`
+- Domain exceptions: let the global handler render; catch only typed exceptions you deliberately map — never blanket-catch `\Throwable`
+
+## Transactions & events
+
+- Multi-table writes: wrap in `DB::transaction` **inside the Service**
+- Dispatch domain events after commit (or `DB::afterCommit()` if inside the closure)
+- Controllers never dispatch domain events
+
+## Routes
+
+- Admin: `auth` + `admin` + `branch.context` in `routes/admin.php`
+- POS pages: `pos.access` group
+- Internal POS/search JSON: `routes/api.php` with session `web` + `auth` — not Sanctum for these
+- Public/token API: see `api.mdc`
+
+## New admin feature checklist
+
+1. Migration(s) — see `migration.mdc`
+2. Model + relationships + fillable
+3. Enum(s) if status/reason fields
+4. Repository interface + Eloquent impl + container bind
+5. DTO(s) + FormRequest(s)
+6. Service + Policy + permissions in `PermissionSeeder` / `RoleSeeder`
+7. Controller + `routes/admin.php`
+8. Register auditable models on `AuditObserver` if required (`database.mdc` / ADR-011)
+9. Frontend page + `en.json` keys + navigation entry if user-facing

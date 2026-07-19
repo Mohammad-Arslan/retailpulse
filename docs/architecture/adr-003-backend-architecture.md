@@ -6,7 +6,7 @@ Date: 2026-07-19
 
 Related: [ADR-002 Modular Monolith](./adr-002-modular-monolith.md) · [ADR-012 Development Standards](./adr-012-development-standards.md) · [ADR-010 Security](./adr-010-security.md) · [ADR-005 Domain Events](./adr-005-domain-events.md)
 
-Implementation-level detail (file placement, PHP conventions, per-layer code checklists) lives in `.cursor/rules/retailpulse-backend.mdc`, which implements this ADR — read that rule for the concrete "how to write it" once this ADR's boundaries are understood.
+Implementation-level detail (file placement, PHP conventions, per-layer code checklists) lives in `.ai/rules/backend.mdc`, which implements this ADR — read that rule for the concrete "how to write it" once this ADR's boundaries are understood.
 
 ---
 

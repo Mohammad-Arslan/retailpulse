@@ -15,8 +15,8 @@ docs/architecture/README.md (this file) ← WHAT and WHY, per architectural area
     ↓
 docs/architecture/adr-NNN-*.md          ← the specific, binding decisions
     ↓
-.cursor/rules/*.mdc         ← HOW to write the code inside those decisions
-    ↓
+.ai/rules/*.mdc             ← HOW to write the code inside those decisions
+    ↓                         (Cursor loads via .cursor/rules → .ai/rules)
 Implementation (app/, resources/, database/, tests/)
 ```
 
@@ -74,8 +74,8 @@ So any ADR can be read the same way regardless of topic:
 - **`docs/srs.md`** — the Software Requirements Specification. It defines *what* the system must do, per module, per phase. These ADRs define *how* the system is built to satisfy the SRS durably.
 - **`docs/phases/`** — the phase-by-phase delivery roadmap. Phase docs describe planned schema and services for a specific slice of scope (e.g. Phase 28 for tenancy, Phase 29 for workflow). The ADRs here are the cross-phase architectural contract those phases must honor.
 - **`docs/implementation-status.md`** — a point-in-time snapshot of what's actually built. It changes phase to phase; the ADRs do not.
-- **`.cursor/rules/*.mdc`** — implementation-level coding standards (file placement, exact patterns, code-level checklists). Cursor Rules implement these ADRs; they state *how*, this directory states *why* and *what*. A rule should reference the ADR(s) it implements (`Implements: ADR-003, ADR-012`) rather than re-explaining the architecture.
-- **`CLAUDE.md`** (repo root) — the AI onboarding guide: how an AI agent should approach this codebase, in what order to read documentation, and how to reconcile architecture with implementation when they differ. It does not duplicate this directory's content or the Cursor Rules' content — it tells an agent how to use both.
+- **[`.ai/rules/*.mdc`](../../.ai/README.md)** — implementation-level coding standards (file placement, exact patterns, code-level checklists). These rules implement the ADRs; they state *how*, this directory states *why* and *what*. A rule should reference the ADR(s) it implements (`Implements: ADR-003`) rather than re-explaining the architecture. Cursor resolves the same files through `.cursor/rules` (symlink/junction to `.ai/rules`).
+- **`CLAUDE.md` / `AGENTS.md`** (repo root) — AI onboarding: read order and how to reconcile architecture with implementation. They do not duplicate ADRs or rules — they tell an agent how to use both.
 
 ## AI Governance
 
@@ -91,7 +91,7 @@ Every AI coding agent working on RetailPulse — regardless of tool (Claude Code
 8. **When architecture and implementation differ**: explain the inconsistency (flag it, note it in the relevant gap doc if appropriate) rather than silently "fixing" the code to match the agent's own assumption of what's correct, or silently deepening the deviation.
 9. **When proposing an architectural improvement**: justify the change, state the trade-offs, and update the relevant ADR if the decision actually changes — an improvement that isn't reflected back into the ADR is not actually adopted, it's a one-off deviation waiting to confuse the next contributor.
 
-`CLAUDE.md` is the concrete, operational expansion of this section — the step-by-step onboarding sequence an AI agent follows before writing code in this repository.
+`CLAUDE.md` and `AGENTS.md` are the concrete, operational expansion of this section — the step-by-step onboarding sequence an AI agent follows before writing code in this repository.
 
 ## Changing a decision
 

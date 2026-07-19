@@ -6,7 +6,7 @@ Date: 2026-07-19
 
 Related: [ADR-003 Backend Architecture](./adr-003-backend-architecture.md) · [ADR-010 Security](./adr-010-security.md) · [ADR-012 Development Standards](./adr-012-development-standards.md)
 
-Implementation-level detail (exact component names, Tailwind class conventions, code-level patterns like the modal styling checklist or `ScrollArea` usage) lives in `.cursor/rules/retailpulse-frontend.mdc`, which implements this ADR. This document governs the architectural boundaries; the Cursor rule governs how to write the code inside them — do not duplicate one into the other when either changes.
+Implementation-level detail lives in `.ai/rules/frontend.mdc` (Inertia/pages/i18n) and `.ai/rules/ui.mdc` (design-system checklists: modals, buttons, ScrollArea, tokens). This document governs the architectural boundaries; those rules govern how to write the code inside them — do not duplicate one into the other when either changes.
 
 ---
 
@@ -76,11 +76,11 @@ Ownership rule: a component moves *down* this table (toward `ui/`) as it becomes
 
 ### Design system
 
-Tailwind utility classes are the default styling mechanism; design tokens are OKLch CSS variables in `resources/css/app.css`, not ad hoc hex values inline in components. Primary/secondary/destructive button hierarchy, scrollable-region handling, icon set (Lucide), and dark mode are all governed centrally (see `.cursor/rules/retailpulse-frontend.mdc` for the exact class names and component APIs) — never overridden per-page. A new component must render correctly in both light and dark theme, not just the one the author happened to be looking at.
+Tailwind utility classes are the default styling mechanism; design tokens are OKLch CSS variables in `resources/css/app.css`, not ad hoc hex values inline in components. Primary/secondary/destructive button hierarchy, scrollable-region handling, icon set (Lucide), and dark mode are all governed centrally (see `.ai/rules/ui.mdc` for the exact class names and component APIs) — never overridden per-page. A new component must render correctly in both light and dark theme, not just the one the author happened to be looking at.
 
 ### Forms, tables, authorization, i18n — architectural rules
 
-- **Modal vs. dedicated page** is a considered decision, not a default: a modal for simple config/master-data managed from an index page ("create/edit → stay on the list"); a dedicated page for standalone transactions, forms needing tabs/repeatable rows/file uploads, or a contextual info panel. Field count alone does not justify a page — a well-sectioned modal handles 15–20 fields fine. (Full styling checklist for each: `.cursor/rules/retailpulse-frontend.mdc`.)
+- **Modal vs. dedicated page** is a considered decision, not a default: a modal for simple config/master-data managed from an index page ("create/edit → stay on the list"); a dedicated page for standalone transactions, forms needing tabs/repeatable rows/file uploads, or a contextual info panel. Field count alone does not justify a page — a well-sectioned modal handles 15–20 fields fine. (Full styling checklist for each: `.ai/rules/ui.mdc`; decision criteria: `.ai/rules/frontend.mdc`.)
 - **Tables** (`DataTable` + `ListPagination`) are server-driven: filtering and sorting round-trip through the server via query-string Inertia visits, never client-side re-sorting/re-filtering of an already-paginated page — that would only ever be correct for the current page's rows.
 - **Authorization** (`useCan()`) gates UI visibility/enabled-state and must always mirror an actual backend Policy ([ADR-010](./adr-010-security.md)) — adding a permission-gated UI affordance requires the backend Policy to exist first. **Never rely solely on frontend authorization**; hiding a button is not a security control.
 - **Internationalization** (i18next) — every user-facing string is a translation key from the first version of a component, including breadcrumbs (`useBreadcrumbs.js`) and navigation labels (`NavigationRegistry`/`AdminNavigationCatalog`) — retrofitting i18n later is far more error-prone than authoring it correctly the first time.

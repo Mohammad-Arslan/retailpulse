@@ -1,0 +1,55 @@
+---
+description: RBAC — policies, permission naming, useCan, backend vs UI authorization
+globs: app/Policies/**/*.php,app/Http/Requests/**/*.php,database/seeders/**/*Permission*.php,database/seeders/**/*Role*.php,resources/js/Hooks/useCan.*
+alwaysApply: false
+---
+
+# Permissions (RBAC)
+
+Implements: ADR-010, ADR-004 (UI gates). WHY: `docs/architecture/adr-010-security.md`. Broader security → `security.mdc`.
+
+## Backend (authoritative)
+
+- Spatie Laravel Permission is the store; Policies are the only authorization API for resources
+- Every first-class resource has `app/Policies/{Resource}Policy.php`
+- Controllers: `$this->authorize('action', Model::class)` or model instance; FormRequests: `authorize()` → Policy
+- **Never** scatter `if ($user->hasRole('admin'))` in controllers as a substitute for Policies
+- `UserPermissionOverride` is for exceptional per-user grants — not a replacement for defining a shared role
+
+## Permission naming
+
+Follow existing seeder style: `{resource}.{action}` in `PermissionSeeder` / assignment in `RoleSeeder`.
+
+Examples: `products.view`, `products.create`, `users.assign-roles`, `dashboard.view-profit`.
+
+- Add new permissions to **both** seeders in the same change
+- Prefer extending an existing resource vocabulary over inventing a parallel naming scheme
+
+## Policy methods
+
+Mirror Laravel resource abilities where possible: `viewAny`, `view`, `create`, `update`, `delete`, plus domain verbs (`adjust`, `approve`, `post`, …) when needed. Keep Policy methods thin — delegate complex “may this user touch *this* row” rules to services only when the Policy would otherwise duplicate heavy domain logic; still authorize at the HTTP edge first.
+
+## UI authorization
+
+```jsx
+const can = useCan();
+{can('products.create') && <Button … />}
+```
+
+- `useCan()` hides/disables affordances only
+- **Never** rely on UI-only hiding — backend must still reject unauthorized actions
+- Adding a gated button requires the backend Policy + permission seed first
+
+## Branch / module gates
+
+- Branch scoping: `BranchContext` / accessible branch IDs — orthogonal to permission names
+- Module-enabled middleware (`EnsureHrModuleEnabled`, etc.) gates whole modules; still authorize individual actions with Policies
+
+## Checklist for a new gated action
+
+1. Permission string in `PermissionSeeder`
+2. Role mapping in `RoleSeeder`
+3. Policy method
+4. `$this->authorize` / FormRequest `authorize()`
+5. `useCan('…')` on the UI control
+6. Update user manual if the permission is user-visible (see `architecture.mdc`)

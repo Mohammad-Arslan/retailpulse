@@ -1,0 +1,55 @@
+---
+description: REST API standards — internal vs public, versioning, auth, responses
+globs: routes/api.php,app/Http/Controllers/Api/**/*.php,app/Http/Resources/**/*.php,app/Http/Requests/Api/**/*.php
+alwaysApply: false
+---
+
+# API
+
+Implements: ADR-008, ADR-007 (webhooks). WHY: `docs/architecture/adr-008-public-api.md`. Do not conflate internal session JSON with the public token API.
+
+## Two surfaces
+
+| Surface | Auth | Stability | Used by |
+| :--- | :--- | :--- | :--- |
+| **Internal** `/api/v1/...` | Session `web` + `auth` | May change with admin/POS UI | Inertia frontend (POS, search, checkout) |
+| **Public** (Phase 15+) | Sanctum personal access tokens + **abilities** | Versioned contract | External integrators |
+
+Internal routes are not a stable third-party contract. If a capability must be external, design a public endpoint deliberately.
+
+## Versioning (public)
+
+- URI versioning: `/api/v1/...`; bump to `v2` only for breaking changes
+- Safe without bump: add field, add optional endpoint, add event slug
+- Breaking: remove/rename field, change type/meaning, change required params — new version or explicit deprecation window
+- Controllers stay thin; call the same Services as admin (ADR-003) — no parallel business logic
+
+## Resource naming & JSON
+
+- Plural nouns, kebab or conventional Laravel API resource paths matching existing `/api/v1` style
+- Prefer API Resources / presenters for response shaping
+- Validation via FormRequests under `app/Http/Requests/Api/`
+- Errors: structured JSON via the global exception handler — consistent shape, no ad hoc HTML error pages
+
+## Authentication & authorization
+
+- Public: check token **ability** per endpoint (e.g. `sales:read`), not merely “authenticated”
+- Admin UI issues/revokes tokens with audit trail (Phase 15)
+- Rate limit: per-token quotas **and** IP limits on auth-sensitive routes (ADR-010)
+- New endpoints default to authenticated + ability/permission — “public” is an explicit reviewed exception
+
+## Pagination
+
+- Prefer existing list pagination conventions (page/cursor as already used in the codebase)
+- Always return enough meta for clients to page safely; do not silently truncate
+
+## Webhooks (outbound / inbound)
+
+- Outbound event slugs align with domain event slugs (`events.mdc` / ADR-005)
+- Inbound: verify signatures **before** processing; never trust unsigned payloads
+- Do not fetch user-supplied URLs server-side without allow-listing (SSRF)
+
+## Documentation
+
+- A new **public** endpoint is incomplete until it appears in generated OpenAPI (Phase 15 tooling)
+- Import/export public endpoints follow the same validate → preview → confirm → queue pattern as admin import/export

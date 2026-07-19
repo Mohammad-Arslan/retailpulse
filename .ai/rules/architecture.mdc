@@ -1,0 +1,80 @@
+---
+description: High-level implementation guardrails — ADRs first, no competing architectures
+alwaysApply: true
+---
+
+# Architecture Guardrails
+
+Implements: ADR-001, ADR-002, ADR-012. Authoritative WHY: `docs/architecture/`. This file is HOW agents must behave — not a substitute for ADRs.
+
+## Before writing code
+
+1. Read `docs/architecture/README.md` (Architecture Bible index).
+2. Read the ADR(s) that govern the change (new tables, modules, events, API, frontend patterns, tenancy, security).
+3. Load the matching rule under `.ai/rules/` for the layer you are editing.
+4. Prefer the nearest existing analog in the codebase over inventing a new pattern.
+
+Trivial copy/bug fixes confined to one function do not require re-reading every ADR — use judgment; when unsure, read one level higher.
+
+## Non-negotiable
+
+- **ADRs win.** If code and an ADR conflict, follow the ADR; flag the gap (see `docs/gaps/`). Do not silently “fix” toward your own assumption or deepen the deviation.
+- **Never invent competing architectures.** One stack, one layering, one audit path, one event convention, one frontend data model — per ADRs. No second router, state library, service pattern, or auth scheme “just for this feature.”
+- **Modular monolith** (ADR-002): cross-module reads/writes go through the owning module’s Service/Repository — do not mutate another module’s models directly.
+- **Prefer extending** existing services, repositories, DTOs, components, and seeders over parallel implementations.
+- **Reuse** shared UI (`Components/ui`, `Components/common`), presenters, and helpers before adding new ones.
+- **Event-driven side effects** (ADR-005): cross-module reactions via domain events from Services — not direct cross-module service spaghetti.
+- **SaaS-first** (ADR-001): classify every new table for `tenant_id` at migration time; do not invent ad hoc tenant filtering before Phase 28/29 infrastructure exists.
+- **Consistency:** schema + Service + Inertia props + docs/manuals move together (ADR-012).
+
+## Agent workflow constraints
+
+- Do **not** run the test suite (`php artisan test`, `composer test`, `npm test`) unless the user explicitly asks — state what to run.
+- Do **not** run migrations against shared/production DBs, create commits, or push unless asked.
+- Do **not** add tests or unrelated docs unless asked (except user-manual sync below).
+- Minimize diff scope; match existing naming and file placement.
+
+## Stack (do not replace)
+
+- Backend: Laravel 13, PHP 8.3+, Eloquent, Spatie Permission, session auth for admin/POS pages
+- Frontend: React + Inertia.js 2 — no React Router; no REST CRUD hydration for normal admin pages
+- UI: Tailwind CSS 4 (`resources/css/app.css`, no `tailwind.config.js`), shadcn/ui (New York), Radix, Lucide
+- Real-time: Reverb + Echo where needed
+- DB default: SQLite; schema changes via migrations only
+
+## Request flow
+
+```
+Admin:  Route → Controller → FormRequest → Service → Repository → Model
+        Controller returns Inertia::render('Admin/...', $props)
+
+Internal API (POS/search): routes/api.php → Controller → Service (session `web`+`auth`)
+Public API (Phase 15+):    token/Sanctum abilities — see api.mdc + ADR-008
+```
+
+## Documentation sync (ADR-012)
+
+When changing user-visible behavior, admin nav, permissions, import/export columns, financial report logic, or inventory/accounting workflows, update the matching user manual in the same task:
+
+| Area | Manual |
+| :--- | :--- |
+| Accounting / GL / tax / reports / cost layers | `docs/user-manual-accounting-and-finance.md` |
+| Inventory / catalogue / transfers / bins | `docs/user-manual-inventory-and-catalogue.md` |
+| Putting stock on hand | `docs/user-manual-put-product-in-stock.md` |
+| Customers / AR / loyalty | `docs/user-manual-customers-and-loyalty.md` |
+| Import/export wizard | `docs/generic-import-export.md` |
+
+Bump document history; keep English UI labels in Title Case. i18n-only copy changes do not require manual updates unless terminology changes.
+
+## Key paths
+
+| Area | Location |
+| :--- | :--- |
+| Admin routes | `routes/admin.php` |
+| API routes | `routes/api.php` |
+| Shared Inertia props | `app/Http/Middleware/HandleInertiaRequests.php` |
+| Admin navigation | `app/Services/Navigation/Catalog/AdminNavigationCatalog.php` (+ frontend nav config) |
+| i18n | `resources/js/locales/en.json` |
+| Import/export | `routes/import-export.php`, `app/Services/ImportExport/` |
+
+See `CLAUDE.md` / `AGENTS.md` for commands and onboarding order.

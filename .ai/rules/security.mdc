@@ -1,0 +1,62 @@
+---
+description: Security implementation — OWASP, secrets, encryption, rate limits, isolation
+globs: app/Http/**/*.php,app/Policies/**/*.php,config/**/*.php,routes/**/*.php
+alwaysApply: false
+---
+
+# Security
+
+Implements: ADR-010. WHY: `docs/architecture/adr-010-security.md`. RBAC how-to → `permissions.mdc`. Tenant schema prep → `database.mdc` / `migration.mdc`.
+
+## Secure defaults
+
+- New integrations/features **disabled** until configured
+- New endpoints require authentication + Policy/ability check by default
+- Admin/API middleware stacks include `auth`, module gates, and (post-Phase-28) tenant context — skipping any needs a documented reason (e.g. signature-verified webhooks)
+
+## Authorization
+
+- Server-side Policies only as the real boundary (`permissions.mdc`)
+- Frontend `useCan()` is UX only
+- Post-Phase-28: `withoutGlobalScope(TenantScope::class)` is a security-sensitive escape hatch — treat like `sudo`; never on tenant-reachable paths
+
+## Validation & injection
+
+- All input through FormRequests / validated APIs
+- Eloquent / query builder parameter binding only — no string-concatenated SQL
+- Authorize before acting; validate before trusting
+
+## Secrets & encryption
+
+- Sensitive columns: Laravel encrypted casts — not ad hoc crypto
+- Credentials in `.env` or encrypted settings tables — never hardcoded, never logged
+- Do not commit `.env` or real secrets; document required keys in `CLAUDE.md`
+
+## Rate limiting & auth abuse
+
+- Auth-sensitive routes (login, PIN): rate limit; POS PIN lockout precedent (5 attempts → 15 min)
+- Public API: per-token quotas in addition to IP limits (`api.mdc`)
+- Webhook receivers: verify signature before processing
+
+## Tenant isolation
+
+- Pre-Phase-28: nullable `tenant_id` prep only — no fake isolation logic
+- After Phase 28/29: cross-tenant read/write is a **security incident**, not a normal data bug
+
+## OWASP quick check (new risky code)
+
+| Risk | Do |
+| :--- | :--- |
+| Access control | Policy + server enforce; tenant scope when live |
+| Crypto | Encrypted casts; TLS non-local; no secrets in logs |
+| Injection | Bound queries + FormRequests |
+| Misconfig | Secure defaults; no committed secrets |
+| Auth failures | Session/Sanctum correctly; PIN lockout for secrets |
+| Integrity | Audit trail; webhook signatures |
+| SSRF | No user-controlled outbound URLs without allow-list |
+
+Touching auth, uploads, outbound HTTP, or raw SQL → review against this table before merge.
+
+## Payments / PCI posture
+
+- Prefer gateway hosted fields / tokenization — do not pull raw card data into RetailPulse request paths

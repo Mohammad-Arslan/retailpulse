@@ -9,11 +9,11 @@ This file is the **AI onboarding guide** for RetailPulse. It is not the architec
 3. **[docs/principles.md](docs/principles.md)** — the non-negotiable engineering principles behind every architectural decision.
 4. **[docs/architecture/README.md](docs/architecture/README.md)** — the Architecture Bible: the index of every binding Architecture Decision Record (ADR).
 5. **The specific ADR(s) relevant to your task** (`docs/architecture/adr-NNN-*.md`) — read these fully, not just skimmed, before touching anything the ADR governs (new tables, new modules, new cross-cutting concerns, new API surfaces, new frontend patterns, tenancy, security).
-6. **The relevant Cursor Rule(s)** (`.cursor/rules/*.mdc`) — implementation-level conventions (file placement, exact patterns, checklists) for the layer you're working in. Each rule states which ADR(s) it implements.
+6. **The relevant implementation rule(s)** ([`.ai/rules/*.mdc`](.ai/rules/)) — file placement, exact patterns, checklists for the layer you're editing. Each rule states which ADR(s) it implements. Cursor loads the same files via `.cursor/rules` → `.ai/rules` (see [`.ai/README.md`](.ai/README.md) and [`AGENTS.md`](AGENTS.md)).
 
-Skipping straight to step 6 for anything architecturally significant is how drift happens — the Cursor Rules tell you *how* to write code that's already been decided to work a certain way; they don't carry the *why*, the trade-offs, or the alternatives that were already rejected, which is exactly the context you need to extend a pattern correctly instead of by accident.
+Skipping straight to step 6 for anything architecturally significant is how drift happens — the rules tell you *how* to write code that's already been decided to work a certain way; they don't carry the *why*, the trade-offs, or the alternatives that were already rejected, which is exactly the context you need to extend a pattern correctly instead of by accident.
 
-For a small, clearly-scoped change (a copy fix, a bug fix confined to one function, adding a field to an existing, well-understood pattern), reading the nearest existing analog in the code plus the relevant Cursor Rule is normally sufficient — you don't need to re-read the whole Architecture Bible for every one-line change. Use judgment on scope, but when in doubt, read one level higher than you think you need to.
+For a small, clearly-scoped change (a copy fix, a bug fix confined to one function, adding a field to an existing, well-understood pattern), reading the nearest existing analog in the code plus the relevant rule is normally sufficient — you don't need to re-read the whole Architecture Bible for every one-line change. Use judgment on scope, but when in doubt, read one level higher than you think you need to.
 
 ## How to approach the work
 
@@ -79,7 +79,7 @@ php artisan test --filter=TestName  # Run a single test
 php artisan test tests/Feature/     # Run a specific directory
 ```
 
-Per `.cursor/rules/retailpulse-core.mdc`: do not run these yourself unless explicitly asked — state what to run and let the user execute it.
+Per `.ai/rules/architecture.mdc` / `testing.mdc`: do not run these yourself unless explicitly asked — state what to run and let the user execute it.
 
 ### Code Quality
 
@@ -103,7 +103,8 @@ Do not run migrations against a shared/production database, and do not create mi
 | Looking for | Location |
 | :--- | :--- |
 | Architecture decisions (the *why*) | `docs/architecture/` |
-| Coding conventions (the *how*) | `.cursor/rules/*.mdc` |
+| Coding conventions (the *how*) | `.ai/rules/*.mdc` (Cursor: `.cursor/rules` → same files) |
+| Multi-agent entry | `AGENTS.md` |
 | Requirements spec | `docs/srs.md` |
 | Phase-by-phase roadmap and schema | `docs/phases/` |
 | What's actually built right now | `docs/implementation-status.md` |
@@ -113,7 +114,7 @@ Do not run migrations against a shared/production database, and do not create mi
 | Shared Inertia props | `app/Http/Middleware/HandleInertiaRequests.php` |
 | Admin navigation | `app/Services/Navigation/Catalog/AdminNavigationCatalog.php` |
 | i18n strings | `resources/js/locales/en.json` |
-| User manuals (keep in sync per Cursor rule) | `docs/user-manual-*.md` |
+| User manuals (keep in sync per `.ai/rules/architecture.mdc`) | `docs/user-manual-*.md` |
 | Import/export framework | `routes/import-export.php`, `app/Services/ImportExport/` |
 
 ## Environment

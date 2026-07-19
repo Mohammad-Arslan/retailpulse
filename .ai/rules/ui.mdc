@@ -1,0 +1,63 @@
+---
+description: RetailPulse design system — buttons, forms, modals, tokens, ScrollArea
+globs: resources/js/Components/**/*.{js,jsx},resources/css/**/*.css
+alwaysApply: false
+---
+
+# UI / Design System
+
+Implements: ADR-004 (design system). Page/Inertia patterns → `frontend.mdc`.
+
+## Tokens & styling
+
+- Tailwind 4 via `resources/css/app.css` + `retailpulse.css` — **no** `tailwind.config.js`
+- Prefer OKLch / `text-rp-*` / `border-rp-border` tokens over ad hoc hex
+- Light **and** dark theme must work — do not style for one theme only
+- Prefer Tailwind + existing tokens; do not add new CSS files unless necessary
+- Icons: `lucide-react`
+
+## Component layers
+
+| Use | For |
+| :--- | :--- |
+| `@/Components/ui/*` | Button, Dialog, Select, Table, Input, … |
+| `@/Components/common/*` | PageHeader, FormCard, FormInfoPanel, AdminFormField, ModalHeader, DataTable, ScrollArea |
+| `@/Components/admin/*` | Domain-specific composites |
+
+## Buttons
+
+- Primary: `Button variant="brand"` / `.rp-btn-primary` — **black at rest, teal on hover** (`bg-ink-900` → `hover:bg-teal-500`; dark: teal rest → lighter hover)
+- Never solid teal/green at rest on primary actions
+- Change the shared `buttonVariants` / `.rp-btn-primary` definition if the convention must change — do not override per page with `bg-teal-*`
+- Outline cancel: `variant="outline"`; destructive flows confirm via `useConfirm()` — never `window.confirm()`
+
+## Forms
+
+- Fields: `AdminFormField` + `rp-form-input`; pass `required` for asterisk
+- Checkboxes: `rp-checkbox-label` + `accent-teal-600` — never a bare unstyled checkbox
+- Dedicated create pages: `FormCard` (`xl:col-span-2`) + `FormInfoPanel` (`xl:col-span-1`); actions **inside** FormCard footer (`flex justify-end gap-3 border-t …`), not under the info column
+- Section headers: `rp-section-title` distinct from `PageHeader`
+
+## Modals
+
+- Always `ModalHeader` (icon + title + optional description + close) — never a bare `<h3>`
+- Default field layout: `grid gap-4 sm:grid-cols-2`; single column only for small modals
+- Past ~8 fields: section with `rp-section-title` + `border-t border-rp-border pt-4`
+- Long bodies: `ScrollArea` (below) — never raw `overflow-y-auto` on a bare div/form
+- Footer: `flex justify-end gap-2 border-t …` — outline cancel + brand submit
+- Width: `md` ≤6 fields · `xl`/`2xl` for 7–16 in 2 cols · `3xl` for denser/repeatable grids
+
+## Scrollable regions
+
+Any `overflow-y-auto` / `overflow-x-auto` region uses `@/Components/common/ScrollArea` (themed `rp-scroll`). Call sites supply `max-h-*` / overflow via `className`. Use `as="form"` when the scroll region is the form. POS may also use `pos-scroll`.
+
+## Tables & typography
+
+- Tabular layouts: `@/Components/ui/table` over raw `<table>` when building new UI
+- Muted copy: `rp-text-muted`; match spacing/typography of the nearest existing admin page
+- Responsive: layouts must work on desktop and mobile; WCAG 2.1 AA via Radix primitives
+
+## Cards
+
+- Prefer existing `FormCard` / page patterns over inventing new card chrome
+- Do not introduce one-off shadow/radius systems that diverge from `rp-*` tokens

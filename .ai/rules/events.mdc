@@ -1,0 +1,55 @@
+---
+description: Domain events — naming, publishing, listeners, slugs, ownership
+globs: app/Events/**/*.php,app/Listeners/**/*.php,app/Providers/**/*.php
+alwaysApply: false
+---
+
+# Domain Events
+
+Implements: ADR-005. WHY: `docs/architecture/adr-005-domain-events.md`. Workflow/webhooks later attach as listeners (ADR-006, ADR-007).
+
+## When to use
+
+**Use** an event when side effects belong to another module, multiple consumers may react, or work can happen after commit.
+
+**Do not use** when the caller needs a return value, the work is the same module’s invariant, or a plain method call inside one service suffices.
+
+Audit logging is **not** a domain-event listener — `AuditObserver` is separate (ADR-011).
+
+## Naming
+
+- PascalCase, **past tense**, no `Event` suffix: `SaleCompleted`, `InventoryStockChanged`
+- Shape: `{Entity}{PastTenseVerb}`
+- Namespace: `app/Events/{Domain}/` for domain events; flat `app/Events/` for foundational cross-domain events
+- Payload: `public readonly` model properties + `Dispatchable` / `SerializesModels` — no derived junk listeners can compute themselves
+
+## Public slug (integration / workflow contract)
+
+Events that may leave the process (webhooks, workflow triggers) also define a stable **dot-separated slug** (`po.created`, `stock.below_reorder`).
+
+- PHP class name = internal; slug = external versioned contract
+- Never rename a published slug — add + deprecate
+
+## Publishing
+
+- **Services only** — never Controllers
+- After successful business operation; after transaction commit (`DB::afterCommit()` if dispatching inside a transaction)
+- Owning module dispatches; it must not import every consumer
+
+## Listeners
+
+- `app/Listeners/{Domain}/` mirroring events
+- One listener = one responsibility; register multiple listeners instead of a kitchen-sink handler
+- Non-trivial I/O → `ShouldQueue`; let failures surface to queue failure handling
+- Do not swallow failures that drop business data (e.g. missed loyalty accrual)
+
+## Versioning / compatibility
+
+- Adding an optional public property: usually safe
+- Removing/renaming a payload field or slug: breaking — treat like an API contract change
+
+## Ownership
+
+- Producer owns the event class and slug
+- Consumers own their listeners
+- Cross-module coupling stays at the event boundary only

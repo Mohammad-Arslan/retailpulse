@@ -48,7 +48,7 @@ Full **procurement cycle** with approval workflows and supplier ledger.
 - Approval: Branch Manager / Owner PIN or permission
 - Permissions: `procurement.*`, `procurement.approve-po`
 - **Bulk import/export (§3.18):** suppliers CSV/Excel; optional historical purchase headers with `is_historical` (reporting only); `suppliers.import`, `suppliers.export`
-- UI strings: use i18n keys in **camelCase** with **Title Case** English values (see `.cursor/rules/retailpulse-i18n-strings.mdc`). Map dynamic dropdown values (status, payment method) through `resources/js/lib/procurementI18n.js` — never show raw `snake_case` from the API.
+- UI strings: use i18n keys in **camelCase** with **Title Case** English values (see `.ai/rules/frontend.mdc`). Map dynamic dropdown values (status, payment method) through `resources/js/lib/procurementI18n.js` — never show raw `snake_case` from the API.
 
 ### Key implementation files
 
