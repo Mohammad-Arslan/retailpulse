@@ -1,0 +1,44 @@
+# Roadmap Philosophy
+
+This document explains how RetailPulse's 30-phase roadmap (`docs/phases/`) is designed and evolves, how architectural decisions get introduced into it, how technical debt is tracked, when breaking changes are acceptable, and how enterprise-grade quality is maintained across a roadmap this long.
+
+## How RetailPulse evolves
+
+RetailPulse ships as a **sequence of complete, stabilized phases**, not as continuously-in-flight parallel workstreams. Per `docs/phases/README.md`: *complete and stabilize each phase before starting the next.* Phase 1 (auth/RBAC) is the security and identity foundation every later phase depends on; each subsequent phase builds on a working, tested predecessor rather than on an assumption of what the predecessor will eventually become.
+
+This matters for a roadmap this long: a 30-phase plan built entirely upfront and then executed mechanically would ossify around Phase 1's understanding of the problem. Instead, later phases are informed by what was actually learned building earlier ones — the SRS is explicitly versioned as a *living document* (`docs/srs.md`, "v3.0 → v4.0 Gap Analysis & Full Rewrite") specifically because a gap analysis after real implementation experience revealed requirements the original spec missed.
+
+## How roadmap phases are designed
+
+- **A phase is a vertical slice of business capability**, not a horizontal slice of technical layers — Phase 9 (Customers & Loyalty) ships its migrations, models, services, policies, controllers, frontend pages, and tests together, not "all migrations for phases 1-16" followed by "all services." This is what makes "complete and stabilize before moving on" meaningful — a phase is genuinely done, not partially done across every layer.
+- **Dependencies are explicit and directional** — `docs/phases/README.md`'s dependency graph states which phases must precede which (e.g. Phase 5 Inventory → Phase 13 Reporting; Phase 16 Hardening → Phase 23 Module Config Engine → Phase 28 SaaS Multi-Tenancy). A phase is not started ahead of its stated dependencies without a deliberate decision to reorder the roadmap.
+- **Each phase doc is a complete spec** (Objective, Data Model, Services, API Endpoints, Acceptance Criteria) — sufficient for a contributor (human or AI) to implement it without needing a separate design conversation first. If a phase doc is insufficient to start from, that's a documentation gap to fix before implementation starts, not a gap to fill in ad hoc during implementation.
+- **Phase docs describe *what ships* for that slice; they do not re-derive cross-cutting architecture.** A phase doc referencing "the workflow engine" points to [ADR-006](./architecture/adr-006-workflow-engine.md) rather than re-explaining it — this is what keeps 30 phase docs from drifting into 30 slightly-different descriptions of the same cross-cutting mechanism.
+
+## How architectural decisions are introduced
+
+An architectural decision (a new cross-cutting mechanism, a new module boundary, a new external dependency category) is introduced as an ADR in [`architecture/`](./architecture/README.md) — not discovered implicitly by reading whichever phase happened to need it first. Concretely:
+
+1. **Foundational architecture is decided early, deliberately, ahead of the phases that will exercise it most heavily** — multi-tenancy ([ADR-001](./architecture/adr-001-saas-multi-tenancy.md)) is a clear example: decided and documented well before Phase 28 (SaaS Multi-Tenancy) actually implements enforcement, specifically so earlier phases (1 through 27) can prepare their schema for it incrementally rather than requiring a disruptive retrofit.
+2. **A phase that needs a new cross-cutting mechanism proposes the ADR alongside the phase design**, not after implementation reveals the mechanism was needed. If Phase 29 (Workflow Engine) is being scoped and no ADR governs how it fits with the Integration Hub, that gap is resolved by writing/updating the ADR ([ADR-006](./architecture/adr-006-workflow-engine.md)) as part of scoping the phase, not left implicit in the phase doc alone.
+3. **An ADR outlives the phase that introduced it.** Once ADR-001 is written, every subsequent phase's migrations are reviewed against its tenant classification rules — the ADR doesn't stop applying once its originating phase (28) ships; it becomes a permanent constraint on all future schema design.
+
+## How technical debt is managed
+
+- **Known gaps are documented, not silent.** A deviation between the intended design (an ADR, a phase doc's acceptance criteria) and the current implementation goes into `docs/gaps/gaps.md` or a phase-specific gap doc (e.g. `docs/phases/phase-12/gaps.md`) — an undocumented gap gets treated as intended behavior by the next contributor, which is a worse outcome than an honestly documented shortcut.
+- **A documented gap is a scheduled decision, not a permanent state.** It's tracked so it can be prioritized deliberately — closed in a later wave of the same phase, folded into a dependent phase, or explicitly accepted long-term with a stated reason — rather than accumulating invisibly until it becomes a crisis.
+- **Debt incurred for a genuine reason (shipping Phase 8 at 95% with live payment gateway drivers stubbed, for example) is preferable to debt incurred by skipping the standards in [ADR-012](./architecture/adr-012-development-standards.md) or [ADR-013](./architecture/adr-013-testing-strategy.md)** — the former is a scoped, visible trade-off; the latter is exactly the kind of silent quality erosion those ADRs exist to prevent. "We shipped this deliberately incomplete and wrote down why" and "we cut a corner nobody documented" are not treated as equivalent.
+
+## When breaking changes are acceptable
+
+- **Internal implementation details** (a Service's internal method, a Repository's query shape, an admin page's exact prop shape) can change freely — nothing external depends on their exact shape, only on the Service/Controller's stable public surface ([ADR-003](./architecture/adr-003-backend-architecture.md)).
+- **Published contracts** — the public API ([ADR-008](./architecture/adr-008-public-api.md)), webhook event payloads ([ADR-005](./architecture/adr-005-domain-events.md), [ADR-007](./architecture/adr-007-integration-hub.md)), and any live shared-schema migration ([ADR-015](./architecture/adr-015-database-standards.md)) — are not broken silently. A breaking change to one of these requires either a new version (API), a deprecation window (event slug), or an expand-then-contract migration sequence (schema) — see the relevant ADR for the specific mechanism.
+- **An ADR itself changing** is, by definition, a considered exception to "don't break things silently" — but it still isn't silent: see [architecture/README.md](./architecture/README.md#changing-a-decision) for the required process (state what breaks, address why the original trade-off no longer holds, get it reviewed).
+- **Pre-release, unshipped phases** carry no backward-compatibility obligation at all — a phase doc for a phase that hasn't shipped yet can be redesigned freely as understanding improves; the discipline above applies to what's live, not to what's still on the roadmap.
+
+## How enterprise quality is maintained across a 30-phase roadmap
+
+- **The same layering, naming, and testing standards apply to phase 2 and phase 29 equally** ([ADR-003](./architecture/adr-003-backend-architecture.md), [ADR-012](./architecture/adr-012-development-standards.md), [ADR-013](./architecture/adr-013-testing-strategy.md)) — there is no "move fast" exemption for later phases just because the roadmap is long; a shortcut taken in phase 20 is exactly as expensive to unwind as one taken in phase 2, and the codebase has had more time to build on top of it by the time anyone notices.
+- **Every phase gets a phase doc, and every shipped user-facing module gets a user manual** ([ADR-012](./architecture/adr-012-development-standards.md)'s documentation requirements) — "done" includes documentation, not just working code, specifically because a 30-phase roadmap without consistently maintained documentation becomes unnavigable to new contributors long before it's finished.
+- **Acceptance criteria are specific and testable**, stated in each phase doc, and are what "phase complete" is measured against — not a subjective sense that "it feels done."
+- **The Architecture Bible is the anti-drift mechanism.** With phases spanning years and a mix of human and AI contributors who don't share continuous memory of earlier decisions, the ADRs — not individual recollection — are what keeps phase 25's e-commerce integration consistent with phase 7's POS architecture. This is the entire reason [`docs/architecture/`](./architecture/README.md) exists as a permanent, authoritative reference rather than a set of PR descriptions scattered across years of commit history.

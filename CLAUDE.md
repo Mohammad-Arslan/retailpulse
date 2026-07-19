@@ -1,6 +1,49 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file is the **AI onboarding guide** for RetailPulse. It is not the architecture reference and not the coding-standards reference — those live elsewhere, and this file exists to send you to them in the right order rather than repeat them. What follows is how to approach this codebase before, during, and after writing code in it.
+
+## Required reading order, before writing code
+
+1. **[docs/README.md](docs/README.md)** — what RetailPulse is and how its documentation fits together.
+2. **[docs/vision.md](docs/vision.md)** — why RetailPulse exists, what it's becoming.
+3. **[docs/principles.md](docs/principles.md)** — the non-negotiable engineering principles behind every architectural decision.
+4. **[docs/architecture/README.md](docs/architecture/README.md)** — the Architecture Bible: the index of every binding Architecture Decision Record (ADR).
+5. **The specific ADR(s) relevant to your task** (`docs/architecture/adr-NNN-*.md`) — read these fully, not just skimmed, before touching anything the ADR governs (new tables, new modules, new cross-cutting concerns, new API surfaces, new frontend patterns, tenancy, security).
+6. **The relevant Cursor Rule(s)** (`.cursor/rules/*.mdc`) — implementation-level conventions (file placement, exact patterns, checklists) for the layer you're working in. Each rule states which ADR(s) it implements.
+
+Skipping straight to step 6 for anything architecturally significant is how drift happens — the Cursor Rules tell you *how* to write code that's already been decided to work a certain way; they don't carry the *why*, the trade-offs, or the alternatives that were already rejected, which is exactly the context you need to extend a pattern correctly instead of by accident.
+
+For a small, clearly-scoped change (a copy fix, a bug fix confined to one function, adding a field to an existing, well-understood pattern), reading the nearest existing analog in the code plus the relevant Cursor Rule is normally sufficient — you don't need to re-read the whole Architecture Bible for every one-line change. Use judgment on scope, but when in doubt, read one level higher than you think you need to.
+
+## How to approach the work
+
+- **Understand the existing implementation before changing it.** Read the module you're touching — its Service, its tests, its nearest sibling feature — before writing new code. A change that "looks right" without that context is exactly how a codebase this size accumulates quiet inconsistency.
+- **Follow architecture before implementation.** If the fastest path to a working feature conflicts with an ADR, the ADR wins. A working feature that violates the architecture isn't done — it's a defect that happens to run.
+- **Prefer extending existing modules and services over introducing new patterns.** If a `LeaveService`-shaped problem already has a `LeaveService`, your job is very often to extend it, not to write a parallel implementation because the existing one wasn't convenient to read at 2am.
+- **Never introduce competing architectures.** No second state-management library, no parallel service-layer pattern, no second audit mechanism, no second event-dispatch convention. One way to do a thing, per [docs/architecture/](docs/architecture/README.md).
+- **Never duplicate business logic.** A rule that already lives in a Service is referenced or called, not re-derived in a Controller, a second Service, or the frontend "for convenience."
+- **Reuse existing services, repositories, DTOs, and components.** Before writing a new one, check whether an existing one already does most of what you need — extend it, don't fork it.
+- **Follow module boundaries** ([ADR-002](docs/architecture/adr-002-modular-monolith.md)). Read another module's data through its service/repository; don't reach into its models directly to mutate state you don't own.
+- **Preserve backward compatibility whenever possible.** A published API contract, a live migration, an event payload other code depends on — none of these break silently. See [ADR-008](docs/architecture/adr-008-public-api.md) and [ADR-015](docs/architecture/adr-015-database-standards.md) for the specific mechanisms (versioning, expand-then-contract migrations) when a change is unavoidable.
+- **Maintain consistency across backend, frontend, database, and documentation together.** A schema change that isn't reflected in the Service, a frontend page whose props silently drift from what the controller sends, or a shipped feature with no phase-doc/user-manual update ([ADR-012](docs/architecture/adr-012-development-standards.md)) are all the same kind of defect — the work isn't finished until all four are consistent.
+
+## When architecture and implementation differ
+
+If you find code that doesn't match a documented ADR:
+
+- **Explain the inconsistency.** Say what you found and which ADR it deviates from.
+- **Do not silently "fix" the code to match your own assumption of what's correct**, and do not silently extend the deviation further because it was already there. Either flag it for the user to decide how to handle, or — if the task explicitly calls for resolving it — fix it deliberately and call out that you did.
+- **Check `docs/gaps/gaps.md` and phase-specific gap docs** (e.g. `docs/phases/phase-12/gaps.md`) — the deviation may already be a known, deliberately-deferred gap, not an oversight. If it's not documented and you're confident it's a real gap, add it rather than leaving it invisible for the next contributor.
+
+## Proposing an architectural improvement
+
+If you believe an ADR itself should change:
+
+1. **Justify the change** — state the concrete problem with the current decision, not just a preference.
+2. **Explain the trade-offs** — every ADR in this codebase already documents what it gives up for what it gains; a proposed change needs to reckon with that, not ignore it.
+3. **Update the ADR if the decision changes** — see [docs/architecture/README.md](docs/architecture/README.md#changing-a-decision) for the process. An improvement that isn't reflected back into the ADR isn't actually adopted — it's a one-off deviation waiting to confuse the next contributor, human or AI.
+
+Do not ship an architectural deviation inside an unrelated feature PR "because it seemed better" — raise it explicitly.
 
 ## Commands
 
@@ -36,6 +79,8 @@ php artisan test --filter=TestName  # Run a single test
 php artisan test tests/Feature/     # Run a specific directory
 ```
 
+Per `.cursor/rules/retailpulse-core.mdc`: do not run these yourself unless explicitly asked — state what to run and let the user execute it.
+
 ### Code Quality
 
 ```bash
@@ -51,142 +96,27 @@ php artisan migrate:fresh --seed    # Fresh database with seeders
 php artisan tinker                  # REPL for debugging
 ```
 
-## Architecture
+Do not run migrations against a shared/production database, and do not create migrations that get auto-applied — a human applies them deliberately.
 
-> **Authoritative source:** The summary below is a condensed orientation for quick reference. The binding architectural decisions — multi-tenancy strategy, module boundaries, layered backend pattern, domain events, audit trail, workflow engine, integration/API strategy, plugin architecture, security principles, coding standards, and frontend architecture — live in [docs/architecture/](docs/architecture/README.md) as Architecture Decision Records (ADRs). **Read the relevant ADR before making an architectural change** (new tables, new modules, new cross-cutting concerns, new API surfaces, new frontend patterns). If anything below conflicts with an ADR, the ADR wins.
+## Where things are (quick reference — see the architecture docs for why)
 
-### Stack
+| Looking for | Location |
+| :--- | :--- |
+| Architecture decisions (the *why*) | `docs/architecture/` |
+| Coding conventions (the *how*) | `.cursor/rules/*.mdc` |
+| Requirements spec | `docs/srs.md` |
+| Phase-by-phase roadmap and schema | `docs/phases/` |
+| What's actually built right now | `docs/implementation-status.md` |
+| Known gaps between design and implementation | `docs/gaps/gaps.md`, `docs/phases/phase-12/gaps.md` |
+| Admin routes | `routes/admin.php` |
+| API routes | `routes/api.php` |
+| Shared Inertia props | `app/Http/Middleware/HandleInertiaRequests.php` |
+| Admin navigation | `app/Services/Navigation/Catalog/AdminNavigationCatalog.php` |
+| i18n strings | `resources/js/locales/en.json` |
+| User manuals (keep in sync per Cursor rule) | `docs/user-manual-*.md` |
+| Import/export framework | `routes/import-export.php`, `app/Services/ImportExport/` |
 
-- **Backend:** Laravel 13 (PHP 8.3+), Eloquent ORM, Sanctum auth, Spatie RBAC
-- **Frontend:** React 18 + Inertia.js 2.0 (no client-side router — all routing is server-side via Inertia)
-- **Build:** Vite 8, Tailwind CSS 4, shadcn/ui (New York style), Radix UI primitives
-- **Real-time:** Laravel Reverb (WebSocket) + Laravel Echo + Pusher.js
-- **Database:** SQLite (default); sessions, cache, and queue all use database driver
-
-### Server–Client Bridge: Inertia.js
-
-Inertia.js is the critical piece that connects Laravel and React. Controllers return `Inertia::render('Admin/Products/Index', $props)` instead of JSON or Blade views. The React component at `resources/js/Pages/Admin/Products/Index.jsx` receives those props directly. There is no separate API layer for page data — form submissions go through standard Laravel routes with `useForm` from `@inertiajs/react`.
-
-Shared global props (auth user, permissions, flash messages, branch context, app name) are injected in `app/Http/Middleware/HandleInertiaRequests.php`.
-
-### Multi-Branch / RBAC Design
-
-The app is a multi-branch retail system. Key concepts:
-
-- **BranchContext** (`app/Support/BranchContext.php`) stores the active branch in the request lifecycle, set by `SetBranchContext` middleware.
-- **Spatie Laravel Permission** handles roles and permissions. Roles are scoped per branch where needed.
-- **UserPermissionOverride** model allows per-user permission overrides on top of roles.
-- All admin routes are behind `auth`, `EnsureAdminAccess`, and `SetBranchContext` middleware.
-
-### Layered Backend Pattern
-
-Controllers are thin — they delegate to the service layer:
-
-```
-Controller → Service → Repository → Eloquent Model
-```
-
-- `app/Repositories/Contracts/` — repository interfaces
-- `app/Repositories/Eloquent/` — Eloquent implementations
-- `app/Services/` — business logic (13 services)
-- `app/DTOs/` — typed data transfer objects passed between layers
-- `app/Http/Requests/` — validation via Form Requests before hitting controllers
-
-### Audit Logging
-
-`app/Observers/AuditObserver.php` hooks into Eloquent model lifecycle events to write to the `audit_logs` table automatically. Register new models for auditing in `AppServiceProvider`.
-
-### Frontend Structure
-
-```
-resources/js/
-├── app.jsx              # Inertia + React bootstrap, AppProviders, flash toasts
-├── echo.js              # Laravel Echo / Reverb config
-├── Pages/Admin/         # One file per admin page, receives Inertia props
-├── Components/
-│   ├── ui/              # shadcn/ui primitives (Button, Dialog, Table, etc.)
-│   ├── admin/           # Domain-specific admin components
-│   ├── charts/          # Recharts wrappers
-│   └── common/          # AppProviders, FlashToasts, layout shells
-├── Hooks/               # Custom React hooks
-├── HOCs/                # Higher-order components
-├── Layouts/             # Page layout wrappers
-└── locales/             # i18n translation files (i18next)
-```
-
-Tailwind 4 is configured via CSS (`resources/css/app.css`) using OKLch color variables and `@plugin` directives — there is no `tailwind.config.js`. Shadcn component config lives in `components.json`.
-
-#### Modal vs. dedicated page
-
-Use a **modal** for simple config/master-data managed from an index page with a "create/edit → stay on the list" workflow (Leave Types, Leave Policies, Overtime Policies) — field count alone is not a reason to prefer a page; a well-sectioned 2-column modal handles 15–20 fields fine. Use a **dedicated page** for standalone transactions a user navigates to (Leave Request, TOIL Claim, Sales), forms needing tabs or repeatable rows/file uploads, or when a contextual "how this works" panel adds value. On a dedicated page laid out as form + info panel, Cancel/Submit buttons go **inside the form card itself** (bottom, right-aligned) — not in a separate row below the grid, which right-aligns under the info panel instead and visually detaches the buttons from the form. Any scrollable region (long modal bodies, lists) must use `ScrollArea` from `@/Components/common/ScrollArea` — never raw `overflow-y-auto` on a bare element, which renders the native unstyled scrollbar. Primary buttons (`variant="brand"` / `.rp-btn-primary`) are black by default with teal on hover, never solid teal at rest — enforced centrally in `resources/js/Components/ui/button.jsx`, don't override per-page. Full styling standard is in `.cursor/rules/retailpulse-frontend.mdc`.
-
-### Route Organization
-
-```
-routes/
-├── web.php      # Root redirect → /admin/dashboard
-├── admin.php    # All /admin/* resource routes (branches, products, users, roles, inventory, transfers)
-├── auth.php     # Login/logout only (registration is admin-only via user management)
-├── channels.php # Reverb broadcast channel auth
-└── console.php  # Scheduled commands / CLI
-```
-
-### Key Models & Relationships
-
-The domain centers on:
-- **Branch → Inventory** (branch-specific stock levels)
-- **Product → ProductVariant → ProductBatch / ProductSerial** (variant + batch/serial tracking)
-- **StockTransfer → StockTransferItem** (inter-branch transfer workflow with status enum)
-- **BranchProductPrice** (per-branch pricing overrides)
-- **Sale → SaleItem / SalePayment / SaleInvoice** (checkout transaction lifecycle)
-- **AuditLog** (append-only, written by observers)
-
-### Phase 8 — Checkout, Payments & Invoicing
-
-All checkout behaviour is configuration-driven via `system_settings`. Nothing is hardcoded.
-
-**Settings groups** (Admin → Settings):
-- `tax` — enable/disable tax, mode (exclusive/inclusive), default rate, rounding
-- `checkout` — cash change, split tender, layaway, invoice numbering, inventory deduction timing
-- `fbr` — enable/disable FBR IRIS reporting, POS ID, credentials, failure mode (queue/block)
-
-**Checkout flow:**
-```
-POS (F10) → POST /api/v1/pos/carts/{id}/checkout
-         → Inertia redirect to /admin/checkout/{cartId}
-         → GET /api/v1/checkout/{cartId}   (bootstrap: cart + config snapshot)
-         → POST /api/v1/checkout/{cartId}/confirm  (creates Sale, marks cart completed)
-         → POST /api/v1/sales/{id}/payments  (repeatable; reduces balance_due)
-         → Sale → completed; SaleInvoice created; FBR queued if enabled
-```
-
-**Tax pipeline:** `TaxCalculationService` resolves rate per line item (variant → product → category → default). When `tax.enabled = false` the tax column is suppressed everywhere — POS totals, checkout screen, invoice PDF.
-
-**FBR toggle:** When `fbr.enabled = false` (default), no FBR fields appear and no IRIS calls are made. When enabled, `failure_mode = queue` lets sales complete even if IRIS is unreachable; `block` holds the sale until IRIS confirms.
-
-**New services in `app/Services/Checkout/`:**
-- `CheckoutService` — orchestrates the full lifecycle
-- `TaxCalculationService` — per-line tax with priority resolution
-- `SalePaymentProcessor` — gateway dispatch (stub/live/disabled per `payment_gateway_configs`)
-- `InvoiceService` / `InvoicePdfService` — DomPDF rendering to `resources/views/invoices/`
-- `InvoiceNumberService` — race-safe sequence via `FOR UPDATE` row lock
-- `FbrReportingService` — HTTP POST to FBR IRIS endpoint
-- `CheckoutConfigService` — resolves `system_settings` snapshot at bootstrap time
-- `HistoricalSaleImportService` — bulk historical sale import (no inventory, no FBR)
-
-**Key API routes (all `web` + `auth` session-based, not Sanctum):**
-```
-GET  /api/v1/checkout/{cartId}              pos.access
-POST /api/v1/checkout/{cartId}/confirm      pos.access
-POST /api/v1/sales/{id}/payments            pos.access
-POST /api/v1/sales/{id}/void               pos.void-cart
-GET  /api/v1/customers?q=                  auth
-GET  /api/v1/sales/export                  sales.export
-POST /api/v1/sales/import-historical       sales.import-historical
-GET  /invoice/{publicToken}               public
-```
-
-### Environment
+## Environment
 
 Required `.env` values beyond defaults:
 - `SUPER_ADMIN_NAME`, `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD` — seeder uses these for initial admin account
