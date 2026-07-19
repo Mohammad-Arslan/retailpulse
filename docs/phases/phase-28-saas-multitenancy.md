@@ -10,6 +10,12 @@
 ## Objective
 Transform the application from a single-tenant system into a commercially licensable multi-tenant SaaS platform. Each tenant gets isolated data via a global Eloquent scope, a subscription plan that controls which modules are accessible, an onboarding wizard, and usage metering — with Stripe Billing as the payment stub.
 
+## Schema preparation status
+
+Nullable `tenant_id` columns are already on tenant-owned tables (17 prior + 153 via migration `2026_07_19_140000_add_nullable_tenant_id_for_saas_schema_prep`). See [docs/architecture/tenant-schema-preparation.md](../architecture/tenant-schema-preparation.md) for the full inventory and exclusions.
+
+**Still Phase 28 work (not done):** `tenants` table, tenant resolver, `TenantContext`, `TenantScope`, middleware, security, tenant-aware cache/queues/storage/search, provisioning, billing, and cross-tenant protection. Until those land, the app remains single-tenant — columns alone do not enforce isolation.
+
 ---
 
 ## 1. Data Model

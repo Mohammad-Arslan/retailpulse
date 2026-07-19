@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['customer_id', 'balance', 'expires_at', 'source_sale_id', 'notes'])]
+#[Fillable(['tenant_id', 'customer_id', 'balance', 'expires_at', 'source_sale_id', 'notes'])]
 class StoreCredit extends Model
 {
     protected function casts(): array

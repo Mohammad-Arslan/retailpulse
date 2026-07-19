@@ -11,6 +11,7 @@ use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
+    'tenant_id',
     'imageable_type',
     'imageable_id',
     'disk',

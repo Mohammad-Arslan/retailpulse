@@ -60,7 +60,7 @@ Architecture decisions (modular monolith, shared-schema tenancy, queue-based asy
 
 ## Multi-tenancy
 
-Tenant data isolation is a security boundary, prepared for continuously from early development even while enforcement is deferred to its scheduled phase. See [ADR-001](./architecture/adr-001-saas-multi-tenancy.md).
+Tenant data isolation is a security boundary. Schema is prepared continuously (`tenant_id` on tenant-owned tables — see [tenant-schema-preparation.md](./architecture/tenant-schema-preparation.md)); enforcement (`TenantScope`, resolver, tenant-aware subsystems) is deferred to Phase 28. Presence of `tenant_id` alone is not isolation. See [ADR-001](./architecture/adr-001-saas-multi-tenancy.md).
 
 ## Extensibility
 

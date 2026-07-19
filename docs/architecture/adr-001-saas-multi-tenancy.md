@@ -20,15 +20,15 @@ RetailPulse adopts **shared database, shared schema, row-level isolation**:
 - Every tenant-owned table carries a `tenant_id` column.
 - Isolation is enforced by a global query scope keyed on the current request's resolved tenant — not by separate databases or separate schemas per tenant.
 
-Phase 29 implements the complete enforcement infrastructure (tenant resolver, context, global scope, middleware, tenant-aware queues/cache/storage/search/broadcasting — see below). Before Phase 29, the codebase prepares for this without enforcing it.
+Phase 28 implements the complete enforcement infrastructure (tenant resolver, context, global scope, middleware, tenant-aware queues/cache/storage/search/broadcasting — see below). Before Phase 28, the codebase prepares for this without enforcing it. Phase 29 is Workflow Engine — do not conflate.
 
 ## How
 
 ### Phase strategy
 
-**Before Phase 29 (current state):** the application operates as a single-tenant ERP. Schema is prepared incrementally — nullable `tenant_id` columns are added to Category 2 tables (below) as they're created — but no filtering, middleware, resolver, or tenant-scoped security exists yet. The sole purpose of this phase is to avoid a disruptive backfill later.
+**Before Phase 28 (current state):** the application operates as a single-tenant ERP. Schema is prepared — nullable `tenant_id` columns exist on tenant-owned tables — but no filtering, middleware, resolver, or tenant-scoped security exists yet. The sole purpose of schema prep is to avoid a disruptive backfill later.
 
-**Phase 29 delivers:**
+**Phase 28 delivers:**
 
 - Tenant Resolver — resolves the active tenant from subdomain or an explicit header (see Phase 28 doc for the concrete `SetTenantContext` design)
 - `TenantContext` — request-lifecycle singleton holding the resolved tenant, the same architectural pattern as the existing `BranchContext` ([ADR-002](./adr-002-modular-monolith.md))
@@ -38,11 +38,11 @@ Phase 29 implements the complete enforcement infrastructure (tenant resolver, co
 - Tenant Provisioning and Tenant Lifecycle Management (below)
 - Cross-Tenant Data Protection
 
-After Phase 29, tenant isolation is mandatory for every new table and every new subsystem — not optional, not "add it later."
+After Phase 28, tenant isolation is mandatory for every new table and every new subsystem — not optional, not "add it later."
 
 ### Current state in codebase
 
-As of this writing (pre-Phase-28), 11 migrations already carry a nullable `tenant_id` column (e.g. `extend_users_table`, `create_branches_table`, `create_product_catalog_tables`, `create_products_tables`), added ahead of schedule per the prep strategy above. There is no `tenants` table, no `TenantContext`/`TenantScope`/`SetTenantContext` middleware, and no tenant filtering enforced anywhere yet. **Do not treat the presence of a `tenant_id` column as evidence that isolation is enforced** — grep for `TenantScope` before assuming it exists, and do not add ad hoc tenant-filtering logic ahead of Phase 28/29 without an explicit decision to pull that scope forward.
+Schema preparation is complete: **170 tables** carry a nullable `tenant_id` (17 already had the column; migration `2026_07_19_140000_add_nullable_tenant_id_for_saas_schema_prep` added it to 153 more). Full table lists, exclusions, and notes: [tenant-schema-preparation.md](./tenant-schema-preparation.md). There is still no `tenants` table, no `TenantContext` / `TenantScope` / `SetTenantContext` middleware, and no tenant filtering enforced anywhere. **Do not treat the presence of a `tenant_id` column as evidence that isolation is enforced** — grep for `TenantScope` before assuming it exists, and do not add ad hoc tenant-filtering logic ahead of Phase 28 without an explicit decision to pull that scope forward.
 
 ### Tenant classification rules
 
@@ -52,7 +52,7 @@ As of this writing (pre-Phase-28), 11 migrations already carry a nullable `tenan
 
 **Category 3 — Platform Infrastructure** (never `tenant_id`): migrations, jobs, failed_jobs, cache, sessions, password reset tokens.
 
-**Category 4 — Global Reference Data** (never `tenant_id`, shared by all tenants): Countries, Currencies, Languages, Timezones, Units of Measure.
+**Category 4 — Global Reference Data** (never `tenant_id`, shared by all tenants): Countries, Currencies, Languages, Timezones. **Note:** Units of Measure (`units`) already carries `tenant_id` in this codebase (treated as a tenant catalog). Phase 28 should decide whether to keep that or demote `units` to true global reference — see [tenant-schema-preparation.md](./tenant-schema-preparation.md).
 
 **Pivot tables** do not automatically get `tenant_id` — only add it when the pivot behaves as an independent business entity or is queried independently of its parents.
 
@@ -88,6 +88,6 @@ RetailPulse is designed to support thousands of tenants and millions of users on
 
 ## Impact on future development
 
-Every new table added from now on is classified against the four categories above before it is created. Every new subsystem (a new cache usage, a new queue, a new search index, a new broadcast channel) is designed from the start with "how does this stay tenant-scoped once Phase 29 lands" in mind, even while no enforcement exists yet — retrofitting a subsystem that assumed global state is exactly the expensive rework this ADR exists to avoid.
+Every new table added from now on is classified against the four categories above before it is created. Every new subsystem (a new cache usage, a new queue, a new search index, a new broadcast channel) is designed from the start with "how does this stay tenant-scoped once Phase 28 lands" in mind, even while no enforcement exists yet — retrofitting a subsystem that assumed global state is exactly the expensive rework this ADR exists to avoid.
 
 This document is the authoritative source for RetailPulse's SaaS multi-tenancy architecture. All future phases and AI-assisted development must comply with it.

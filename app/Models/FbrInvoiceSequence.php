@@ -15,6 +15,7 @@ class FbrInvoiceSequence extends Model
     protected $primaryKey = null;
 
     protected $fillable = [
+        'tenant_id',
         'branch_id',
         'date',
         'last_sequence',

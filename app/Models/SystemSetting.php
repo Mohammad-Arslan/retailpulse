@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 
 #[Fillable([
+    'tenant_id',
     'group',
     'key',
     'value',

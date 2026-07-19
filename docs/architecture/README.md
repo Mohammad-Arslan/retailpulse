@@ -46,7 +46,7 @@ So any ADR can be read the same way regardless of topic:
 
 | ADR | Title | Governs |
 | :--- | :--- | :--- |
-| [ADR-001](./adr-001-saas-multi-tenancy.md) | SaaS Multi-Tenancy Strategy | Tenant data model, isolation strategy, phased rollout, tenant classification, tenant lifecycle |
+| [ADR-001](./adr-001-saas-multi-tenancy.md) | SaaS Multi-Tenancy Strategy | Tenant data model, isolation strategy, phased rollout, tenant classification, tenant lifecycle — schema prep inventory: [tenant-schema-preparation.md](./tenant-schema-preparation.md) |
 | [ADR-002](./adr-002-modular-monolith.md) | Modular Monolith Architecture | Module boundaries, ownership, cross-module communication |
 | [ADR-003](./adr-003-backend-architecture.md) | Backend Architecture | Controller → FormRequest → Service → Repository → DTO → Model, DI, transactions, error handling |
 | [ADR-004](./adr-004-frontend-architecture.md) | Frontend Architecture (React + Inertia) | Page structure, Inertia standards, component hierarchy, design system, forms, tables, i18n |
@@ -73,6 +73,7 @@ So any ADR can be read the same way regardless of topic:
 - **[`docs/roadmap-philosophy.md`](../roadmap-philosophy.md)** — how the phase roadmap is designed, how architectural decisions get introduced, how technical debt is managed.
 - **`docs/srs.md`** — the Software Requirements Specification. It defines *what* the system must do, per module, per phase. These ADRs define *how* the system is built to satisfy the SRS durably.
 - **`docs/phases/`** — the phase-by-phase delivery roadmap. Phase docs describe planned schema and services for a specific slice of scope (e.g. Phase 28 for tenancy, Phase 29 for workflow). The ADRs here are the cross-phase architectural contract those phases must honor.
+- **[tenant-schema-preparation.md](./tenant-schema-preparation.md)** — inventory of tables that already have / received nullable `tenant_id` ahead of Phase 28 enforcement (companion to ADR-001).
 - **`docs/implementation-status.md`** — a point-in-time snapshot of what's actually built. It changes phase to phase; the ADRs do not.
 - **[`.ai/rules/*.mdc`](../../.ai/README.md)** — implementation-level coding standards (file placement, exact patterns, code-level checklists). These rules implement the ADRs; they state *how*, this directory states *why* and *what*. A rule should reference the ADR(s) it implements (`Implements: ADR-003`) rather than re-explaining the architecture. Cursor resolves the same files through `.cursor/rules` (symlink/junction to `.ai/rules`).
 - **`CLAUDE.md` / `AGENTS.md`** (repo root) — AI onboarding: read order and how to reconcile architecture with implementation. They do not duplicate ADRs or rules — they tell an agent how to use both.

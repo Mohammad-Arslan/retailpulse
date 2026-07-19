@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['customer_id', 'sale_id', 'points', 'type', 'description'])]
+#[Fillable(['tenant_id', 'customer_id', 'sale_id', 'points', 'type', 'description'])]
 class LoyaltyPoint extends Model
 {
     public $timestamps = false;

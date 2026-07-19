@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 #[Fillable([
+    'tenant_id',
     'employee_code',
     'user_id',
     'legal_entity_id',

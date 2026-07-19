@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['customer_id', 'balance', 'expires_at'])]
+#[Fillable(['tenant_id', 'customer_id', 'balance', 'expires_at'])]
 class CustomerWallet extends Model
 {
     protected function casts(): array

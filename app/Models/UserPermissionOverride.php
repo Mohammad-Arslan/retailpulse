@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class UserPermissionOverride extends Model
 {
     protected $fillable = [
+        'tenant_id',
         'user_id',
         'permission_id',
         'type',

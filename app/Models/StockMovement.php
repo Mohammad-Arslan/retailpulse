@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 #[Fillable([
+    'tenant_id',
     'warehouse_id',
     'product_variant_id',
     'batch_id',

@@ -44,7 +44,7 @@ Terminology used consistently across the SRS, phase docs, ADRs, and code. When a
 
 **SRS (Software Requirements Specification)** — `docs/srs.md`, the document defining *what* RetailPulse must do, organized by numbered section (e.g. §3.30 Workflow Engine) referenced throughout phase docs and ADRs.
 
-**Tenant** — a customer organization using RetailPulse's shared SaaS instance, isolated at the data layer by `tenant_id` (post-Phase-28). See [ADR-001](./adr-001-saas-multi-tenancy.md).
+**Tenant** — a customer organization using RetailPulse's shared SaaS instance. Nullable `tenant_id` columns already exist on tenant-owned tables ([tenant-schema-preparation.md](./tenant-schema-preparation.md)); row-level isolation via `TenantScope` / `TenantContext` is Phase 28. See [ADR-001](./adr-001-saas-multi-tenancy.md).
 
 **TenantContext** — the (post-Phase-28) request-lifecycle singleton holding the resolved active tenant, mirroring `BranchContext`. See [ADR-001](./adr-001-saas-multi-tenancy.md).
 

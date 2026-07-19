@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'slug', 'description', 'price_list_id', 'is_active'])]
+#[Fillable(['tenant_id', 'name', 'slug', 'description', 'price_list_id', 'is_active'])]
 class CustomerGroup extends Model
 {
     protected function casts(): array

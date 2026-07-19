@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['customer_id', 'channel', 'bucket', 'amount_due', 'status', 'error'])]
+#[Fillable(['tenant_id', 'customer_id', 'channel', 'bucket', 'amount_due', 'status', 'error'])]
 class CustomerReminderLog extends Model
 {
     public $timestamps = false;

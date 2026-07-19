@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['branch_id', 'product_variant_id', 'reorder_point', 'safety_stock_qty'])]
+#[Fillable(['tenant_id', 'branch_id', 'product_variant_id', 'reorder_point', 'safety_stock_qty'])]
 class VariantBranchSetting extends Model
 {
     protected function casts(): array
