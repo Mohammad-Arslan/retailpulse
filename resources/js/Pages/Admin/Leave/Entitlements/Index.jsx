@@ -8,16 +8,46 @@ import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, router, useForm } from '@inertiajs/react';
-import { CalendarClock, Search } from 'lucide-react';
+import { CalendarClock, Plus, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-function Index({ entitlements, filters, leaveTypes = [] }) {
+function Index({ entitlements, filters, leaveTypes = [], employees = [] }) {
     const { t } = useTranslation();
     const can = useCan();
     const [editing, setEditing] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
+    const [grantModalOpen, setGrantModalOpen] = useState(false);
     const form = useForm({ accrued_days: '', carried_forward_days: '' });
+    const grantForm = useForm({ employee_id: '', leave_type_id: '', accrued_days: '', carried_forward_days: '' });
+
+    const employeeOptions = useMemo(
+        () =>
+            employees.map((employee) => ({
+                value: String(employee.id),
+                label: `${employee.first_name} ${employee.last_name} (${employee.employee_code})`,
+            })),
+        [employees],
+    );
+
+    const grantLeaveTypeOptions = useMemo(
+        () => leaveTypes.map((type) => ({ value: String(type.id), label: `${type.name} (${type.code})` })),
+        [leaveTypes],
+    );
+
+    const openGrant = () => {
+        grantForm.clearErrors();
+        grantForm.setData({ employee_id: '', leave_type_id: '', accrued_days: '', carried_forward_days: '' });
+        setGrantModalOpen(true);
+    };
+
+    const submitGrant = (e) => {
+        e.preventDefault();
+        grantForm.post(route('admin.leave.entitlements.store'), {
+            preserveScroll: true,
+            onSuccess: () => setGrantModalOpen(false),
+        });
+    };
 
     const leaveTypeOptions = useMemo(
         () => [
@@ -112,6 +142,18 @@ function Index({ entitlements, filters, leaveTypes = [] }) {
                 header: t('pages.leaveEntitlements.columns.lastAccrual'),
                 cell: ({ row }) => row.original.accrual_last_run_on ?? '—',
             },
+            {
+                id: 'grantedManually',
+                header: t('pages.leaveEntitlements.columns.grantedManually'),
+                cell: ({ row }) =>
+                    row.original.granted_manually ? (
+                        <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
+                            {t('pages.leaveEntitlements.grantedManually')}
+                        </span>
+                    ) : (
+                        '—'
+                    ),
+            },
         ],
         [t],
     );
@@ -130,7 +172,14 @@ function Index({ entitlements, filters, leaveTypes = [] }) {
             <PageHeader
                 title={t('pages.leaveEntitlements.indexTitle')}
                 description={t('pages.leaveEntitlements.indexDescription')}
-            />
+            >
+                {can('leave.manage-entitlements') && (
+                    <Button variant="brand" onClick={openGrant}>
+                        <Plus className="h-4 w-4" />
+                        {t('pages.leaveEntitlements.grantTitle')}
+                    </Button>
+                )}
+            </PageHeader>
 
             <form onSubmit={search} className="rp-filter-bar mb-4 flex-wrap gap-2">
                 <div className="rp-search-inset min-w-[200px] flex-1">
@@ -207,6 +256,77 @@ function Index({ entitlements, filters, leaveTypes = [] }) {
                             {t('confirm.cancel')}
                         </Button>
                         <Button type="submit" variant="brand" disabled={form.processing}>
+                            {t('common.save')}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            <Modal show={grantModalOpen} onClose={() => setGrantModalOpen(false)} maxWidth="md">
+                <ModalHeader
+                    icon={CalendarClock}
+                    title={t('pages.leaveEntitlements.grantTitle')}
+                    description={t('pages.leaveEntitlements.grantHint')}
+                    onClose={() => setGrantModalOpen(false)}
+                />
+                <form onSubmit={submitGrant} className="space-y-4 p-6">
+                    <AdminFormField
+                        label={t('pages.leaveEntitlements.fields.employee')}
+                        error={grantForm.errors.employee_id}
+                        required
+                    >
+                        <Select
+                            value={grantForm.data.employee_id}
+                            onChange={(value) => grantForm.setData('employee_id', value ?? '')}
+                            options={employeeOptions}
+                        />
+                    </AdminFormField>
+                    <AdminFormField
+                        label={t('pages.leaveEntitlements.fields.leaveType')}
+                        error={grantForm.errors.leave_type_id}
+                        required
+                    >
+                        <Select
+                            value={grantForm.data.leave_type_id}
+                            onChange={(value) => grantForm.setData('leave_type_id', value ?? '')}
+                            options={grantLeaveTypeOptions}
+                        />
+                    </AdminFormField>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <AdminFormField
+                            label={t('pages.leaveEntitlements.fields.accruedDays')}
+                            error={grantForm.errors.accrued_days}
+                            required
+                        >
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                className="rp-form-input"
+                                value={grantForm.data.accrued_days}
+                                onChange={(e) => grantForm.setData('accrued_days', e.target.value)}
+                                required
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.leaveEntitlements.fields.carriedForwardDays')}
+                            error={grantForm.errors.carried_forward_days}
+                        >
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                className="rp-form-input"
+                                value={grantForm.data.carried_forward_days}
+                                onChange={(e) => grantForm.setData('carried_forward_days', e.target.value)}
+                            />
+                        </AdminFormField>
+                    </div>
+                    <div className="flex justify-end gap-2 border-t border-rp-border pt-4">
+                        <Button type="button" variant="outline" onClick={() => setGrantModalOpen(false)}>
+                            {t('confirm.cancel')}
+                        </Button>
+                        <Button type="submit" variant="brand" disabled={grantForm.processing}>
                             {t('common.save')}
                         </Button>
                     </div>

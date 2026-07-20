@@ -207,6 +207,7 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::post('encashments/{leaveEncashment}/cancel', [LeaveEncashmentController::class, 'cancel'])->name('encashments.cancel');
             Route::get('year-end-runs', [LeaveYearEndRunController::class, 'index'])->name('year-end-runs.index');
             Route::get('entitlements', [LeaveEntitlementController::class, 'index'])->name('entitlements.index');
+            Route::post('entitlements', [LeaveEntitlementController::class, 'store'])->name('entitlements.store');
             Route::put('entitlements/{entitlement}', [LeaveEntitlementController::class, 'update'])->name('entitlements.update');
         });
 

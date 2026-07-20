@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin\Leave;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Leave\StoreLeavePolicyRequest;
 use App\Http\Requests\Admin\Leave\UpdateLeavePolicyRequest;
+use App\Jobs\Leave\ReevaluateLeaveEligibilityForPolicyJob;
 use App\Models\Grade;
 use App\Models\HrEmploymentType;
 use App\Models\LeavePolicy;
@@ -88,7 +89,12 @@ final class LeavePolicyController extends Controller
     {
         $this->authorize('create', LeavePolicy::class);
 
-        LeavePolicy::query()->create($request->validated());
+        $policy = LeavePolicy::query()->create($request->validated());
+
+        // Always re-check on create: a brand-new policy may make employees
+        // who already exist newly eligible for a leave type they had no
+        // policy for at all before.
+        ReevaluateLeaveEligibilityForPolicyJob::dispatch($policy);
 
         return back()->with('success', __('Leave Policy Created Successfully.'));
     }
@@ -97,7 +103,23 @@ final class LeavePolicyController extends Controller
     {
         $this->authorize('update', $policy);
 
+        // Carbon casts don't compare reliably with ===, so snapshot as plain
+        // scalars rather than diffing the raw ->only() arrays.
+        $snapshot = fn (LeavePolicy $p): array => [
+            'eligibility_json' => $p->eligibility_json,
+            'effective_from' => $p->effective_from?->toDateString(),
+            'effective_to' => $p->effective_to?->toDateString(),
+        ];
+
+        $before = $snapshot($policy);
+
         $policy->update($request->validated());
+
+        $after = $snapshot($policy);
+
+        if ($before !== $after) {
+            ReevaluateLeaveEligibilityForPolicyJob::dispatch($policy);
+        }
 
         return back()->with('success', __('Leave Policy Updated Successfully.'));
     }

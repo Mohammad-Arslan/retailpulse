@@ -415,6 +415,22 @@ final class LeaveService
 
         $hireDate = $employee->hire_date !== null ? CarbonImmutable::parse($employee->hire_date) : CarbonImmutable::now();
         $policy = $this->resolveLeavePolicy($employee, $leaveType, $hireDate);
+
+        return $this->createInitialEntitlement($employee, $leaveType, $policy, $hireDate, $fiscalYearId);
+    }
+
+    /**
+     * Computes and persists the initial grant for a brand-new entitlement row.
+     * The one and only place this math lives — shared by the lazy-fallback
+     * path above and `LeaveEntitlementAssignmentService`'s explicit evaluation.
+     */
+    public function createInitialEntitlement(
+        Employee $employee,
+        LeaveType $leaveType,
+        ?LeavePolicy $policy,
+        CarbonImmutable $hireDate,
+        ?int $fiscalYearId = null,
+    ): LeaveEntitlement {
         $initialGrant = 0.0;
 
         if ($policy !== null && $policy->accrual_method === 'fixed_annual') {

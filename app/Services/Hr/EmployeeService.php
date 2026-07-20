@@ -12,6 +12,7 @@ use App\Events\EmployeeCreated;
 use App\Events\EmployeeReactivated;
 use App\Events\EmployeeTerminated;
 use App\Events\EmployeeUpdated;
+use App\Events\OrgAssignmentChanged;
 use App\Models\Branch;
 use App\Models\CostCentre;
 use App\Models\Department;
@@ -38,6 +39,17 @@ final class EmployeeService
      * @var list<string>
      */
     private const ASSIGNMENT_TRACKED_FIELDS = EmployeeAssignmentService::TRACKED_FIELDS;
+
+    /**
+     * Fields outside EmployeeAssignmentService::TRACKED_FIELDS that leave
+     * eligibility also keys on. Not schedulable/history-tracked like the
+     * TRACKED_FIELDS set — these apply immediately, so the change is
+     * detected and the shared OrgAssignmentChanged event dispatched directly
+     * here rather than piggybacking on applyOrgChanges()'s scheduling.
+     *
+     * @var list<string>
+     */
+    private const ELIGIBILITY_ONLY_TRACKED_FIELDS = ['legal_entity_id', 'employment_type'];
 
     /**
      * @var list<string>
@@ -235,7 +247,22 @@ final class EmployeeService
 
             $this->assignments->applyOrgChanges($employee, $attributes, $data->orgEffectiveFrom);
 
+            $before = $employee->only(self::ELIGIBILITY_ONLY_TRACKED_FIELDS);
+
             $employee->update($attributes);
+
+            foreach (self::ELIGIBILITY_ONLY_TRACKED_FIELDS as $field) {
+                if (! array_key_exists($field, $attributes)) {
+                    continue;
+                }
+
+                $oldValue = $before[$field] !== null ? (string) $before[$field] : null;
+                $newValue = $employee->{$field} !== null ? (string) $employee->{$field} : null;
+
+                if ($oldValue !== $newValue) {
+                    event(new OrgAssignmentChanged($employee, $field, $oldValue, $newValue, now()->toDateString()));
+                }
+            }
 
             $this->syncNested(
                 $employee,

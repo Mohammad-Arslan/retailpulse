@@ -6,7 +6,9 @@ namespace App\Providers;
 
 use App\Contracts\AI\LocalAiClient;
 use App\Events\Accounting\CreditNoteIssued;
+use App\Events\EmployeeCreated;
 use App\Events\InventoryStockChanged;
+use App\Events\OrgAssignmentChanged;
 use App\Events\Procurement\DebitNoteIssued;
 use App\Events\Procurement\DropShipGrnConfirmed;
 use App\Events\Procurement\GoodsReceived;
@@ -22,6 +24,8 @@ use App\Listeners\Accounting\ProcessAccountingOnSaleCompleted;
 use App\Listeners\Accounting\ProcessAccountingOnSupplierInvoiceMatched;
 use App\Listeners\Accounting\ProcessAccountingOnSupplierPaymentRecorded;
 use App\Listeners\Accounting\ProcessAccountingOnTransferConfirmed;
+use App\Listeners\Leave\EvaluateLeaveEligibilityOnEmployeeCreated;
+use App\Listeners\Leave\EvaluateLeaveEligibilityOnOrgAssignmentChanged;
 use App\Listeners\ProcessLoyaltyOnSaleCompleted;
 use App\Listeners\Procurement\LogDropShipGrnConfirmed;
 use App\Listeners\Procurement\LogGoodsReceived;
@@ -404,5 +408,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(CreditNoteIssued::class, PostCreditNoteToAccounting::class);
         Event::listen(InventoryStockChanged::class, ProcessAccountingOnInventoryMovement::class);
         Event::listen(TransferConfirmed::class, ProcessAccountingOnTransferConfirmed::class);
+        Event::listen(EmployeeCreated::class, EvaluateLeaveEligibilityOnEmployeeCreated::class);
+        Event::listen(OrgAssignmentChanged::class, EvaluateLeaveEligibilityOnOrgAssignmentChanged::class);
     }
 }

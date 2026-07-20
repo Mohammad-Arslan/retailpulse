@@ -1400,6 +1400,9 @@
             "adjust": "Adjust",
             "adjustTitle": "Adjust Leave Entitlement",
             "adjustHint": "Adjustments are recorded in the audit log with the previous value, actor, and timestamp.",
+            "grantTitle": "Grant Leave",
+            "grantHint": "Manually grant a leave type to an employee, outside normal policy eligibility (e.g. a one-off compassionate leave grant). This bypasses eligibility rules and is flagged as a manual grant.",
+            "grantedManually": "Manually Granted",
             "columns": {
                 "employee": "Employee",
                 "leaveType": "Leave Type",
@@ -1408,9 +1411,12 @@
                 "carriedForward": "Carried Forward",
                 "encashed": "Encashed",
                 "remaining": "Remaining",
-                "lastAccrual": "Last Accrual"
+                "lastAccrual": "Last Accrual",
+                "grantedManually": "Grant Type"
             },
             "fields": {
+                "employee": "Employee",
+                "leaveType": "Leave Type",
                 "accruedDays": "Accrued Days",
                 "carriedForwardDays": "Carried Forward Days"
             }
