@@ -213,4 +213,33 @@ final class AccountingModuleGatingRoutesTest extends TestCase
             ->get(route('admin.accounting.credit-notes.index'))
             ->assertOk();
     }
+
+    public function test_core_only_branch_redirects_with_error_on_debit_notes_index(): void
+    {
+        $this->setEnabledModules(['core']);
+
+        $this->actingAsBranchAdmin()
+            ->get(route('admin.accounting.debit-notes.index'))
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
+    }
+
+    public function test_enabling_debit_notes_alone_without_ar_ap_still_redirects_with_error(): void
+    {
+        $this->setEnabledModules(['core', 'debit_notes']);
+
+        $this->actingAsBranchAdmin()
+            ->get(route('admin.accounting.debit-notes.index'))
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('error');
+    }
+
+    public function test_enabling_debit_notes_with_ar_ap_allows_access(): void
+    {
+        $this->setEnabledModules(['core', 'ar_ap', 'debit_notes']);
+
+        $this->actingAsBranchAdmin()
+            ->get(route('admin.accounting.debit-notes.index'))
+            ->assertOk();
+    }
 }
