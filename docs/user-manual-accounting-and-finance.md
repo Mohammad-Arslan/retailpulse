@@ -991,17 +991,16 @@ See also [`user-manual-put-product-in-stock.md`](user-manual-put-product-in-stoc
 
 **What if `ar_ap` not enabled?** Credit notes module stays off even if `credit_notes` is in the profile array without `ar_ap`.
 
-### 16.2 Debit notes (procurement — no standalone Accounting menu)
+### 16.2 Debit notes (`debit_notes` + `ar_ap`)
 
-Unlike credit notes, **debit notes are not a separate item under Accounting → sidebar**. They are issued from the **Purchase Return** flow in Procurement (Phase 10).
+**Menu:** Accounting → Debit Notes
 
-| Where to find it | Procurement → Purchase Returns → issue debit note on an approved return |
-|------------------|---------------------------------------------------------------------------|
-| Accounting event | `debit_note.issued` (listener: `ProcessAccountingOnDebitNoteIssued`) |
-| Typical GL impact | Reduces AP / adjusts purchase accrual per seeded posting rule `debit_note_issued_default` |
-| PDF | Available from the purchase return / debit note route (`debit-notes/{id}/pdf`) |
+- Issue a debit note against a supplier → reduces AP. Can stand alone (just a supplier) or optionally link to a supplier invoice, which caps the amount at that invoice's remaining balance.
+- Also issuable from the **Purchase Return** flow in Procurement (Phase 10) — approving an RMA's "Issue Debit Note" action creates the debit note the same way, linked to the return instead of an invoice.
+- Fires `debit_note.issued` (listener: `ProcessAccountingOnDebitNoteIssued`) → posting rule `debit_note_issued_default` reduces AP / adjusts purchase accrual.
+- PDF available from `debit-notes/{id}/pdf`, whichever path created the note.
 
-**What if support searches this manual for "Debit Notes"?** There is no Accounting → Debit Notes page by design — direct the user to **Inventory → Purchase Orders / Goods Receiving → Purchase Returns**, not the Accounting section.
+**What if `ar_ap` not enabled?** Debit notes module stays off even if `debit_notes` is in the profile array without `ar_ap`, same as credit notes.
 
 **What if posting fails?** Check Accounting Events for `debit_note.issued` with Failed status; fix mappings/rules the same way as other auto-posted events.
 
@@ -1347,7 +1346,7 @@ A: May indicate mis-posted GRN journals (e.g. offset to GRNI/clearing instead of
 A: Phase 12 — not in this manual.
 
 **Q: Where are debit notes in Accounting?**  
-A: There is no Accounting → Debit Notes menu. Debit notes are issued from **Procurement → Purchase Returns**. The GL effect appears via `debit_note.issued` in Accounting Events and Journal Entries.
+A: Accounting → Debit Notes (gated by the `debit_notes` + `ar_ap` modules), same as credit notes. Debit notes can also still be issued from **Procurement → Purchase Returns**, which creates the same kind of record linked to the return instead of a supplier invoice. The GL effect appears via `debit_note.issued` in Accounting Events and Journal Entries either way.
 
 **Q: Customer payment on account without new sale?**  
 A: Distinct `payment.received` event is deferred; partial coverage via sale settlement lines today.
@@ -1358,6 +1357,7 @@ A: Distinct `payment.received` event is deferred; partial coverage via sale sett
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 2.2 | July 2026 | Debit notes promoted to a standalone `debit_notes` sub-module (Accounting → Debit Notes), mirroring Credit Notes; supersedes §16.2's prior "no standalone menu by design" note |
 | 2.1 | July 2026 | Phase 12 GL events for expenses + payroll; link to HR/payroll user manual; clarify approve-vs-post for payroll |
 | 2.0 | July 2026 | Phase 12 recurring expenses: nav item, scheduler command, `expense.recurring_due` posting |
 | 1.9 | July 2026 | Cost Centre Allocate Shared Expense: clarified Run Allocation steps, methods table, troubleshooting; fixed allocate form submit (Inertia transform) |

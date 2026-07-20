@@ -14,4 +14,5 @@ return [
     'fixed_assets' => ['requires' => ['core']],
     'intercompany' => ['requires' => ['core', 'multi_currency']],
     'credit_notes' => ['requires' => ['core', 'ar_ap']],
+    'debit_notes' => ['requires' => ['core', 'ar_ap']],
 ];
