@@ -29,6 +29,8 @@ final class AccountMappingKeys
             'cogs',
             'inventory_adjustment',
             'inventory_write_off',
+            'inventory_adjustment_gain',
+            'inventory_shrinkage_expense',
             'output_tax',
             'input_tax',
             'tax_payable',
