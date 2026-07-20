@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace App\Services\Procurement;
 
+use App\DTOs\Accounting\CreateDebitNoteData;
 use App\DTOs\Inventory\DeductStockData;
 use App\Enums\ProcurementDocumentType;
 use App\Enums\PurchaseReturnStatus;
 use App\Enums\StockMovementReason;
-use App\Enums\SupplierLedgerEntryType;
-use App\Events\Procurement\DebitNoteIssued;
 use App\Events\Procurement\PurchaseReturnApproved;
 use App\Models\DebitNote;
 use App\Models\GoodsReceivingNote;
 use App\Models\PurchaseReturn;
+use App\Services\Accounting\DebitNoteService;
 use App\Services\InventoryService;
 use App\Services\Procurement\Contracts\ProcurementPostingHook;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +23,7 @@ final class PurchaseReturnService
 {
     public function __construct(
         private readonly ProcurementDocumentNumberService $documentNumbers,
-        private readonly SupplierLedgerService $ledger,
+        private readonly DebitNoteService $debitNotes,
         private readonly InventoryService $inventory,
         private readonly ProcurementPostingHook $postingHook,
     ) {}
@@ -178,45 +178,25 @@ final class PurchaseReturnService
             ?? $return->supplier?->currency_code
             ?? 'USD';
         $exchangeRate = (float) ($return->purchaseOrder?->exchange_rate ?? 1);
-        $functionalAmount = round($amount * $exchangeRate, 2);
 
-        return DB::transaction(function () use ($return, $amount, $userId, $currencyCode, $exchangeRate, $functionalAmount) {
-            $debitNote = DebitNote::query()->create([
-                'branch_id' => $return->branch_id,
-                'supplier_id' => $return->supplier_id,
-                'purchase_return_id' => $return->id,
-                'reference_no' => $this->documentNumbers->next($return->branch_id, ProcurementDocumentType::DebitNote),
-                'amount' => $amount,
-                'currency_code' => $currencyCode,
-                'exchange_rate' => $exchangeRate,
-                'functional_amount' => $functionalAmount,
-                'status' => 'issued',
-                'issued_at' => now(),
-                'created_by' => $userId,
-                'updated_by' => $userId,
-            ]);
-
-            $this->ledger->recordEntry(
+        return DB::transaction(function () use ($return, $amount, $userId, $currencyCode, $exchangeRate) {
+            $debitNote = $this->debitNotes->create(new CreateDebitNoteData(
                 supplierId: $return->supplier_id,
                 branchId: $return->branch_id,
-                type: SupplierLedgerEntryType::DebitNote,
+                purchaseReturnId: $return->id,
+                supplierInvoiceId: null,
+                date: now()->toDateString(),
                 amount: $amount,
-                currencyCode: $debitNote->currency_code,
-                exchangeRate: (float) $debitNote->exchange_rate,
-                functionalAmount: (float) $debitNote->functional_amount,
-                referenceType: DebitNote::class,
-                referenceId: $debitNote->id,
-                referenceNo: $debitNote->reference_no,
-                notes: __('Debit note for return :ref', ['ref' => $return->reference_no]),
-                userId: $userId,
-            );
+                currencyCode: $currencyCode,
+                exchangeRate: $exchangeRate,
+                reason: __('Debit note for return :ref', ['ref' => $return->reference_no]),
+            ), $userId);
 
             $return->update([
                 'status' => PurchaseReturnStatus::DebitNoteIssued,
                 'updated_by' => $userId,
             ]);
 
-            event(new DebitNoteIssued($debitNote));
             $this->postingHook->postPurchaseReturn($return->fresh() ?? $return);
 
             return $debitNote;
