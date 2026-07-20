@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'status',
     'backdated_at',
     'backdated_reason',
+    'is_zero_cost',
 ])]
 class InventoryCostLayer extends Model
 {
@@ -38,6 +39,7 @@ class InventoryCostLayer extends Model
             'valuation_method' => InventoryValuationMethod::class,
             'landed_cost_amount' => 'decimal:4',
             'backdated_at' => 'datetime',
+            'is_zero_cost' => 'boolean',
         ];
     }
 

@@ -7,6 +7,7 @@ namespace App\Services\Accounting;
 use App\DTOs\Accounting\BackdatedPostingAssessment;
 use App\DTOs\Accounting\ConsumedCost;
 use App\Enums\InventoryValuationMethod;
+use App\Enums\ZeroCostInventoryPolicy;
 use App\Models\FinancialSetting;
 use App\Models\GoodsReceivingNote;
 use App\Models\GrnItem;
@@ -70,7 +71,19 @@ final class CostService
             ]);
         }
 
-        if ($unitCost <= 0) {
+        $settings = $this->financialSettings->get();
+        $method = $valuationMethod ?? $settings->default_inventory_valuation_method ?? InventoryValuationMethod::Fifo;
+
+        $isZeroCost = $unitCost <= 0;
+        $zeroCostPolicy = $settings->zero_cost_inventory_policy ?? ZeroCostInventoryPolicy::Warn;
+
+        if ($isZeroCost && $zeroCostPolicy === ZeroCostInventoryPolicy::Block) {
+            throw ValidationException::withMessages([
+                'unit_cost' => __('Receiving inventory at zero or negative unit cost is blocked by the current zero-cost inventory policy.'),
+            ]);
+        }
+
+        if ($isZeroCost && $zeroCostPolicy !== ZeroCostInventoryPolicy::Allow) {
             Log::warning('Inventory cost layer received at zero or negative unit cost.', [
                 'product_variant_id' => $productVariantId,
                 'warehouse_id' => $warehouseId,
@@ -78,9 +91,6 @@ final class CostService
                 'source_reference_id' => $sourceReferenceId,
             ]);
         }
-
-        $settings = $this->financialSettings->get();
-        $method = $valuationMethod ?? $settings->default_inventory_valuation_method ?? InventoryValuationMethod::Fifo;
 
         $effectiveReceivedAt = $receivedAt ?? now();
         $assessment = $this->assessBackdatedReceipt($productVariantId, $warehouseId, $effectiveReceivedAt, $settings);
@@ -108,6 +118,7 @@ final class CostService
             'status' => 'active',
             'backdated_at' => $assessment->shouldFlag ? now() : null,
             'backdated_reason' => $assessment->shouldFlag ? self::BACKDATED_REASON : null,
+            'is_zero_cost' => $isZeroCost,
         ]);
 
         if ($assessment->shouldFlag) {
@@ -197,6 +208,23 @@ final class CostService
                     (bool) $settings->allow_negative_inventory,
                 ),
             };
+
+            if ($result->basis === 'none') {
+                $zeroCostPolicy = $settings->zero_cost_inventory_policy ?? ZeroCostInventoryPolicy::Warn;
+
+                if ($zeroCostPolicy === ZeroCostInventoryPolicy::Block) {
+                    throw ValidationException::withMessages([
+                        'inventory' => __('This sale has no resolvable inventory cost and is blocked by the current zero-cost inventory policy.'),
+                    ]);
+                }
+
+                if ($zeroCostPolicy === ZeroCostInventoryPolicy::Warn) {
+                    Log::warning('Sale consumed inventory with no resolvable cost basis.', [
+                        'product_variant_id' => $variantId,
+                        'warehouse_id' => $warehouseId,
+                    ]);
+                }
+            }
 
             return new ConsumedCost(round($result->amount, 2), $result->estimated, $result->basis);
         });

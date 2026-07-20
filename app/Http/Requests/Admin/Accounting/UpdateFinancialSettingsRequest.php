@@ -36,6 +36,7 @@ final class UpdateFinancialSettingsRequest extends FormRequest
             'manual_journal_approval_limit' => ['nullable', 'numeric', 'min:0'],
             'backdated_posting_policy' => ['nullable', 'string', 'in:allow,warn,block'],
             'backdated_entry_approval_required' => ['boolean'],
+            'zero_cost_inventory_policy' => ['nullable', 'string', 'in:block,warn,allow'],
             'fiscal_year_close_approval_required' => ['boolean'],
             'period_lock_mode' => ['nullable', 'string', 'in:fiscal_year,monthly'],
             'journal_numbering_mode' => ['nullable', 'string', 'in:global,branch,branch_fiscal'],

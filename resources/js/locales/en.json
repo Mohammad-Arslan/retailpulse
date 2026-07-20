@@ -3686,6 +3686,11 @@
                     "warn": "Warn — post and flag backdated entries for review",
                     "block": "Block — reject backdated entries"
                 },
+                "zeroCostPolicy": {
+                    "block": "Block — reject zero-cost receipts and sales",
+                    "warn": "Warn — allow, flag, and log zero-cost receipts and sales",
+                    "allow": "Allow — permit zero-cost receipts and sales silently"
+                },
                 "fiscalYearsTitle": "Fiscal Years",
                 "fiscalYearsEmpty": "No fiscal years configured.",
                 "fiscalYearColumns": {
@@ -3725,6 +3730,7 @@
                     "defaultValuationMethod": "Default Inventory Valuation Method",
                     "approvalLimit": "Manual Journal Approval Limit",
                     "backdatedPostingPolicy": "Backdated Posting Policy",
+                    "zeroCostInventoryPolicy": "Zero-Cost Inventory Policy",
                     "fiscalYearReopenWindowHours": "Fiscal Year Reopen Window (Hours)",
                     "defaultSalesTaxType": "Default Sales Tax Type",
                     "defaultPurchaseTaxType": "Default Purchase Tax Type",

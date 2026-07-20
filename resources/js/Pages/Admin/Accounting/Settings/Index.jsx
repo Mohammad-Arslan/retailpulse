@@ -41,6 +41,7 @@ function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reo
         fx_loss_account_id: settings.fx_loss_account_id ? String(settings.fx_loss_account_id) : '',
         default_inventory_valuation_method: settings.default_inventory_valuation_method ?? 'fifo',
         allow_negative_inventory: settings.allow_negative_inventory === true,
+        zero_cost_inventory_policy: settings.zero_cost_inventory_policy ?? 'warn',
         allow_manual_journal_posting: settings.allow_manual_journal_posting !== false,
         manual_journal_approval_limit: settings.manual_journal_approval_limit ?? '',
         backdated_posting_policy: settings.backdated_posting_policy ?? 'warn',
@@ -403,6 +404,23 @@ function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reo
                         <p className="text-sm text-amber-700 dark:text-amber-400 sm:col-span-2">
                             {t('pages.accounting.settings.negativeInventoryWarning')}
                         </p>
+                        <AdminFormField
+                            label={t('pages.accounting.settings.fields.zeroCostInventoryPolicy')}
+                            id="zero_cost_inventory_policy"
+                            error={errors.zero_cost_inventory_policy}
+                        >
+                            <Select
+                                id="zero_cost_inventory_policy"
+                                value={data.zero_cost_inventory_policy}
+                                onChange={(value) => setData('zero_cost_inventory_policy', value ?? 'warn')}
+                                options={[
+                                    { value: 'block', label: t('pages.accounting.settings.zeroCostPolicy.block') },
+                                    { value: 'warn', label: t('pages.accounting.settings.zeroCostPolicy.warn') },
+                                    { value: 'allow', label: t('pages.accounting.settings.zeroCostPolicy.allow') },
+                                ]}
+                                disabled={readOnly}
+                            />
+                        </AdminFormField>
                     </div>
                 </FormCard>
 

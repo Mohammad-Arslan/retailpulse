@@ -31,6 +31,7 @@ final class FinancialSettingsPresenter
             'manual_journal_approval_limit' => $settings->manual_journal_approval_limit,
             'backdated_posting_policy' => $settings->backdated_posting_policy?->value,
             'backdated_entry_approval_required' => $settings->backdated_entry_approval_required,
+            'zero_cost_inventory_policy' => $settings->zero_cost_inventory_policy?->value,
             'fiscal_year_close_approval_required' => $settings->fiscal_year_close_approval_required,
             'period_lock_mode' => $settings->period_lock_mode,
             'journal_numbering_mode' => $settings->journal_numbering_mode,

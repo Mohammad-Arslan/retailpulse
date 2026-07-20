@@ -25,6 +25,7 @@ final readonly class UpdateFinancialSettingsData
         public ?float $manualJournalApprovalLimit,
         public ?string $backdatedPostingPolicy,
         public ?bool $backdatedEntryApprovalRequired,
+        public ?string $zeroCostInventoryPolicy,
         public ?bool $fiscalYearCloseApprovalRequired,
         public ?string $periodLockMode,
         public ?string $journalNumberingMode,
@@ -66,6 +67,7 @@ final readonly class UpdateFinancialSettingsData
             backdatedPostingPolicy: $request->validated('backdated_posting_policy'),
             backdatedEntryApprovalRequired: $request->has('backdated_entry_approval_required')
                 ? $request->boolean('backdated_entry_approval_required') : null,
+            zeroCostInventoryPolicy: $request->validated('zero_cost_inventory_policy'),
             fiscalYearCloseApprovalRequired: $request->has('fiscal_year_close_approval_required')
                 ? $request->boolean('fiscal_year_close_approval_required') : null,
             periodLockMode: $request->validated('period_lock_mode'),
@@ -104,6 +106,7 @@ final readonly class UpdateFinancialSettingsData
             'manual_journal_approval_limit' => $this->manualJournalApprovalLimit,
             'backdated_posting_policy' => $this->backdatedPostingPolicy,
             'backdated_entry_approval_required' => $this->backdatedEntryApprovalRequired,
+            'zero_cost_inventory_policy' => $this->zeroCostInventoryPolicy,
             'fiscal_year_close_approval_required' => $this->fiscalYearCloseApprovalRequired,
             'period_lock_mode' => $this->periodLockMode,
             'journal_numbering_mode' => $this->journalNumberingMode,

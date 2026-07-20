@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\BackdatedPostingPolicy;
 use App\Enums\InventoryValuationMethod;
+use App\Enums\ZeroCostInventoryPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'manual_journal_approval_limit',
     'backdated_posting_policy',
     'backdated_entry_approval_required',
+    'zero_cost_inventory_policy',
     'fiscal_year_close_approval_required',
     'period_lock_mode',
     'journal_numbering_mode',
@@ -49,6 +51,7 @@ class FinancialSetting extends Model
             'manual_journal_approval_limit' => 'decimal:2',
             'backdated_posting_policy' => BackdatedPostingPolicy::class,
             'backdated_entry_approval_required' => 'boolean',
+            'zero_cost_inventory_policy' => ZeroCostInventoryPolicy::class,
             'fiscal_year_close_approval_required' => 'boolean',
             'tax_reporting_enabled' => 'boolean',
             'accounting_cutover_date' => 'date',
