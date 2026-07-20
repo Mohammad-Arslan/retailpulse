@@ -53,15 +53,17 @@ final class ProcessAccountingOnSaleCompleted
             $itemCosts = [];
 
             foreach ($sale->items as $item) {
-                $lineCost = $this->costService->consumeOnSale($item);
-                $inventoryCost += $lineCost;
+                $consumed = $this->costService->consumeOnSale($item);
+                $inventoryCost += $consumed->amount;
                 $itemCosts[] = [
                     'sale_item_id' => $item->id,
                     'product_variant_id' => $item->product_variant_id,
                     'quantity' => $item->quantity,
                     'line_total' => (float) $item->line_total,
                     'tax_amount' => (float) $item->tax_amount,
-                    'inventory_cost' => $lineCost,
+                    'inventory_cost' => $consumed->amount,
+                    'cost_estimated' => $consumed->estimated,
+                    'cost_basis' => $consumed->basis,
                 ];
             }
 
@@ -108,10 +110,13 @@ final class ProcessAccountingOnSaleCompleted
 
             foreach ($sale->items as $index => $item) {
                 $lineCost = $itemCosts[$index]['inventory_cost'] ?? 0.0;
+                $estimated = $itemCosts[$index]['cost_estimated'] ?? false;
 
                 $item->update([
-                    'cost_consumed' => $lineCost > 0 ? $lineCost : null,
+                    'cost_consumed' => $lineCost > 0 || $estimated ? $lineCost : null,
                     'cogs_journal_entry_id' => $journalEntryId,
+                    'cost_estimated' => $estimated,
+                    'cost_basis' => $itemCosts[$index]['cost_basis'] ?? null,
                 ]);
             }
         });

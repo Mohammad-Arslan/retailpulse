@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Accounting;
 
+use App\Enums\InventoryValuationMethod;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\ProductType;
@@ -25,6 +26,7 @@ use App\Models\Warehouse;
 use App\Services\Accounting\CostService;
 use App\Services\Accounting\FinancialSettingsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Tests\Concerns\SeedsAccounting;
 use Tests\TestCase;
 
@@ -147,7 +149,7 @@ final class CostServiceTest extends TestCase
         $this->assertSame(SaleItem::class, $restored->source_reference_type);
     }
 
-    public function test_consume_on_sale_without_layers_uses_zero_when_negative_inventory_allowed(): void
+    public function test_consume_on_sale_without_layers_flags_estimated_zero_cost_when_negative_inventory_allowed(): void
     {
         $settings = app(FinancialSettingsService::class)->get();
         $settings->update(['allow_negative_inventory' => true]);
@@ -155,10 +157,90 @@ final class CostServiceTest extends TestCase
         $sale = $this->createSaleWithItem(quantity: 2, unitPrice: 50);
         $item = $sale->items()->first();
 
-        $cost = app(CostService::class)->consumeOnSale($item);
+        $consumed = app(CostService::class)->consumeOnSale($item);
 
-        $this->assertSame(0.0, $cost);
+        $this->assertSame(0.0, $consumed->amount);
+        $this->assertTrue($consumed->estimated);
+        $this->assertSame('none', $consumed->basis);
         $this->assertSame(0, InventoryCostLayer::query()->count());
+    }
+
+    public function test_sale_completed_persists_estimated_zero_cost_flag_on_sale_item(): void
+    {
+        $settings = app(FinancialSettingsService::class)->get();
+        $settings->update(['allow_negative_inventory' => true]);
+
+        $sale = $this->createSaleWithItem(quantity: 2, unitPrice: 50);
+
+        app(ProcessAccountingOnSaleCompleted::class)->handle(new SaleCompleted($sale->fresh(['items', 'payments', 'invoice'])));
+
+        $saleItem = $sale->items()->first()->fresh();
+
+        $this->assertSame(0.0, (float) $saleItem->cost_consumed);
+        $this->assertTrue($saleItem->cost_estimated);
+        $this->assertSame('none', $saleItem->cost_basis);
+    }
+
+    public function test_consume_on_sale_falls_back_to_last_known_cost_when_layer_is_fully_depleted(): void
+    {
+        app(FinancialSettingsService::class)->get()->update(['allow_negative_inventory' => true]);
+
+        app(CostService::class)->createLayerOnReceive(
+            productVariantId: $this->variant->id,
+            warehouseId: $this->warehouse->id,
+            qtyReceived: 3,
+            unitCost: 40,
+            sourceReferenceType: 'Tests\\GrnItem',
+            sourceReferenceId: 10,
+        );
+
+        $firstSale = $this->createSaleWithItem(quantity: 3, unitPrice: 100);
+        app(CostService::class)->consumeOnSale($firstSale->items()->first());
+
+        $this->assertSame(0, InventoryCostLayer::query()->where('status', 'active')->count());
+
+        $secondSale = $this->createSaleWithItem(quantity: 2, unitPrice: 100);
+        $consumed = app(CostService::class)->consumeOnSale($secondSale->items()->first());
+
+        $this->assertSame(80.0, $consumed->amount);
+        $this->assertTrue($consumed->estimated);
+        $this->assertSame('last_known', $consumed->basis);
+    }
+
+    public function test_consume_weighted_average_flags_estimated_zero_cost_when_negative_inventory_allowed(): void
+    {
+        $settings = app(FinancialSettingsService::class)->get();
+        $settings->update([
+            'allow_negative_inventory' => true,
+            'default_inventory_valuation_method' => InventoryValuationMethod::Wac,
+        ]);
+
+        $sale = $this->createSaleWithItem(quantity: 2, unitPrice: 50);
+        $item = $sale->items()->first();
+
+        $consumed = app(CostService::class)->consumeOnSale($item);
+
+        $this->assertSame(0.0, $consumed->amount);
+        $this->assertTrue($consumed->estimated);
+        $this->assertSame('none', $consumed->basis);
+    }
+
+    public function test_create_layer_on_receive_logs_warning_for_zero_unit_cost(): void
+    {
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(fn (string $message) => str_contains($message, 'zero or negative unit cost'));
+
+        $layer = app(CostService::class)->createLayerOnReceive(
+            productVariantId: $this->variant->id,
+            warehouseId: $this->warehouse->id,
+            qtyReceived: 5,
+            unitCost: 0,
+            sourceReferenceType: 'Tests\\GrnItem',
+            sourceReferenceId: 20,
+        );
+
+        $this->assertSame(0.0, (float) $layer->unit_cost);
     }
 
     public function test_duplicate_sale_completed_dispatch_consumes_cost_layers_once(): void

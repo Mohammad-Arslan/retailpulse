@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
+use App\DTOs\Accounting\ConsumedCost;
 use App\Enums\InventoryValuationMethod;
 use App\Models\GoodsReceivingNote;
 use App\Models\GrnItem;
@@ -14,6 +15,7 @@ use App\Models\PurchaseOrderItem;
 use App\Models\SaleItem;
 use DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 final class CostService
@@ -62,6 +64,15 @@ final class CostService
             ]);
         }
 
+        if ($unitCost <= 0) {
+            Log::warning('Inventory cost layer received at zero or negative unit cost.', [
+                'product_variant_id' => $productVariantId,
+                'warehouse_id' => $warehouseId,
+                'source_reference_type' => $sourceReferenceType,
+                'source_reference_id' => $sourceReferenceId,
+            ]);
+        }
+
         $settings = $this->financialSettings->get();
         $method = $valuationMethod ?? $settings->default_inventory_valuation_method ?? InventoryValuationMethod::Fifo;
 
@@ -83,7 +94,7 @@ final class CostService
         ]);
     }
 
-    public function consumeOnSale(SaleItem $item): float
+    public function consumeOnSale(SaleItem $item): ConsumedCost
     {
         $item->loadMissing('sale');
         $sale = $item->sale;
@@ -97,7 +108,7 @@ final class CostService
         $qtyNeeded = (float) $item->quantity;
 
         if ($qtyNeeded <= 0) {
-            return 0.0;
+            return new ConsumedCost(0.0, false, 'none');
         }
 
         $settings = $this->financialSettings->get();
@@ -110,7 +121,7 @@ final class CostService
             $method,
             $settings,
         ) {
-            $totalCost = match ($method) {
+            $result = match ($method) {
                 InventoryValuationMethod::Wac => $this->consumeWeightedAverage($variantId, $warehouseId, $qtyNeeded),
                 InventoryValuationMethod::Fifo => $this->consumeFifoWithWacFallback(
                     $variantId,
@@ -120,7 +131,7 @@ final class CostService
                 ),
             };
 
-            return round($totalCost, 2);
+            return new ConsumedCost(round($result->amount, 2), $result->estimated, $result->basis);
         });
     }
 
@@ -204,7 +215,7 @@ final class CostService
         int $warehouseId,
         float $qtyNeeded,
         bool $allowNegative,
-    ): float {
+    ): ConsumedCost {
         $remaining = $qtyNeeded;
         $totalCost = 0.0;
 
@@ -237,22 +248,38 @@ final class CostService
             ]);
         }
 
-        if ($remaining > 0) {
-            $wacUnitCost = $this->weightedAverageUnitCost($variantId, $warehouseId);
+        $usedLayers = $remaining < $qtyNeeded;
 
-            if ($wacUnitCost <= 0 && ! $allowNegative) {
-                throw ValidationException::withMessages([
-                    'inventory' => __('Insufficient inventory cost layers for this sale.'),
-                ]);
-            }
-
-            $totalCost += $remaining * $wacUnitCost;
+        if ($remaining <= 0) {
+            return new ConsumedCost($totalCost, false, 'layers');
         }
 
-        return $totalCost;
+        $wacUnitCost = $this->weightedAverageUnitCost($variantId, $warehouseId);
+
+        if ($wacUnitCost > 0) {
+            $totalCost += $remaining * $wacUnitCost;
+
+            return new ConsumedCost($totalCost, false, $usedLayers ? 'layers' : 'wac');
+        }
+
+        if (! $allowNegative) {
+            throw ValidationException::withMessages([
+                'inventory' => __('Insufficient inventory cost layers for this sale.'),
+            ]);
+        }
+
+        $lastKnownUnitCost = $this->lastKnownUnitCost($variantId, $warehouseId);
+
+        if ($lastKnownUnitCost > 0) {
+            $totalCost += $remaining * $lastKnownUnitCost;
+
+            return new ConsumedCost($totalCost, true, 'last_known');
+        }
+
+        return new ConsumedCost($totalCost, true, 'none');
     }
 
-    private function consumeWeightedAverage(int $variantId, int $warehouseId, float $qtyNeeded): float
+    private function consumeWeightedAverage(int $variantId, int $warehouseId, float $qtyNeeded): ConsumedCost
     {
         $layers = InventoryCostLayer::query()
             ->where('product_variant_id', $variantId)
@@ -273,7 +300,13 @@ final class CostService
                 ]);
             }
 
-            return 0.0;
+            $lastKnownUnitCost = $this->lastKnownUnitCost($variantId, $warehouseId);
+
+            if ($lastKnownUnitCost > 0) {
+                return new ConsumedCost($qtyNeeded * $lastKnownUnitCost, true, 'last_known');
+            }
+
+            return new ConsumedCost(0.0, true, 'none');
         }
 
         $wacUnitCost = $this->weightedAverageUnitCost($variantId, $warehouseId);
@@ -312,12 +345,24 @@ final class CostService
             ]);
         }
 
-        return $totalCost;
+        return new ConsumedCost($totalCost, false, 'wac');
     }
 
     public function averageUnitCost(int $productVariantId, int $warehouseId): float
     {
         return $this->weightedAverageUnitCost($productVariantId, $warehouseId);
+    }
+
+    private function lastKnownUnitCost(int $variantId, int $warehouseId): float
+    {
+        $layer = InventoryCostLayer::query()
+            ->where('product_variant_id', $variantId)
+            ->where('warehouse_id', $warehouseId)
+            ->orderByDesc('received_at')
+            ->orderByDesc('id')
+            ->first();
+
+        return $layer !== null ? (float) $layer->unit_cost : 0.0;
     }
 
     private function weightedAverageUnitCost(int $variantId, int $warehouseId): float

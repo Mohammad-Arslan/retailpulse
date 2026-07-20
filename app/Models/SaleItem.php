@@ -25,6 +25,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'line_total_inc_tax',
     'cost_consumed',
     'cogs_journal_entry_id',
+    'cost_estimated',
+    'cost_basis',
 ])]
 class SaleItem extends Model
 {
@@ -39,6 +41,7 @@ class SaleItem extends Model
             'line_total_inc_tax' => 'decimal:2',
             'cost_consumed' => 'decimal:2',
             'quantity' => 'integer',
+            'cost_estimated' => 'boolean',
         ];
     }
 
