@@ -440,6 +440,12 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.accounting.credit-notes.*',
                 'keywords' => ['credit note', 'ar', 'customer refund'],
             ]),
+            self::item('debit-notes', 'debitNotes', 'admin.accounting.debit-notes.index', 'file-minus', 'accounting', 115, [
+                'permission' => 'procurement.view',
+                'module' => 'debit_notes',
+                'routePattern' => 'admin.accounting.debit-notes.*',
+                'keywords' => ['debit note', 'ap', 'supplier charge-back'],
+            ]),
             self::item('tax-types', 'taxTypes', 'admin.accounting.tax-types.index', 'scale', 'accounting', 120, [
                 'permission' => 'accounting.manage-tax-settings',
                 'module' => 'tax',

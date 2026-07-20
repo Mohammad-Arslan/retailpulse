@@ -99,6 +99,7 @@
         "accountingReports": "Financial Reports",
         "accountingEvents": "Accounting Events",
         "creditNotes": "Credit Notes",
+        "debitNotes": "Debit Notes",
         "taxTypes": "Tax Types",
         "bankAccounts": "Bank Accounts",
         "bankReconciliation": "Bank Reconciliation",
@@ -151,7 +152,8 @@
             "cheques": "Cheques",
             "fixed_assets": "Fixed Assets",
             "intercompany": "Intercompany",
-            "credit_notes": "Credit Notes"
+            "credit_notes": "Credit Notes",
+            "debit_notes": "Debit Notes"
         },
         "hrModules": {
             "expenses": "Expenses",
@@ -205,6 +207,7 @@
         "download": "Download",
         "status": "Status",
         "customer": "Customer",
+        "supplier": "Supplier",
         "amount": "Amount",
         "date": "Date",
         "name": "Name",
@@ -4074,6 +4077,23 @@
                     "reason": "Reason"
                 }
             },
+            "debitNotes": {
+                "title": "Debit Notes",
+                "description": "Issue supplier debit notes that reduce accounts payable.",
+                "empty": "No debit notes found.",
+                "createTitle": "New Debit Note",
+                "createDescription": "Create a debit note against a supplier, optionally linked to a supplier invoice.",
+                "createSubmit": "Issue Debit Note",
+                "selectSupplier": "Select Supplier…",
+                "columns": {
+                    "number": "Debit Note No.",
+                    "status": "Status",
+                    "notes": "Notes"
+                },
+                "fields": {
+                    "reason": "Reason"
+                }
+            },
             "taxTypes": {
                 "title": "Tax Types",
                 "description": "Configure tax rates, directions, and GL account mappings.",
@@ -4333,6 +4353,7 @@
         "accountingReports": "Financial Reports",
         "accountingEvents": "Accounting Events",
         "creditNotes": "Credit Notes",
+        "debitNotes": "Debit Notes",
         "taxTypes": "Tax Types",
         "bankAccounts": "Bank Accounts",
         "bankReconciliation": "Bank Reconciliation",
