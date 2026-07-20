@@ -1208,6 +1208,11 @@
                 "carryForwardExpiryMonthsPlaceholder": "e.g. 3",
                 "negativeLeaveBalancePolicy": "Negative Leave Balance Policy",
                 "negativeLeaveBalancePolicyHint": "What Happens When A Request Would Exceed The Available Leave Balance.",
+                "eligibilityGenders": "Gender",
+                "eligibilityGrades": "Grades",
+                "eligibilityEmploymentTypes": "Employment Types",
+                "eligibilityMinTenureMonths": "Minimum Tenure (Months)",
+                "eligibilityMinTenureMonthsPlaceholder": "Optional — e.g. 6",
                 "prorationOnJoin": "Proration On Join",
                 "prorationOnJoinHint": "Prorate Accrual When An Employee Joins Mid-Period",
                 "excludePublicHolidays": "Exclude Public Holidays",
@@ -1241,6 +1246,13 @@
                 "warn": "Warn (Flag For The Approver)",
                 "allow": "Allow (No Enforcement)"
             },
+            "eligibilityHint": "Leave Any Filter Empty To Match Everyone On That Dimension — Matches Current Behavior Until Configured.",
+            "eligibilityGenders": {
+                "male": "Male",
+                "female": "Female",
+                "other": "Other",
+                "undisclosed": "Prefer Not To Say"
+            },
             "accrualMethods": {
                 "fixed_annual": "Fixed Annual",
                 "monthly_accrual": "Monthly Accrual",
@@ -1252,6 +1264,7 @@
             },
             "sections": {
                 "accrual": "Accrual Rules",
+                "eligibility": "Eligibility",
                 "dayCounting": "Day Counting",
                 "encashment": "Encashment",
                 "scheduleAndStatus": "Schedule & Status"

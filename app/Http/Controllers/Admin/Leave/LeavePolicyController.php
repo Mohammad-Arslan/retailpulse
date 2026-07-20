@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Admin\Leave;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Leave\StoreLeavePolicyRequest;
 use App\Http\Requests\Admin\Leave\UpdateLeavePolicyRequest;
+use App\Models\Grade;
+use App\Models\HrEmploymentType;
 use App\Models\LeavePolicy;
 use App\Models\LeaveType;
 use App\Models\OrganizationEntity;
@@ -44,6 +46,7 @@ final class LeavePolicyController extends Controller
                 'carry_forward_limit' => $policy->carry_forward_limit !== null ? (string) $policy->carry_forward_limit : null,
                 'carry_forward_expiry_months' => $policy->carry_forward_expiry_months,
                 'negative_leave_balance_policy' => $policy->negative_leave_balance_policy?->value,
+                'eligibility_json' => $policy->eligibility_json,
                 'proration_on_join' => $policy->proration_on_join,
                 'exclude_public_holidays' => $policy->exclude_public_holidays,
                 'exclude_weekends' => $policy->exclude_weekends,
@@ -70,6 +73,14 @@ final class LeavePolicyController extends Controller
                 ->where('status', 'active')
                 ->orderBy('legal_name')
                 ->get(['id', 'legal_name']),
+            'grades' => Grade::query()
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            'employmentTypes' => HrEmploymentType::query()
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['code', 'name']),
         ]);
     }
 

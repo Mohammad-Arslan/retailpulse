@@ -5,6 +5,7 @@ import PageHeader from '@/Components/common/PageHeader';
 import ScrollArea from '@/Components/common/ScrollArea';
 import Modal from '@/Components/Modal';
 import { Button } from '@/Components/ui/button';
+import MultiSelect from '@/Components/ui/multi-select';
 import Select from '@/Components/ui/select';
 import { withAdminLayout } from '@/HOCs/withAdminLayout';
 import { useCan } from '@/Hooks/useCan';
@@ -15,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 
 const ACCRUAL_METHODS = ['fixed_annual', 'monthly_accrual', 'per_worked_hours'];
 const NEGATIVE_LEAVE_BALANCE_POLICIES = ['block', 'warn', 'allow'];
+const ELIGIBILITY_GENDERS = ['male', 'female', 'other', 'undisclosed'];
 
 function emptyForm() {
     return {
@@ -26,6 +28,10 @@ function emptyForm() {
         carry_forward_limit: '',
         carry_forward_expiry_months: '',
         negative_leave_balance_policy: 'block',
+        eligibility_genders: [],
+        eligibility_grade_ids: [],
+        eligibility_employment_types: [],
+        eligibility_min_tenure_months: '',
         proration_on_join: false,
         exclude_public_holidays: true,
         exclude_weekends: true,
@@ -42,7 +48,7 @@ function emptyForm() {
     };
 }
 
-function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
+function Index({ policies, filters, leaveTypes = [], legalEntities = [], grades = [], employmentTypes = [] }) {
     const { t } = useTranslation();
     const can = useCan();
     const [modalOpen, setModalOpen] = useState(false);
@@ -113,6 +119,25 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
         [t],
     );
 
+    const eligibilityGenderOptions = useMemo(
+        () =>
+            ELIGIBILITY_GENDERS.map((gender) => ({
+                value: gender,
+                label: t(`pages.leavePolicies.eligibilityGenders.${gender}`),
+            })),
+        [t],
+    );
+
+    const eligibilityGradeOptions = useMemo(
+        () => grades.map((grade) => ({ value: String(grade.id), label: grade.name })),
+        [grades],
+    );
+
+    const eligibilityEmploymentTypeOptions = useMemo(
+        () => employmentTypes.map((type) => ({ value: type.code, label: type.name })),
+        [employmentTypes],
+    );
+
     const openCreate = () => {
         setEditing(null);
         form.clearErrors();
@@ -135,6 +160,13 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
                     ? String(row.carry_forward_expiry_months)
                     : '',
             negative_leave_balance_policy: row.negative_leave_balance_policy ?? 'block',
+            eligibility_genders: row.eligibility_json?.genders ?? [],
+            eligibility_grade_ids: (row.eligibility_json?.grade_ids ?? []).map(String),
+            eligibility_employment_types: row.eligibility_json?.employment_types ?? [],
+            eligibility_min_tenure_months:
+                row.eligibility_json?.min_tenure_months !== null && row.eligibility_json?.min_tenure_months !== undefined
+                    ? String(row.eligibility_json.min_tenure_months)
+                    : '',
             proration_on_join: !!row.proration_on_join,
             exclude_public_holidays: !!row.exclude_public_holidays,
             exclude_weekends: row.exclude_weekends !== false,
@@ -162,6 +194,26 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
             onSuccess: () => setModalOpen(false),
             onFinish: () => form.transform((data) => data),
         };
+
+        form.transform((data) => {
+            const {
+                eligibility_genders,
+                eligibility_grade_ids,
+                eligibility_employment_types,
+                eligibility_min_tenure_months,
+                ...rest
+            } = data;
+
+            return {
+                ...rest,
+                eligibility_json: {
+                    genders: eligibility_genders,
+                    grade_ids: eligibility_grade_ids.map(Number),
+                    employment_types: eligibility_employment_types,
+                    min_tenure_months: eligibility_min_tenure_months === '' ? null : Number(eligibility_min_tenure_months),
+                },
+            };
+        });
 
         if (editing) {
             form.put(route('admin.leave.policies.update', editing.id), options);
@@ -410,6 +462,61 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
                             />
                             {t('pages.leavePolicies.fields.prorationOnJoinHint')}
                         </label>
+                    </div>
+
+                    <div className="space-y-3 border-t border-rp-border pt-4">
+                        <h4 className="rp-section-title">{t('pages.leavePolicies.sections.eligibility')}</h4>
+                        <p className="text-xs text-rp-text-muted">{t('pages.leavePolicies.eligibilityHint')}</p>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.eligibilityGenders')}
+                                id="eligibility_genders"
+                            >
+                                <MultiSelect
+                                    id="eligibility_genders"
+                                    value={form.data.eligibility_genders}
+                                    onChange={(values) => form.setData('eligibility_genders', values)}
+                                    options={eligibilityGenderOptions}
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.eligibilityGrades')}
+                                id="eligibility_grade_ids"
+                            >
+                                <MultiSelect
+                                    id="eligibility_grade_ids"
+                                    value={form.data.eligibility_grade_ids}
+                                    onChange={(values) => form.setData('eligibility_grade_ids', values)}
+                                    options={eligibilityGradeOptions}
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.eligibilityEmploymentTypes')}
+                                id="eligibility_employment_types"
+                            >
+                                <MultiSelect
+                                    id="eligibility_employment_types"
+                                    value={form.data.eligibility_employment_types}
+                                    onChange={(values) => form.setData('eligibility_employment_types', values)}
+                                    options={eligibilityEmploymentTypeOptions}
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.eligibilityMinTenureMonths')}
+                                id="eligibility_min_tenure_months"
+                                error={form.errors['eligibility_json.min_tenure_months']}
+                            >
+                                <input
+                                    id="eligibility_min_tenure_months"
+                                    type="number"
+                                    min="0"
+                                    value={form.data.eligibility_min_tenure_months}
+                                    onChange={(e) => form.setData('eligibility_min_tenure_months', e.target.value)}
+                                    placeholder={t('pages.leavePolicies.fields.eligibilityMinTenureMonthsPlaceholder')}
+                                    className="rp-form-input"
+                                />
+                            </AdminFormField>
+                        </div>
                     </div>
 
                     <div className="space-y-3 border-t border-rp-border pt-4">
