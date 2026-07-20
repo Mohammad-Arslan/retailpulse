@@ -40,7 +40,7 @@ function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reo
         fx_gain_account_id: settings.fx_gain_account_id ? String(settings.fx_gain_account_id) : '',
         fx_loss_account_id: settings.fx_loss_account_id ? String(settings.fx_loss_account_id) : '',
         default_inventory_valuation_method: settings.default_inventory_valuation_method ?? 'fifo',
-        allow_negative_inventory: settings.allow_negative_inventory === true,
+        negative_inventory_policy: settings.negative_inventory_policy ?? 'strict',
         zero_cost_inventory_policy: settings.zero_cost_inventory_policy ?? 'warn',
         allow_manual_journal_posting: settings.allow_manual_journal_posting !== false,
         manual_journal_approval_limit: settings.manual_journal_approval_limit ?? '',
@@ -392,18 +392,31 @@ function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reo
                                 disabled={readOnly}
                             />
                         </AdminFormField>
-                        <label className="flex items-center gap-2 text-sm sm:col-span-2">
-                            <input
-                                type="checkbox"
-                                checked={data.allow_negative_inventory}
-                                onChange={(e) => setData('allow_negative_inventory', e.target.checked)}
+                        <AdminFormField
+                            label={t('pages.accounting.settings.fields.negativeInventoryPolicy')}
+                            id="negative_inventory_policy"
+                            error={errors.negative_inventory_policy}
+                        >
+                            <Select
+                                id="negative_inventory_policy"
+                                value={data.negative_inventory_policy}
+                                onChange={(value) => setData('negative_inventory_policy', value ?? 'strict')}
+                                options={[
+                                    { value: 'strict', label: t('pages.accounting.settings.negativeInventoryPolicy.strict') },
+                                    { value: 'allow', label: t('pages.accounting.settings.negativeInventoryPolicy.allow') },
+                                    {
+                                        value: 'approval_required',
+                                        label: t('pages.accounting.settings.negativeInventoryPolicy.approvalRequired'),
+                                    },
+                                ]}
                                 disabled={readOnly}
                             />
-                            {t('pages.accounting.settings.fields.allowNegativeInventory')}
-                        </label>
-                        <p className="text-sm text-amber-700 dark:text-amber-400 sm:col-span-2">
-                            {t('pages.accounting.settings.negativeInventoryWarning')}
-                        </p>
+                        </AdminFormField>
+                        {data.negative_inventory_policy !== 'strict' && (
+                            <p className="text-sm text-amber-700 dark:text-amber-400 sm:col-span-2">
+                                {t('pages.accounting.settings.negativeInventoryWarning')}
+                            </p>
+                        )}
                         <AdminFormField
                             label={t('pages.accounting.settings.fields.zeroCostInventoryPolicy')}
                             id="zero_cost_inventory_policy"

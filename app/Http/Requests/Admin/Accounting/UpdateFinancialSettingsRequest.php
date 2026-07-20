@@ -31,7 +31,7 @@ final class UpdateFinancialSettingsRequest extends FormRequest
             'fx_gain_account_id' => ['nullable', 'integer', 'exists:chart_of_accounts,id'],
             'fx_loss_account_id' => ['nullable', 'integer', 'exists:chart_of_accounts,id'],
             'default_inventory_valuation_method' => ['nullable', Rule::enum(InventoryValuationMethod::class)],
-            'allow_negative_inventory' => ['boolean'],
+            'negative_inventory_policy' => ['nullable', 'string', 'in:strict,allow,approval_required'],
             'allow_manual_journal_posting' => ['boolean'],
             'manual_journal_approval_limit' => ['nullable', 'numeric', 'min:0'],
             'backdated_posting_policy' => ['nullable', 'string', 'in:allow,warn,block'],

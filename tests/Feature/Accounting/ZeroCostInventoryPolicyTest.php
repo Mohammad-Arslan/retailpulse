@@ -183,7 +183,7 @@ final class ZeroCostInventoryPolicyTest extends TestCase
 
     public function test_sale_with_no_cost_history_is_blocked_under_block_policy(): void
     {
-        app(FinancialSettingsService::class)->get()->update(['allow_negative_inventory' => true]);
+        app(FinancialSettingsService::class)->get()->update(['negative_inventory_policy' => 'allow']);
         $this->setPolicy('block');
 
         $sale = $this->createSaleWithItem(quantity: 2, unitPrice: 50);
@@ -195,7 +195,7 @@ final class ZeroCostInventoryPolicyTest extends TestCase
 
     public function test_sale_with_no_cost_history_proceeds_and_logs_under_warn_policy(): void
     {
-        app(FinancialSettingsService::class)->get()->update(['allow_negative_inventory' => true]);
+        app(FinancialSettingsService::class)->get()->update(['negative_inventory_policy' => 'allow']);
         $this->setPolicy('warn');
 
         Log::shouldReceive('warning')->once();
@@ -209,7 +209,7 @@ final class ZeroCostInventoryPolicyTest extends TestCase
 
     public function test_sale_with_no_cost_history_proceeds_silently_under_allow_policy(): void
     {
-        app(FinancialSettingsService::class)->get()->update(['allow_negative_inventory' => true]);
+        app(FinancialSettingsService::class)->get()->update(['negative_inventory_policy' => 'allow']);
         $this->setPolicy('allow');
 
         $sale = $this->createSaleWithItem(quantity: 2, unitPrice: 50);

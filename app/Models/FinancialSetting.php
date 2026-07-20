@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\BackdatedPostingPolicy;
 use App\Enums\InventoryValuationMethod;
+use App\Enums\NegativeInventoryPolicy;
 use App\Enums\ZeroCostInventoryPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -23,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'fx_gain_account_id',
     'fx_loss_account_id',
     'default_inventory_valuation_method',
-    'allow_negative_inventory',
+    'negative_inventory_policy',
     'allow_manual_journal_posting',
     'manual_journal_approval_limit',
     'backdated_posting_policy',
@@ -46,7 +47,7 @@ class FinancialSetting extends Model
     {
         return [
             'default_inventory_valuation_method' => InventoryValuationMethod::class,
-            'allow_negative_inventory' => 'boolean',
+            'negative_inventory_policy' => NegativeInventoryPolicy::class,
             'allow_manual_journal_posting' => 'boolean',
             'manual_journal_approval_limit' => 'decimal:2',
             'backdated_posting_policy' => BackdatedPostingPolicy::class,

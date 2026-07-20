@@ -519,10 +519,17 @@ export default function CheckoutIndex({ cartId }) {
         }
 
         setProcessing(true);
+        let awaitingApproval = false;
         try {
             await executePayment(managerPinOverride);
         } catch (err) {
             const messages = err?.response?.data?.errors;
+            if (messages?.manager_approval && !managerPinOverride) {
+                awaitingApproval = true;
+                setPendingPayment(true);
+                setShowManagerPinModal(true);
+                return;
+            }
             if (messages) {
                 error(Object.values(messages).flat().join(' '));
             } else {
@@ -530,7 +537,9 @@ export default function CheckoutIndex({ cartId }) {
             }
         } finally {
             setProcessing(false);
-            setPendingPayment(false);
+            if (!awaitingApproval) {
+                setPendingPayment(false);
+            }
         }
     }
 

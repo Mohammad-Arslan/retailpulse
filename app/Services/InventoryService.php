@@ -8,6 +8,7 @@ use App\DTOs\Inventory\AdjustStockData;
 use App\DTOs\Inventory\DeductStockData;
 use App\DTOs\Inventory\ReceiveStockData;
 use App\DTOs\Inventory\ReserveStockData;
+use App\Enums\NegativeInventoryPolicy;
 use App\Enums\PickingStrategy;
 use App\Enums\SerialStatus;
 use App\Enums\StockMovementReason;
@@ -19,11 +20,14 @@ use App\Models\ProductSerial;
 use App\Models\ProductVariant;
 use App\Models\StockReservation;
 use App\Models\SystemSetting;
+use App\Models\User;
 use App\Models\VariantBranchSetting;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
 use App\Repositories\Contracts\StockMovementRepositoryInterface;
+use App\Services\Accounting\FinancialSettingsService;
 use App\Support\InventoryFreezeGuard;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -32,6 +36,8 @@ final class InventoryService
     public function __construct(
         private readonly InventoryRepositoryInterface $inventories,
         private readonly StockMovementRepositoryInterface $movements,
+        private readonly FinancialSettingsService $financialSettings,
+        private readonly PosPinService $posPin,
     ) {}
 
     public function receive(ReceiveStockData $data): Inventory
@@ -847,9 +853,13 @@ final class InventoryService
             $previousReserved = $inventory->quantity_reserved;
 
             if ($inventory->availableQuantity() < $quantity) {
-                throw ValidationException::withMessages([
-                    'quantity' => __('Insufficient stock on hand.'),
-                ]);
+                if ($data->reason === StockMovementReason::Sale) {
+                    $this->assertNegativeInventoryPermitted($data);
+                } else {
+                    throw ValidationException::withMessages([
+                        'quantity' => __('Insufficient stock on hand.'),
+                    ]);
+                }
             }
 
             $reservedRelease = min($quantity, $inventory->quantity_reserved);
@@ -909,6 +919,40 @@ final class InventoryService
         if ($cutover !== null && now()->lt($cutover)) {
             throw ValidationException::withMessages([
                 'cutover_date' => __('Live POS sales are blocked until the go-live cutover date.'),
+            ]);
+        }
+    }
+
+    private function assertNegativeInventoryPermitted(DeductStockData $data): void
+    {
+        $policy = $this->financialSettings->get()->negative_inventory_policy;
+
+        if ($policy === NegativeInventoryPolicy::Allow) {
+            return;
+        }
+
+        if ($policy === NegativeInventoryPolicy::Strict || $policy === null) {
+            throw ValidationException::withMessages([
+                'quantity' => __('Insufficient stock on hand.'),
+            ]);
+        }
+
+        // ApprovalRequired
+        if ($data->managerPin === null || $data->managerPin === '') {
+            throw ValidationException::withMessages([
+                'manager_approval' => __('Selling below available stock requires manager approval.'),
+            ]);
+        }
+
+        $cashier = $data->userId !== null ? User::query()->find($data->userId) : null;
+
+        if ($cashier === null || ! $cashier->can('pos.override-stock')) {
+            throw new AuthorizationException(__('Manager approval requires pos.override-stock permission.'));
+        }
+
+        if (! $this->posPin->verifyPin($cashier, $data->managerPin)) {
+            throw ValidationException::withMessages([
+                'manager_approval' => __('Invalid manager PIN.'),
             ]);
         }
     }

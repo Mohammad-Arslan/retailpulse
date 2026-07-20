@@ -3680,7 +3680,7 @@
                     "fifo": "FIFO",
                     "wac": "Weighted Average"
                 },
-                "negativeInventoryWarning": "Warning: Enabling this allows sales to complete with $0 COGS when no cost layers exist. This understates expenses and overstates profit — use only when you accept that financial risk.",
+                "negativeInventoryWarning": "Warning: Allow/Approval Required permit a sale to push on-hand stock below zero, and can complete with $0 COGS when no cost layers exist. This understates expenses and overstates profit — use only when you accept that financial risk.",
                 "backdatedPolicy": {
                     "allow": "Allow — post backdated entries without restriction",
                     "warn": "Warn — post and flag backdated entries for review",
@@ -3690,6 +3690,11 @@
                     "block": "Block — reject zero-cost receipts and sales",
                     "warn": "Warn — allow, flag, and log zero-cost receipts and sales",
                     "allow": "Allow — permit zero-cost receipts and sales silently"
+                },
+                "negativeInventoryPolicy": {
+                    "strict": "Strict — block any sale that would go below available stock",
+                    "allow": "Allow — permit sales to go negative without restriction",
+                    "approvalRequired": "Approval Required — requires manager PIN + pos.override-stock permission"
                 },
                 "fiscalYearsTitle": "Fiscal Years",
                 "fiscalYearsEmpty": "No fiscal years configured.",
@@ -3726,7 +3731,7 @@
                     "fxGain": "FX Gain Account",
                     "fxLoss": "FX Loss Account",
                     "allowManualPosting": "Allow Manual Journal Posting",
-                    "allowNegativeInventory": "Allow Negative Inventory",
+                    "negativeInventoryPolicy": "Negative Inventory Policy",
                     "defaultValuationMethod": "Default Inventory Valuation Method",
                     "approvalLimit": "Manual Journal Approval Limit",
                     "backdatedPostingPolicy": "Backdated Posting Policy",

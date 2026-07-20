@@ -334,7 +334,7 @@ final class CheckoutService
             }
 
             if ($settings['inventory_deduct_on'] === 'payment_started' && $sale->payments()->where('status', PaymentStatus::Completed)->count() === 1) {
-                $this->deductInventory($sale, $cashierId);
+                $this->deductInventory($sale, $cashierId, $data->managerPin);
             }
 
             $newBalance = round($balanceDue - $paymentAmount, 2);
@@ -347,7 +347,7 @@ final class CheckoutService
                 return $sale->fresh(['items', 'payments', 'invoice']);
             }
 
-            return $this->finalizeSale($sale, $cashierId);
+            return $this->finalizeSale($sale, $cashierId, $data->managerPin);
         });
     }
 
@@ -642,7 +642,7 @@ final class CheckoutService
         ]);
     }
 
-    private function finalizeSale(Sale $sale, int $cashierId): Sale
+    private function finalizeSale(Sale $sale, int $cashierId, ?string $managerPin = null): Sale
     {
         if ($sale->status === SaleStatus::Completed) {
             return $sale->fresh(['items', 'payments', 'invoice']);
@@ -662,7 +662,7 @@ final class CheckoutService
         }
 
         if ($settings['inventory_deduct_on'] === 'sale_completed') {
-            $this->deductInventory($sale, $cashierId);
+            $this->deductInventory($sale, $cashierId, $managerPin);
         }
 
         $sale->update([
@@ -782,7 +782,7 @@ final class CheckoutService
         return $items;
     }
 
-    private function deductInventory(Sale $sale, int $userId): void
+    private function deductInventory(Sale $sale, int $userId, ?string $managerPin = null): void
     {
         if ($sale->is_historical || $sale->warehouse_id === null) {
             return;
@@ -811,8 +811,15 @@ final class CheckoutService
                     userId: $userId,
                     referenceType: 'sale',
                     referenceId: $sale->id,
+                    managerPin: $managerPin,
                 ));
             } catch (ValidationException $e) {
+                // manager_approval is a distinct signal the frontend acts on (show the PIN
+                // modal) — don't fold it into the generic quantity message below.
+                if (array_key_exists('manager_approval', $e->errors())) {
+                    throw $e;
+                }
+
                 $label = trim((string) $item->name);
                 if ($item->sku) {
                     $label = $label === '' ? (string) $item->sku : "{$label} ({$item->sku})";

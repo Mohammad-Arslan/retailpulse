@@ -20,7 +20,7 @@ final readonly class UpdateFinancialSettingsData
         public ?int $fxGainAccountId,
         public ?int $fxLossAccountId,
         public ?InventoryValuationMethod $defaultInventoryValuationMethod,
-        public ?bool $allowNegativeInventory,
+        public ?string $negativeInventoryPolicy,
         public ?bool $allowManualJournalPosting,
         public ?float $manualJournalApprovalLimit,
         public ?string $backdatedPostingPolicy,
@@ -60,7 +60,7 @@ final readonly class UpdateFinancialSettingsData
             fxLossAccountId: $request->validated('fx_loss_account_id') !== null
                 ? (int) $request->validated('fx_loss_account_id') : null,
             defaultInventoryValuationMethod: $method !== null ? InventoryValuationMethod::from($method) : null,
-            allowNegativeInventory: $request->has('allow_negative_inventory') ? $request->boolean('allow_negative_inventory') : null,
+            negativeInventoryPolicy: $request->validated('negative_inventory_policy'),
             allowManualJournalPosting: $request->has('allow_manual_journal_posting') ? $request->boolean('allow_manual_journal_posting') : null,
             manualJournalApprovalLimit: $request->validated('manual_journal_approval_limit') !== null
                 ? (float) $request->validated('manual_journal_approval_limit') : null,
@@ -101,7 +101,7 @@ final readonly class UpdateFinancialSettingsData
             'fx_gain_account_id' => $this->fxGainAccountId,
             'fx_loss_account_id' => $this->fxLossAccountId,
             'default_inventory_valuation_method' => $this->defaultInventoryValuationMethod?->value,
-            'allow_negative_inventory' => $this->allowNegativeInventory,
+            'negative_inventory_policy' => $this->negativeInventoryPolicy,
             'allow_manual_journal_posting' => $this->allowManualJournalPosting,
             'manual_journal_approval_limit' => $this->manualJournalApprovalLimit,
             'backdated_posting_policy' => $this->backdatedPostingPolicy,

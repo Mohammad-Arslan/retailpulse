@@ -193,7 +193,7 @@ final class TransferAndSplitTenderPostingTest extends TestCase
         ]);
 
         app(\App\Services\Accounting\FinancialSettingsService::class)->get()
-            ->update(['allow_negative_inventory' => true]);
+            ->update(['negative_inventory_policy' => 'allow']);
 
         $cashier = User::factory()->create(['is_active' => true]);
 

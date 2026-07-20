@@ -18,5 +18,6 @@ final readonly class DeductStockData
         public ?string $referenceType = null,
         public ?int $referenceId = null,
         public ?string $notes = null,
+        public ?string $managerPin = null,
     ) {}
 }

@@ -26,7 +26,7 @@ final class FinancialSettingsPresenter
             'fx_gain_account_id' => $settings->fx_gain_account_id,
             'fx_loss_account_id' => $settings->fx_loss_account_id,
             'default_inventory_valuation_method' => $settings->default_inventory_valuation_method?->value,
-            'allow_negative_inventory' => $settings->allow_negative_inventory,
+            'negative_inventory_policy' => $settings->negative_inventory_policy?->value,
             'allow_manual_journal_posting' => $settings->allow_manual_journal_posting,
             'manual_journal_approval_limit' => $settings->manual_journal_approval_limit,
             'backdated_posting_policy' => $settings->backdated_posting_policy?->value,

@@ -7,6 +7,7 @@ namespace App\Services\Accounting;
 use App\DTOs\Accounting\BackdatedPostingAssessment;
 use App\DTOs\Accounting\ConsumedCost;
 use App\Enums\InventoryValuationMethod;
+use App\Enums\NegativeInventoryPolicy;
 use App\Enums\ZeroCostInventoryPolicy;
 use App\Models\FinancialSetting;
 use App\Models\GoodsReceivingNote;
@@ -199,13 +200,16 @@ final class CostService
             $method,
             $settings,
         ) {
+            // Runs after InventoryService has already gated (and, for ApprovalRequired, PIN-approved)
+            // the sale going negative — only Strict blocks here; ApprovalRequired behaves like Allow
+            // since there's no PIN to check this late in the pipeline.
             $result = match ($method) {
                 InventoryValuationMethod::Wac => $this->consumeWeightedAverage($variantId, $warehouseId, $qtyNeeded),
                 InventoryValuationMethod::Fifo => $this->consumeFifoWithWacFallback(
                     $variantId,
                     $warehouseId,
                     $qtyNeeded,
-                    (bool) $settings->allow_negative_inventory,
+                    $settings->negative_inventory_policy !== NegativeInventoryPolicy::Strict,
                 ),
             };
 
@@ -309,7 +313,7 @@ final class CostService
         int $variantId,
         int $warehouseId,
         float $qtyNeeded,
-        bool $allowNegative,
+        bool $permitsNegative,
     ): ConsumedCost {
         $remaining = $qtyNeeded;
         $totalCost = 0.0;
@@ -357,7 +361,7 @@ final class CostService
             return new ConsumedCost($totalCost, false, $usedLayers ? 'layers' : 'wac');
         }
 
-        if (! $allowNegative) {
+        if (! $permitsNegative) {
             throw ValidationException::withMessages([
                 'inventory' => __('Insufficient inventory cost layers for this sale.'),
             ]);
@@ -389,7 +393,7 @@ final class CostService
         if ($totalQty <= 0) {
             $settings = $this->financialSettings->get();
 
-            if (! $settings->allow_negative_inventory) {
+            if ($settings->negative_inventory_policy === NegativeInventoryPolicy::Strict) {
                 throw ValidationException::withMessages([
                     'inventory' => __('Insufficient inventory cost layers for this sale.'),
                 ]);

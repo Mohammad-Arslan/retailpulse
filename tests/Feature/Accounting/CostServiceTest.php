@@ -152,7 +152,7 @@ final class CostServiceTest extends TestCase
     public function test_consume_on_sale_without_layers_flags_estimated_zero_cost_when_negative_inventory_allowed(): void
     {
         $settings = app(FinancialSettingsService::class)->get();
-        $settings->update(['allow_negative_inventory' => true]);
+        $settings->update(['negative_inventory_policy' => 'allow']);
 
         $sale = $this->createSaleWithItem(quantity: 2, unitPrice: 50);
         $item = $sale->items()->first();
@@ -168,7 +168,7 @@ final class CostServiceTest extends TestCase
     public function test_sale_completed_persists_estimated_zero_cost_flag_on_sale_item(): void
     {
         $settings = app(FinancialSettingsService::class)->get();
-        $settings->update(['allow_negative_inventory' => true]);
+        $settings->update(['negative_inventory_policy' => 'allow']);
 
         $sale = $this->createSaleWithItem(quantity: 2, unitPrice: 50);
 
@@ -183,7 +183,7 @@ final class CostServiceTest extends TestCase
 
     public function test_consume_on_sale_falls_back_to_last_known_cost_when_layer_is_fully_depleted(): void
     {
-        app(FinancialSettingsService::class)->get()->update(['allow_negative_inventory' => true]);
+        app(FinancialSettingsService::class)->get()->update(['negative_inventory_policy' => 'allow']);
 
         app(CostService::class)->createLayerOnReceive(
             productVariantId: $this->variant->id,
@@ -211,7 +211,7 @@ final class CostServiceTest extends TestCase
     {
         $settings = app(FinancialSettingsService::class)->get();
         $settings->update([
-            'allow_negative_inventory' => true,
+            'negative_inventory_policy' => 'allow',
             'default_inventory_valuation_method' => InventoryValuationMethod::Wac,
         ]);
 
