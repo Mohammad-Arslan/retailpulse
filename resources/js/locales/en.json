@@ -1206,6 +1206,8 @@
                 "carryForwardLimitPlaceholder": "Optional Days",
                 "carryForwardExpiryMonths": "Carry Forward Expiry (Months)",
                 "carryForwardExpiryMonthsPlaceholder": "e.g. 3",
+                "negativeLeaveBalancePolicy": "Negative Leave Balance Policy",
+                "negativeLeaveBalancePolicyHint": "What Happens When A Request Would Exceed The Available Leave Balance.",
                 "prorationOnJoin": "Proration On Join",
                 "prorationOnJoinHint": "Prorate Accrual When An Employee Joins Mid-Period",
                 "excludePublicHolidays": "Exclude Public Holidays",
@@ -1233,6 +1235,11 @@
             "yearEndExcessDispositions": {
                 "expire": "Expire (Use It Or Lose It)",
                 "encash": "Encash Automatically"
+            },
+            "negativeLeaveBalancePolicies": {
+                "block": "Block (Reject The Request)",
+                "warn": "Warn (Flag For The Approver)",
+                "allow": "Allow (No Enforcement)"
             },
             "accrualMethods": {
                 "fixed_annual": "Fixed Annual",
@@ -1276,6 +1283,8 @@
                 "days": "Days",
                 "status": "Status"
             },
+            "balanceWarning": "Balance Warning",
+            "balanceWarningHint": "This Request Would Exceed The Employee's Available Leave Balance.",
             "fields": {
                 "sectionTitle": "Request Details",
                 "employee": "Employee",

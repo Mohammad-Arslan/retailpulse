@@ -33,7 +33,7 @@ Define configurable accrual, proration, carry-forward, encashment, and eligibili
 | P12-LVP-FR-004 | Partial | Pro-rata accrual on join is implemented for `fixed_annual` policies on calendar-day basis (see FR-009); a configurable `day_count_basis` (calendar vs. working days) and exit-side proration remain Planned. |
 | P12-LVP-FR-005 | Implemented | Encashment policy: `encashment_allowed`, `encashment_max_days` (nullable = unlimited), `encashment_requires_approval`. Rate resolution reuses the existing leave-deduction daily-rate mechanism (`LeaveType.payroll_encashment_component_code` → `PayComponent` → `basisComponent` → `config('payroll.leave_days_in_month')`) rather than a separate basic/gross literal, so there is exactly one config-driven day-rate formula for both leave deductions and leave encashment. |
 | P12-LVP-FR-006 | Planned | Gender / grade / employment-type eligibility filters as optional policy JSON. |
-| P12-LVP-FR-007 | Planned | Negative balance allowed flag (advances against future accrual). |
+| P12-LVP-FR-007 | Implemented | `negative_leave_balance_policy` per leave policy (`block` default / `warn` / `allow`) — superset of the originally-planned single "allowed" flag. Checked in `LeaveService::requestLeave()` at submission and again in `LeaveService::approve()` right before the balance actually moves (a request valid at submission can still be blocked/warned at approval if another request was approved in between). `block` rejects (`ValidationException` at submission, `DomainException` at approval, since the approve action has no bound form to surface a validation error on); `warn` persists a `balance_warning` flag on the `LeaveRequest` for the approver to see; `allow` applies no enforcement, matching the "advance against future accrual" case this FR originally described. No policy resolved for the leave type at all (e.g. no `LeavePolicy` row) skips enforcement entirely, consistent with every other per-policy check in `requestLeave()`. |
 | P12-LVP-FR-008 | Planned | Minimum notice days and max consecutive days configurable. |
 | P12-LVP-FR-009 | Implemented | Accrual is posted for all three methods: `fixed_annual` grants the full `accrual_rate` once — at a new hire's first-ever entitlement (`LeaveService::resolveEntitlement()`, prorated when `proration_on_join` is true) and again at each year-end rollover (`LeaveFiscalYearService::closeEntitlement()`, never prorated there). `monthly_accrual` and `per_worked_hours` are posted by the daily-scheduled `leave:process-accrual` command (`LeaveService::processAccrual()`), which tracks progress per entitlement via `accrual_last_run_on` so a run is never double-counted; `per_worked_hours` sums `attendance_records.worked_minutes` for closed records in the elapsed window. All grants are capped at the policy's `max_balance` when set. |
 
@@ -49,6 +49,7 @@ leave_policies
   max_balance nullable,
   carry_forward_limit nullable,
   carry_forward_expiry_months nullable,
+  negative_leave_balance_policy (block / warn / allow, default block),
   proration_on_join,
   effective_from / effective_to,
   status,
@@ -56,10 +57,16 @@ leave_policies
   out_station_deducts_balance,
   encashment_allowed, encashment_max_days, encashment_requires_approval
 
+leave_requests (addition)
+- balance_warning boolean default false — set when the negative-leave-balance
+  policy is `warn` and the request (at submission or, again, at approval)
+  would draw the entitlement below zero. Never set for TOIL, which draws from
+  the separate TOIL ledger and never consults this policy.
+
 # Planned extensions
-- eligibility_json, allow_negative_balance, min_notice_days,
-  max_consecutive_days, day_count_basis (configurable calendar/working-day
-  toggle — accrual proration today is always calendar-day)
+- eligibility_json, min_notice_days, max_consecutive_days, day_count_basis
+  (configurable calendar/working-day toggle — accrual proration today is
+  always calendar-day)
 
 leave_entitlements (addition)
 - accrual_last_run_on nullable date — tracks the point up to which

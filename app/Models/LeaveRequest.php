@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'end_time',
     'days',
     'deduct_from_balance',
+    'balance_warning',
     'reason',
     'status',
     'approval_chain_json',
@@ -38,6 +39,7 @@ final class LeaveRequest extends Model
             'end_date' => 'date',
             'days' => 'decimal:2',
             'deduct_from_balance' => 'boolean',
+            'balance_warning' => 'boolean',
             'approval_chain_json' => 'array',
         ];
     }

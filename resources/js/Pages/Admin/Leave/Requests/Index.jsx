@@ -120,10 +120,23 @@ function Index({ requests, filters }) {
             {
                 id: 'status',
                 header: t('pages.leaveRequests.columns.status'),
-                cell: ({ row }) =>
-                    t(`pages.leaveRequests.statuses.${row.original.status}`, {
-                        defaultValue: row.original.status,
-                    }),
+                cell: ({ row }) => (
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span>
+                            {t(`pages.leaveRequests.statuses.${row.original.status}`, {
+                                defaultValue: row.original.status,
+                            })}
+                        </span>
+                        {row.original.balance_warning && (
+                            <span
+                                title={t('pages.leaveRequests.balanceWarningHint')}
+                                className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/20 dark:text-amber-300"
+                            >
+                                {t('pages.leaveRequests.balanceWarning')}
+                            </span>
+                        )}
+                    </div>
+                ),
             },
             {
                 id: 'actions',

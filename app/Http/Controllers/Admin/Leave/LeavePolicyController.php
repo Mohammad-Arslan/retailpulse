@@ -43,6 +43,7 @@ final class LeavePolicyController extends Controller
                 'max_balance' => $policy->max_balance !== null ? (string) $policy->max_balance : null,
                 'carry_forward_limit' => $policy->carry_forward_limit !== null ? (string) $policy->carry_forward_limit : null,
                 'carry_forward_expiry_months' => $policy->carry_forward_expiry_months,
+                'negative_leave_balance_policy' => $policy->negative_leave_balance_policy?->value,
                 'proration_on_join' => $policy->proration_on_join,
                 'exclude_public_holidays' => $policy->exclude_public_holidays,
                 'exclude_weekends' => $policy->exclude_weekends,

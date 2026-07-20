@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Leave;
 
+use App\DTOs\Leave\LeaveBalanceAssessment;
+use App\Enums\NegativeLeaveBalancePolicy;
 use App\Models\AttendanceRecord;
 use App\Models\Employee;
 use App\Models\FiscalYear;
@@ -110,6 +112,21 @@ final class LeaveService
                 ? true
                 : ($policy?->out_station_deducts_balance ?? false);
 
+            $balanceWarning = false;
+
+            if (! $isToil && $deductFromBalance && $policy !== null) {
+                $entitlement = $this->resolveEntitlement($employee, $leaveType);
+                $assessment = $this->assessBalance($entitlement, $days, $policy);
+
+                if ($assessment->shouldBlock) {
+                    throw ValidationException::withMessages([
+                        'days' => __('This request would exceed the available leave balance.'),
+                    ]);
+                }
+
+                $balanceWarning = $assessment->shouldWarn;
+            }
+
             $approverUserId = $this->approvers->resolveApproverUserId(
                 'direct_manager',
                 $employee,
@@ -138,6 +155,7 @@ final class LeaveService
                 'end_time' => $durationType === 'short_leave' ? $endTime : null,
                 'days' => $days,
                 'deduct_from_balance' => $deductFromBalance,
+                'balance_warning' => $balanceWarning,
                 'reason' => $reason,
                 'status' => 'pending',
                 'approval_chain_json' => $approvalChain,
@@ -162,6 +180,8 @@ final class LeaveService
         return DB::transaction(function () use ($request, $approvedByUserId): LeaveRequest {
             $request->loadMissing(['employee', 'leaveType', 'toilClaim']);
 
+            $balanceWarning = (bool) $request->balance_warning;
+
             if ($request->leaveType?->code === self::TOIL_LEAVE_TYPE_CODE) {
                 if ($request->toilClaim !== null) {
                     $this->toilClaims->approve($request->toilClaim, $approvedByUserId);
@@ -171,6 +191,22 @@ final class LeaveService
                     $request->employee,
                     $request->leaveType,
                 );
+
+                $policy = $this->resolveLeavePolicy(
+                    $request->employee,
+                    $request->leaveType,
+                    CarbonImmutable::parse($request->start_date),
+                );
+
+                if ($policy !== null) {
+                    $assessment = $this->assessBalance($entitlement, (float) $request->days, $policy);
+
+                    if ($assessment->shouldBlock) {
+                        throw new DomainException(__('This leave request would exceed the available leave balance.'));
+                    }
+
+                    $balanceWarning = $balanceWarning || $assessment->shouldWarn;
+                }
 
                 $entitlement->increment('used_days', (float) $request->days);
             }
@@ -184,6 +220,7 @@ final class LeaveService
 
             $request->update([
                 'status' => 'approved',
+                'balance_warning' => $balanceWarning,
                 'approval_chain_json' => $chain,
             ]);
 
@@ -666,6 +703,21 @@ final class LeaveService
                 ]);
             }
         }
+    }
+
+    private function assessBalance(LeaveEntitlement $entitlement, float $days, LeavePolicy $policy): LeaveBalanceAssessment
+    {
+        $overdrawnBy = $days - (float) $entitlement->remaining_days;
+
+        if ($overdrawnBy <= 0.0) {
+            return new LeaveBalanceAssessment(shouldBlock: false, shouldWarn: false);
+        }
+
+        return match ($policy->negative_leave_balance_policy ?? NegativeLeaveBalancePolicy::Block) {
+            NegativeLeaveBalancePolicy::Block => new LeaveBalanceAssessment(shouldBlock: true, shouldWarn: false),
+            NegativeLeaveBalancePolicy::Warn => new LeaveBalanceAssessment(shouldBlock: false, shouldWarn: true),
+            NegativeLeaveBalancePolicy::Allow => new LeaveBalanceAssessment(shouldBlock: false, shouldWarn: false),
+        };
     }
 
     private function assertPending(LeaveRequest $request): void

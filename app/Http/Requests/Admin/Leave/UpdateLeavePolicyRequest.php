@@ -45,6 +45,7 @@ final class UpdateLeavePolicyRequest extends FormRequest
             'max_balance' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'carry_forward_limit' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'carry_forward_expiry_months' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:120'],
+            'negative_leave_balance_policy' => ['sometimes', 'required', 'string', Rule::in(['block', 'warn', 'allow'])],
             'proration_on_join' => ['sometimes', 'boolean'],
             'exclude_public_holidays' => ['sometimes', 'boolean'],
             'exclude_weekends' => ['sometimes', 'boolean'],

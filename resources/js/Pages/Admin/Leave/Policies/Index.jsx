@@ -14,6 +14,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const ACCRUAL_METHODS = ['fixed_annual', 'monthly_accrual', 'per_worked_hours'];
+const NEGATIVE_LEAVE_BALANCE_POLICIES = ['block', 'warn', 'allow'];
 
 function emptyForm() {
     return {
@@ -24,6 +25,7 @@ function emptyForm() {
         max_balance: '',
         carry_forward_limit: '',
         carry_forward_expiry_months: '',
+        negative_leave_balance_policy: 'block',
         proration_on_join: false,
         exclude_public_holidays: true,
         exclude_weekends: true,
@@ -102,6 +104,15 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
         [t],
     );
 
+    const negativeLeaveBalancePolicyOptions = useMemo(
+        () =>
+            NEGATIVE_LEAVE_BALANCE_POLICIES.map((policy) => ({
+                value: policy,
+                label: t(`pages.leavePolicies.negativeLeaveBalancePolicies.${policy}`),
+            })),
+        [t],
+    );
+
     const openCreate = () => {
         setEditing(null);
         form.clearErrors();
@@ -123,6 +134,7 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
                 row.carry_forward_expiry_months !== null && row.carry_forward_expiry_months !== undefined
                     ? String(row.carry_forward_expiry_months)
                     : '',
+            negative_leave_balance_policy: row.negative_leave_balance_policy ?? 'block',
             proration_on_join: !!row.proration_on_join,
             exclude_public_holidays: !!row.exclude_public_holidays,
             exclude_weekends: row.exclude_weekends !== false,
@@ -372,6 +384,20 @@ function Index({ policies, filters, leaveTypes = [], legalEntities = [] }) {
                                     onChange={(e) => form.setData('carry_forward_expiry_months', e.target.value)}
                                     placeholder={t('pages.leavePolicies.fields.carryForwardExpiryMonthsPlaceholder')}
                                     className="rp-form-input"
+                                />
+                            </AdminFormField>
+                            <AdminFormField
+                                label={t('pages.leavePolicies.fields.negativeLeaveBalancePolicy')}
+                                id="negative_leave_balance_policy"
+                                error={form.errors.negative_leave_balance_policy}
+                                hint={t('pages.leavePolicies.fields.negativeLeaveBalancePolicyHint')}
+                                required
+                            >
+                                <Select
+                                    id="negative_leave_balance_policy"
+                                    value={form.data.negative_leave_balance_policy}
+                                    onChange={(value) => form.setData('negative_leave_balance_policy', value ?? 'block')}
+                                    options={negativeLeaveBalancePolicyOptions}
                                 />
                             </AdminFormField>
                         </div>

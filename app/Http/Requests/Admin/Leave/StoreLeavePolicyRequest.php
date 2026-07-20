@@ -58,6 +58,10 @@ final class StoreLeavePolicyRequest extends FormRequest
         if (! $this->has('year_end_excess_disposition') || $this->input('year_end_excess_disposition') === '') {
             $this->merge(['year_end_excess_disposition' => 'expire']);
         }
+
+        if (! $this->has('negative_leave_balance_policy') || $this->input('negative_leave_balance_policy') === '') {
+            $this->merge(['negative_leave_balance_policy' => 'block']);
+        }
     }
 
     /**
@@ -73,6 +77,7 @@ final class StoreLeavePolicyRequest extends FormRequest
             'max_balance' => ['nullable', 'numeric', 'min:0'],
             'carry_forward_limit' => ['nullable', 'numeric', 'min:0'],
             'carry_forward_expiry_months' => ['nullable', 'integer', 'min:0', 'max:120'],
+            'negative_leave_balance_policy' => ['required', 'string', Rule::in(['block', 'warn', 'allow'])],
             'proration_on_join' => ['boolean'],
             'exclude_public_holidays' => ['boolean'],
             'exclude_weekends' => ['boolean'],

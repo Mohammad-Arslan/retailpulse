@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\NegativeLeaveBalancePolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'max_balance',
     'carry_forward_limit',
     'carry_forward_expiry_months',
+    'negative_leave_balance_policy',
     'proration_on_join',
     'exclude_public_holidays',
     'exclude_weekends',
@@ -43,6 +45,7 @@ final class LeavePolicy extends Model
             'max_balance' => 'decimal:2',
             'carry_forward_limit' => 'decimal:2',
             'carry_forward_expiry_months' => 'integer',
+            'negative_leave_balance_policy' => NegativeLeaveBalancePolicy::class,
             'proration_on_join' => 'boolean',
             'exclude_public_holidays' => 'boolean',
             'exclude_weekends' => 'boolean',

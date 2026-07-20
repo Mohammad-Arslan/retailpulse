@@ -69,6 +69,7 @@ final class LeaveRequestController extends Controller
                 'end_time' => $leaveRequest->end_time,
                 'days' => (float) $leaveRequest->days,
                 'deduct_from_balance' => $leaveRequest->deduct_from_balance,
+                'balance_warning' => $leaveRequest->balance_warning,
                 'reason' => $leaveRequest->reason,
                 'status' => $leaveRequest->status,
                 'reschedule_count' => $leaveRequest->reschedules->count(),
