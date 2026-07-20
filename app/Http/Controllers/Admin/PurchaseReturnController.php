@@ -6,21 +6,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePurchaseReturnRequest;
-use App\Models\DebitNote;
 use App\Models\GoodsReceivingNote;
 use App\Models\PurchaseReturn;
-use App\Services\Procurement\DebitNotePdfService;
 use App\Services\Procurement\PurchaseReturnService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 final class PurchaseReturnController extends Controller
 {
     public function __construct(
         private readonly PurchaseReturnService $returns,
-        private readonly DebitNotePdfService $debitNotePdf,
     ) {}
 
     public function store(StorePurchaseReturnRequest $request, GoodsReceivingNote $goodsReceivingNote): RedirectResponse
@@ -85,17 +80,5 @@ final class PurchaseReturnController extends Controller
         $this->returns->close($purchaseReturn, (int) $request->user()->id);
 
         return back()->with('success', __('Return closed.'));
-    }
-
-    public function debitNotePdf(DebitNote $debitNote): BinaryFileResponse
-    {
-        $this->authorize('viewAny', PurchaseReturn::class);
-
-        $path = $this->debitNotePdf->generate($debitNote);
-
-        return response()->file(Storage::disk('local')->path($path), [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="'.$debitNote->reference_no.'.pdf"',
-        ]);
     }
 }

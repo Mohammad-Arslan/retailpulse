@@ -13,7 +13,7 @@ final class DebitNotePdfService
 {
     public function generate(DebitNote $debitNote): string
     {
-        $debitNote->load(['supplier', 'branch', 'purchaseReturn']);
+        $debitNote->load(['supplier', 'branch', 'purchaseReturn', 'supplierInvoice']);
 
         $pdf = Pdf::loadView('procurement.debit_note', [
             'debitNote' => $debitNote,

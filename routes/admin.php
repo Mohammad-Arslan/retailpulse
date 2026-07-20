@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\CostLayerController;
 use App\Http\Controllers\Admin\CountScheduleRuleController;
 use App\Http\Controllers\Admin\CountSessionController;
 use App\Http\Controllers\Admin\CreditNoteController;
+use App\Http\Controllers\Admin\DebitNoteController;
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\CustomerGroupController;
@@ -358,7 +359,7 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             ->name('purchase-returns.acknowledge');
         Route::post('purchase-returns/{purchase_return}/close', [PurchaseReturnController::class, 'close'])
             ->name('purchase-returns.close');
-        Route::get('debit-notes/{debit_note}/pdf', [PurchaseReturnController::class, 'debitNotePdf'])
+        Route::get('debit-notes/{debit_note}/pdf', [DebitNoteController::class, 'pdf'])
             ->name('debit-notes.pdf');
 
         Route::get('procurement/reports', [ProcurementReportController::class, 'index'])
@@ -592,6 +593,15 @@ Route::middleware(['auth', 'admin', 'branch.context'])
                     ->name('credit-notes.create');
                 Route::post('credit-notes', [CreditNoteController::class, 'store'])
                     ->name('credit-notes.store');
+            });
+
+            Route::middleware(['accounting-module:debit_notes'])->group(function () {
+                Route::get('debit-notes', [DebitNoteController::class, 'index'])
+                    ->name('debit-notes.index');
+                Route::get('debit-notes/create', [DebitNoteController::class, 'create'])
+                    ->name('debit-notes.create');
+                Route::post('debit-notes', [DebitNoteController::class, 'store'])
+                    ->name('debit-notes.store');
             });
 
             Route::middleware(['accounting-module:tax'])->group(function () {

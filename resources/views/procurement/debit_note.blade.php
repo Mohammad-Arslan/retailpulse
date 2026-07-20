@@ -16,6 +16,7 @@
         Supplier: {{ $debitNote->supplier?->name }}<br>
         Branch: {{ $debitNote->branch?->name }}<br>
         Return: {{ $debitNote->purchaseReturn?->reference_no ?? '—' }}<br>
+        Invoice: {{ $debitNote->supplierInvoice?->reference_no ?? '—' }}<br>
         Issued: {{ $debitNote->issued_at?->format('Y-m-d') ?? '—' }}<br>
         Amount: {{ number_format((float) $debitNote->amount, 2) }} {{ $debitNote->currency_code }}
     </div>
