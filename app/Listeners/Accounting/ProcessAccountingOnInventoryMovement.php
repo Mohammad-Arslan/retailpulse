@@ -20,9 +20,7 @@ final class ProcessAccountingOnInventoryMovement
 
     public function handle(InventoryStockChanged $event): void
     {
-        $eventType = $this->resolveEventType($event->reason);
-
-        if ($eventType === null || $event->stockMovementId === null) {
+        if ($event->stockMovementId === null) {
             return;
         }
 
@@ -32,12 +30,20 @@ final class ProcessAccountingOnInventoryMovement
             return;
         }
 
-        $inventory = $event->inventory->loadMissing('warehouse');
-        $qtyDelta = abs((int) $movement->qty_delta);
+        $signedQtyDelta = (int) $movement->qty_delta;
+        $qtyDelta = abs($signedQtyDelta);
 
         if ($qtyDelta === 0) {
             return;
         }
+
+        $eventType = $this->resolveEventType($event->reason, $signedQtyDelta);
+
+        if ($eventType === null) {
+            return;
+        }
+
+        $inventory = $event->inventory->loadMissing('warehouse');
 
         $unitCost = $this->costService->averageUnitCost(
             (int) $inventory->product_variant_id,
@@ -84,13 +90,15 @@ final class ProcessAccountingOnInventoryMovement
         );
     }
 
-    private function resolveEventType(StockMovementReason $reason): ?string
+    private function resolveEventType(StockMovementReason $reason, int $signedQtyDelta): ?string
     {
         return match ($reason) {
             StockMovementReason::SaleReturn,
             StockMovementReason::ReturnCustomer => 'sale.returned',
             StockMovementReason::Adjustment,
-            StockMovementReason::CycleCountAdjustment => 'inventory.adjusted',
+            StockMovementReason::CycleCountAdjustment => $signedQtyDelta >= 0
+                ? 'inventory.adjustment_gain'
+                : 'inventory.adjustment_loss',
             StockMovementReason::Damaged,
             StockMovementReason::QuarantineScrap => 'stock.scrapped',
             default => null,

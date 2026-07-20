@@ -27,7 +27,8 @@ final class PostingRulesSeeder extends Seeder
         $this->seedDebitNoteIssuedRule($effectiveFrom);
         $this->seedPurchaseReturnedRule($effectiveFrom);
         $this->seedSaleReturnedRule($effectiveFrom);
-        $this->seedInventoryAdjustedRule($effectiveFrom);
+        $this->seedInventoryAdjustmentGainRule($effectiveFrom);
+        $this->seedInventoryAdjustmentLossRule($effectiveFrom);
         $this->seedStockScrappedRule($effectiveFrom);
         $this->seedTransferConfirmedRule($effectiveFrom);
         $this->seedChequeRules($effectiveFrom);
@@ -209,17 +210,30 @@ final class PostingRulesSeeder extends Seeder
         $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'cogs', required: false);
     }
 
-    private function seedInventoryAdjustedRule(string $effectiveFrom): void
+    private function seedInventoryAdjustmentGainRule(string $effectiveFrom): void
     {
         $ruleSet = $this->createRuleSet(
-            code: 'inventory_adjusted_default',
-            name: 'Inventory Adjusted — Default',
-            eventType: 'inventory.adjusted',
+            code: 'inventory_adjustment_gain_default',
+            name: 'Inventory Adjustment Gain — Default',
+            eventType: 'inventory.adjustment_gain',
             effectiveFrom: $effectiveFrom,
         );
 
         $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false);
-        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_adjustment', required: false);
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_adjustment_gain', required: false);
+    }
+
+    private function seedInventoryAdjustmentLossRule(string $effectiveFrom): void
+    {
+        $ruleSet = $this->createRuleSet(
+            code: 'inventory_adjustment_loss_default',
+            name: 'Inventory Adjustment Loss — Default',
+            eventType: 'inventory.adjustment_loss',
+            effectiveFrom: $effectiveFrom,
+        );
+
+        $this->createLine($ruleSet->id, 1, PostingRuleEntrySide::Debit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_shrinkage_expense', required: false);
+        $this->createLine($ruleSet->id, 2, PostingRuleEntrySide::Credit, AccountResolutionType::AccountMapping, AmountSource::InventoryCost, 'inventory_asset', required: false);
     }
 
     private function seedStockScrappedRule(string $effectiveFrom): void

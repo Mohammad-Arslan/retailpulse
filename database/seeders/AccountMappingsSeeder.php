@@ -16,7 +16,7 @@ final class AccountMappingsSeeder extends Seeder
             ->whereIn('code', [
                 '1100', '1110', '1210', '1300', '1350', '1400', '1500', '1510', '1610', '1620',
                 '2100', '2200', '2210', '2300', '3400', '4100', '4150', '4200',
-                '5100', '5200', '5300', '5400', '5500', '5600', '5900', '5910',
+                '5100', '5200', '5300', '5400', '5500', '5600', '5700', '5900', '5910',
             ])
             ->pluck('id', 'code');
 
@@ -31,6 +31,8 @@ final class AccountMappingsSeeder extends Seeder
             ['mapping_key' => 'cogs', 'account_code' => '5100'],
             ['mapping_key' => 'inventory_adjustment', 'account_code' => '5910'],
             ['mapping_key' => 'inventory_write_off', 'account_code' => '5910'],
+            ['mapping_key' => 'inventory_adjustment_gain', 'account_code' => '4200'],
+            ['mapping_key' => 'inventory_shrinkage_expense', 'account_code' => '5700'],
             ['mapping_key' => 'output_tax', 'account_code' => '2200'],
             ['mapping_key' => 'input_tax', 'account_code' => '1350'],
             ['mapping_key' => 'opening_balance_equity', 'account_code' => '3400'],

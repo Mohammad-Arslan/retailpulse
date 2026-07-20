@@ -21,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'retry_count',
     'payload',
     'processed_at',
+    'flagged_for_review_at',
+    'flagged_for_review_reason',
 ])]
 class AccountingEvent extends Model
 {
@@ -30,6 +32,7 @@ class AccountingEvent extends Model
             'processing_status' => AccountingEventStatus::class,
             'payload' => 'array',
             'processed_at' => 'datetime',
+            'flagged_for_review_at' => 'datetime',
         ];
     }
 
