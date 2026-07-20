@@ -19,7 +19,7 @@ final class ProcessLeaveYearEnd extends Command
         $asOfInput = $this->option('as-of');
         $asOf = $asOfInput !== null ? CarbonImmutable::parse($asOfInput) : CarbonImmutable::now();
 
-        $runs = $service->processDue($asOf);
+        $runs = [...$service->processDue($asOf), ...$service->expireDueCarriedForward($asOf)];
 
         if ($runs === []) {
             $this->info("No leave year-end processing due as of {$asOf->toDateString()}.");

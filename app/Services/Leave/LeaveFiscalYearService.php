@@ -62,6 +62,123 @@ final class LeaveFiscalYearService
     }
 
     /**
+     * Expires the still-unused portion of `carried_forward_days` once its stamped
+     * `carried_forward_expires_at` (set by `closeEntitlement()`) is at or before `$asOf`.
+     * Purely date-driven — no fiscal-year-mode branching needed here, since the expiry
+     * date was already computed against the correct mode-specific period end when it
+     * was stamped. Never touches `used_days`: only the unused remainder can expire.
+     *
+     * @return list<LeaveYearEndRun>
+     */
+    public function expireDueCarriedForward(CarbonImmutable $asOf): array
+    {
+        $runs = [];
+
+        $entities = OrganizationEntity::query()->where('status', 'active')->get();
+
+        foreach ($entities as $entity) {
+            $periodLabel = 'CF-EXPIRY-'.$asOf->toDateString();
+
+            if ($this->alreadyProcessed($entity, $periodLabel)) {
+                continue;
+            }
+
+            $run = $this->expireCarriedForwardForEntity($entity, $periodLabel, $asOf);
+
+            if ($run !== null) {
+                $runs[] = $run;
+            }
+        }
+
+        return $runs;
+    }
+
+    private function expireCarriedForwardForEntity(OrganizationEntity $entity, string $periodLabel, CarbonImmutable $asOf): ?LeaveYearEndRun
+    {
+        return DB::transaction(function () use ($entity, $periodLabel, $asOf): ?LeaveYearEndRun {
+            // Re-check under transaction to close a race between two overlapping schedule runs.
+            if ($this->alreadyProcessed($entity, $periodLabel)) {
+                return null;
+            }
+
+            $entitlements = LeaveEntitlement::query()
+                ->whereHas('employee', fn ($q) => $q->where('legal_entity_id', $entity->id)->where('status', 'active'))
+                ->whereNotNull('carried_forward_expires_at')
+                ->where('carried_forward_expires_at', '<=', $asOf->toDateString())
+                ->where('carried_forward_days', '>', 0)
+                ->with(['employee', 'leaveType'])
+                ->lockForUpdate()
+                ->get();
+
+            if ($entitlements->isEmpty()) {
+                return null;
+            }
+
+            $run = LeaveYearEndRun::query()->create([
+                'legal_entity_id' => $entity->id,
+                'period_label' => $periodLabel,
+                'status' => 'completed',
+                'executed_at' => now(),
+            ]);
+
+            $totals = ['carried_forward' => 0.0, 'expired' => 0.0, 'encashed' => 0.0, 'entitlements_processed' => 0];
+
+            foreach ($entitlements as $entitlement) {
+                $line = $this->expireCarriedForwardForEntitlement($run, $entitlement);
+
+                if ($line === null) {
+                    continue;
+                }
+
+                $totals['carried_forward'] += (float) $line->carried_forward;
+                $totals['expired'] += (float) $line->expired;
+                $totals['entitlements_processed']++;
+            }
+
+            $run->update(['totals_json' => $totals]);
+
+            return $run->fresh(['lines']) ?? $run;
+        });
+    }
+
+    private function expireCarriedForwardForEntitlement(LeaveYearEndRun $run, LeaveEntitlement $entitlement): ?LeaveYearEndLine
+    {
+        $employee = $entitlement->employee;
+        $leaveType = $entitlement->leaveType;
+
+        if ($employee === null || $leaveType === null) {
+            return null;
+        }
+
+        $expiredAmount = min((float) $entitlement->carried_forward_days, max(0.0, (float) $entitlement->remaining_days));
+
+        if ($expiredAmount <= 0.0) {
+            // Nothing left to expire (fully consumed already) — clear the flag so this
+            // entitlement isn't rechecked forever, but there is nothing to report.
+            $entitlement->update(['carried_forward_expires_at' => null]);
+
+            return null;
+        }
+
+        $newCarriedForward = round((float) $entitlement->carried_forward_days - $expiredAmount, 2);
+
+        $entitlement->update([
+            'carried_forward_days' => $newCarriedForward,
+            'carried_forward_expires_at' => null,
+        ]);
+
+        return LeaveYearEndLine::query()->create([
+            'leave_year_end_run_id' => $run->id,
+            'employee_id' => $employee->id,
+            'leave_type_id' => $leaveType->id,
+            'carried_forward' => $newCarriedForward,
+            'expired' => $expiredAmount,
+            'encashed' => 0,
+            'next_opening' => $newCarriedForward,
+        ]);
+    }
+
+    /**
      * @return list<LeaveYearEndRun>
      */
     private function processCalendarYearModeEntity(OrganizationEntity $entity, CarbonImmutable $asOf): array
@@ -262,6 +379,10 @@ final class LeaveFiscalYearService
 
         $totalCarried = $carryFromAvailable + $pendingHold;
 
+        $carriedForwardExpiresAt = ($policy->carry_forward_expiry_months !== null && $totalCarried > 0)
+            ? $periodEnd->addMonths($policy->carry_forward_expiry_months)->toDateString()
+            : null;
+
         // fixed_annual re-grants the full rate for the new period in this same reset —
         // never prorated here, proration only ever applies to a brand-new hire's first grant.
         $nextAccrued = $policy->accrual_method === 'fixed_annual' ? (float) $policy->accrual_rate : 0.0;
@@ -271,6 +392,7 @@ final class LeaveFiscalYearService
             'used_days' => 0,
             'encashed_days' => 0,
             'carried_forward_days' => $totalCarried,
+            'carried_forward_expires_at' => $carriedForwardExpiresAt,
             'accrual_last_run_on' => $periodEnd->toDateString(),
         ]);
 

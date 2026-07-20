@@ -30,7 +30,7 @@ Ensure leave entitlements, carry-forward, expiry, and encashment operate on conf
 | P12-LVFY-FR-001 | Implemented | Leave entitlements are keyed by `fiscal_year_id`. |
 | P12-LVFY-FR-002 | Partial | Fiscal years align with entity/Phase 11 fiscal definitions where available. |
 | P12-LVFY-FR-003 | Implemented | Year-end job (`leave:process-year-end`, scheduled daily) applies `carry_forward_limit`, expires excess, and resets the entitlement in place for the new year. **Deliberate deviation from the literal "create next FY entitlements" wording**: the rest of `LeaveService` (approve/cancel/request) always resolves the single `fiscal_year_id = null` entitlement bucket for an employee+leave type — creating a second row keyed to a real `fiscal_year_id` would silently orphan it from every future operation. Instead the existing bucket is reset in place (`accrued_days`/`used_days`/`encashed_days` → 0, `carried_forward_days` → computed carry) and the closing snapshot is preserved immutably in `leave_year_end_runs`/`leave_year_end_lines`. `fiscal_year_id` is still recorded on the run as a reference pointer in `fiscal_year` mode. |
-| P12-LVFY-FR-004 | Planned | Carry-forward expiry_months (separate from the year-end carry cap) starts from FY start or join — configurable. |
+| P12-LVFY-FR-004 | Implemented | `leave_policies.carry_forward_expiry_months` is stamped onto `leave_entitlements.carried_forward_expires_at` (`= period end + N months`) by `closeEntitlement()` whenever the policy sets it and something was actually carried, and is re-stamped fresh on every subsequent year-end close (never additive). `LeaveFiscalYearService::expireDueCarriedForward()`, called by the same daily `leave:process-year-end` job right after `processDue()`, reduces `carried_forward_days` by whatever's still unused once the stamped date is reached — capped at `remaining_days`, so days already consumed before expiry are never touched, only the unused remainder. Reuses the existing `leave_year_end_runs`/`leave_year_end_lines` reporting shape (a `CF-EXPIRY-{date}` period label per legal entity, same `(legal_entity_id, period_label)` idempotency guard). A policy with no `carry_forward_expiry_months` behaves exactly as before this change. |
 | P12-LVFY-FR-005 | Implemented | Encashment at year-end is optional per policy (`leave_policies.year_end_excess_disposition`: `expire` default / `encash`) — only excess above `carry_forward_limit` is affected; days held by a pending leave request are never expired or encashed (see AC below). |
 | P12-LVFY-FR-006 | Planned | Opening leave balances on mid-year go-live are FY-specific migration rows. |
 | P12-LVFY-FR-007 | Planned | Reports filter by fiscal year. |
@@ -43,6 +43,9 @@ Ensure leave entitlements, carry-forward, expiry, and encashment operate on conf
 # Uses Phase 11 / shared fiscal_years (reference only — see FR-003)
 
 leave_entitlements.fiscal_year_id          # Implemented (always null in practice today)
+leave_entitlements.carried_forward_expires_at  # Implemented — nullable date, stamped by
+                                                # closeEntitlement() when the policy's
+                                                # carry_forward_expiry_months is set
 
 leave_year_end_runs
 - id, legal_entity_id, fiscal_year_id nullable, employee_id nullable (hire_anniversary mode),
@@ -65,10 +68,13 @@ leave_year_end_lines
 
 ```text
 LeaveFiscalYearService
-  processDue(asOf)     # entry point called by leave:process-year-end; scans all active
-                       # legal entities, resolves each one's mode, and closes any due period
-  closeYear(...)       # per legal entity (or per employee in hire_anniversary mode);
-                       # idempotent — guarded by the (legal_entity_id, period_label) unique index
+  processDue(asOf)             # entry point called by leave:process-year-end; scans all active
+                               # legal entities, resolves each one's mode, and closes any due period
+  closeYear(...)               # per legal entity (or per employee in hire_anniversary mode);
+                               # idempotent — guarded by the (legal_entity_id, period_label) unique index
+  expireDueCarriedForward(asOf) # also called by leave:process-year-end, right after processDue();
+                                # purely date-driven sweep of carried_forward_expires_at, no
+                                # fiscal-year-mode branching needed (the date already encodes it)
 ```
 
 ---
