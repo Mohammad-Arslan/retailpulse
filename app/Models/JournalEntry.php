@@ -33,6 +33,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'posted_by',
     'approved_by',
     'locked_at',
+    'backdated_at',
+    'backdated_reason',
     'created_by',
     'updated_by',
 ])]
@@ -48,6 +50,7 @@ class JournalEntry extends Model
             'is_closing_entry' => 'boolean',
             'posted_at' => 'datetime',
             'locked_at' => 'datetime',
+            'backdated_at' => 'datetime',
         ];
     }
 

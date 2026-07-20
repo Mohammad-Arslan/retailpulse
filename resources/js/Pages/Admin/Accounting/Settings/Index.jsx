@@ -43,6 +43,7 @@ function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reo
         allow_negative_inventory: settings.allow_negative_inventory === true,
         allow_manual_journal_posting: settings.allow_manual_journal_posting !== false,
         manual_journal_approval_limit: settings.manual_journal_approval_limit ?? '',
+        backdated_posting_policy: settings.backdated_posting_policy ?? 'warn',
         accounting_cutover_date: settings.accounting_cutover_date?.slice(0, 10) ?? '',
         journal_numbering_mode: settings.journal_numbering_mode ?? 'branch_fiscal',
         fiscal_year_reopen_window_hours: String(settings.fiscal_year_reopen_window_hours ?? 48),
@@ -340,6 +341,23 @@ function Index({ settings, fiscalYears = [], accounts = [], currencies = [], reo
                                 value={data.manual_journal_approval_limit}
                                 onChange={(e) => setData('manual_journal_approval_limit', e.target.value)}
                                 className="rp-form-input"
+                                disabled={readOnly}
+                            />
+                        </AdminFormField>
+                        <AdminFormField
+                            label={t('pages.accounting.settings.fields.backdatedPostingPolicy')}
+                            id="backdated_posting_policy"
+                            error={errors.backdated_posting_policy}
+                        >
+                            <Select
+                                id="backdated_posting_policy"
+                                value={data.backdated_posting_policy}
+                                onChange={(value) => setData('backdated_posting_policy', value ?? 'warn')}
+                                options={[
+                                    { value: 'allow', label: t('pages.accounting.settings.backdatedPolicy.allow') },
+                                    { value: 'warn', label: t('pages.accounting.settings.backdatedPolicy.warn') },
+                                    { value: 'block', label: t('pages.accounting.settings.backdatedPolicy.block') },
+                                ]}
                                 disabled={readOnly}
                             />
                         </AdminFormField>

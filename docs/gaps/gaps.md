@@ -233,6 +233,7 @@ Last reviewed: 2026-07-14 (Phase 11 correctness bugs P11-27–P11-31 closed; P11
 | P11-29 | **Split-tender sales collapsed to primary payment method** | — | **Resolved 2026-07-14** — `PostingRuleEngine` expands `PaymentMethodAccount`+`SettlementAmount` across `payments[]`. |
 | P11-30 | **`asset.acquired` not wired** | — | **Resolved 2026-07-14** — `FixedAssetService::create` posts `asset.acquired` (Dr asset / Cr AP). |
 | P11-31 | **Fiscal year `Closing` left journals unattached; closing JE unlocked** | — | **Resolved 2026-07-14** — `resolveFiscalYearId` includes `Closing`; close locks all FY journals after closing entry posts. |
+| P11-32 | **`JournalService::updateDraft()` doesn't recompute `fiscal_year_id` when `journal_date` changes** — unlike `createDraft()`, which resolves `fiscal_year_id` from `journal_date` via `resolveFiscalYearId()`, editing a draft's `journal_date` leaves the original (now possibly stale/wrong) `fiscal_year_id` in place | **Medium** | Found 2026-07-20 while wiring the P1 `backdated_posting_policy` check into `updateDraft()` — noted rather than fixed, since it's a pre-existing, unrelated gap and out of scope for that change. |
 
 ---
 

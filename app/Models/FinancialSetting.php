@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\BackdatedPostingPolicy;
 use App\Enums\InventoryValuationMethod;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -46,6 +47,7 @@ class FinancialSetting extends Model
             'allow_negative_inventory' => 'boolean',
             'allow_manual_journal_posting' => 'boolean',
             'manual_journal_approval_limit' => 'decimal:2',
+            'backdated_posting_policy' => BackdatedPostingPolicy::class,
             'backdated_entry_approval_required' => 'boolean',
             'fiscal_year_close_approval_required' => 'boolean',
             'tax_reporting_enabled' => 'boolean',

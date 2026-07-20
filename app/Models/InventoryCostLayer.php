@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'source_reference_type',
     'source_reference_id',
     'status',
+    'backdated_at',
+    'backdated_reason',
 ])]
 class InventoryCostLayer extends Model
 {
@@ -35,6 +37,7 @@ class InventoryCostLayer extends Model
             'unit_cost' => 'decimal:4',
             'valuation_method' => InventoryValuationMethod::class,
             'landed_cost_amount' => 'decimal:4',
+            'backdated_at' => 'datetime',
         ];
     }
 

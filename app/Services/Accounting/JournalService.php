@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
+use App\DTOs\Accounting\BackdatedPostingAssessment;
 use App\Enums\FiscalYearStatus;
 use App\Enums\JournalEntryStatus;
 use App\Models\FiscalYear;
@@ -15,10 +16,13 @@ use Illuminate\Support\Facades\DB;
 
 final class JournalService
 {
+    private const BACKDATED_REASON = 'Journal date is before today; posted under the warn backdated-posting policy.';
+
     public function __construct(
         private readonly JournalValidationService $validation,
         private readonly JournalNumberService $numberService,
         private readonly FinancialSettingsService $settings,
+        private readonly BackdatedPostingPolicyGuard $backdatedGuard,
     ) {}
 
     /**
@@ -26,7 +30,16 @@ final class JournalService
      */
     public function createDraft(array $attributes, array $lines, int $userId): JournalEntry
     {
-        return DB::transaction(function () use ($attributes, $lines, $userId) {
+        $assessment = $this->assessBackdated(
+            $attributes['journal_date'] ?? now(),
+            (bool) ($attributes['is_system_generated'] ?? false),
+        );
+
+        if ($assessment->shouldBlock) {
+            throw new \DomainException('Journal date is backdated and the current posting policy blocks backdated entries.');
+        }
+
+        return DB::transaction(function () use ($attributes, $lines, $userId, $assessment) {
             $fiscalYearId = $attributes['fiscal_year_id'] ?? $this->resolveFiscalYearId($attributes['journal_date'] ?? now());
 
             $entry = JournalEntry::query()->create([
@@ -39,6 +52,8 @@ final class JournalService
                 'status' => JournalEntryStatus::Draft,
                 'created_by' => $userId,
                 'updated_by' => $userId,
+                'backdated_at' => $assessment->shouldFlag ? now() : null,
+                'backdated_reason' => $assessment->shouldFlag ? self::BACKDATED_REASON : null,
             ]);
 
             $this->syncLines($entry, $lines);
@@ -59,10 +74,24 @@ final class JournalService
             throw new \DomainException('Only draft journals can be edited.');
         }
 
-        return DB::transaction(function () use ($entry, $attributes, $lines, $userId) {
+        $assessment = null;
+
+        if (array_key_exists('journal_date', $attributes)) {
+            $assessment = $this->assessBackdated($attributes['journal_date'], $entry->is_system_generated);
+
+            if ($assessment->shouldBlock) {
+                throw new \DomainException('Journal date is backdated and the current posting policy blocks backdated entries.');
+            }
+        }
+
+        return DB::transaction(function () use ($entry, $attributes, $lines, $userId, $assessment) {
             $entry->update([
                 ...$attributes,
                 'updated_by' => $userId,
+                ...($assessment !== null ? [
+                    'backdated_at' => $assessment->shouldFlag ? now() : $entry->backdated_at,
+                    'backdated_reason' => $assessment->shouldFlag ? self::BACKDATED_REASON : $entry->backdated_reason,
+                ] : []),
             ]);
 
             $entry->transactions()->delete();
@@ -205,6 +234,18 @@ final class JournalService
                 'description' => $line['description'] ?? null,
             ]);
         }
+    }
+
+    private function assessBackdated(mixed $journalDate, bool $isSystemGenerated): BackdatedPostingAssessment
+    {
+        if ($isSystemGenerated) {
+            return new BackdatedPostingAssessment(isBackdated: false, shouldBlock: false, shouldFlag: false);
+        }
+
+        $parsed = $journalDate instanceof CarbonInterface ? $journalDate : Carbon::parse($journalDate);
+        $isBackdated = $parsed->copy()->startOfDay()->lt(Carbon::today());
+
+        return $this->backdatedGuard->assess($isBackdated, $this->settings->get());
     }
 
     private function resolveFiscalYearId(CarbonInterface|string $date): ?int

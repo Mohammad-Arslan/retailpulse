@@ -3681,6 +3681,11 @@
                     "wac": "Weighted Average"
                 },
                 "negativeInventoryWarning": "Warning: Enabling this allows sales to complete with $0 COGS when no cost layers exist. This understates expenses and overstates profit — use only when you accept that financial risk.",
+                "backdatedPolicy": {
+                    "allow": "Allow — post backdated entries without restriction",
+                    "warn": "Warn — post and flag backdated entries for review",
+                    "block": "Block — reject backdated entries"
+                },
                 "fiscalYearsTitle": "Fiscal Years",
                 "fiscalYearsEmpty": "No fiscal years configured.",
                 "fiscalYearColumns": {
@@ -3719,6 +3724,7 @@
                     "allowNegativeInventory": "Allow Negative Inventory",
                     "defaultValuationMethod": "Default Inventory Valuation Method",
                     "approvalLimit": "Manual Journal Approval Limit",
+                    "backdatedPostingPolicy": "Backdated Posting Policy",
                     "fiscalYearReopenWindowHours": "Fiscal Year Reopen Window (Hours)",
                     "defaultSalesTaxType": "Default Sales Tax Type",
                     "defaultPurchaseTaxType": "Default Purchase Tax Type",

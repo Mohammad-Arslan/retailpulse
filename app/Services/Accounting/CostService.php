@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
+use App\DTOs\Accounting\BackdatedPostingAssessment;
 use App\DTOs\Accounting\ConsumedCost;
 use App\Enums\InventoryValuationMethod;
+use App\Models\FinancialSetting;
 use App\Models\GoodsReceivingNote;
 use App\Models\GrnItem;
 use App\Models\InventoryCostLayer;
@@ -13,6 +15,7 @@ use App\Models\LandedCostEntry;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\SaleItem;
+use Carbon\Carbon;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -20,8 +23,11 @@ use Illuminate\Validation\ValidationException;
 
 final class CostService
 {
+    private const BACKDATED_REASON = 'Received date is before existing FIFO history; recorded under the warn backdated-posting policy.';
+
     public function __construct(
         private readonly FinancialSettingsService $financialSettings,
+        private readonly BackdatedPostingPolicyGuard $backdatedGuard,
     ) {}
 
     public function createLayerFromGrnItem(
@@ -76,13 +82,22 @@ final class CostService
         $settings = $this->financialSettings->get();
         $method = $valuationMethod ?? $settings->default_inventory_valuation_method ?? InventoryValuationMethod::Fifo;
 
+        $effectiveReceivedAt = $receivedAt ?? now();
+        $assessment = $this->assessBackdatedReceipt($productVariantId, $warehouseId, $effectiveReceivedAt, $settings);
+
+        if ($assessment->shouldBlock) {
+            throw ValidationException::withMessages([
+                'received_at' => __('This receipt is dated before existing inventory history for this variant/warehouse and the current backdated-posting policy blocks it.'),
+            ]);
+        }
+
         $effectiveUnitCost = $unitCost + ($qtyReceived > 0 ? $landedCostAmount / $qtyReceived : 0);
 
-        return InventoryCostLayer::query()->create([
+        $layer = InventoryCostLayer::query()->create([
             'product_variant_id' => $productVariantId,
             'warehouse_id' => $warehouseId,
             'batch_no' => $batchNo,
-            'received_at' => $receivedAt ?? now(),
+            'received_at' => $effectiveReceivedAt,
             'qty_received' => $qtyReceived,
             'qty_remaining' => $qtyReceived,
             'unit_cost' => round($effectiveUnitCost, 4),
@@ -91,6 +106,58 @@ final class CostService
             'source_reference_type' => $sourceReferenceType,
             'source_reference_id' => $sourceReferenceId,
             'status' => 'active',
+            'backdated_at' => $assessment->shouldFlag ? now() : null,
+            'backdated_reason' => $assessment->shouldFlag ? self::BACKDATED_REASON : null,
+        ]);
+
+        if ($assessment->shouldFlag) {
+            $this->logSalesInBackdatedGap($productVariantId, $warehouseId, $effectiveReceivedAt);
+        }
+
+        return $layer;
+    }
+
+    private function assessBackdatedReceipt(
+        int $productVariantId,
+        int $warehouseId,
+        \DateTimeInterface $receivedAt,
+        FinancialSetting $settings,
+    ): BackdatedPostingAssessment {
+        $parsedReceivedAt = Carbon::parse($receivedAt);
+
+        $mostRecentReceivedAt = InventoryCostLayer::query()
+            ->where('product_variant_id', $productVariantId)
+            ->where('warehouse_id', $warehouseId)
+            ->max('received_at');
+
+        $wouldReorderHistory = $mostRecentReceivedAt !== null
+            && $parsedReceivedAt->lt(Carbon::parse($mostRecentReceivedAt));
+
+        $isBackdated = $wouldReorderHistory && $parsedReceivedAt->copy()->startOfDay()->lt(Carbon::today());
+
+        return $this->backdatedGuard->assess($isBackdated, $settings);
+    }
+
+    private function logSalesInBackdatedGap(int $productVariantId, int $warehouseId, \DateTimeInterface $receivedAt): void
+    {
+        $affectedSaleItemIds = SaleItem::query()
+            ->where('product_variant_id', $productVariantId)
+            ->whereNotNull('cost_consumed')
+            ->whereHas('sale', function ($query) use ($warehouseId, $receivedAt) {
+                $query->where('warehouse_id', $warehouseId)
+                    ->whereBetween('completed_at', [$receivedAt, now()]);
+            })
+            ->pluck('id');
+
+        if ($affectedSaleItemIds->isEmpty()) {
+            return;
+        }
+
+        Log::warning('Backdated inventory receipt may invalidate FIFO ordering for already-posted sales.', [
+            'product_variant_id' => $productVariantId,
+            'warehouse_id' => $warehouseId,
+            'received_at' => Carbon::parse($receivedAt)->toDateTimeString(),
+            'affected_sale_item_ids' => $affectedSaleItemIds->all(),
         ]);
     }
 

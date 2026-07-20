@@ -29,7 +29,7 @@ final class FinancialSettingsPresenter
             'allow_negative_inventory' => $settings->allow_negative_inventory,
             'allow_manual_journal_posting' => $settings->allow_manual_journal_posting,
             'manual_journal_approval_limit' => $settings->manual_journal_approval_limit,
-            'backdated_posting_policy' => $settings->backdated_posting_policy,
+            'backdated_posting_policy' => $settings->backdated_posting_policy?->value,
             'backdated_entry_approval_required' => $settings->backdated_entry_approval_required,
             'fiscal_year_close_approval_required' => $settings->fiscal_year_close_approval_required,
             'period_lock_mode' => $settings->period_lock_mode,
