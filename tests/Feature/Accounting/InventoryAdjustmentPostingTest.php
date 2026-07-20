@@ -80,6 +80,17 @@ final class InventoryAdjustmentPostingTest extends TestCase
             sourceReferenceType: 'Tests\\AdjustmentGrn',
             sourceReferenceId: 1,
         );
+
+        // Cost layers only establish cost basis — seed actual on-hand quantity separately
+        // so a negative cycle-count variance below has stock to subtract from.
+        app(InventoryService::class)->applyDelta(
+            warehouseId: $this->warehouse->id,
+            variantId: $this->variant->id,
+            batchId: null,
+            qtyDelta: 100,
+            reason: StockMovementReason::OpeningBalance,
+            userId: $this->user->id,
+        );
     }
 
     public function test_positive_variance_posts_as_inventory_gain(): void
