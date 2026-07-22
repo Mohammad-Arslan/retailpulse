@@ -21,6 +21,7 @@ use App\Services\Overtime\ToilClaimService;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 final class LeaveService
@@ -35,6 +36,7 @@ final class LeaveService
         private readonly ApprovalApproverResolver $approvers,
         private readonly HolidayResolver $holidays,
         private readonly ToilClaimService $toilClaims,
+        private readonly LeaveEligibilityService $eligibility,
     ) {}
 
     public function requestLeave(
@@ -115,7 +117,14 @@ final class LeaveService
             $balanceWarning = false;
 
             if (! $isToil && $deductFromBalance && $policy !== null) {
-                $entitlement = $this->resolveEntitlement($employee, $leaveType);
+                try {
+                    $entitlement = $this->resolveEntitlement($employee, $leaveType);
+                } catch (DomainException $e) {
+                    throw ValidationException::withMessages([
+                        'leave_type_id' => $e->getMessage(),
+                    ]);
+                }
+
                 $assessment = $this->assessBalance($entitlement, $days, $policy);
 
                 if ($assessment->shouldBlock) {
@@ -416,6 +425,13 @@ final class LeaveService
         $hireDate = $employee->hire_date !== null ? CarbonImmutable::parse($employee->hire_date) : CarbonImmutable::now();
         $policy = $this->resolveLeavePolicy($employee, $leaveType, $hireDate);
 
+        if ($policy !== null && ! $this->eligibility->isEligible($employee, $policy, CarbonImmutable::now())) {
+            throw new DomainException(__(
+                'This employee is not eligible for :type leave under the current policy.',
+                ['type' => $leaveType->name],
+            ));
+        }
+
         return $this->createInitialEntitlement($employee, $leaveType, $policy, $hireDate, $fiscalYearId);
     }
 
@@ -524,6 +540,19 @@ final class LeaveService
             $policy = $this->resolveLeavePolicy($employee, $leaveType, $asOf);
 
             if ($policy === null || $policy->accrual_method === 'fixed_annual') {
+                continue;
+            }
+
+            if (! $this->eligibility->isEligible($employee, $policy, $asOf)) {
+                // A scheduled batch job must not halt on one ineligible employee
+                // (e.g. a policy tightened after this entitlement was created) —
+                // skip it and keep processing the rest of the run.
+                Log::warning('Skipped leave accrual for an entitlement whose employee is no longer eligible under the current policy.', [
+                    'employee_id' => $employee->id,
+                    'leave_type_id' => $leaveType->id,
+                    'leave_policy_id' => $policy->id,
+                ]);
+
                 continue;
             }
 
