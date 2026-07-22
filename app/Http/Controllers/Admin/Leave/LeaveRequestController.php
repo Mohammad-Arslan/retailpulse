@@ -10,7 +10,9 @@ use App\Http\Requests\Admin\Leave\StoreLeaveRequestRequest;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
+use App\Services\BranchContextService;
 use App\Services\Leave\LeaveService;
+use App\Support\BranchScope;
 use App\Support\ListPagination;
 use Carbon\CarbonImmutable;
 use DomainException;
@@ -24,6 +26,7 @@ final class LeaveRequestController extends Controller
 {
     public function __construct(
         private readonly LeaveService $leaveService,
+        private readonly BranchContextService $branchContext,
     ) {}
 
     public function index(Request $request): Response
@@ -50,6 +53,8 @@ final class LeaveRequestController extends Controller
             })
             ->when($filters['status'] ?? null, fn ($q, string $status) => $q->where('status', $status))
             ->orderBy($filters['sort'] ?? 'start_date', $filters['direction'] ?? 'desc');
+
+        BranchScope::applyViaEmployee($query, $this->branchContext->accessibleBranchIds($request->user()));
 
         $requests = $query->paginate($perPage)->withQueryString();
 
@@ -78,13 +83,16 @@ final class LeaveRequestController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $this->authorize('create', LeaveRequest::class);
+
+        $accessibleBranchIds = $this->branchContext->accessibleBranchIds($request->user());
 
         return Inertia::render('Admin/Leave/Requests/Create', [
             'employees' => Employee::query()
                 ->where('status', 'active')
+                ->when($accessibleBranchIds !== null, fn ($q) => $q->whereIn('primary_branch_id', $accessibleBranchIds))
                 ->orderBy('first_name')
                 ->get(['id', 'first_name', 'last_name', 'employee_code']),
             'leaveTypes' => LeaveType::query()

@@ -11,6 +11,9 @@ use App\Models\Branch;
 use App\Models\Employee;
 use App\Services\Attendance\AttendanceClockPayload;
 use App\Services\Attendance\AttendanceService;
+use App\Services\BranchContextService;
+use App\Support\BranchContext;
+use App\Support\BranchScope;
 use App\Support\ListPagination;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +25,7 @@ final class AttendanceRecordController extends Controller
 {
     public function __construct(
         private readonly AttendanceService $attendanceService,
+        private readonly BranchContextService $branchContext,
     ) {}
 
     public function index(Request $request): Response
@@ -49,6 +53,8 @@ final class AttendanceRecordController extends Controller
             ->when($filters['status'] ?? null, fn ($q, string $status) => $q->where('status', $status))
             ->orderBy($filters['sort'] ?? 'clock_in', $filters['direction'] ?? 'desc');
 
+        BranchScope::apply($query, app(BranchContext::class), 'branch_id');
+
         $records = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('Admin/Attendance/Records/Index', [
@@ -69,16 +75,23 @@ final class AttendanceRecordController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $this->authorize('create', AttendanceRecord::class);
+
+        $accessibleBranchIds = $this->branchContext->accessibleBranchIds($request->user());
 
         return Inertia::render('Admin/Attendance/Records/Create', [
             'employees' => Employee::query()
                 ->where('status', 'active')
+                ->when($accessibleBranchIds !== null, fn ($q) => $q->whereIn('primary_branch_id', $accessibleBranchIds))
                 ->orderBy('first_name')
                 ->get(['id', 'first_name', 'last_name', 'employee_code']),
-            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
+            'branches' => Branch::query()
+                ->where('is_active', true)
+                ->when($accessibleBranchIds !== null, fn ($q) => $q->whereIn('id', $accessibleBranchIds))
+                ->orderBy('name')
+                ->get(['id', 'name', 'code']),
             'actions' => ['clock_in', 'clock_out'],
         ]);
     }

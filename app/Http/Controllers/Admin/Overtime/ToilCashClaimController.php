@@ -9,7 +9,9 @@ use App\Http\Requests\Admin\Overtime\StoreToilCashClaimRequest;
 use App\Models\Employee;
 use App\Models\LeaveType;
 use App\Models\ToilClaim;
+use App\Services\BranchContextService;
 use App\Services\Overtime\ToilClaimService;
+use App\Support\BranchScope;
 use App\Support\ListPagination;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +24,7 @@ final class ToilCashClaimController extends Controller
 {
     public function __construct(
         private readonly ToilClaimService $toilClaims,
+        private readonly BranchContextService $branchContext,
     ) {}
 
     public function index(Request $request): Response
@@ -44,6 +47,8 @@ final class ToilCashClaimController extends Controller
             ->when($filters['status'] ?? null, fn ($q, string $status) => $q->where('status', $status))
             ->orderBy($filters['sort'] ?? 'created_at', $filters['direction'] ?? 'desc');
 
+        BranchScope::applyViaEmployee($query, $this->branchContext->accessibleBranchIds($request->user()));
+
         $claims = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('Admin/Overtime/ToilClaims/Index', [
@@ -60,13 +65,16 @@ final class ToilCashClaimController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $this->authorize('create', ToilClaim::class);
+
+        $accessibleBranchIds = $this->branchContext->accessibleBranchIds($request->user());
 
         return Inertia::render('Admin/Overtime/ToilClaims/Create', [
             'employees' => Employee::query()
                 ->where('status', 'active')
+                ->when($accessibleBranchIds !== null, fn ($q) => $q->whereIn('primary_branch_id', $accessibleBranchIds))
                 ->orderBy('first_name')
                 ->get(['id', 'first_name', 'last_name', 'employee_code']),
         ]);

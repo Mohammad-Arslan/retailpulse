@@ -10,6 +10,7 @@ use App\Http\Requests\Admin\Overtime\UpdateOvertimePolicyRequest;
 use App\Models\Branch;
 use App\Models\OrganizationEntity;
 use App\Models\OvertimePolicy;
+use App\Services\BranchContextService;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,12 +20,17 @@ use Inertia\Response;
 
 final class OvertimePolicyController extends Controller
 {
+    public function __construct(
+        private readonly BranchContextService $branchContext,
+    ) {}
+
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', OvertimePolicy::class);
 
         $filters = ListPagination::filters($request, ['search', 'status', 'sort', 'direction']);
         $perPage = ListPagination::resolve($filters['per_page']);
+        $accessibleBranchIds = $this->branchContext->accessibleBranchIds($request->user());
 
         $query = OvertimePolicy::query()
             ->with([
@@ -33,6 +39,9 @@ final class OvertimePolicyController extends Controller
                 'multipliers:id,overtime_policy_id,day_type,multiplier,compensation_type',
             ])
             ->when($filters['status'] ?? null, fn ($q, string $status) => $q->where('status', $status))
+            ->when($accessibleBranchIds !== null, fn ($q) => $q->where(function ($inner) use ($accessibleBranchIds): void {
+                $inner->whereNull('branch_id')->orWhereIn('branch_id', $accessibleBranchIds);
+            }))
             ->orderBy($filters['sort'] ?? 'priority', $filters['direction'] ?? 'asc');
 
         $policies = $query->paginate($perPage)->withQueryString();
@@ -68,6 +77,7 @@ final class OvertimePolicyController extends Controller
                 ->get(['id', 'legal_name']),
             'branches' => Branch::query()
                 ->where('is_active', true)
+                ->when($accessibleBranchIds !== null, fn ($q) => $q->whereIn('id', $accessibleBranchIds))
                 ->orderBy('name')
                 ->get(['id', 'name', 'code']),
         ]);

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin\Hr;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\OrganizationEntity;
+use App\Services\BranchContextService;
 use App\Services\Hr\ReportingHierarchyService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,6 +17,7 @@ final class OrgChartController extends Controller
 {
     public function __construct(
         private readonly ReportingHierarchyService $hierarchy,
+        private readonly BranchContextService $branchContext,
     ) {}
 
     public function index(Request $request): Response
@@ -24,9 +26,10 @@ final class OrgChartController extends Controller
 
         $legalEntityId = $request->integer('legal_entity_id') ?: null;
         $rootEmployeeId = $request->integer('root_employee_id') ?: null;
+        $accessibleBranchIds = $this->branchContext->accessibleBranchIds($request->user());
 
         return Inertia::render('Admin/Hr/OrgChart', [
-            'tree' => $this->hierarchy->orgChart($legalEntityId, $rootEmployeeId),
+            'tree' => $this->hierarchy->orgChart($legalEntityId, $rootEmployeeId, $accessibleBranchIds),
             'filters' => [
                 'legal_entity_id' => $legalEntityId,
                 'root_employee_id' => $rootEmployeeId,
@@ -38,6 +41,7 @@ final class OrgChartController extends Controller
             'employees' => Employee::query()
                 ->where('status', 'active')
                 ->when($legalEntityId, fn ($q) => $q->where('legal_entity_id', $legalEntityId))
+                ->when($accessibleBranchIds !== null, fn ($q) => $q->whereIn('primary_branch_id', $accessibleBranchIds))
                 ->orderBy('employee_code')
                 ->get(['id', 'employee_code', 'first_name', 'last_name'])
                 ->map(fn (Employee $e) => [

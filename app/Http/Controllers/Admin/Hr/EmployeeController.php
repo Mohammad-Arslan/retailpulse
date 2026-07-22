@@ -13,6 +13,7 @@ use App\Http\Requests\Admin\Hr\TerminateEmployeeRequest;
 use App\Http\Requests\Admin\Hr\UpdateEmployeeRequest;
 use App\Models\Employee;
 use App\Models\Image;
+use App\Services\BranchContextService;
 use App\Services\Hr\EmployeeService;
 use App\Services\ImageService;
 use App\Support\ListPagination;
@@ -27,6 +28,7 @@ final class EmployeeController extends Controller
     public function __construct(
         private readonly EmployeeService $employees,
         private readonly ImageService $images,
+        private readonly BranchContextService $branchContext,
     ) {}
 
     public function index(Request $request): Response
@@ -37,15 +39,22 @@ final class EmployeeController extends Controller
 
         return Inertia::render(
             'Admin/Hr/Employees/Index',
-            $this->employees->indexPayload($filters, ListPagination::resolve($filters['per_page'])),
+            $this->employees->indexPayload(
+                $filters,
+                ListPagination::resolve($filters['per_page']),
+                $this->branchContext->accessibleBranchIds($request->user()),
+            ),
         );
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $this->authorize('create', Employee::class);
 
-        return Inertia::render('Admin/Hr/Employees/Create', $this->employees->createPayload());
+        return Inertia::render(
+            'Admin/Hr/Employees/Create',
+            $this->employees->createPayload($this->branchContext->accessibleBranchIds($request->user())),
+        );
     }
 
     public function store(StoreEmployeeRequest $request): RedirectResponse
@@ -59,12 +68,12 @@ final class EmployeeController extends Controller
             ->with('success', __('Employee Created Successfully. Complete Remaining Profile Tabs.'));
     }
 
-    public function show(Employee $employee): Response
+    public function show(Request $request, Employee $employee): Response
     {
         $this->authorize('view', $employee);
 
         return Inertia::render('Admin/Hr/Employees/Show', [
-            ...$this->employees->showPayload($employee),
+            ...$this->employees->showPayload($employee, $this->branchContext->accessibleBranchIds($request->user())),
             'tab' => request()->string('tab')->toString() ?: 'basic',
         ]);
     }
@@ -74,7 +83,7 @@ final class EmployeeController extends Controller
         $this->authorize('update', $employee);
 
         return Inertia::render('Admin/Hr/Employees/Edit', [
-            ...$this->employees->editPayload($employee),
+            ...$this->employees->editPayload($employee, $this->branchContext->accessibleBranchIds($request->user())),
             'tab' => $request->string('tab')->toString() ?: 'basic',
         ]);
     }

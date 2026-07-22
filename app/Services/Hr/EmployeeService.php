@@ -27,9 +27,12 @@ use App\Models\User;
 use App\Repositories\Contracts\CurrencyRepositoryInterface;
 use App\Services\Accounting\DocumentNumberService;
 use App\Services\ImageService;
+use App\Support\BranchContext;
+use App\Support\BranchScope;
 use App\Support\EmployeePresenter;
 use DomainException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -88,33 +91,36 @@ final class EmployeeService
 
     /**
      * @param  array<string, mixed>  $filters
+     * @param  list<int>|null  $accessibleBranchIds
      * @return array<string, mixed>
      */
-    public function indexPayload(array $filters, int $perPage): array
+    public function indexPayload(array $filters, int $perPage, ?array $accessibleBranchIds): array
     {
         return [
-            'employees' => EmployeePresenter::paginated($this->paginate($filters, $perPage)),
+            'employees' => EmployeePresenter::paginated($this->paginate($filters, $perPage, $accessibleBranchIds)),
             'filters' => $filters,
-            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
+            'branches' => $this->accessibleBranchOptions($accessibleBranchIds),
             'departments' => Department::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'code']),
         ];
     }
 
     /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return array<string, mixed>
      */
-    public function createPayload(): array
+    public function createPayload(?array $accessibleBranchIds): array
     {
         return [
-            ...$this->formOptions(),
+            ...$this->formOptions(null, $accessibleBranchIds),
             'nextCode' => $this->documentNumbers->peek('employee', 'EMP'),
         ];
     }
 
     /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return array{employee: array<string, mixed>}
      */
-    public function showPayload(Employee $employee): array
+    public function showPayload(Employee $employee, ?array $accessibleBranchIds): array
     {
         $this->assignments->applyDueScheduledChanges($employee);
         $employee->load(self::DETAIL_RELATIONS);
@@ -122,14 +128,15 @@ final class EmployeeService
         return [
             'employee' => EmployeePresenter::detail($employee),
             'assignmentHistory' => $this->assignments->historyForEmployee($employee),
-            ...$this->formOptions($employee),
+            ...$this->formOptions($employee, $accessibleBranchIds),
         ];
     }
 
     /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return array<string, mixed>
      */
-    public function editPayload(Employee $employee): array
+    public function editPayload(Employee $employee, ?array $accessibleBranchIds): array
     {
         $this->assignments->applyDueScheduledChanges($employee);
         $employee->load(self::DETAIL_RELATIONS);
@@ -137,14 +144,15 @@ final class EmployeeService
         return [
             'employee' => EmployeePresenter::detail($employee),
             'assignmentHistory' => $this->assignments->historyForEmployee($employee),
-            ...$this->formOptions($employee),
+            ...$this->formOptions($employee, $accessibleBranchIds),
         ];
     }
 
     /**
      * @param  array<string, mixed>  $filters
+     * @param  list<int>|null  $accessibleBranchIds
      */
-    public function paginate(array $filters, int $perPage): LengthAwarePaginator
+    public function paginate(array $filters, int $perPage, ?array $accessibleBranchIds): LengthAwarePaginator
     {
         $query = Employee::query()->with(['legalEntity', 'primaryBranch', 'department', 'designation']);
 
@@ -162,9 +170,14 @@ final class EmployeeService
             $query->where('status', $filters['status']);
         }
 
+        $filterBranchId = null;
         if (($filters['branch_id'] ?? null) !== null && $filters['branch_id'] !== '') {
-            $query->where('primary_branch_id', (int) $filters['branch_id']);
+            $candidate = (int) $filters['branch_id'];
+            if (BranchScope::canAccess($candidate, $accessibleBranchIds)) {
+                $filterBranchId = $candidate;
+            }
         }
+        BranchScope::apply($query, new BranchContext($filterBranchId, $accessibleBranchIds), 'primary_branch_id');
 
         if (($filters['department_id'] ?? null) !== null && $filters['department_id'] !== '') {
             $query->where('department_id', (int) $filters['department_id']);
@@ -176,6 +189,18 @@ final class EmployeeService
         $direction = ($filters['direction'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
 
         return $query->orderBy($sort, $direction)->paginate($perPage);
+    }
+
+    /**
+     * @param  list<int>|null  $accessibleBranchIds
+     */
+    private function accessibleBranchOptions(?array $accessibleBranchIds): Collection
+    {
+        return Branch::query()
+            ->where('is_active', true)
+            ->when($accessibleBranchIds !== null, fn ($q) => $q->whereIn('id', $accessibleBranchIds))
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
     }
 
     public function create(CreateEmployeeData $data): Employee
@@ -527,13 +552,17 @@ final class EmployeeService
     }
 
     /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return array<string, mixed>
      */
-    private function formOptions(?Employee $excludeFromManagers = null): array
+    private function formOptions(?Employee $excludeFromManagers = null, ?array $accessibleBranchIds = null): array
     {
         $managerQuery = Employee::query()->where('status', 'active')->orderBy('first_name');
         if ($excludeFromManagers !== null) {
             $managerQuery->where('id', '!=', $excludeFromManagers->id);
+        }
+        if ($accessibleBranchIds !== null) {
+            $managerQuery->whereIn('primary_branch_id', $accessibleBranchIds);
         }
 
         return [
@@ -541,7 +570,7 @@ final class EmployeeService
                 ->where('status', 'active')
                 ->orderBy('legal_name')
                 ->get(['id', 'legal_name', 'functional_currency_code']),
-            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
+            'branches' => $this->accessibleBranchOptions($accessibleBranchIds),
             'costCentres' => CostCentre::query()->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name']),
             'departments' => Department::query()->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name', 'legal_entity_id']),
             'designations' => Designation::query()->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name', 'legal_entity_id']),

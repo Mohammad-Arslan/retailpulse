@@ -17,6 +17,7 @@ use App\Models\OrganizationEntity;
 use App\Repositories\Contracts\HolidayCalendarRepositoryInterface;
 use App\Services\Accounting\DocumentNumberService;
 use App\Services\Hr\Concerns\GeneratesHrMasterCodes;
+use App\Support\BranchScope;
 use App\Support\HolidayCalendarPresenter;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -44,6 +45,7 @@ final class HolidayCalendarService
 
     /**
      * @param  array<string, mixed>  $filters
+     * @param  list<int>|null  $accessibleBranchIds
      * @return array{
      *     calendars: LengthAwarePaginator,
      *     filters: array<string, mixed>,
@@ -52,18 +54,19 @@ final class HolidayCalendarService
      *     nextCode: string
      * }
      */
-    public function indexPayload(array $filters, int $perPage): array
+    public function indexPayload(array $filters, int $perPage, ?array $accessibleBranchIds = null): array
     {
         return [
-            'calendars' => HolidayCalendarPresenter::paginated($this->paginate($filters, $perPage)),
+            'calendars' => HolidayCalendarPresenter::paginated($this->paginate($filters, $perPage, $accessibleBranchIds)),
             'filters' => $filters,
             'legalEntities' => $this->activeLegalEntities(),
-            'branches' => $this->activeBranches(),
+            'branches' => $this->activeBranches($accessibleBranchIds),
             'nextCode' => $this->peekMasterCode(self::CODE_TYPE, self::CODE_PREFIX),
         ];
     }
 
     /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return array{
      *     calendar: array<string, mixed>,
      *     dates: list<array<string, mixed>>,
@@ -73,7 +76,7 @@ final class HolidayCalendarService
      *     employees: Collection
      * }
      */
-    public function showPayload(HolidayCalendar $calendar): array
+    public function showPayload(HolidayCalendar $calendar, ?array $accessibleBranchIds = null): array
     {
         $calendar = $this->details($calendar);
 
@@ -81,13 +84,15 @@ final class HolidayCalendarService
             'calendar' => HolidayCalendarPresenter::detail($calendar),
             'dates' => $calendar->dates->map(fn (HolidayDate $d) => HolidayCalendarPresenter::dateItem($d))->values()->all(),
             'assignments' => $calendar->assignments
+                ->filter(fn (HolidayCalendarAssignment $a) => $this->assignmentIsAccessible($a, $accessibleBranchIds))
                 ->map(fn (HolidayCalendarAssignment $a) => HolidayCalendarPresenter::assignmentItem($a))
                 ->values()
                 ->all(),
             'legalEntities' => $this->activeLegalEntities(),
-            'branches' => $this->activeBranches(),
+            'branches' => $this->activeBranches($accessibleBranchIds),
             'employees' => Employee::query()
                 ->where('status', 'active')
+                ->when($accessibleBranchIds !== null, fn ($q) => $q->whereIn('primary_branch_id', $accessibleBranchIds))
                 ->orderBy('first_name')
                 ->limit(500)
                 ->get(['id', 'first_name', 'last_name', 'employee_code']),
@@ -96,10 +101,33 @@ final class HolidayCalendarService
 
     /**
      * @param  array<string, mixed>  $filters
+     * @param  list<int>|null  $accessibleBranchIds
      */
-    public function paginate(array $filters, int $perPage): LengthAwarePaginator
+    public function paginate(array $filters, int $perPage, ?array $accessibleBranchIds = null): LengthAwarePaginator
     {
-        return $this->calendars->paginate($filters, $perPage);
+        return $this->calendars->paginate($filters, $perPage, $accessibleBranchIds);
+    }
+
+    /**
+     * Employee-type assignments to an employee outside the viewer's accessible
+     * branches are hidden entirely, not just unlabeled — the assignment's
+     * existence is itself branch-owned information.
+     *
+     * @param  list<int>|null  $accessibleBranchIds
+     */
+    private function assignmentIsAccessible(HolidayCalendarAssignment $assignment, ?array $accessibleBranchIds): bool
+    {
+        if ($accessibleBranchIds === null || $assignment->assignable_type !== Employee::class) {
+            return true;
+        }
+
+        $employee = $assignment->relationLoaded('assignable') ? $assignment->assignable : $assignment->assignable()->first();
+
+        if (! $employee instanceof Employee) {
+            return true;
+        }
+
+        return BranchScope::canAccess((int) $employee->primary_branch_id, $accessibleBranchIds);
     }
 
     public function details(HolidayCalendar $calendar): HolidayCalendar
@@ -202,12 +230,14 @@ final class HolidayCalendarService
     }
 
     /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return Collection<int, Branch>
      */
-    private function activeBranches()
+    private function activeBranches(?array $accessibleBranchIds = null)
     {
         return Branch::query()
             ->where('is_active', true)
+            ->when($accessibleBranchIds !== null, fn ($q) => $q->whereIn('id', $accessibleBranchIds))
             ->orderBy('name')
             ->get(['id', 'name', 'code']);
     }

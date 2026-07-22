@@ -97,13 +97,15 @@ final class ReportingHierarchyService
     }
 
     /**
+     * @param  list<int>|null  $accessibleBranchIds
      * @return list<array<string, mixed>>
      */
-    public function orgChart(?int $legalEntityId = null, ?int $rootEmployeeId = null): array
+    public function orgChart(?int $legalEntityId = null, ?int $rootEmployeeId = null, ?array $accessibleBranchIds = null): array
     {
         $employees = Employee::query()
             ->where('status', 'active')
             ->when($legalEntityId !== null, fn ($q) => $q->where('legal_entity_id', $legalEntityId))
+            ->when($accessibleBranchIds !== null, fn ($q) => $q->whereIn('primary_branch_id', $accessibleBranchIds))
             ->with([
                 'department:id,name',
                 'designation:id,name',

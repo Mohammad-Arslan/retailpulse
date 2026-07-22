@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Leave;
 
+use App\Models\Employee;
+use App\Services\BranchContextService;
+use App\Support\BranchScope;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class StoreLeaveEntitlementRequest extends FormRequest
@@ -24,5 +28,21 @@ final class StoreLeaveEntitlementRequest extends FormRequest
             'accrued_days' => ['required', 'numeric', 'min:0'],
             'carried_forward_days' => ['nullable', 'numeric', 'min:0'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $employeeId = $this->input('employee_id');
+            if ($employeeId === null) {
+                return;
+            }
+
+            $accessibleBranchIds = app(BranchContextService::class)->accessibleBranchIds($this->user());
+            $employeeBranchId = Employee::query()->whereKey((int) $employeeId)->value('primary_branch_id');
+            if ($employeeBranchId !== null && ! BranchScope::canAccess((int) $employeeBranchId, $accessibleBranchIds)) {
+                $validator->errors()->add('employee_id', __('You Do Not Have Access To This Employee.'));
+            }
+        });
     }
 }

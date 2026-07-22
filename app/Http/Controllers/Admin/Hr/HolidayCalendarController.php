@@ -16,6 +16,7 @@ use App\Http\Requests\Admin\Hr\UpdateHolidayCalendarRequest;
 use App\Models\HolidayCalendar;
 use App\Models\HolidayCalendarAssignment;
 use App\Models\HolidayDate;
+use App\Services\BranchContextService;
 use App\Services\Hr\HolidayCalendarService;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
@@ -27,6 +28,7 @@ final class HolidayCalendarController extends Controller
 {
     public function __construct(
         private readonly HolidayCalendarService $calendars,
+        private readonly BranchContextService $branchContext,
     ) {}
 
     public function index(Request $request): Response
@@ -37,7 +39,11 @@ final class HolidayCalendarController extends Controller
 
         return Inertia::render(
             'Admin/Hr/HolidayCalendars/Index',
-            $this->calendars->indexPayload($filters, ListPagination::resolve($filters['per_page'])),
+            $this->calendars->indexPayload(
+                $filters,
+                ListPagination::resolve($filters['per_page']),
+                $this->branchContext->accessibleBranchIds($request->user()),
+            ),
         );
     }
 
@@ -52,13 +58,13 @@ final class HolidayCalendarController extends Controller
             ->with('success', __('Holiday Calendar Created Successfully.'));
     }
 
-    public function show(HolidayCalendar $holidayCalendar): Response
+    public function show(Request $request, HolidayCalendar $holidayCalendar): Response
     {
         $this->authorize('view', $holidayCalendar);
 
         return Inertia::render(
             'Admin/Hr/HolidayCalendars/Show',
-            $this->calendars->showPayload($holidayCalendar),
+            $this->calendars->showPayload($holidayCalendar, $this->branchContext->accessibleBranchIds($request->user())),
         );
     }
 

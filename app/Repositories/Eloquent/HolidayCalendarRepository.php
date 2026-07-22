@@ -15,8 +15,9 @@ final class HolidayCalendarRepository implements HolidayCalendarRepositoryInterf
 {
     /**
      * @param  array<string, mixed>  $filters
+     * @param  list<int>|null  $accessibleBranchIds
      */
-    public function paginate(array $filters, int $perPage): LengthAwarePaginator
+    public function paginate(array $filters, int $perPage, ?array $accessibleBranchIds = null): LengthAwarePaginator
     {
         $sort = in_array($filters['sort'] ?? '', ['name', 'code', 'status'], true)
             ? $filters['sort']
@@ -32,6 +33,9 @@ final class HolidayCalendarRepository implements HolidayCalendarRepositoryInterf
                 });
             })
             ->when($filters['status'] ?? null, fn ($q, string $status) => $q->where('status', $status))
+            ->when($accessibleBranchIds !== null, fn ($q) => $q->where(function ($inner) use ($accessibleBranchIds): void {
+                $inner->whereNull('branch_id')->orWhereIn('branch_id', $accessibleBranchIds);
+            }))
             ->orderBy($sort, $direction)
             ->paginate($perPage)
             ->withQueryString();

@@ -10,6 +10,8 @@ use App\Http\Requests\Admin\Leave\UpdateLeaveEntitlementRequest;
 use App\Models\Employee;
 use App\Models\LeaveEntitlement;
 use App\Models\LeaveType;
+use App\Services\BranchContextService;
+use App\Support\BranchScope;
 use App\Support\ListPagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,12 +21,17 @@ use Inertia\Response;
 
 final class LeaveEntitlementController extends Controller
 {
+    public function __construct(
+        private readonly BranchContextService $branchContext,
+    ) {}
+
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', LeaveEntitlement::class);
 
         $filters = ListPagination::filters($request, ['search', 'leave_type_id', 'sort', 'direction']);
         $perPage = ListPagination::resolve($filters['per_page']);
+        $accessibleBranchIds = $this->branchContext->accessibleBranchIds($request->user());
 
         $query = LeaveEntitlement::query()
             ->with(['employee:id,first_name,last_name,employee_code', 'leaveType:id,code,name'])
@@ -37,6 +44,8 @@ final class LeaveEntitlementController extends Controller
             })
             ->when($filters['leave_type_id'] ?? null, fn ($q, $id) => $q->where('leave_type_id', (int) $id))
             ->orderBy($filters['sort'] ?? 'updated_at', $filters['direction'] ?? 'desc');
+
+        BranchScope::applyViaEmployee($query, $accessibleBranchIds);
 
         $entitlements = $query->paginate($perPage)->withQueryString();
 
@@ -62,6 +71,7 @@ final class LeaveEntitlementController extends Controller
                 ->get(['id', 'code', 'name']),
             'employees' => Employee::query()
                 ->where('status', 'active')
+                ->when($accessibleBranchIds !== null, fn ($q) => $q->whereIn('primary_branch_id', $accessibleBranchIds))
                 ->orderBy('first_name')
                 ->get(['id', 'first_name', 'last_name', 'employee_code']),
         ]);

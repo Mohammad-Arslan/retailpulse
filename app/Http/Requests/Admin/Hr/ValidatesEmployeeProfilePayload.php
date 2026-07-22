@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Hr;
 
+use App\Services\BranchContextService;
 use App\Services\Hr\HrEmploymentTypeService;
+use App\Support\BranchScope;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -144,6 +146,14 @@ trait ValidatesEmployeeProfilePayload
     protected function withEmployeeProfileValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            $primaryBranchId = $this->input('primary_branch_id');
+            if ($primaryBranchId !== null && $primaryBranchId !== '') {
+                $accessibleBranchIds = app(BranchContextService::class)->accessibleBranchIds($this->user());
+                if (! BranchScope::canAccess((int) $primaryBranchId, $accessibleBranchIds)) {
+                    $validator->errors()->add('primary_branch_id', __('You Do Not Have Access To Assign This Branch.'));
+                }
+            }
+
             $hire = $this->input('hire_date');
             $probation = $this->input('probation_end_date');
             $confirmation = $this->input('confirmation_date');

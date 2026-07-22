@@ -12,11 +12,14 @@ use App\Models\Employee;
 use App\Models\Grade;
 use App\Models\OrganizationEntity;
 use App\Models\SalaryStructure;
+use App\Models\User;
 use App\Services\Accounting\DocumentNumberService;
+use App\Services\BranchContextService;
 use App\Services\Hr\ReportingHierarchyService;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
+use App\Support\BranchScope;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -25,6 +28,7 @@ final class EmployeeImportHandler implements ImportHandler
     public function __construct(
         private readonly DocumentNumberService $documentNumbers,
         private readonly ReportingHierarchyService $hierarchy,
+        private readonly BranchContextService $branchContext,
     ) {}
 
     public function columns(): array
@@ -306,6 +310,11 @@ final class EmployeeImportHandler implements ImportHandler
             $errors['legal_entity'] = ['Legal entity not found.'];
         }
 
+        $branchCode = (string) ($row['primary_branch_code'] ?? '');
+        if ($branchCode !== '' && ! $this->canImportToBranchCode($branchCode, $context)) {
+            $errors['primary_branch_code'] = ['You do not have access to this branch.'];
+        }
+
         $managerCode = isset($row['manager_employee_code']) ? (string) $row['manager_employee_code'] : '';
         if ($managerCode !== '' && $code !== '' && strtoupper($managerCode) === strtoupper($code)) {
             $errors['manager_employee_code'] = ['An employee cannot report to themselves.'];
@@ -427,6 +436,19 @@ final class EmployeeImportHandler implements ImportHandler
     public function chunkSize(): int
     {
         return 100;
+    }
+
+    private function canImportToBranchCode(string $branchCode, ImportContext $context): bool
+    {
+        $branchId = Branch::query()->where('code', $branchCode)->value('id');
+        if ($branchId === null) {
+            return true;
+        }
+
+        $owner = User::query()->find($context->userId);
+        $accessibleBranchIds = $owner !== null ? $this->branchContext->accessibleBranchIds($owner) : [];
+
+        return BranchScope::canAccess((int) $branchId, $accessibleBranchIds);
     }
 
     private function findLegalEntityId(string $value): ?int

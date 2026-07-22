@@ -6,7 +6,9 @@ namespace App\Http\Controllers\Admin\Overtime;
 
 use App\Http\Controllers\Controller;
 use App\Models\OvertimeRecord;
+use App\Services\BranchContextService;
 use App\Services\Overtime\OvertimeEngine;
+use App\Support\BranchScope;
 use App\Support\ListPagination;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +21,7 @@ final class OvertimeRecordController extends Controller
 {
     public function __construct(
         private readonly OvertimeEngine $overtimeEngine,
+        private readonly BranchContextService $branchContext,
     ) {}
 
     public function index(Request $request): Response
@@ -43,6 +46,8 @@ final class OvertimeRecordController extends Controller
             })
             ->when($filters['status'] ?? null, fn ($q, string $status) => $q->where('status', $status))
             ->orderBy($filters['sort'] ?? 'date', $filters['direction'] ?? 'desc');
+
+        BranchScope::applyViaEmployee($query, $this->branchContext->accessibleBranchIds($request->user()));
 
         $records = $query->paginate($perPage)->withQueryString();
 

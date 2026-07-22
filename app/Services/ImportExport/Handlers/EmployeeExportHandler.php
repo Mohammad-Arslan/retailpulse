@@ -5,19 +5,27 @@ declare(strict_types=1);
 namespace App\Services\ImportExport\Handlers;
 
 use App\Models\Employee;
+use App\Models\User;
 use App\Services\Accounting\DocumentNumberService;
+use App\Services\BranchContextService;
 use App\Services\Hr\ReportingHierarchyService;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\BranchScope;
 use Illuminate\Database\Eloquent\Builder;
 
 final class EmployeeExportHandler implements ExportHandler
 {
+    public function __construct(
+        private readonly BranchContextService $branchContext,
+    ) {}
+
     public function columns(): array
     {
         return (new EmployeeImportHandler(
             app(DocumentNumberService::class),
             app(ReportingHierarchyService::class),
+            app(BranchContextService::class),
         ))->columns();
     }
 
@@ -35,6 +43,13 @@ final class EmployeeExportHandler implements ExportHandler
                 'salaryStructure:id,code',
             ])
             ->orderBy('employee_code');
+
+        $owner = User::query()->find($context->userId);
+        BranchScope::applyAccessible(
+            $query,
+            $owner !== null ? $this->branchContext->accessibleBranchIds($owner) : [],
+            'primary_branch_id',
+        );
 
         $filters = $context->options['filters'] ?? [];
 

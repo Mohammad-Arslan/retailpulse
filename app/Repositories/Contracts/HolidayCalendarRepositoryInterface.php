@@ -14,8 +14,9 @@ interface HolidayCalendarRepositoryInterface
 {
     /**
      * @param  array<string, mixed>  $filters
+     * @param  list<int>|null  $accessibleBranchIds
      */
-    public function paginate(array $filters, int $perPage): LengthAwarePaginator;
+    public function paginate(array $filters, int $perPage, ?array $accessibleBranchIds = null): LengthAwarePaginator;
 
     public function findWithDetails(HolidayCalendar $calendar): HolidayCalendar;
 

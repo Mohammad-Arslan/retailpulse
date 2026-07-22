@@ -1,7 +1,7 @@
 # RetailPulse — Phase Gaps Register
 
 Tracked gaps between **phase specifications** (`docs/phases/`) and the **current codebase**.  
-Last reviewed: 2026-07-14 (Phase 11 correctness bugs P11-27–P11-31 closed; P11-16/P11-25 resolved; P11-26 Intercompany remains open).
+Last reviewed: 2026-07-22 (Phase 3: P3-03 cross-branch data access documented; HR Employees `BranchContext` enforcement closed. Phase 11 correctness bugs P11-27–P11-31 closed 2026-07-14; P11-16/P11-25 resolved; P11-26 Intercompany remains open).
 
 ## Severity legend
 
@@ -47,12 +47,68 @@ Last reviewed: 2026-07-14 (Phase 11 correctness bugs P11-27–P11-31 closed; P11
 ## Phase 3 — Multi-Branch & Centralized Management
 
 **Phase doc status:** Complete  
-**Overall gap level:** None significant
+**Overall gap level:** Medium — core branch-assignment/switching mechanics are solid; cross-branch data-access model and consistent enforcement are gaps (see P3-03)  
+**Last reviewed:** 2026-07-22
 
 | ID | Gap | Severity | Notes |
 | :--- | :--- | :---: | :--- |
-| P3-01 | No material gaps vs acceptance criteria | — | Branches, warehouses, `SetBranchContext`, switcher, permissions, user assignment implemented. |
+| P3-01 | No material gaps vs the Phase 3 acceptance criteria as originally scoped | — | Branches, warehouses, `SetBranchContext`, switcher, permissions, user assignment implemented. Superseded for anything beyond the original AC by P3-03: acceptance criteria didn't anticipate an intermediate cross-branch/regional visibility tier, and didn't test whether every module actually applies `BranchContext`. |
 | P3-02 | **`warehouses.type` column + admin UI** — `WarehouseType` enum, DTOs, create/edit/index | — | **Resolved 2026-07-06** |
+| P3-03 | **Cross-branch data access & regional visibility** — no intermediate capability model; inconsistent `BranchContext` enforcement across modules | **Medium** | See detail below. Nine **High**-severity confirmed leaks were **closed 2026-07-22** across HR Employees, HR Holiday Calendars, HR Attendance Records, and the full Leave/Overtime/TOIL surface (Leave Requests, Leave Entitlements, Leave Encashments, Leave Year-End Runs, Overtime Records, Overtime Policies, TOIL Cash Claims) — several were write-path gaps (approve/reject/record actions), not just display leaks. The Medium-severity capability-model gap remains open, as does enforcement in Payroll runs, most Accounting lists, and Procurement/Inventory partial-scoping. |
+
+### P3-03 detail — Cross-Branch Data Access & Regional Visibility
+
+The current `BranchContext` (`app/Support/BranchContext.php`, `BranchContextService::accessibleBranchIds()`) supports two states only: branch-restricted (a `list<int>` of assigned branches) or fully unrestricted (`null` = every branch, head-office style). It lacks an intermediate **cross-branch** tier. Future releases should introduce explicit permissions — `branches.view-own`, `branches.view-cross`, `branches.view-all`, `branches.switch` — to support regional managers, head-office HR/finance, auditors, and other corporate roles that need visibility across multiple *assigned* branches without granting silent company-wide access. Queries and policies must consistently respect the user's **effective** branch set while allowing optional filtering between an individual branch and all allowed branches.
+
+**Near-term enforcement gap (independent of the permission model above):** many modules ignore `BranchContext` entirely today, so even the existing two-tier model (restricted vs. unrestricted) isn't applied consistently:
+
+| Area | Status (as of 2026-07-22) |
+| :--- | :--- |
+| HR Employees / Org Chart | **Resolved this pass** — `EmployeeService::paginate`/`formOptions`, `EmployeePolicy`, `OrgChartController`/`ReportingHierarchyService::orgChart`, `EmployeeImportHandler`/`EmployeeExportHandler` now apply the accessible-branch set via `BranchScope`. |
+| HR Holiday Calendars | **Resolved this pass** — found via manual QA while reviewing the Employees fix: the calendar Show page's employee picker (`HolidayCalendarService::showPayload`) queried every active employee company-wide, and the assignment list rendered any employee-type assignment's name regardless of the assignee's branch (a restricted branch-manager could see e.g. `Amina Khan (Employee)` on another branch's calendar). Fixed: `HolidayCalendarPolicy::view`/`update` now check the calendar's own `branch_id` (null = company-wide, unaffected); `showPayload`'s employee picker and branch pickers are scoped; out-of-scope employee-type assignments are filtered out of the `assignments` list entirely (not just unlabeled); `HolidayCalendarRepository::paginate` scopes the calendar list itself to the viewer's branches plus company-wide (`branch_id IS NULL`) calendars. **Not covered:** `storeAssignment` doesn't validate that the *employee being assigned* is in the calendar's/actor's accessible branches — low risk today since `holiday.manage` is only granted to `hr-manager`, which is expected to be company-wide, but worth tightening if that role is ever branch-restricted. |
+| HR Attendance Records | **Resolved this pass** — found via manual QA (Manual Clock create form showed every branch's employees and all branches to a restricted branch-manager). This one was a genuine write-path gap, not just a display leak: `AttendanceRecordController::index()` had **no branch filter at all** (any restricted user could list every branch's clock-in/out records), the Manual Clock `create()` pickers were unscoped, and `StoreManualAttendanceRequest` only checked that `employee_id`/`branch_id` *existed*, not that they were in the actor's accessible branches — so a branch-manager could actually record attendance for an out-of-scope employee at an out-of-scope branch, not just see one in a dropdown. Fixed: `index()` scoped via `BranchScope::apply(..., app(BranchContext::class), 'branch_id')`; `create()` pickers scoped to accessible branches; `StoreManualAttendanceRequest::withValidator()` rejects an out-of-scope `branch_id` or an `employee_id` whose `primary_branch_id` is out of scope; `AttendanceRecordPolicy::view`/`adjust` gained the same branch check for when those methods get wired to a route (currently unused — no `show`/`adjust` route exists yet). |
+| Leave Requests / Entitlements / Encashments / Year-End Runs | **Resolved this pass** — found via user report, confirmed identical pattern to Attendance. All four had unscoped index queries and unscoped employee pickers; `LeaveEntitlementController`'s `store` FormRequest had `authorize()` hardcoded to `true` with no checks at all. Worse, every `approve`/`reject`/`reschedule`/`cancel` action (`LeaveRequestPolicy`, `LeaveEncashmentPolicy`) was permission-only — a line-manager could approve/reject another branch's employee's leave request or encashment, the same write-path class of bug as Attendance. Fixed: index queries scoped via new `BranchScope::applyViaEmployee()` (added this pass — these models reach branch only through `employee.primary_branch_id`, not an own `branch_id` column); employee pickers scoped; all four Policies gained a branch check on `view`/`approve`/`reject`/`reschedule`/`cancel`/`update`; `StoreLeaveRequestRequest`, `StoreLeaveEntitlementRequest`, `StoreLeaveEncashmentRequest` reject an `employee_id` outside the actor's accessible branches. Leave Types/Leave Policies are unaffected — confirmed legitimately company-wide master data, not employee/branch-scoped. |
+| Overtime Records / Overtime Policies / TOIL Cash Claims | **Resolved this pass** — same pattern. `OvertimeRecordController::index()` and `ToilCashClaimController::index()` were unscoped; `ToilCashClaimController::create()`'s employee picker was unscoped; `OvertimeRecordPolicy`/`ToilClaimPolicy`'s `approve`/`reject`/`cancel` were permission-only (same approve-across-branches write-path bug). `OvertimePolicy` is a genuine branch-scoped config model (own nullable `branch_id`, null = entity-wide) that was fully unscoped in both its list query and branch picker. Fixed with the same `BranchScope::applyViaEmployee()` pattern for records/claims, and the `whereNull('branch_id')->orWhereIn(...)` pattern (matching Holiday Calendars) for `OvertimePolicy`. `StoreToilCashClaimRequest` gained the same `employee_id` accessibility check. `overtime.manage-policies` (create/update policy config) is HR-manager-only today, not branch-restricted in practice, so no FormRequest change was made there — documented, not fixed, consistent with the Holiday Calendar `holiday.manage` precedent. |
+| Payroll runs | **Not enforced** — documented here; not fixed this pass. |
+| Accounting ops (journals, bank, petty cash, cheques, CN/DN, cost centres, assets, expenses) | **Not enforced** — most list endpoints have no branch filter at all. |
+| Procurement / Inventory | **Partial** — usually filter by the single active `branchId` only, not the full accessible set; acceptable for `view-own`-shaped restricted users today, but fragile once cross-branch visibility exists. |
+| Sales list, Warehouses (+policy), Users list, Dashboard, Search | **Enforced** (gold standard — `SaleController::index`, `WarehouseController`/`WarehousePolicy`, `UserController::userBranchFilterIds`, `DashboardComposer`, `AbstractSearchProvider::scopeBranch`). |
+| Policies generally | Now check branch ownership: `WarehousePolicy`, `EmployeePolicy`, `HolidayCalendarPolicy`, `AttendanceRecordPolicy`, `LeaveRequestPolicy`, `LeaveEntitlementPolicy`, `LeaveEncashmentPolicy`, `LeaveYearEndRunPolicy`, `OvertimeRecordPolicy`, `OvertimePolicyPolicy`, `ToilClaimPolicy`. Every other branch-owned model's `show`/`update` route remains a potential IDOR-by-URL if the model has no policy branch check (e.g. `Sale`, `PurchaseOrder`, Payroll, Accounting). |
+
+Evolve `branches.access-all` into `branches.view-all` once the permission model above ships; don't rename it speculatively before then. Also stop treating "no branch assignment" as unrestricted (`BranchContextService::accessibleBranchIds()` returns `null` for both `branches.access-all` *and* `!hasBranchRestrictions()`) — that's a footgun default, not a deliberate grant; it should require an explicit company-wide permission once the new tier exists. Not changed in this pass (documented per the task's "don't change this without an explicit safe assert" guidance).
+
+Branch restriction (assignment) and cross-branch visibility (permission) must be separate concepts. Filtering (active/selected branch) must be separate from authorization (effective allowed set). This is exactly the distinction `App\Support\BranchScope` (added this pass) is built to carry forward: it takes an active branch id (filter) and an accessible-branch list (authorization) as two independent inputs, and is designed for reuse by the modules above rather than each one re-deriving the same `when($branchId...)->when($accessibleIds...)` chain (previously duplicated between `SaleController` and `AbstractSearchProvider::scopeBranch`).
+
+**Target permission model** (documented; not shipped — see acceptance-criteria note above):
+
+| Permission | Purpose |
+| :--- | :--- |
+| `branches.view-own` | View only assigned branch data (default for branch-scoped roles) |
+| `branches.view-cross` | View all *assigned* branches simultaneously / aggregate |
+| `branches.view-all` | View every branch in the company (evolves/replaces `branches.access-all`) |
+| `branches.switch` | Change active branch in the selector |
+
+`branches.view|create|update|delete` remain branch **master-data** CRUD permissions — orthogonal to data-visibility scope and unaffected by this proposal.
+
+Example role matrix:
+
+| User | Assignments | Permission | Result |
+| :--- | :--- | :--- | :--- |
+| Branch Manager | Lahore | own | Only Lahore |
+| Regional Manager | Lahore, Islamabad, Faisalabad | cross | Those three (individually or aggregated) |
+| HR Head / CFO / Auditor | — | all | Entire company |
+| Area Sales Manager | North-region branches | cross | Only those assigned |
+
+Target backend contract:
+
+```
+Authorization → effectiveBranchIds: null | list<int>
+Session/UI filter → selected ⊆ effective
+Every query → BranchScope::apply(...) / BranchScope::applyAccessible(...)
+Every branch-owned Policy → canAccessBranch / BranchScope::canAccess(...)
+```
+
+Cross-reference: Phase 12's `P12-08` Enterprise HRMS expansion and any future branch-scoped headcount/payroll report inherit this same effective-branch-set contract once built.
 
 ---
 
@@ -339,7 +395,7 @@ flowchart LR
 | :--- | :---: |
 | Critical | 1 |
 | High | 21 |
-| Medium | 23 |
+| Medium | 24 |
 | Low | 12 |
 
-*Counts exclude resolved rows (including P10-01, P11-01–P11-15, P11-17–P11-24, X-01–X-03/X-05–X-06) and “not a gap” / implemented subsections. High count still driven by earlier phases (P1/P4/P7/P8/P12/P13/P14) plus P11-26 Intercompany.*
+*Counts exclude resolved rows (including P10-01, P11-01–P11-15, P11-17–P11-24, X-01–X-03/X-05–X-06) and “not a gap” / implemented subsections. High count still driven by earlier phases (P1/P4/P7/P8/P12/P13/P14) plus P11-26 Intercompany. Medium count now includes P3-03 (cross-branch visibility capability model); its High-severity confirmed leak (HR Employees) was closed 2026-07-22 and is not counted.*
