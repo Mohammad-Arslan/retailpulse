@@ -10,6 +10,22 @@ log() {
 }
 
 # ---------------------------------------------------------------------------
+# Inside Docker, always prefer Compose service DNS over bind-mounted .env
+# values like REDIS_HOST=127.0.0.1 (those are for host-side tooling only).
+# Immutable Dotenv will not override these once exported/set by the runtime.
+# ---------------------------------------------------------------------------
+if [[ -f /.dockerenv ]]; then
+  export DB_HOST=mysql
+  export DB_PORT=3306
+  export REDIS_HOST=redis
+  export REDIS_PORT=6379
+  export MAIL_HOST="${MAIL_HOST:-mailpit}"
+  export MAIL_PORT="${MAIL_PORT:-1025}"
+  export MINIO_ENDPOINT="${MINIO_ENDPOINT:-http://minio:9000}"
+  log "Docker runtime — DB_HOST=mysql REDIS_HOST=redis"
+fi
+
+# ---------------------------------------------------------------------------
 # Bootstrap .env from example if missing (bind mount may not have one yet)
 # ---------------------------------------------------------------------------
 if [[ ! -f .env ]]; then
@@ -89,6 +105,34 @@ done
 log "MySQL is ready"
 
 # ---------------------------------------------------------------------------
+# Wait for Redis (session/cache/queue)
+# ---------------------------------------------------------------------------
+REDIS_HOST="${REDIS_HOST:-redis}"
+REDIS_PORT="${REDIS_PORT:-6379}"
+
+log "Waiting for Redis at ${REDIS_HOST}:${REDIS_PORT}..."
+ATTEMPTS=0
+MAX_ATTEMPTS=60
+until php -r '
+  $host = getenv("REDIS_HOST") ?: "redis";
+  $port = (int) (getenv("REDIS_PORT") ?: 6379);
+  $r = new Redis();
+  try {
+    exit($r->connect($host, $port, 2.0) ? 0 : 1);
+  } catch (Throwable $e) {
+    exit(1);
+  }
+' 2>/dev/null; do
+  ATTEMPTS=$((ATTEMPTS + 1))
+  if [[ "${ATTEMPTS}" -ge "${MAX_ATTEMPTS}" ]]; then
+    log "ERROR: Redis not reachable at ${REDIS_HOST}:${REDIS_PORT}"
+    exit 1
+  fi
+  sleep 2
+done
+log "Redis is ready"
+
+# ---------------------------------------------------------------------------
 # Laravel bootstrap
 # ---------------------------------------------------------------------------
 if ! grep -qE '^APP_KEY=base64:.+' .env 2>/dev/null; then
@@ -104,6 +148,9 @@ php artisan storage:link --force 2>/dev/null || php artisan storage:link || true
 
 log "Running migrations"
 php artisan migrate --force
+
+log "Running seeders"
+php artisan db:seed --force
 
 if [[ "${MODE}" == "production" ]]; then
   log "Caching config/routes/views/events (production)"
