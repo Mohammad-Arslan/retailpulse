@@ -31,6 +31,7 @@ If you're new to RetailPulse — human contributor or AI coding agent — read i
 | `gaps/`, `phases/phase-12/gaps.md` | Where does the current implementation knowingly diverge from the intended design? |
 | `user-manual-*.md` | How does an end user (not a developer) use a shipped feature? |
 | `generic-import-export.md` | How does the bulk import/export framework work, mechanically? |
+| [deployment-guidelines.md](./deployment-guidelines.md) | How do we deploy RetailPulse to a Contabo VPS with Docker? |
 
 ## What is authoritative
 

@@ -1,138 +1,131 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# RetailPulse
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Multi-branch retail & restaurant ERP — POS, inventory, procurement, accounting, HR/payroll, CRM/loyalty, and platform services — built as a **Laravel 13 + React/Inertia** modular monolith.
 
-## About Laravel
+## Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Layer | Technology |
+| :--- | :--- |
+| Backend | Laravel 13, PHP 8.3+, Eloquent, Spatie Permission |
+| Frontend | React 18, Inertia.js 2, Tailwind CSS 4, Vite |
+| Real-time | Laravel Reverb (WebSockets) |
+| Data | MySQL 8, Redis 7 |
+| Object storage | MinIO (S3-compatible) |
+| Queues (local) | `queue:listen` / `queue:work` |
+| Queues (production) | Laravel Horizon |
+| HTTP (production) | Laravel Octane + FrankenPHP |
+| Containers | Docker Compose project `retailpulse` |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Quick start (Docker)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+**Prerequisites:** Docker Desktop (Windows/macOS) or Docker Engine + Compose v2 (Linux), and Git Bash on Windows.
 
 ```bash
-composer require laravel/boost --dev
+# Clone, then from the repo root:
+cp .env.example .env   # if .env does not exist — setup.sh also does this
 
-php artisan boost:install
+bash setup.sh              # Windows/Git Bash → local mode
+# or
+bash setup.sh production   # Linux server / production image (Octane + Horizon)
+bash setup.sh local --rebuild   # force rebuild of the app image
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+One command builds/pulls images, resolves host port conflicts, starts the stack, runs **migrations + seeders**, and leaves the app serving.
 
-## Contributing
+### Default URLs (local)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Service | URL |
+| :--- | :--- |
+| App | http://localhost:8000 |
+| Vite HMR (local only) | http://localhost:5173 |
+| Reverb | ws://localhost:8080 |
+| Mailpit UI | http://localhost:8025 |
+| MinIO Console | http://localhost:9001 |
+| phpMyAdmin | http://localhost:8081 |
+| MySQL (host) | `localhost:${MYSQL_HOST_PORT}` (default 3306) |
+| Redis (host) | `localhost:${REDIS_HOST_PORT}` (default 6379) |
 
-## Code of Conduct
+If a preferred port is already in use, `setup.sh` remaps it and writes the chosen value into `.env` (e.g. MySQL → `3307`).
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Containers & volumes
 
-## Security Vulnerabilities
+| Container | Role |
+| :--- | :--- |
+| `retailpulse-app` | Laravel + Reverb + queue/schedule (+ Vite locally / Octane+Horizon in production) |
+| `retailpulse-mysql` | MySQL 8 |
+| `retailpulse-redis` | Redis 7 |
+| `retailpulse-mailpit` | Dev SMTP + inbox UI |
+| `retailpulse-minio` | S3-compatible media storage |
+| `retailpulse-phpmyadmin` | DB UI |
+| `retailpulse-minio-init` | One-shot bucket bootstrap |
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Named volumes: `retailpulse_mysql`, `retailpulse_redis`, `retailpulse_minio`, `retailpulse_vendor`, `retailpulse_node_modules`, `retailpulse_build`.
 
-## License
+### Useful Compose commands
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+docker compose logs -f app
+docker compose ps
+docker compose down          # stop (keeps volumes)
+docker compose down -v       # stop and delete volumes (destructive)
+```
 
-## RetailPulse Documentation
+## Local without Docker (Laragon)
 
-RetailPulse is a multi-branch retail ERP built on this Laravel base. Key docs:
+```bash
+composer setup    # install PHP deps, .env, key, migrate, npm build
+composer dev      # serve + queue + pail + vite + reverb
+```
 
-- [docs/srs.md](docs/srs.md) — full requirements specification
-- [docs/phases/](docs/phases/README.md) — phase-by-phase delivery roadmap
-- [docs/architecture/](docs/architecture/README.md) — **authoritative architecture decision records.** Read this before making any architectural change (new modules, tenancy, events, API surface, frontend patterns) — it takes precedence over ad hoc implementation choices.
-- [docs/implementation-status.md](docs/implementation-status.md) — current build status by phase
-- `CLAUDE.md` (repo root) — command reference and condensed architecture summary for AI coding agents
+See [CLAUDE.md](CLAUDE.md) for the full command list.
+
+Default super-admin (after seed) comes from `.env`:
+
+```ini
+SUPER_ADMIN_EMAIL=admin@retailpulse.local
+SUPER_ADMIN_PASSWORD=...
+```
+
+## Documentation
+
+| Doc | Purpose |
+| :--- | :--- |
+| [docs/README.md](docs/README.md) | Documentation index & reading order |
+| [docs/vision.md](docs/vision.md) | Product vision |
+| [docs/architecture/](docs/architecture/README.md) | Architecture Decision Records (authoritative) |
+| [docs/srs.md](docs/srs.md) | Requirements |
+| [docs/phases/](docs/phases/README.md) | Phase roadmap |
+| [docs/implementation-status.md](docs/implementation-status.md) | What’s built today |
+| [docs/deployment-guidelines.md](docs/deployment-guidelines.md) | **Deploy to Contabo VPS with Docker** |
+| [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md) | AI agent onboarding |
 
 ## Local AI (Ollama)
 
-RetailPulse can call a **local** Ollama model through the Laravel AI SDK (`laravel/ai`). The browser never talks to Ollama directly — only the Laravel backend does.
+RetailPulse can call a **local** Ollama model via the Laravel AI SDK. The browser never talks to Ollama — only the backend does.
 
-### Prerequisites
-
-1. Install [Ollama](https://ollama.com/) for Windows.
-2. Pull and run the model:
+1. Install [Ollama](https://ollama.com/), then:
 
 ```bash
 ollama pull qwen2.5-coder:7b
 ollama run qwen2.5-coder:7b
 ```
 
-3. Confirm Ollama is reachable at `http://127.0.0.1:11434`.
-
-### Configure Laravel
-
-In `.env` (do **not** commit secrets):
+2. In `.env`:
 
 ```ini
-APP_ENV=local
 AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 OLLAMA_MODEL=qwen2.5-coder:7b
 ```
 
-Start the app as usual (Laragon / `composer dev` / `php artisan serve`).
+3. Local-only test endpoint: `POST /api/dev/ai/ask` (404 unless `APP_ENV=local`).
 
-### Test endpoint (local only)
+## Security notes
 
-`POST /api/dev/ai/ask` is registered with middleware that returns **404** unless `APP_ENV=local`.
+- Never commit `.env` or real secrets.
+- Production: use strong `APP_KEY`, DB, MinIO, and Reverb secrets; set `APP_DEBUG=false`.
+- Prefer putting MySQL/Redis/MinIO behind a firewall and exposing only HTTP(S) via a reverse proxy (see deployment guidelines).
 
-**PowerShell:**
+## License
 
-```powershell
-Invoke-RestMethod -Method Post -Uri "http://retailpulse.test/api/dev/ai/ask" `
-  -ContentType "application/json" `
-  -Body '{"prompt":"Explain Laravel service container in simple words"}'
-```
-
-**curl:**
-
-```bash
-curl -X POST http://retailpulse.test/api/dev/ai/ask \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json" \
-  -d "{\"prompt\":\"Explain Laravel service container in simple words\"}"
-```
-
-Expected shape:
-
-```json
-{
-  "success": true,
-  "answer": "..."
-}
-```
-
-### Troubleshooting
-
-| Symptom | Likely cause | Fix |
-|--------|--------------|-----|
-| Connection refused / “Could not connect…” | Ollama not running | Start Ollama; verify `http://127.0.0.1:11434` |
-| Model not found | Model not pulled | `ollama pull qwen2.5-coder:7b` then match `OLLAMA_MODEL` |
-| 404 on `/api/dev/ai/ask` | Not local | Set `APP_ENV=local` (endpoint is blocked in staging/production) |
-| Timeouts on first request | Cold model load | Retry; first generate can be slow on CPU |
-
-Switch providers later by changing `AI_PROVIDER` (and provider credentials) in `.env` — no code change required for the default text provider used by `LocalAiService`.
+Application code follows the project’s license terms. The upstream Laravel skeleton is MIT-licensed.
