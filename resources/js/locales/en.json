@@ -2233,11 +2233,18 @@
             "binLocations": "Bin locations",
             "addZone": "Add zone",
             "addBin": "Add bin",
+            "addMore": "Add more",
+            "removeRow": "Remove row",
+            "zoneRow": "Zone {{number}}",
+            "binRow": "Bin {{number}}",
             "saveZone": "Save zone",
             "saveBin": "Save bin",
+            "saveZones": "Save zones",
+            "saveBins": "Save bins",
             "noZones": "No zones defined yet.",
             "noBins": "No bin locations defined yet.",
             "noZone": "No zone",
+            "capacityLabel": "Cap. {{count}}",
             "binReportTitle": "Stock by bin",
             "editZone": "Edit zone",
             "editBin": "Edit bin",
@@ -2246,13 +2253,26 @@
             "fields": {
                 "name": "Name",
                 "code": "Code",
+                "codeAutoHint": "Generated automatically.",
                 "zone": "Zone",
                 "aisle": "Aisle",
                 "shelf": "Shelf",
                 "binCode": "Bin code",
                 "location": "Location",
+                "capacity": "Capacity",
                 "capacityLimit": "Capacity limit",
                 "active": "Active"
+            },
+            "placeholders": {
+                "zoneName": "e.g. Bedding & Linen",
+                "zone": "Select a zone…",
+                "aisle": "e.g. B1",
+                "shelf": "e.g. S1",
+                "capacity": "e.g. 100"
+            },
+            "validation": {
+                "atLeastOneZone": "Add at least one zone with a name.",
+                "atLeastOneBin": "Add at least one bin row before saving."
             }
         },
         "binTransfer": {

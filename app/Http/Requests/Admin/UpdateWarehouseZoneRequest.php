@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 final class UpdateWarehouseZoneRequest extends FormRequest
 {
@@ -14,25 +13,33 @@ final class UpdateWarehouseZoneRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('capacity_limit') === '') {
+            $this->merge(['capacity_limit' => null]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
     public function rules(): array
     {
-        $warehouseId = $this->route('warehouse')?->id;
-        $zoneId = $this->route('zone')?->id;
-
         return [
             'name' => ['required', 'string', 'max:255'],
-            'code' => [
-                'required',
-                'string',
-                'max:32',
-                Rule::unique('warehouse_zones', 'code')
-                    ->where('warehouse_id', $warehouseId)
-                    ->ignore($zoneId),
-            ],
+            'capacity_limit' => ['nullable', 'integer', 'min:1'],
             'is_active' => ['sometimes', 'boolean'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => __('Zone name is required.'),
+            'capacity_limit.min' => __('Capacity must be at least 1.'),
         ];
     }
 }

@@ -1,7 +1,7 @@
 # RetailPulse User Manual — Catalogue & Inventory
 
 **Audience:** Customer support teams and store operators  
-**Version:** 1.4 (July 2026)  
+**Version:** 1.5 (July 2026)  
 **Scope:** Product catalogue (PIM) and warehouse inventory features available in the admin panel
 
 This manual explains **where to click**, **what each screen does**, **how data flows**, and **what every term means**. Hand it to customers who manage products and stock in RetailPulse.
@@ -248,23 +248,24 @@ Two panels:
 **Left — Zones**
 
 1. Click **Add zone**.
-2. Enter **Name** (e.g. “Ambient”) and **Code** (e.g. `AMB`).
-3. Click **Save zone**.
-4. Use **Edit zone** on a row to rename, change code, or deactivate.
+2. Enter **Name** (e.g. “Ambient”) and optional **Capacity**.
+3. **Code** is generated automatically (e.g. `ZONE-00001`) — you cannot type it.
+4. Click **Add more** to enter several zones, then **Save zones** once to create them all.
+5. Use **Edit zone** on a row to rename, change capacity, or deactivate (code stays fixed).
 
 **Right — Bin locations**
 
 1. Click **Add bin**.
-2. Optionally pick a **Zone**.
-3. Enter **Aisle**, **Shelf**, and **Bin code** (required unique identifier within warehouse).
-4. Click **Save bin**.
+2. Optionally pick a **Zone**, then enter **Aisle**, **Shelf**, and optional **Capacity**.
+3. **Bin code** is generated automatically (e.g. `BIN-00001`).
+4. Click **Add more** for additional rows, then **Save bins** once.
 
 **Example bin layout**
 
 | Zone | Aisle | Shelf | Bin code | Example use |
 |------|-------|-------|----------|-------------|
-| Ambient | A | 1 | A-01-001 | Dry goods shelf 1 |
-| Cold | C | 2 | C-02-010 | Refrigerated bay |
+| Ambient | A | 1 | BIN-00001 | Dry goods shelf 1 |
+| Cold | C | 2 | BIN-00002 | Refrigerated bay |
 
 Bins appear when **receiving stock** and in **bin transfer** / **bin stock report**.
 
@@ -883,6 +884,7 @@ Movements are **permanent audit records** — they are not edited or deleted.
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.5 | July 2026 | Manage bins: zone capacity, bulk Add more + save, auto-generated zone/bin codes |
 | 1.4 | July 2026 | Global Search (Ctrl/Cmd+K) searches pages and business records via permission-aware providers; sidebar uses shared Navigation Registry |
 | 1.3 | July 2026 | Home dashboard layout: health strip, sales trends, revenue bar chart, Operations stat-group cards |
 | 1.2 | July 2026 | Checkout (confirm + payment) uses the same full-screen POS shell as the register |

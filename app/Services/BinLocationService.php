@@ -14,24 +14,70 @@ use App\Models\BinLocation;
 use App\Models\WarehouseZone;
 use App\Repositories\Contracts\BinLocationRepositoryInterface;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
+use App\Services\Accounting\DocumentNumberService;
+use App\Services\Concerns\GeneratesMasterCodes;
 use App\Support\InventoryFreezeGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 final class BinLocationService
 {
+    use GeneratesMasterCodes;
+
+    private const ZONE_CODE_TYPE = 'warehouse_zone';
+
+    private const ZONE_CODE_PREFIX = 'ZONE';
+
+    private const BIN_CODE_TYPE = 'bin_location';
+
+    private const BIN_CODE_PREFIX = 'BIN';
+
     public function __construct(
         private readonly BinLocationRepositoryInterface $bins,
         private readonly InventoryRepositoryInterface $inventories,
         private readonly InventoryService $inventoryService,
+        private readonly DocumentNumberService $documentNumberService,
     ) {}
+
+    protected function documentNumbers(): DocumentNumberService
+    {
+        return $this->documentNumberService;
+    }
+
+    public function nextZoneCode(): string
+    {
+        return $this->peekMasterCode(self::ZONE_CODE_TYPE, self::ZONE_CODE_PREFIX);
+    }
+
+    public function nextBinCode(): string
+    {
+        return $this->peekMasterCode(self::BIN_CODE_TYPE, self::BIN_CODE_PREFIX);
+    }
+
+    /**
+     * @param  list<CreateWarehouseZoneData>  $zones
+     * @return list<WarehouseZone>
+     */
+    public function createZones(array $zones): array
+    {
+        return DB::transaction(function () use ($zones): array {
+            $created = [];
+
+            foreach ($zones as $data) {
+                $created[] = $this->createZone($data);
+            }
+
+            return $created;
+        });
+    }
 
     public function createZone(CreateWarehouseZoneData $data): WarehouseZone
     {
         return WarehouseZone::query()->create([
             'warehouse_id' => $data->warehouseId,
             'name' => $data->name,
-            'code' => $data->code,
+            'code' => $this->nextMasterCode(self::ZONE_CODE_TYPE, self::ZONE_CODE_PREFIX),
+            'capacity_limit' => $data->capacityLimit,
             'is_active' => true,
         ]);
     }
@@ -40,18 +86,37 @@ final class BinLocationService
     {
         $zone->update([
             'name' => $data->name,
-            'code' => $data->code,
+            'capacity_limit' => $data->capacityLimit,
             'is_active' => $data->isActive,
         ]);
 
         return $zone->fresh() ?? $zone;
     }
 
+    /**
+     * @param  list<CreateBinLocationData>  $bins
+     * @return list<BinLocation>
+     */
+    public function createBins(array $bins): array
+    {
+        return DB::transaction(function () use ($bins): array {
+            $created = [];
+
+            foreach ($bins as $data) {
+                $created[] = $this->createBin($data);
+            }
+
+            return $created;
+        });
+    }
+
     public function createBin(CreateBinLocationData $data): BinLocation
     {
-        if ($this->bins->findByCode($data->warehouseId, $data->binCode) !== null) {
+        $binCode = $this->nextMasterCode(self::BIN_CODE_TYPE, self::BIN_CODE_PREFIX);
+
+        if ($this->bins->findByCode($data->warehouseId, $binCode) !== null) {
             throw ValidationException::withMessages([
-                'bin_code' => __('Bin code already exists in this warehouse.'),
+                'bins' => __('Bin code already exists in this warehouse.'),
             ]);
         }
 
@@ -61,7 +126,7 @@ final class BinLocationService
             'zone' => $data->zone,
             'aisle' => $data->aisle,
             'shelf' => $data->shelf,
-            'bin_code' => $data->binCode,
+            'bin_code' => $binCode,
             'capacity_limit' => $data->capacityLimit,
             'is_active' => true,
         ]);
@@ -69,20 +134,11 @@ final class BinLocationService
 
     public function updateBin(BinLocation $bin, UpdateBinLocationData $data): BinLocation
     {
-        $existing = $this->bins->findByCode($bin->warehouse_id, $data->binCode);
-
-        if ($existing !== null && $existing->id !== $bin->id) {
-            throw ValidationException::withMessages([
-                'bin_code' => __('Bin code already exists in this warehouse.'),
-            ]);
-        }
-
         $bin->update([
             'warehouse_zone_id' => $data->warehouseZoneId,
             'zone' => $data->zone,
             'aisle' => $data->aisle,
             'shelf' => $data->shelf,
-            'bin_code' => $data->binCode,
             'capacity_limit' => $data->capacityLimit,
             'is_active' => $data->isActive,
         ]);

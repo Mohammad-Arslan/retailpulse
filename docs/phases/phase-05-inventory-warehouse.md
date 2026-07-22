@@ -223,7 +223,7 @@ All committed inventory mutations fire `InventoryStockChanged`.
 
 ### Bin & Location Management
 
-- **`warehouse_zones`** — `warehouse_id`, `name`, `code`, `is_active`.
+- **`warehouse_zones`** — `warehouse_id`, `name`, `code`, `capacity_limit` (nullable), `is_active`. Zone/bin codes are auto-assigned via `DocumentNumberService` (`ZONE-#####` / `BIN-#####`).
 - **`bin_locations`** — `warehouse_id`, `zone`, `aisle`, `shelf`, `bin_code`, `is_active`, `capacity_limit` (nullable).
 - **`inventories`** extended with `bin_location_id` (nullable FK); stock tracked at bin level where configured.
 - **Bin Transfer** — lightweight same-warehouse move between bins; creates paired `stock_movements` (out/in) without full inter-branch transfer workflow.

@@ -13,7 +13,6 @@ final readonly class UpdateBinLocationData
         public ?string $zone,
         public ?string $aisle,
         public ?string $shelf,
-        public string $binCode,
         public ?int $capacityLimit,
         public bool $isActive,
     ) {}
@@ -27,7 +26,6 @@ final readonly class UpdateBinLocationData
             zone: $validated['zone'] ?? null,
             aisle: $validated['aisle'] ?? null,
             shelf: $validated['shelf'] ?? null,
-            binCode: strtoupper($validated['bin_code']),
             capacityLimit: isset($validated['capacity_limit']) ? (int) $validated['capacity_limit'] : null,
             isActive: (bool) ($validated['is_active'] ?? true),
         );

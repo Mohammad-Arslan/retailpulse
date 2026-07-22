@@ -49,6 +49,7 @@ final class WarehouseBinController extends Controller
                     'id' => $zone->id,
                     'name' => $zone->name,
                     'code' => $zone->code,
+                    'capacity_limit' => $zone->capacity_limit,
                     'is_active' => $zone->is_active,
                 ])
                 ->values()
@@ -67,6 +68,8 @@ final class WarehouseBinController extends Controller
                 ])
                 ->values()
                 ->all(),
+            'nextZoneCode' => $this->binService->nextZoneCode(),
+            'nextBinCode' => $this->binService->nextBinCode(),
         ]);
     }
 
@@ -74,11 +77,16 @@ final class WarehouseBinController extends Controller
     {
         $this->authorize('manageBins', $warehouse);
 
-        $this->binService->createZone(CreateWarehouseZoneData::fromRequest($request));
+        $zones = array_map(
+            fn (array $row): CreateWarehouseZoneData => CreateWarehouseZoneData::fromArray($warehouse->id, $row),
+            $request->validated('zones'),
+        );
+
+        $this->binService->createZones($zones);
 
         return redirect()
             ->route('admin.warehouses.bins.index', $warehouse)
-            ->with('success', __('Zone created successfully.'));
+            ->with('success', __('Zones created successfully.'));
     }
 
     public function updateZone(
@@ -99,11 +107,16 @@ final class WarehouseBinController extends Controller
     {
         $this->authorize('manageBins', $warehouse);
 
-        $this->binService->createBin(CreateBinLocationData::fromRequest($request));
+        $bins = array_map(
+            fn (array $row): CreateBinLocationData => CreateBinLocationData::fromArray($warehouse->id, $row),
+            $request->validated('bins'),
+        );
+
+        $this->binService->createBins($bins);
 
         return redirect()
             ->route('admin.warehouses.bins.index', $warehouse)
-            ->with('success', __('Bin location created successfully.'));
+            ->with('success', __('Bin locations created successfully.'));
     }
 
     public function updateBin(

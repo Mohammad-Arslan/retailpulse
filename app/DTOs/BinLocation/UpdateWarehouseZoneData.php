@@ -10,7 +10,7 @@ final readonly class UpdateWarehouseZoneData
 {
     public function __construct(
         public string $name,
-        public string $code,
+        public ?int $capacityLimit,
         public bool $isActive,
     ) {}
 
@@ -20,7 +20,7 @@ final readonly class UpdateWarehouseZoneData
 
         return new self(
             name: $validated['name'],
-            code: strtoupper($validated['code']),
+            capacityLimit: isset($validated['capacity_limit']) ? (int) $validated['capacity_limit'] : null,
             isActive: (bool) ($validated['is_active'] ?? true),
         );
     }
