@@ -93,8 +93,19 @@ final class LeaveService
             $endTime,
         ): LeaveRequest {
             // Serialize concurrent submissions for this employee so the short-leave
-            // monthly-quota check below can't be bypassed by two requests racing.
+            // monthly-quota and date-overlap checks below can't be bypassed by two
+            // requests racing.
             Employee::query()->whereKey($employee->id)->lockForUpdate()->first();
+
+            $this->assertNoOverlappingLeave(
+                $employee,
+                $startDate,
+                $endDate,
+                $durationType,
+                $session,
+                $startTime,
+                $endTime,
+            );
 
             $policy = $this->resolveLeavePolicy($employee, $leaveType, $startDate);
 
@@ -362,6 +373,20 @@ final class LeaveService
         }
 
         return DB::transaction(function () use ($request, $newStartDate, $newEndDate, $changedByUserId, $reason): LeaveRequest {
+            $request->loadMissing('employee');
+            Employee::query()->whereKey($request->employee_id)->lockForUpdate()->first();
+
+            $this->assertNoOverlappingLeave(
+                $request->employee,
+                $newStartDate,
+                $newEndDate,
+                (string) $request->duration_type,
+                $request->session,
+                $request->start_time,
+                $request->end_time,
+                $request->id,
+            );
+
             LeaveRequestReschedule::query()->create([
                 'leave_request_id' => $request->id,
                 'old_start_date' => $request->start_date,
@@ -659,6 +684,82 @@ final class LeaveService
                 'duration_type' => __('Invalid leave duration type.'),
             ]);
         }
+    }
+
+    /**
+     * Rejects a new (or rescheduled) request when the employee already has a
+     * pending/approved leave whose dates conflict. Cancelled and rejected
+     * requests free the dates. Complementary half-day sessions (morning +
+     * afternoon) and non-overlapping short-leave windows on the same date
+     * are allowed; full-day and out-station occupy the whole day.
+     */
+    private function assertNoOverlappingLeave(
+        Employee $employee,
+        CarbonImmutable $startDate,
+        CarbonImmutable $endDate,
+        string $durationType,
+        ?string $session = null,
+        ?string $startTime = null,
+        ?string $endTime = null,
+        ?int $excludeRequestId = null,
+    ): void {
+        $start = $startDate->toDateString();
+        $end = $endDate->toDateString();
+
+        $query = LeaveRequest::query()
+            ->where('employee_id', $employee->id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->where('start_date', '<=', $end)
+            ->where('end_date', '>=', $start);
+
+        if ($excludeRequestId !== null) {
+            $query->whereKeyNot($excludeRequestId);
+        }
+
+        foreach ($query->get() as $existing) {
+            if ($this->leaveRequestsConflict(
+                $durationType,
+                $session,
+                $startTime,
+                $endTime,
+                $existing,
+            )) {
+                throw ValidationException::withMessages([
+                    'start_date' => __('This employee already has a pending or approved leave request that overlaps these dates.'),
+                ]);
+            }
+        }
+    }
+
+    private function leaveRequestsConflict(
+        string $durationType,
+        ?string $session,
+        ?string $startTime,
+        ?string $endTime,
+        LeaveRequest $existing,
+    ): bool {
+        $existingDuration = (string) $existing->duration_type;
+        $occupiesFullDay = ['full_day', 'out_station'];
+
+        if (in_array($durationType, $occupiesFullDay, true) || in_array($existingDuration, $occupiesFullDay, true)) {
+            return true;
+        }
+
+        if ($durationType === 'half_day' && $existingDuration === 'half_day') {
+            return $session !== null && $session === $existing->session;
+        }
+
+        if ($durationType === 'short_leave' && $existingDuration === 'short_leave') {
+            if ($startTime === null || $endTime === null || $existing->start_time === null || $existing->end_time === null) {
+                return true;
+            }
+
+            return $startTime < (string) $existing->end_time && $endTime > (string) $existing->start_time;
+        }
+
+        // half_day ↔ short_leave on the same date: treat as conflict — the
+        // employee is already marked unavailable for part of that day.
+        return true;
     }
 
     private function assertValidShortLeaveTimes(?string $startTime, ?string $endTime): void

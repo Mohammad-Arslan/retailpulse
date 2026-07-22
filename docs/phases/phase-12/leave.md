@@ -45,6 +45,7 @@ Manage leave types, entitlements, and requests with approval, balance updates, a
 | P12-LV-FR-011 | Planned | Carry-forward processing at fiscal year boundary (see leave-fiscal-year). |
 | P12-LV-FR-012 | Planned | Historical leave balance and request import. |
 | P12-LV-FR-013 | Implemented | Leave module gated behind `leave` requiring `hr`. |
+| P12-LV-FR-014 | Implemented | Overlapping leave is rejected at submission (and on TOIL reschedule): an employee may not have two `pending`/`approved` requests whose dates conflict. Cancelled/rejected requests free the dates. Complementary half-day sessions (morning + afternoon) and non-overlapping short-leave time windows on the same date are allowed; `full_day` and `out_station` occupy the whole day and conflict with any other active request on those dates. Concurrent submissions are serialized via the same per-employee row lock used for short-leave quota. |
 
 ---
 
@@ -145,6 +146,7 @@ leave.encashment_posted          # Planned — may map to payroll adjustment, no
 | P12-LV-AC-002 | Implemented | Unpaid leave appears as deduction component in payroll run. |
 | P12-LV-AC-003 | Implemented | Leave spanning public holiday excludes holiday when policy configured. |
 | P12-LV-AC-004 | Implemented | Cancelled request does not consume balance. |
+| P12-LV-AC-005 | Implemented | A second full-day (or out-station) request for dates already covered by a pending/approved request is rejected; morning + afternoon half-days on the same date are both allowed. |
 
 ---
 
