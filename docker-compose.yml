@@ -1,0 +1,211 @@
+name: retailpulse
+
+services:
+  app:
+    container_name: retailpulse-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-local}
+    image: retailpulse-app:${BUILD_TARGET:-local}
+    command: ["${BUILD_TARGET:-local}"]
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_URL: http://localhost:${APP_HOST_PORT:-8000}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      BROADCAST_CONNECTION: reverb
+      REVERB_HOST: localhost
+      REVERB_PORT: 8080
+      REVERB_SERVER_HOST: 0.0.0.0
+      REVERB_SERVER_PORT: 8080
+      REVERB_CLIENT_HOST: localhost
+      REVERB_CLIENT_PORT: ${REVERB_HOST_PORT:-8080}
+      OCTANE_SERVER: frankenphp
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_USERNAME: null
+      MAIL_PASSWORD: null
+      MAIL_SCHEME: null
+      MEDIA_DISK: minio
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_URL: http://localhost:${MINIO_API_HOST_PORT:-9000}/${MINIO_BUCKET:-retailpulse}
+      AWS_ENDPOINT: http://minio:9000
+      AWS_URL: http://localhost:${MINIO_API_HOST_PORT:-9000}/${MINIO_BUCKET:-retailpulse}
+      AWS_USE_PATH_STYLE_ENDPOINT: "true"
+      # Vite HMR (local supervisor runs `npm run dev`; production ignores these)
+      VITE_PORT: "5173"
+      VITE_HMR_HOST: localhost
+      VITE_HMR_PORT: ${VITE_HOST_PORT:-5173}
+      VITE_HOST_PORT: ${VITE_HOST_PORT:-5173}
+      VITE_DEV_SERVER_URL: http://localhost:${VITE_HOST_PORT:-5173}
+      CHOKIDAR_USEPOLLING: "true"
+      VITE_USE_POLLING: "true"
+    ports:
+      - "${APP_HOST_PORT:-8000}:8000"
+      - "${REVERB_HOST_PORT:-8080}:8080"
+      - "${VITE_HOST_PORT:-5173}:5173"
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 8000) ? 0 : 1);"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+    volumes:
+      - ./:/var/www/html
+      - retailpulse_vendor:/var/www/html/vendor
+      - retailpulse_node_modules:/var/www/html/node_modules
+      - retailpulse_build:/var/www/html/public/build
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  mysql:
+    container_name: retailpulse-mysql
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-retailpulse}
+      MYSQL_USER: ${DB_USERNAME:-retailpulse}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-${DB_PASSWORD:-secret}}
+    volumes:
+      - retailpulse_mysql:/var/lib/mysql
+    ports:
+      - "${MYSQL_HOST_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  phpmyadmin:
+    container_name: retailpulse-phpmyadmin
+    image: phpmyadmin:5
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_ABSOLUTE_URI: http://localhost:${PHPMYADMIN_HOST_PORT:-8081}/
+      UPLOAD_LIMIT: 64M
+      MEMORY_LIMIT: 512M
+    ports:
+      - "${PHPMYADMIN_HOST_PORT:-8081}:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  redis:
+    container_name: retailpulse-redis
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - retailpulse_redis:/data
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  mailpit:
+    container_name: retailpulse-mailpit
+    image: axllent/mailpit:latest
+    ports:
+      - "${MAILPIT_SMTP_HOST_PORT:-1025}:1025"
+      - "${MAILPIT_UI_HOST_PORT:-8025}:8025"
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  minio:
+    container_name: retailpulse-minio
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioSecret}
+    volumes:
+      - retailpulse_minio:/data
+    ports:
+      - "${MINIO_API_HOST_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_HOST_PORT:-9001}:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  minio-init:
+    container_name: retailpulse-minio-init
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioSecret}
+      MINIO_BUCKET: ${MINIO_BUCKET:-retailpulse}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
+        mc mb --ignore-existing "local/$${MINIO_BUCKET}"
+        mc anonymous set download "local/$${MINIO_BUCKET}"
+        echo "MinIO bucket $${MINIO_BUCKET} is ready"
+    networks:
+      - retailpulse
+    restart: "no"
+
+networks:
+  retailpulse:
+    name: retailpulse
+    driver: bridge
+
+volumes:
+  retailpulse_mysql:
+    name: retailpulse_mysql
+  retailpulse_redis:
+    name: retailpulse_redis
+  retailpulse_minio:
+    name: retailpulse_minio
+  retailpulse_vendor:
+    name: retailpulse_vendor
+  retailpulse_node_modules:
+    name: retailpulse_node_modules
+  retailpulse_build:
+    name: retailpulse_build

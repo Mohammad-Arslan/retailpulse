@@ -69,6 +69,11 @@ class Image extends Model
         $url = $disk->url($path);
 
         // Prefer root-relative URLs for local public media so thumbnails load on any host.
+        // Keep absolute URLs for S3/MinIO (stripping the host would break object storage links).
+        if (! in_array($this->disk, ['public', 'local'], true)) {
+            return $url;
+        }
+
         if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
             $parts = parse_url($url);
             $relative = ($parts['path'] ?? '').(isset($parts['query']) ? '?'.$parts['query'] : '');

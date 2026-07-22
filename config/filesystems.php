@@ -61,6 +61,20 @@ return [
             'report' => false,
         ],
 
+        // S3-compatible MinIO (Docker: retailpulse-minio). Used when MEDIA_DISK=minio.
+        'minio' => [
+            'driver' => 's3',
+            'key' => env('MINIO_ACCESS_KEY', env('AWS_ACCESS_KEY_ID')),
+            'secret' => env('MINIO_SECRET_KEY', env('AWS_SECRET_ACCESS_KEY')),
+            'region' => env('MINIO_REGION', 'us-east-1'),
+            'bucket' => env('MINIO_BUCKET', 'retailpulse'),
+            'url' => env('MINIO_URL', env('AWS_URL')),
+            'endpoint' => env('MINIO_ENDPOINT', env('AWS_ENDPOINT')),
+            'use_path_style_endpoint' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

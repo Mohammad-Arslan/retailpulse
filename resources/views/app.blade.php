@@ -7,6 +7,15 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
+        <script>
+            window.__REVERB__ = {
+                key: @json(config('broadcasting.connections.reverb.key')),
+                host: @json(env('REVERB_CLIENT_HOST', env('REVERB_HOST', 'localhost'))),
+                port: {{ (int) env('REVERB_CLIENT_PORT', env('REVERB_HOST_PORT', env('REVERB_PORT', 8080))) }},
+                scheme: @json(env('REVERB_SCHEME', 'http')),
+            };
+        </script>
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
