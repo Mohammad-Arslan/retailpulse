@@ -22,6 +22,7 @@ final readonly class UpdateUserData
         public ?array $branchAssignments,
         public ?string $posPin,
         public bool $clearPosPin,
+        public ?int $employeeId,
     ) {}
 
     public static function fromRequest(UpdateUserRequest $request): self
@@ -38,6 +39,7 @@ final readonly class UpdateUserData
                 : null,
             posPin: $request->validated('pos_pin'),
             clearPosPin: $request->boolean('clear_pos_pin', false),
+            employeeId: $request->validated('employee_id') !== null ? (int) $request->validated('employee_id') : null,
         );
     }
 }

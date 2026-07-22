@@ -2,12 +2,16 @@ import BranchAssignmentFields from '@/Components/admin/BranchAssignmentFields';
 import AdminFormField from '@/Components/common/AdminFormField';
 import FormCard from '@/Components/common/FormCard';
 import PageHeader from '@/Components/common/PageHeader';
+import Select from '@/Components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useCan } from '@/Hooks/useCan';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
-export default function Create({ roles, availableBranches }) {
+export default function Create({ roles, availableBranches, linkableEmployees = [] }) {
     const can = useCan();
+    const { t } = useTranslation();
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
@@ -19,7 +23,19 @@ export default function Create({ roles, availableBranches }) {
         branches: [],
         pos_pin: '',
         pos_pin_confirmation: '',
+        employee_id: '',
     });
+
+    const employeeOptions = useMemo(
+        () => [
+            { value: '', label: t('common.none') },
+            ...linkableEmployees.map((e) => ({
+                value: String(e.id),
+                label: `${e.code} — ${e.name}`,
+            })),
+        ],
+        [linkableEmployees, t],
+    );
 
     const toggleRole = (role) => {
         if (data.roles.includes(role)) {
@@ -124,6 +140,22 @@ export default function Create({ roles, availableBranches }) {
                         />
                         Active account
                     </label>
+
+                    <AdminFormField
+                        label={t('pages.users.fields.linkedEmployee')}
+                        id="employee_id"
+                        error={errors.employee_id}
+                        hint={t('pages.users.fields.linkedEmployeeHint')}
+                    >
+                        <Select
+                            inputId="employee_id"
+                            value={data.employee_id}
+                            options={employeeOptions}
+                            onChange={(v) => setData('employee_id', v ?? '')}
+                            isClearable
+                            placeholder={t('pages.users.fields.linkedEmployeePlaceholder')}
+                        />
+                    </AdminFormField>
 
                     {can('users.assign-branches') && (
                         <BranchAssignmentFields

@@ -23,6 +23,7 @@ use App\Models\Grade;
 use App\Models\HolidayCalendar;
 use App\Models\OrganizationEntity;
 use App\Models\SalaryStructure;
+use App\Models\User;
 use App\Repositories\Contracts\CurrencyRepositoryInterface;
 use App\Services\Accounting\DocumentNumberService;
 use App\Services\ImageService;
@@ -555,7 +556,36 @@ final class EmployeeService
             'attachmentTypes' => ['cnic', 'photo', 'id_copy', 'other'],
             'maxImages' => (int) config('media.max_images_per_model', 10),
             'weekDays' => [0, 1, 2, 3, 4, 5, 6],
+            'linkableUsers' => $this->linkableUserOptions($excludeFromManagers),
         ];
+    }
+
+    /**
+     * Users not already linked to a different employee, plus this employee's own linked
+     * user (if editing) so the current selection still resolves in the dropdown.
+     *
+     * @return list<array{id: int, name: string, email: ?string, role: ?string}>
+     */
+    private function linkableUserOptions(?Employee $employee): array
+    {
+        $linkedUserIds = Employee::query()
+            ->whereNotNull('user_id')
+            ->when($employee !== null, fn ($query) => $query->where('id', '!=', $employee->id))
+            ->pluck('user_id');
+
+        return User::query()
+            ->whereNotIn('id', $linkedUserIds)
+            ->with('roles')
+            ->orderBy('name')
+            ->get(['id', 'name', 'email'])
+            ->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->getRoleNames()->first(),
+            ])
+            ->values()
+            ->all();
     }
 
     /**

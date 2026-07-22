@@ -63,6 +63,7 @@ final class UserController extends Controller
             'availableBranches' => $this->branches->allActive(
                 $this->branchContext->accessibleBranchIds($request->user()),
             ),
+            'linkableEmployees' => $this->userService->linkableEmployeeOptions(null),
         ]);
     }
 
@@ -81,7 +82,7 @@ final class UserController extends Controller
     {
         $this->authorize('update', $user);
 
-        $user->load(['roles', 'branches']);
+        $user->load(['roles', 'branches', 'employee']);
 
         return Inertia::render('Admin/Users/Edit', [
             'user' => [
@@ -97,11 +98,13 @@ final class UserController extends Controller
                 ]),
                 'has_pos_pin' => $this->posPin->hasPin($user),
                 'pos_pin_lockout' => $this->posPin->getLockoutStatus($user),
+                'employee_id' => $user->employee?->id,
             ],
             'roles' => $this->roleOptions(),
             'availableBranches' => $this->branches->allActive(
                 $this->branchContext->accessibleBranchIds(request()->user()),
             ),
+            'linkableEmployees' => $this->userService->linkableEmployeeOptions($user),
         ]);
     }
 

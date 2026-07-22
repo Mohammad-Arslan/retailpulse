@@ -67,6 +67,14 @@ final class UpdateEmployeeRequest extends NormalizesNullableEmployeeForeignKeys
         return $rules;
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->employeeCoreMessages();
+    }
+
     public function withValidator(Validator $validator): void
     {
         $this->withEmployeeProfileValidator($validator);

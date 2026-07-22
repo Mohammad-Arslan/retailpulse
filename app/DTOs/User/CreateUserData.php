@@ -21,6 +21,7 @@ final readonly class CreateUserData
         public array $roleNames,
         public array $branchAssignments,
         public ?string $posPin,
+        public ?int $employeeId,
     ) {}
 
     public static function fromRequest(StoreUserRequest $request): self
@@ -36,6 +37,7 @@ final readonly class CreateUserData
                 $request->validated('branches'),
             )->assignments,
             posPin: $request->validated('pos_pin'),
+            employeeId: $request->validated('employee_id') !== null ? (int) $request->validated('employee_id') : null,
         );
     }
 }

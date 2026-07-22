@@ -29,6 +29,7 @@ export function useEmployeeFormOptions({
     salaryStructures,
     currencies,
     holidayCalendars,
+    linkableUsers = [],
     t,
 }) {
     const entityOptions = useMemo(
@@ -90,6 +91,22 @@ export function useEmployeeFormOptions({
         ],
         [holidayCalendars, t],
     );
+    const linkableUserOptions = useMemo(
+        () => [
+            { value: '', label: t('common.none') },
+            ...linkableUsers.map((u) => {
+                const parts = [u.name];
+                if (u.role) {
+                    parts.push(`(${u.role})`);
+                }
+                if (u.email) {
+                    parts.push(`— ${u.email}`);
+                }
+                return { value: String(u.id), label: parts.join(' ') };
+            }),
+        ],
+        [linkableUsers, t],
+    );
 
     return {
         entityOptions,
@@ -102,6 +119,7 @@ export function useEmployeeFormOptions({
         structureOptions,
         currencyOptions,
         calendarOptions,
+        linkableUserOptions,
     };
 }
 
@@ -122,6 +140,7 @@ export default function EmployeeFormSections({
     salaryStructures = [],
     currencies = [],
     holidayCalendars = [],
+    linkableUsers = [],
     employmentTypes = [],
     genders = [],
     maritalStatuses = [],
@@ -146,6 +165,7 @@ export default function EmployeeFormSections({
         structureOptions,
         currencyOptions,
         calendarOptions,
+        linkableUserOptions,
     } = useEmployeeFormOptions({
         legalEntities,
         branches,
@@ -157,6 +177,7 @@ export default function EmployeeFormSections({
         salaryStructures,
         currencies,
         holidayCalendars,
+        linkableUsers,
         t,
     });
 
@@ -325,7 +346,11 @@ export default function EmployeeFormSections({
                         onChange={(e) => field('national_id', e.target.value)}
                     />
                 </AdminFormField>
-                <AdminFormField label={t('pages.hrEmployees.fields.email')} error={errors.email}>
+                <AdminFormField
+                    label={t('pages.hrEmployees.fields.email')}
+                    error={errors.email}
+                    hint={t('pages.hrEmployees.hints.email')}
+                >
                     <input
                         type="email"
                         className="rp-form-input"
@@ -575,6 +600,20 @@ export default function EmployeeFormSections({
                         options={structureOptions}
                         onChange={(v) => field('salary_structure_id', v ?? '')}
                         isClearable
+                    />
+                </AdminFormField>
+                <AdminFormField
+                    label={t('pages.hrEmployees.fields.linkedUser')}
+                    error={errors.user_id}
+                    hint={t('pages.hrEmployees.hints.linkedUser')}
+                >
+                    <Select
+                        value={String(data.user_id ?? '')}
+                        isDisabled={readOnly}
+                        options={linkableUserOptions}
+                        onChange={(v) => field('user_id', v ?? '')}
+                        isClearable
+                        placeholder={t('pages.hrEmployees.placeholders.linkedUser')}
                     />
                 </AdminFormField>
             </div>

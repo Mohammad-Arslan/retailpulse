@@ -530,7 +530,7 @@
                 "currency": "Currency",
                 "label": "Label",
                 "isPrimary": "Primary Account",
-                "linkedUser": "Linked User",
+                "linkedUser": "Linked User Account",
                 "dependentName": "Dependent Name",
                 "relation": "Relation",
                 "isEmergencyContact": "Emergency Contact",
@@ -558,9 +558,12 @@
             },
             "overrideWeekendDaysToggle": "Override for this employee",
             "hints": {
-                "weekendDaysOverride": "Independent from Rest Days above (which are for overtime rest-day detection). Falls back to the branch, then legal-entity, weekly off-days default when not overridden. Leave every day unchecked if this employee has no weekly day off (e.g. a departmental store role)."
+                "weekendDaysOverride": "Independent from Rest Days above (which are for overtime rest-day detection). Falls back to the branch, then legal-entity, weekly off-days default when not overridden. Leave every day unchecked if this employee has no weekly day off (e.g. a departmental store role).",
+                "linkedUser": "Links This Employee To A Login Account For Employee Self-Service. Clear To Unlink.",
+                "email": "Personal / Contact Email — Not Used For Login."
             },
             "placeholders": {
+                "linkedUser": "Search By Name Or Email…",
                 "title": "Enter Title",
                 "preferredName": "Enter Preferred Name",
                 "firstName": "Enter First Name",
@@ -1993,7 +1996,16 @@
         "users": {
             "title": "Team Members",
             "description": "Manage users, roles, and access permissions across all branches.",
-            "empty": "No users found."
+            "empty": "No users found.",
+            "columns": {
+                "linkedEmployee": "Linked Employee"
+            },
+            "fields": {
+                "linkedEmployee": "Linked Employee",
+                "linkedEmployeeHint": "Links This Login Account To An Employee Record For Employee Self-Service. Clear To Unlink.",
+                "linkedEmployeePlaceholder": "Search By Name Or Code…",
+                "noLinkedEmployee": "—"
+            }
         },
         "roles": {
             "title": "Roles",

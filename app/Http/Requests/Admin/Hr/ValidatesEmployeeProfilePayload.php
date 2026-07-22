@@ -28,7 +28,12 @@ trait ValidatesEmployeeProfilePayload
             'national_id' => ['nullable', 'string', 'max:64'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:64'],
-            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'user_id' => [
+                'nullable',
+                'integer',
+                'exists:users,id',
+                Rule::unique('employees', 'user_id')->ignore($ignoreEmployeeId),
+            ],
             'legal_entity_id' => ['required', 'integer', 'exists:organization_entities,id'],
             'primary_branch_id' => ['required', 'integer', 'exists:branches,id'],
             'department_id' => ['nullable', 'integer', 'exists:departments,id'],
@@ -123,6 +128,16 @@ trait ValidatesEmployeeProfilePayload
             'image_uploads.*.cnic_back' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.(int) config('media.max_upload_kb', 5120)],
             'remove_image_ids' => ['nullable', 'array'],
             'remove_image_ids.*' => ['integer'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function employeeCoreMessages(): array
+    {
+        return [
+            'user_id.unique' => __('This User Account Is Already Linked To Another Employee.'),
         ];
     }
 

@@ -74,8 +74,24 @@ function Index({ users, filters }) {
                     </div>
                 ),
             },
+            {
+                id: 'employee',
+                header: t('pages.users.columns.linkedEmployee'),
+                enableSorting: false,
+                cell: ({ row }) => {
+                    const employee = row.original.employee;
+                    if (!employee) {
+                        return <span className="text-xs text-rp-text-muted">{t('pages.users.fields.noLinkedEmployee')}</span>;
+                    }
+                    return (
+                        <div className="text-xs text-rp-text-secondary">
+                            {employee.employee_code} — {employee.first_name} {employee.last_name}
+                        </div>
+                    );
+                },
+            },
         ],
-        [],
+        [t],
     );
 
     const rowActions = (user) => {

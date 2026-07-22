@@ -257,7 +257,28 @@
             "terminateConfirmDescription": "سيتم تصنيف {{name}} كمنتهي الخدمة واستبعاده من دورات الرواتب القادمة. اختر تاريخ إنهاء الخدمة أدناه.",
             "reactivateConfirmTitle": "إعادة تفعيل الموظف",
             "reactivateConfirmDescription": "سيتم إعادة {{name}} إلى الحالة النشطة ومسح تاريخ إنهاء الخدمة.",
-            "terminationDateHint": "يُحدَّد فقط عبر إجراء إنهاء الخدمة."
+            "terminationDateHint": "يُحدَّد فقط عبر إجراء إنهاء الخدمة.",
+            "fields": {
+                "linkedUser": "حساب المستخدم المرتبط"
+            },
+            "hints": {
+                "linkedUser": "يربط هذا الموظف بحساب تسجيل دخول للخدمة الذاتية للموظف. أزل التحديد لإلغاء الربط.",
+                "email": "بريد إلكتروني شخصي / للتواصل — لا يُستخدم لتسجيل الدخول."
+            },
+            "placeholders": {
+                "linkedUser": "البحث بالاسم أو البريد الإلكتروني…"
+            }
+        },
+        "users": {
+            "columns": {
+                "linkedEmployee": "الموظف المرتبط"
+            },
+            "fields": {
+                "linkedEmployee": "الموظف المرتبط",
+                "linkedEmployeeHint": "يربط هذا حساب تسجيل الدخول بسجل موظف للخدمة الذاتية للموظف. أزل التحديد لإلغاء الربط.",
+                "linkedEmployeePlaceholder": "البحث بالاسم أو الرمز…",
+                "noLinkedEmployee": "—"
+            }
         },
         "hrDepartments": {
             "fields": {

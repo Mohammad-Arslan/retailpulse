@@ -84,6 +84,7 @@ export const TAB_ERROR_PREFIXES = {
         'joined_as',
         'status',
         'salary_structure_id',
+        'user_id',
     ],
     company: [
         'legal_entity_id',
@@ -277,6 +278,7 @@ export function emptyEmployeeForm(options = {}) {
         default_cost_centre_id: '',
         payment_method: '',
         status: 'active',
+        user_id: '',
         profile: {
             address_line1: '',
             address_line2: '',
@@ -353,6 +355,7 @@ export function employeeToForm(employee) {
         default_cost_centre_id: employee.default_cost_centre_id ? String(employee.default_cost_centre_id) : '',
         payment_method: employee.payment_method ?? '',
         status: employee.status ?? 'active',
+        user_id: employee.user_id ? String(employee.user_id) : '',
         profile: {
             address_line1: employee.profile?.address_line1 ?? '',
             address_line2: employee.profile?.address_line2 ?? '',

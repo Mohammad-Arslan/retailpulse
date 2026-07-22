@@ -12,6 +12,19 @@
 
 Allow employees (linked users) to view and act on own HR data within permission scope. Full mobile UI is Phase 26; Phase 12 provides services + thin admin ESS.
 
+**Prerequisite status:** Met. ESS resolves the current user's employee via
+`Employee::where('user_id', $authUser->id)` (see `EmployeeSelfServiceService::resolveEmployeeForUser()`).
+Until this change, nothing in the UI ever set `employees.user_id`, so that lookup always failed. The
+link is now settable from the Employee form (Service Info tab → "Linked User Account") and from
+Admin/Users Create/Edit ("Link To Employee"), with a DB unique index enforcing one user per employee.
+See [hr-core.md](./hr-core.md#5-services--interfaces) and [employees.md](./employees.md) (P12-EMP-FR-002).
+
+**Naming drift note:** this doc's §5 below refers to `EmployeeSelfServiceFacade` and a
+`selfservice.view-own` permission. The implemented code uses `EmployeeSelfServiceService`
+(`app/Services/Payroll/EmployeeSelfServiceService.php`) and gates routes via the
+`hr-module:employee_self_service` middleware rather than a dedicated permission string. Left as-is
+per this doc's own naming — flagging here rather than renaming working code without cause.
+
 ---
 
 ## 2. Actors & permissions

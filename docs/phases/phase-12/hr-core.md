@@ -75,6 +75,12 @@ EmployeeService                      # see employees.md
 OrgStructureService                  # Implemented via Department/Designation/Grade services
 ```
 
+The Employee <-> User link (`employees.user_id`, prerequisite for [employee-self-service.md](./employee-self-service.md))
+is settable from either side: `EmployeeService::formOptions()` supplies `linkableUsers` to the Employee
+form, and `UserService::linkableEmployeeOptions()` / `syncEmployeeLink()` supply the reverse "Link To
+Employee" control on Admin/Users Create+Edit. Both write paths enforce the same one-user-per-employee
+invariant (DB unique index on `employees.user_id` + form validation on both sides).
+
 ---
 
 ## 6. Domain events

@@ -7,9 +7,11 @@ namespace App\Services;
 use App\DTOs\User\BranchAssignmentData;
 use App\DTOs\User\CreateUserData;
 use App\DTOs\User\UpdateUserData;
+use App\Models\Employee;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -43,6 +45,8 @@ final class UserService
             if ($data->posPin !== null && $data->posPin !== '') {
                 $this->posPin->setPin($user, $data->posPin);
             }
+
+            $this->syncEmployeeLink($user, $data->employeeId);
 
             return $user->load(['roles', 'branches']);
         });
@@ -79,8 +83,57 @@ final class UserService
                 $this->posPin->resetLockout($user);
             }
 
+            $this->syncEmployeeLink($user, $data->employeeId);
+
             return $user->load(['roles', 'branches']);
         });
+    }
+
+    /**
+     * @return Collection<int, array{id: int, code: string, name: string}>
+     */
+    public function linkableEmployeeOptions(?User $user): Collection
+    {
+        return Employee::query()
+            ->where(function ($query) use ($user): void {
+                $query->whereNull('user_id');
+                if ($user !== null) {
+                    $query->orWhere('user_id', $user->id);
+                }
+            })
+            ->orderBy('first_name')
+            ->get(['id', 'employee_code', 'first_name', 'last_name'])
+            ->map(fn (Employee $employee) => [
+                'id' => $employee->id,
+                'code' => $employee->employee_code,
+                'name' => $employee->fullName(),
+            ])
+            ->values();
+    }
+
+    /**
+     * One user <-> at most one employee. Unlinks the previously linked employee (if
+     * changed) before linking the newly chosen one; mirrors the unique constraint the
+     * employee-side form relies on so both write paths enforce the same invariant.
+     */
+    private function syncEmployeeLink(User $user, ?int $employeeId): void
+    {
+        $currentEmployee = $user->employee;
+
+        if ($currentEmployee !== null && $currentEmployee->id !== $employeeId) {
+            $currentEmployee->update(['user_id' => null]);
+        }
+
+        if ($employeeId === null) {
+            return;
+        }
+
+        $employee = Employee::query()->find($employeeId);
+        if ($employee === null || $employee->user_id === $user->id) {
+            return;
+        }
+
+        $employee->update(['user_id' => $user->id]);
     }
 
     public function deactivate(User $user): void

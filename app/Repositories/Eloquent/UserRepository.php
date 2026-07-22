@@ -22,7 +22,11 @@ final class UserRepository implements UserRepositoryInterface
 
     public function paginate(array $filters = [], ?array $branchIds = null, int $perPage = 15): LengthAwarePaginator
     {
-        $query = User::query()->with(['roles', 'branches']);
+        $query = User::query()->with([
+            'roles',
+            'branches',
+            'employee' => fn ($q) => $q->select(['id', 'user_id', 'employee_code', 'first_name', 'last_name']),
+        ]);
 
         if ($branchIds !== null) {
             $query->whereHas('branches', fn ($q) => $q->whereIn('branches.id', $branchIds));

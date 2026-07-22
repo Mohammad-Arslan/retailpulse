@@ -32,7 +32,7 @@ Maintain the employee master record: identity, employment lifecycle, pay structu
 | ID | Status | Statement |
 | :--- | :--- | :--- |
 | P12-EMP-FR-001 | Implemented | The system shall store employee master records with unique `employee_code` per tenant/entity numbering sequence. |
-| P12-EMP-FR-002 | Implemented | An employee may optionally link to an auth `user_id` for ESS login. |
+| P12-EMP-FR-002 | Implemented | An employee may optionally link to an auth `user_id` for ESS login. Settable from the Employee form's "Service Info" tab (`Linked User Account`) or the reverse Admin/Users form (`Link To Employee`); enforced one-to-one via a unique index on `employees.user_id` plus form validation on both sides. |
 | P12-EMP-FR-003 | Implemented | An employee belongs to a `legal_entity_id` and `primary_branch_id`. |
 | P12-EMP-FR-004 | Implemented | An employee may be assigned a `salary_structure_id`. |
 | P12-EMP-FR-005 | Implemented | Hire date is required; termination date is nullable and set on exit. |
@@ -57,7 +57,7 @@ Maintain the employee master record: identity, employment lifecycle, pay structu
 employees                                   # Implemented core + profile fields
 - id
 - employee_code                             # DocumentNumberService
-- user_id nullable
+- user_id nullable, unique                  # one employee <-> at most one user (see hr-core.md)
 - legal_entity_id
 - primary_branch_id
 - salary_structure_id nullable
