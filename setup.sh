@@ -167,6 +167,14 @@ port_held_by_retailpulse() {
 port_listening_on_host() {
   local port="$1"
 
+  # Our own already-running stack publishing this port is fine to keep/reuse.
+  # Must be checked before any generic "is something listening" probe below —
+  # those have no ownership awareness, so on an already-up stack every one of
+  # its own ports looks "busy" and every rerun would drift ports upward.
+  if port_held_by_retailpulse "${port}"; then
+    return 1
+  fi
+
   # Bash /dev/tcp (Git Bash / Linux)
   if (echo >/dev/tcp/127.0.0.1/"${port}") >/dev/null 2>&1; then
     return 0
