@@ -27,14 +27,16 @@ jobs:
             cd /var/www/retailpulse
             git pull origin main
             bash setup.sh production --rebuild
-            # Do NOT add explicit migrate/db:seed steps here: entrypoint.sh
-            # already runs both on every container (re)start, and --rebuild
-            # always forces one. Running db:seed a second time in the same
-            # deploy hits a duplicate-key error on role_has_permissions
-            # (RoleSeeder::syncPermissions against already-seeded, Redis-
-            # cached role/permission state) -- confirmed by hitting exactly
-            # that failure when this was added, then removed, 2026-07-23.
-            docker compose exec -T app php artisan config:cache
-            docker compose exec -T app php artisan route:cache
-            docker compose exec -T app php artisan view:cache
-            docker compose exec -T app php artisan event:cache
+            # Do NOT add explicit migrate/db:seed/cache commands here.
+            # docker/entrypoint.sh already runs the *entire* production
+            # bootstrap itself on every container (re)start -- wait for
+            # mysql/redis, migrate, seed, then config:cache/route:cache/
+            # view:cache/event:cache -- before starting supervisord. And
+            # `docker compose up -d` (inside setup.sh) returns as soon as
+            # the container *starts*, not once entrypoint.sh's sequence
+            # finishes, so any exec'd command here fires concurrently
+            # with entrypoint.sh's own identical steps inside the same
+            # container. That race caused two real failures on 2026-07-23:
+            # a duplicate-key error on role_has_permissions (db:seed run
+            # twice), then a SIGKILL/137 (config:cache racing entrypoint's
+            # own config:cache). entrypoint.sh alone is sufficient.
