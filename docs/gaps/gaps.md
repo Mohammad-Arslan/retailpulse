@@ -349,7 +349,7 @@ Cross-reference: Phase 12's `P12-08` Enterprise HRMS expansion and any future br
 | :--- | :--- | :---: | :--- |
 | X-01 | Bulk product import/export | — | **Resolved** — `ProductImportHandler` / `ProductExportHandler` + catalog entities. |
 | X-02 | Opening stock import | — | **Resolved** — `InventoryImportHandler`, `inventory-adjustments`. |
-| X-03 | Shared `import_export_jobs` framework | — | **Resolved** — wizard, queued jobs, `ImportExportRegistry`. |
+| X-03 | Shared `import_export_jobs` framework | — | **Resolved** — wizard, queued jobs, `ImportExportRegistry`. **Follow-up found and fixed 2026-07-23:** `ProcessExportJob`/`ProcessImportJob`/`ValidateImportJob`/`GenerateErrorReportJob` dispatch to `exports`/`imports-heavy`/`imports-validation`/`imports-reports` queues, but `config/horizon.php`'s supervisor only ever listened to `default` — every import/export job silently sat `pending` forever in every environment (confirmed: a real export job discovered stuck for ~2 hours in production, payload intact in Redis, 0 attempts). Fixed by adding all four queue names to the supervisor's `queue` array. |
 | X-04 | Historical sales archive import | **Medium** | Phase 8 — dedicated API exists; not in generic import registry. |
 | X-05 | Customer/supplier bulk import | — | **Resolved** — `CustomerImportHandler`, `SupplierImportHandler`. |
 | X-06 | COA / opening balance import | — | **Resolved** — see P11-05. |
