@@ -1,0 +1,33 @@
+name: Deploy to Staging
+
+# Runs after CI finishes on main -- deploy never happens on an unvalidated
+# commit. First activation of a workflow_run trigger requires this file to
+# already be merged to the default branch once (a GitHub quirk, not a bug
+# here) -- see docs/deployment-guidelines.md for the manual fallback.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to staging VPS
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /var/www/retailpulse
+            git pull origin main
+            bash setup.sh production --rebuild
+            docker compose exec -T app php artisan config:cache
+            docker compose exec -T app php artisan route:cache
+            docker compose exec -T app php artisan view:cache
+            docker compose exec -T app php artisan event:cache

@@ -374,6 +374,14 @@ Ensure Laravel trusts the reverse proxy (`TrustProxies` / Laravel 13 defaults). 
 
 ### 9.1 Deploy a new release
 
+**Automatic (default):** merging to `main` runs `.github/workflows/ci.yml` (lint → build → test); on success, `.github/workflows/deploy.yml` SSHes to the VPS and redeploys. Nothing to do manually — watch the Actions tab.
+
+Requires these GitHub repo secrets to be set once (Settings → Secrets and variables → Actions): `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` (a private key already trusted on the VPS for that user).
+
+> `workflow_run`-triggered workflows only activate once `deploy.yml` itself has been merged to the default branch — the very first push after adding it won't trigger a deploy. Run it manually once via the Actions tab ("Run workflow" won't be available for `workflow_run` triggers, so instead re-run the CI workflow, or just do one manual deploy per below) to confirm the wiring, then it's automatic from then on.
+
+**Manual fallback** (if Actions is down, or you want to deploy without waiting for CI):
+
 ```bash
 cd /var/www/retailpulse
 git pull origin main
@@ -525,6 +533,7 @@ This runbook is the **practical Contabo path** for the Docker Compose topology c
 | 2026-07-23 | Initial Contabo VPS + Docker production deployment guidelines |
 | 2026-07-23 | Fixed `setup.sh` gap: `APP_URL` was being unconditionally reset to `http://localhost:<APP_HOST_PORT>` on every run (including `production`), overwriting the real domain/scheme set per §6.1. Now only auto-set in `local` mode. |
 | 2026-07-23 | Fixed `docker-compose.yml` gap: the `app` service's `environment:` block hardcoded `APP_URL`, `REVERB_CLIENT_HOST`, `MINIO_URL`, `AWS_URL` to `localhost`-based values with no `.env` override path (`environment:` always wins over `env_file:`). `REVERB_CLIENT_HOST` in particular had no `${...}` substitution at all, so real-time/WebSocket features (Reverb, §12 architecture map) could never work off of `localhost`. Now `${VAR:-default}`, matching the existing pattern used for `APP_HOST_PORT` etc. — local dev defaults unchanged, production `.env` values now take effect. |
+| 2026-07-23 | Added `.github/workflows/ci.yml` (lint/Pint → asset build → test on push/PR to `main`) and `.github/workflows/deploy.yml` (auto-deploy to the staging VPS after CI succeeds on `main`) — see ADR-018 §CI/CD "Current implementation state" for exact scope vs. the full Phase 16 target. |
 | 2026-07-23 | **Security fix** — `docker-compose.yml` published `mysql` (3306), `redis` (6379), `phpmyadmin` (8081), `mailpit` (1025/8025), and the app's direct `8000`/`8080`/`5173` ports on `0.0.0.0`, i.e. every network interface. Docker's port publishing manipulates `iptables`/`DOCKER-USER` directly, which is NOT reflected in `ufw status` and takes precedence over UFW's own rules — so on a Contabo VPS with only 22/80/443 "allowed" in UFW, all of the above were still reachable from the open internet. This directly contradicted §3's own instruction to keep these off `0.0.0.0`. All now bind `127.0.0.1:` explicitly (Nginx and any admin tooling run on the same host, so this changes nothing for legitimate access). MinIO's `9000` (API) stays public by design (§8.2, anonymous-download bucket); its `9001` console is now `127.0.0.1`-only. |
 | 2026-07-23 | Fixed two more instances of the `APP_URL`-class gap in `setup.sh`: `REVERB_CLIENT_PORT` and `MINIO_URL`/`AWS_URL` were also unconditionally reset to `localhost`-based values on every run (found because the `REVERB_CLIENT_PORT` docker-compose.yml fix above still wasn't taking effect — this was why: setup.sh was overwriting the `.env` value right back before `docker compose up` ran). All four now share the same `if [[ "${MODE}" == "local" ]]` guard. |
 | 2026-07-23 | Fixed `setup.sh` gap: `port_listening_on_host()`'s ownership carve-out (`port_held_by_retailpulse`) was only checked in its last-resort branch, after three generic listening probes (`/dev/tcp`, `netstat`, `ss`) that have no such carve-out. Since an already-running stack's own ports are, by definition, listening, every rerun of `bash setup.sh production` on an already-up stack (exactly what §9.1 Day-2 operations tells you to do) treated every one of its own ports as a conflict and drifted them all upward. Ownership is now checked first, before any generic probe. |

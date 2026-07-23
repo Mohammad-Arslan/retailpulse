@@ -34,6 +34,8 @@ Consistent with [ADR-001](./adr-001-saas-multi-tenancy.md)'s tenancy model: the 
 - A failing stage blocks progression to the next — there is no "deploy anyway" override for a failing gate on the path to production.
 - Docker Compose (app, database, Redis, Reverb) is the target local-parity and staging environment shape, so "works on my machine" differences are minimized between development and where the app actually runs in staging/production.
 
+**Current implementation state (2026-07-23):** `.github/workflows/ci.yml` runs lint (Pint) → asset build (`npm run build`) → tests (`composer test`, SQLite in-memory per `phpunit.xml`, no service containers needed) on every push/PR to `main`. `.github/workflows/deploy.yml` auto-deploys to the staging VPS (`git pull` + `bash setup.sh production --rebuild` + cache re-warm) after CI succeeds on `main`. This is a **partial** implementation of the target above — no coverage gate (deliberately: `.ai/rules/testing.mdc` calls out "no gameable percentage-only mindset before Phase 16 CI gates"), no integration-test tier separate from Feature tests, no load-test gate, no staging-vs-production two-tier deploy (there is currently one VPS, treated as staging), and no secrets manager (secrets live in GitHub Actions repo secrets + the VPS's `.env`, not Vault/AWS Secrets Manager). Closing that remaining gap is still Phase 16 scope.
+
 ### Caching, queues, and background workers in production
 
 Per [ADR-014](./adr-014-performance.md): the database-driver cache/queue used in development is expected to become Redis in every staging/production deployment, with queue workers supervised (e.g. Supervisor) rather than run ad hoc — a queue worker dying silently under load is a production incident, not a background inconvenience.
