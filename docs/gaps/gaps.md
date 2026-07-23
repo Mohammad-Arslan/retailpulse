@@ -360,6 +360,42 @@ Cross-reference: Phase 12's `P12-08` Enterprise HRMS expansion and any future br
 
 ---
 
+## Pre-existing test failures surfaced by first CI run (2026-07-23)
+
+**Not new regressions.** `.github/workflows/ci.yml` (added 2026-07-23) is the first time this project's full test suite has run in CI — per `.ai/rules/testing.mdc`, agents don't run `composer test`/`php artisan test` unless explicitly asked, so this backlog accumulated silently. Confirmed identical locally (`php artisan test`, same 48 failures) — not a CI-environment artifact. The `test` job is currently `continue-on-error: true` specifically because of this backlog (see that workflow file); flip it back to blocking once these are worked down. 457 tests total, 409 passing (89.5%).
+
+| Test | Failure |
+| :--- | :--- |
+| `Unit\Loyalty\LoyaltyRuleEngineTest::test_spend_based_rule_calculates_points` | Asserts 10, got 5 |
+| `Unit\Loyalty\LoyaltyRuleEngineTest::test_rules_execute_by_priority_order` | Asserts 2, got 1 |
+| `Feature\Accounting\DebitNoteTest::test_purchase_return_debit_note_flow_still_works_after_refactor` | Expected `debit_note.issued` accounting event not found |
+| `Feature\Accounting\DebitNoteTest::test_user_without_procurement_permissions_cannot_view_or_create` | Expected 403, got 302 |
+| `Feature\Accounting\DebitNoteTest::test_index_lists_debit_notes_via_presenter` | `Inertia\Testing\Assert` vs `AssertableInertia` type mismatch (Inertia testing helper version drift) |
+| `Feature\Admin\AuthenticationTest::test_user_without_admin_access_cannot_login_to_panel` | User ends up authenticated when it shouldn't |
+| `Feature\Admin\DashboardTest::test_super_admin_dashboard_includes_permission_driven_widgets` | 500 error |
+| `Feature\Admin\Phase5V4InventoryTest::test_posted_count_creates_cycle_count_adjustment` | "Only sessions under review can be approved" |
+| `Feature\Auth\PasswordResetTest` (4 tests) | Reset-password screens/flow return 302 instead of 200; `ResetPassword` notification never sent |
+| `Feature\Auth\RegistrationTest::test_registration_routes_are_disabled` | Expected 404, got 302 |
+| `Feature\Checkout\CheckoutFlowTest::test_cash_change_is_stored_in_payment_meta` | Expected 200, got 422 |
+| `Feature\Checkout\CheckoutEdgeCasesTest::test_historical_import_creates_completed_sales_without_inventory_movement` | `Class "App\Models\InventoryMovement" not found` |
+| `Feature\ExampleTest::test_the_application_returns_a_successful_response` | 500 error on `/` |
+| `Feature\Loyalty\LoyaltyApprovalTest::test_pin_approval_completes_pending_credit` | "PIN must be exactly 6 digits" |
+| `Feature\Phase12\Phase12Block0FoundationsTest::test_employee_crud_happy_path` | Asserts not-null, got null |
+| `Feature\Phase12\Phase12Block2RecurringExpensesTest` (2 tests) | Recurring expense scheduler produces 0 occurrences instead of 1 |
+| `Feature\Phase12\Phase12Block5OvertimeTest::test_unapproved_overtime_excluded_from_approved_records_for_period` | Asserts size 1, got 0 |
+| `Feature\Phase12\Phase12Block5OvertimeTest::test_changing_multiplier_in_db_changes_pay_calculation_without_code_change` | SQLite UNIQUE constraint violation on `overtime_records` |
+| `Feature\Phase12\Phase12Block6PayrollCalculationTest::test_pk_income_tax_slabs_and_eobi_produce_correct_payroll_lines` | Wrong income tax line (expected 250) |
+| `Feature\Phase12\Phase12Block7PayrollPostingTest` (2 tests) | `Unknown currency code: PKR` |
+| `Feature\Phase12\Phase12EmployeeUserLinkTest` (2 tests) | User↔employee link not persisted as expected |
+| `Feature\Phase12\Phase12Wave2LeaveCarryForwardExpiryTest` (3 tests) | Carry-forward expiry produces 0 rows instead of 1 |
+| `Feature\Phase12\Phase12Wave2LeaveDurationTypesTest::test_short_leave_monthly_quota_counts_pending_and_approved_requests` | "This request would exceed the available leave balance" |
+| `Feature\Phase12\Phase12Wave2LeaveEligibilityTest` (3 tests) | Missing `leave_type_id` key; `employees.hire_date` NOT NULL violation; spurious leave-balance-exceeded error |
+| `Feature\Phase12\Phase12Wave2LeaveWeekendExclusionTest` (all 8 tests) | "This request would exceed the available leave balance" — entire test class |
+| `Feature\Pos\PosCartReservationTest` (4 tests — all) | `ArgumentCountError`: `AddCartItemData::__construct()` needs 3 args, tests pass 2 (missing `notes:`) — mechanical, one-line test fix |
+| `Feature\Procurement\ProcurementWorkflowTest` (2 tests) | "A supplier invoice already exists for this GRN" |
+
+---
+
 ## Cross-phase dependencies
 
 ```mermaid
