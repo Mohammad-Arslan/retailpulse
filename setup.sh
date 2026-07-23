@@ -119,6 +119,15 @@ ensure_env_key "MYSQL_ROOT_PASSWORD" "secret"
 ensure_env_key "DB_DATABASE" "retailpulse"
 ensure_env_key "DB_HOST" "127.0.0.1"
 
+# APP_KEY must exist in .env *before* the container is created — env_file bakes
+# vars into the container's environment once at creation time, so the
+# entrypoint's own `php artisan key:generate` (run after the container is
+# already up) fixes the file on disk but not the already-frozen process env,
+# leaving Octane's worker crash-looping on MissingAppKeyException.
+if command -v openssl >/dev/null 2>&1; then
+  ensure_env_key "APP_KEY" "base64:$(openssl rand -base64 32)"
+fi
+
 if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
   COMPOSE=(docker compose)
 elif command -v docker-compose >/dev/null 2>&1; then
