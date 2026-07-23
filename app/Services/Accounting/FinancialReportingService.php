@@ -30,6 +30,7 @@ final class FinancialReportingService
     public function __construct(
         private readonly TaxLedgerService $taxLedger,
     ) {}
+
     /**
      * @param  array<string, mixed>  $filters
      * @return array{rows: list<array<string, mixed>>, totals: array<string, float>}

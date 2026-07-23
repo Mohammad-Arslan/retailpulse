@@ -6,6 +6,7 @@ namespace App\Services\Accounting;
 
 use App\DTOs\Accounting\CreateCostCentreData;
 use App\DTOs\Accounting\UpdateCostCentreData;
+use App\Enums\CostCentreAllocationMethod;
 use App\Enums\JournalEntryStatus;
 use App\Models\CostCentre;
 use App\Models\JournalTransaction;
@@ -73,7 +74,7 @@ final class CostCentreService
             'branches' => $this->branchRepository->allActive()->map->only(['id', 'name'])->values(),
             'legalEntities' => OrganizationEntity::query()->orderBy('legal_name')->get(['id', 'legal_name']),
             'allocatableLines' => $allocatableLines,
-            'allocationMethods' => \App\Enums\CostCentreAllocationMethod::values(),
+            'allocationMethods' => CostCentreAllocationMethod::values(),
         ];
     }
 

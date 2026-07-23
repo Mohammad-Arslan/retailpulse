@@ -22,6 +22,7 @@ use App\Support\ImportExportAuthorization;
 use App\Support\TenantImportScope;
 use App\Traits\HandlesImportExportStorage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -217,7 +218,7 @@ final class ImportWizardController extends Controller
             ->firstOrFail();
     }
 
-    private function authorizeImport(\Illuminate\Http\Request $request, string $entityType): void
+    private function authorizeImport(Request $request, string $entityType): void
     {
         if (! ImportExportAuthorization::canImport($request->user(), $entityType)) {
             abort(Response::HTTP_FORBIDDEN);

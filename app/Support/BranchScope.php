@@ -23,6 +23,7 @@ final class BranchScope
      * no single branch is active. No-op when the context is fully unrestricted.
      *
      * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
      * @param  Builder<TModel>  $query
      * @return Builder<TModel>
      */
@@ -38,6 +39,7 @@ final class BranchScope
      * where BranchContext is bound.
      *
      * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
      * @param  Builder<TModel>  $query
      * @param  list<int>|null  $accessibleBranchIds
      * @return Builder<TModel>
@@ -65,6 +67,7 @@ final class BranchScope
      * column. Used by Leave/Overtime/TOIL models that key on employee_id only.
      *
      * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
      * @param  Builder<TModel>  $query
      * @param  list<int>|null  $accessibleBranchIds
      * @return Builder<TModel>
@@ -80,6 +83,7 @@ final class BranchScope
 
     /**
      * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
      * @param  Builder<TModel>  $query
      * @param  list<int>|null  $accessibleBranchIds
      * @return Builder<TModel>

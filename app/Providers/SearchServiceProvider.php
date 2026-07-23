@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Services\Search\Contracts\SearchProvider;
 use App\Services\Search\Providers\BankAccountSearchProvider;
 use App\Services\Search\Providers\BranchSearchProvider;
 use App\Services\Search\Providers\CustomerSearchProvider;
@@ -18,7 +19,6 @@ use App\Services\Search\Providers\StockTransferSearchProvider;
 use App\Services\Search\Providers\SupplierSearchProvider;
 use App\Services\Search\Providers\UserSearchProvider;
 use App\Services\Search\Providers\WarehouseSearchProvider;
-use App\Services\Search\Contracts\SearchProvider;
 use App\Services\Search\SearchManager;
 use App\Services\Search\SearchRegistry;
 use Illuminate\Support\ServiceProvider;

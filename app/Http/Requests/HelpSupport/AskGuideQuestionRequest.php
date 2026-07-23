@@ -46,4 +46,3 @@ final class AskGuideQuestionRequest extends FormRequest
         ], 401));
     }
 }
-

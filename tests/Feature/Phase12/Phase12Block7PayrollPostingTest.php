@@ -12,7 +12,6 @@ use App\Models\JournalEntry;
 use App\Models\OrganizationEntity;
 use App\Models\PayComponent;
 use App\Models\PayrollApprovalSetting;
-use App\Models\PayrollRun;
 use App\Models\SalaryStructure;
 use App\Models\SalaryStructureComponent;
 use App\Models\User;

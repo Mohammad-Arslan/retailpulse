@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\ProductVariant;
+use App\Models\Unit;
 use Illuminate\Database\Eloquent\Builder;
 
 final class CatalogExportFilters
@@ -55,7 +59,7 @@ final class CatalogExportFilters
     }
 
     /**
-     * @param  Builder<\App\Models\ProductVariant>  $query
+     * @param  Builder<ProductVariant>  $query
      * @param  array<string, mixed>  $filters
      */
     public static function applyProductVariantFilters(Builder $query, array $filters): void
@@ -109,7 +113,7 @@ final class CatalogExportFilters
     }
 
     /**
-     * @param  Builder<\App\Models\Category>  $query
+     * @param  Builder<Category>  $query
      * @param  array<string, mixed>  $filters
      */
     public static function applyCategoryFilters(Builder $query, array $filters): void
@@ -135,7 +139,7 @@ final class CatalogExportFilters
     }
 
     /**
-     * @param  Builder<\App\Models\Brand>  $query
+     * @param  Builder<Brand>  $query
      * @param  array<string, mixed>  $filters
      */
     public static function applyBrandFilters(Builder $query, array $filters): void
@@ -161,7 +165,7 @@ final class CatalogExportFilters
     }
 
     /**
-     * @param  Builder<\App\Models\Unit>  $query
+     * @param  Builder<Unit>  $query
      * @param  array<string, mixed>  $filters
      */
     public static function applyUnitFilters(Builder $query, array $filters): void

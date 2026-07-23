@@ -6,6 +6,7 @@ namespace App\Traits;
 
 use App\Services\ImportExport\Storage\ImportExportStorageManager;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 
 trait HandlesImportExportStorage
 {
@@ -33,7 +34,7 @@ trait HandlesImportExportStorage
             $entityType,
             now()->format('Y'),
             now()->format('m'),
-            \Illuminate\Support\Str::ulid(),
+            Str::ulid(),
             $extension,
         );
 
@@ -50,7 +51,7 @@ trait HandlesImportExportStorage
             $entityType,
             now()->format('Y'),
             now()->format('m'),
-            \Illuminate\Support\Str::ulid(),
+            Str::ulid(),
             $extension,
         );
 

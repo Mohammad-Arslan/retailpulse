@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace App\Services\Checkout;
 
+use App\Enums\FbrInvoiceStatus;
 use App\Enums\SaleStatus;
 use App\Enums\TaxMode;
 use App\Models\Branch;
 use App\Models\Sale;
 use App\Models\SaleInvoice;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final class HistoricalSaleImportService
 {
     /**
      * @param  list<array<string, mixed>>  $rows
-     * @param  int  $importedBy
      * @return array{imported: int, skipped: int, errors: list<array{row: int, reason: string}>}
      */
     public function import(array $rows, int $importedBy): array
@@ -31,6 +33,7 @@ final class HistoricalSaleImportService
             if ($validation !== null) {
                 $errors[] = $validation;
                 $skipped++;
+
                 continue;
             }
 
@@ -44,6 +47,7 @@ final class HistoricalSaleImportService
                 ->exists()) {
                 $errors[] = ['row' => $rowNum, 'reason' => "Duplicate invoice number '{$invoiceNumber}' for branch {$branchId}."];
                 $skipped++;
+
                 continue;
             }
 
@@ -93,8 +97,8 @@ final class HistoricalSaleImportService
                         'number' => $invoiceNumber !== '' ? $invoiceNumber : 'HIST-'.$sale->id,
                         'template' => 'a4',
                         'pdf_path' => null,
-                        'public_token' => (string) \Illuminate\Support\Str::uuid(),
-                        'fbr_status' => \App\Enums\FbrInvoiceStatus::NotApplicable,
+                        'public_token' => (string) Str::uuid(),
+                        'fbr_status' => FbrInvoiceStatus::NotApplicable,
                         'fbr_invoice_number' => null,
                     ]);
                 });
@@ -127,7 +131,7 @@ final class HistoricalSaleImportService
         }
 
         try {
-            $date = \Carbon\Carbon::parse((string) $row['sale_date']);
+            $date = Carbon::parse((string) $row['sale_date']);
             if ($date->isFuture()) {
                 return ['row' => $rowNum, 'reason' => 'sale_date must be in the past.'];
             }

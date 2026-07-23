@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\DTOs\Accounting\CreatePettyCashRegisterData;
 use App\Enums\PettyCashApprovalStatus;
 use App\Enums\PettyCashRegisterMode;
+use App\Enums\PettyCashVoucherType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Accounting\RejectPettyCashVoucherRequest;
 use App\Http\Requests\Admin\Accounting\StorePettyCashRegisterRequest;
@@ -36,7 +37,7 @@ final class PettyCashController extends Controller
         return Inertia::render('Admin/Accounting/PettyCash/Index', [
             ...$this->pettyCashRegisterService->indexPayload(),
             'registerModes' => PettyCashRegisterMode::values(),
-            'voucherTypes' => \App\Enums\PettyCashVoucherType::values(),
+            'voucherTypes' => PettyCashVoucherType::values(),
         ]);
     }
 

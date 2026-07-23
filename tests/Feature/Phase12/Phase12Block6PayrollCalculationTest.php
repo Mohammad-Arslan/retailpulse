@@ -18,7 +18,6 @@ use App\Models\StatutoryScheme;
 use App\Models\TaxSlab;
 use App\Models\User;
 use App\Services\Payroll\PayrollCalculationService;
-use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Group;
@@ -32,7 +31,9 @@ final class Phase12Block6PayrollCalculationTest extends TestCase
     use SeedsRbac;
 
     private Branch $branch;
+
     private User $admin;
+
     private OrganizationEntity $pkEntity;
 
     protected function setUp(): void
@@ -324,7 +325,7 @@ final class Phase12Block6PayrollCalculationTest extends TestCase
      */
     public function test_formula_calculation_type_fails_validation(): void
     {
-        $request = new StorePayComponentRequest();
+        $request = new StorePayComponentRequest;
         $validator = Validator::make(
             [
                 'code' => 'FORMULA_TEST',
@@ -405,14 +406,14 @@ final class Phase12Block6PayrollCalculationTest extends TestCase
         $counter++;
 
         return Employee::query()->create([
-            'employee_code' => 'EMP' . str_pad((string) $counter, 4, '0', STR_PAD_LEFT),
+            'employee_code' => 'EMP'.str_pad((string) $counter, 4, '0', STR_PAD_LEFT),
             'legal_entity_id' => $legalEntityId,
             'primary_branch_id' => $branchId,
             'salary_structure_id' => $salaryStructureId,
             'hire_date' => '2024-01-01',
             'status' => 'active',
             'first_name' => 'Test',
-            'last_name' => 'Employee ' . $counter,
+            'last_name' => 'Employee '.$counter,
         ]);
     }
 }

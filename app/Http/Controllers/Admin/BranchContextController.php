@@ -8,7 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SwitchBranchRequest;
 use App\Services\BranchContextService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 final class BranchContextController extends Controller
 {

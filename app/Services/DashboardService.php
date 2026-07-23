@@ -18,6 +18,7 @@ use App\Models\StockMovement;
 use App\Models\StockTransfer;
 use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 final class DashboardService
 {
@@ -244,7 +245,7 @@ final class DashboardService
      * @param  Builder<Sale>  $completed
      * @return array{sales: float, gross_profit: float, count: int, atv: float}
      */
-    private function salesMetricsForDate(Builder $completed, \Illuminate\Support\Carbon $date): array
+    private function salesMetricsForDate(Builder $completed, Carbon $date): array
     {
         $dayQuery = (clone $completed)->whereDate('completed_at', $date);
         $sales = (float) (clone $dayQuery)->toBase()->sum('grand_total');

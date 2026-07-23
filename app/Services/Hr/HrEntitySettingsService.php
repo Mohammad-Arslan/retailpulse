@@ -7,7 +7,6 @@ namespace App\Services\Hr;
 use App\Models\HolidayCalendar;
 use App\Models\HrEntitySetting;
 use App\Models\OrganizationEntity;
-use Illuminate\Support\Collection;
 
 final class HrEntitySettingsService
 {

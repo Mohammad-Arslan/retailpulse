@@ -13,6 +13,7 @@ use App\Services\ImportExport\Storage\ImportExportStorageManager;
 use Generator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -46,7 +47,7 @@ final class ProcessExportJob implements ShouldQueue
 
             $generator = function () use ($handler, $context, $query, $job): Generator {
                 $processed = 0;
-                $cursor = $query instanceof \Illuminate\Database\Eloquent\Builder
+                $cursor = $query instanceof Builder
                     ? $query->cursor()
                     : $query;
 

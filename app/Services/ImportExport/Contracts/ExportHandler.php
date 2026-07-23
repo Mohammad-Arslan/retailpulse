@@ -6,6 +6,7 @@ namespace App\Services\ImportExport\Contracts;
 
 use App\Services\ImportExport\ExportContext;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\LazyCollection;
 
 interface ExportHandler
@@ -16,7 +17,7 @@ interface ExportHandler
     public function columns(): array;
 
     /**
-     * @return Builder<\Illuminate\Database\Eloquent\Model>|LazyCollection<int, mixed>
+     * @return Builder<Model>|LazyCollection<int, mixed>
      */
     public function query(ExportContext $context): Builder|LazyCollection;
 

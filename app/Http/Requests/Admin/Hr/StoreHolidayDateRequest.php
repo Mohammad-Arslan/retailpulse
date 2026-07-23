@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Hr;
 
+use App\Models\HolidayCalendar;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,7 @@ final class StoreHolidayDateRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var \App\Models\HolidayCalendar $holidayCalendar */
+        /** @var HolidayCalendar $holidayCalendar */
         $holidayCalendar = $this->route('holiday_calendar');
 
         return [

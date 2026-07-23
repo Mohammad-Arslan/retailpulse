@@ -6,6 +6,7 @@ namespace App\Services\Accounting;
 
 use App\DTOs\Accounting\MatchBankStatementData;
 use App\Enums\BankReconciliationMatchType;
+use App\Enums\JournalEntryStatus;
 use App\Models\BankStatementLine;
 use App\Models\JournalTransaction;
 use App\Repositories\Contracts\BankAccountRepositoryInterface;
@@ -68,7 +69,7 @@ final class BankReconciliationPageService
                 ->select('journal_transactions.*')
                 ->with('journalEntry:id,journal_number,journal_date')
                 ->join('journal_entries', 'journal_entries.id', '=', 'journal_transactions.journal_entry_id')
-                ->where('journal_entries.status', \App\Enums\JournalEntryStatus::Posted)
+                ->where('journal_entries.status', JournalEntryStatus::Posted)
                 ->where('journal_transactions.account_id', $bankAccount->coa_account_id)
                 ->orderByDesc('journal_entries.journal_date')
                 ->limit(100)

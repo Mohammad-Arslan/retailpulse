@@ -11,6 +11,7 @@ use App\Models\CostCentreAllocation;
 use App\Models\JournalEntry;
 use App\Models\JournalTransaction;
 use DomainException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 final class CostCentreAllocationService
@@ -149,7 +150,7 @@ final class CostCentreAllocationService
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, CostCentre>  $centres
+     * @param  Collection<int, CostCentre>  $centres
      * @return list<array{cost_centre_id: int, weight: string}>
      */
     private function driverWeights($centres, string $column): array

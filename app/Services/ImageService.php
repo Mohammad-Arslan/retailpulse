@@ -11,8 +11,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\Laravel\Facades\Image as ImageFacade;
 use Intervention\Image\Interfaces\ImageInterface;
+use Intervention\Image\Laravel\Facades\Image as ImageFacade;
 
 final class ImageService
 {

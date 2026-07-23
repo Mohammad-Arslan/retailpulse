@@ -12,6 +12,7 @@ use App\Models\ExchangeRate;
 use App\Models\FinancialSetting;
 use App\Models\JournalEntry;
 use App\Models\User;
+use App\Services\Accounting\CurrencyConversionService;
 use App\Services\Accounting\FxRevaluationService;
 use App\Services\Accounting\JournalService;
 use Carbon\Carbon;
@@ -250,7 +251,7 @@ final class FxRevaluationServiceTest extends TestCase
             'status' => 'active',
         ]);
 
-        $rate = app(\App\Services\Accounting\CurrencyConversionService::class)
+        $rate = app(CurrencyConversionService::class)
             ->resolveRate('EUR', '2026-01-31');
 
         $this->assertSame(1.05, $rate);

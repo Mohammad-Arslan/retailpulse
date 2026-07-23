@@ -15,6 +15,7 @@ use App\Models\Payslip;
 use App\Models\SalaryStructure;
 use App\Models\SalaryStructureComponent;
 use App\Models\User;
+use App\Services\Payroll\EmployeeSelfServiceService;
 use App\Services\Payroll\PayrollCalculationService;
 use App\Services\Payroll\PayslipService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -128,7 +129,7 @@ final class Phase12Block8PayslipsTest extends TestCase
         $otherItem = $this->seedCalculatedPayrollItem('31000', 'EMP-OTHER');
         $this->payslips->generateForItem($otherItem);
 
-        $service = app(\App\Services\Payroll\EmployeeSelfServiceService::class);
+        $service = app(EmployeeSelfServiceService::class);
         $own = $service->listOwnPayslips($user);
 
         $this->assertCount(1, $own);

@@ -10,7 +10,6 @@ use App\Enums\TaxDirection;
 use App\Models\Branch;
 use App\Models\BranchHrProfile;
 use App\Models\ChartOfAccount;
-use App\Models\Expense;
 use App\Models\ExpenseApprovalPolicy;
 use App\Models\ExpenseCategory;
 use App\Models\JournalEntry;

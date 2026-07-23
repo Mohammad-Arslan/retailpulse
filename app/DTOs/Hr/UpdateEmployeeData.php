@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\DTOs\Hr;
 
 use App\Http\Requests\Admin\Hr\UpdateEmployeeRequest;
+use Illuminate\Http\UploadedFile;
 
 final readonly class UpdateEmployeeData
 {
@@ -16,7 +17,7 @@ final readonly class UpdateEmployeeData
      * @param  list<array<string, mixed>>  $dependents
      * @param  list<array<string, mixed>>  $bankAccounts
      * @param  list<array<string, mixed>>  $branchAssignments
-     * @param  list<array{type: string, images: list<\Illuminate\Http\UploadedFile>, cnic_front: ?\Illuminate\Http\UploadedFile, cnic_back: ?\Illuminate\Http\UploadedFile}>  $imageUploads
+     * @param  list<array{type: string, images: list<UploadedFile>, cnic_front: ?UploadedFile, cnic_back: ?UploadedFile}>  $imageUploads
      * @param  list<int>  $removeImageIds
      */
     public function __construct(

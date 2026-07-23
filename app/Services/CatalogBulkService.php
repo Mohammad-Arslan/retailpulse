@@ -15,6 +15,7 @@ use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\UnitRepositoryInterface;
 use App\Support\TenantImportScope;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -138,7 +139,7 @@ final class CatalogBulkService
     }
 
     /**
-     * @param  \Illuminate\Database\Eloquent\Builder<Model>  $query
+     * @param  Builder<Model>  $query
      */
     private function findScoped($query, ?int $tenantId, int $id): Product|Category|Brand|Unit|null
     {

@@ -7,6 +7,7 @@ namespace App\Policies;
 use App\Models\Branch;
 use App\Models\User;
 use App\Services\BranchContextService;
+
 final class BranchPolicy
 {
     public function __construct(

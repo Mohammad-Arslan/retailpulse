@@ -24,8 +24,8 @@ final class StatutoryResolverService
      * computes annual tax = slab.fixed_amount + marginal_rate% * (annualGross - slab.lower_bound),
      * then prorates back to the period.
      *
-     * @param  string  $periodGross   bcmath string, sum of taxable earnings for the period
-     * @param  int     $periodMonths  number of months this run covers (typically 1)
+     * @param  string  $periodGross  bcmath string, sum of taxable earnings for the period
+     * @param  int  $periodMonths  number of months this run covers (typically 1)
      */
     public function resolveTaxFromSlabs(
         string $periodGross,

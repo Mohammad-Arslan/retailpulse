@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Search;
 
+use App\Models\User;
 use App\Services\Search\SearchManager;
 use App\Support\BranchContext;
 use Illuminate\Http\JsonResponse;
@@ -17,7 +18,7 @@ final class SearchController
             'q' => ['required', 'string', 'max:100'],
         ]);
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $request->user();
 
         return response()->json(

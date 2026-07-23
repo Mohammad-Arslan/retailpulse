@@ -11,6 +11,7 @@ use App\Enums\ProductType;
 use App\Enums\SaleStatus;
 use App\Events\SaleCompleted;
 use App\Listeners\Accounting\ProcessAccountingOnSaleCompleted;
+use App\Models\AccountingEvent;
 use App\Models\Branch;
 use App\Models\ChartOfAccount;
 use App\Models\InventoryCostLayer;
@@ -264,7 +265,7 @@ final class CostServiceTest extends TestCase
         $layer->refresh();
         $this->assertSame(6.0, (float) $layer->qty_remaining);
         $this->assertSame(1, JournalEntry::query()->where('source_event', 'sale.completed')->count());
-        $this->assertSame(1, \App\Models\AccountingEvent::query()
+        $this->assertSame(1, AccountingEvent::query()
             ->where('event_type', 'sale.completed')
             ->where('source_id', $sale->id)
             ->count());

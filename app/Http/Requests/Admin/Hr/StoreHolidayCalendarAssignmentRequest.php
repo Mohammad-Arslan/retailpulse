@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Hr;
 
+use App\Models\Branch;
+use App\Models\Employee;
+use App\Models\OrganizationEntity;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -44,9 +47,9 @@ final class StoreHolidayCalendarAssignmentRequest extends FormRequest
         $data = parent::validated($key, $default);
 
         $data['assignable_type'] = match ($data['assignable_type']) {
-            'employee' => \App\Models\Employee::class,
-            'branch' => \App\Models\Branch::class,
-            'legal_entity' => \App\Models\OrganizationEntity::class,
+            'employee' => Employee::class,
+            'branch' => Branch::class,
+            'legal_entity' => OrganizationEntity::class,
             default => $data['assignable_type'],
         };
 

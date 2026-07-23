@@ -7,6 +7,8 @@ namespace App\Services\Search\Support;
 use App\Models\User;
 use App\Services\Search\Contracts\SearchProvider;
 use App\Support\BranchContext;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 abstract class AbstractSearchProvider implements SearchProvider
 {
@@ -40,8 +42,8 @@ abstract class AbstractSearchProvider implements SearchProvider
     /**
      * Scope a query to the active branch or the user's accessible branches.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<\Illuminate\Database\Eloquent\Model>  $builder
-     * @return \Illuminate\Database\Eloquent\Builder<\Illuminate\Database\Eloquent\Model>
+     * @param  Builder<Model>  $builder
+     * @return Builder<Model>
      */
     protected function scopeBranch($builder, BranchContext $context, string $column = 'branch_id')
     {

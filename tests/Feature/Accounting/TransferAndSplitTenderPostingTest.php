@@ -21,6 +21,7 @@ use App\Models\Branch;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\JournalTransaction;
+use App\Models\PostingRuleSet;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Sale;
@@ -31,6 +32,8 @@ use App\Models\StockTransferItem;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\Accounting\CostService;
+use App\Services\Accounting\FinancialSettingsService;
 use App\Services\Accounting\PostingRuleEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\SeedsAccounting;
@@ -114,7 +117,7 @@ final class TransferAndSplitTenderPostingTest extends TestCase
             'is_default' => true,
         ]);
 
-        app(\App\Services\Accounting\CostService::class)->createLayerOnReceive(
+        app(CostService::class)->createLayerOnReceive(
             productVariantId: $variant->id,
             warehouseId: $from->id,
             qtyReceived: 10,
@@ -192,7 +195,7 @@ final class TransferAndSplitTenderPostingTest extends TestCase
             'is_default' => true,
         ]);
 
-        app(\App\Services\Accounting\FinancialSettingsService::class)->get()
+        app(FinancialSettingsService::class)->get()
             ->update(['negative_inventory_policy' => 'allow']);
 
         $cashier = User::factory()->create(['is_active' => true]);
@@ -308,7 +311,7 @@ final class TransferAndSplitTenderPostingTest extends TestCase
             'status' => 'active',
         ]);
 
-        $ruleSet = \App\Models\PostingRuleSet::query()->create([
+        $ruleSet = PostingRuleSet::query()->create([
             'code' => 'TEST-TRANSFER-SCOPE',
             'name' => 'Transfer Scope',
             'event_type' => 'test.transfer.scope',

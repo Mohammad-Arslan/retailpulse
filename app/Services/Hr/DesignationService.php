@@ -14,6 +14,7 @@ use App\Services\Hr\Concerns\GeneratesHrMasterCodes;
 use App\Support\DesignationPresenter;
 use App\Support\GradePresenter;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 final class DesignationService
@@ -40,7 +41,7 @@ final class DesignationService
      * @return array{
      *     designations: LengthAwarePaginator,
      *     filters: array<string, mixed>,
-     *     legalEntities: \Illuminate\Support\Collection,
+     *     legalEntities: Collection,
      *     grades: list<array{id: int, code: string, name: string}>,
      *     nextCode: string
      * }

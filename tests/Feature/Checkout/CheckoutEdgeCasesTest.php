@@ -7,11 +7,13 @@ namespace Tests\Feature\Checkout;
 use App\Enums\FbrInvoiceStatus;
 use App\Enums\PosCartStatus;
 use App\Enums\ProductType;
+use App\Enums\SaleStatus;
+use App\Enums\TaxMode;
 use App\Jobs\SubmitFbrInvoiceJob;
 use App\Models\Branch;
 use App\Models\Customer;
-use App\Models\FbrInvoiceQueue;
 use App\Models\Inventory;
+use App\Models\InventoryMovement;
 use App\Models\PosCart;
 use App\Models\PosCartItem;
 use App\Models\Product;
@@ -24,6 +26,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use Tests\Concerns\SeedsRbac;
 use Tests\TestCase;
 
@@ -278,7 +281,7 @@ final class CheckoutEdgeCasesTest extends TestCase
         $owner->assignRole('owner');
         $owner->branches()->attach($this->branch->id);
 
-        $initialMovements = \App\Models\InventoryMovement::query()->count();
+        $initialMovements = InventoryMovement::query()->count();
 
         $payload = [
             'sales' => [
@@ -324,7 +327,7 @@ final class CheckoutEdgeCasesTest extends TestCase
         ]);
 
         // No inventory movements should have been posted
-        $this->assertSame($initialMovements, \App\Models\InventoryMovement::query()->count());
+        $this->assertSame($initialMovements, InventoryMovement::query()->count());
     }
 
     public function test_historical_import_rejects_future_sale_date(): void
@@ -365,14 +368,14 @@ final class CheckoutEdgeCasesTest extends TestCase
         $sale = Sale::query()->create([
             'branch_id' => $this->branch->id,
             'cashier_id' => $owner->id,
-            'status' => \App\Enums\SaleStatus::Completed,
+            'status' => SaleStatus::Completed,
             'subtotal' => 100,
             'total_discount' => 0,
             'tax_total' => 0,
             'grand_total' => 100,
             'balance_due' => 0,
             'currency' => 'PKR',
-            'tax_mode' => \App\Enums\TaxMode::Exclusive,
+            'tax_mode' => TaxMode::Exclusive,
             'is_historical' => true,
             'completed_at' => now()->subDay(),
         ]);
@@ -381,7 +384,7 @@ final class CheckoutEdgeCasesTest extends TestCase
             'sale_id' => $sale->id,
             'number' => 'DUP-001',
             'template' => 'a4',
-            'public_token' => (string) \Illuminate\Support\Str::uuid(),
+            'public_token' => (string) Str::uuid(),
             'fbr_status' => FbrInvoiceStatus::NotApplicable,
         ]);
 

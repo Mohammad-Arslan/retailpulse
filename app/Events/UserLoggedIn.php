@@ -70,7 +70,7 @@ final class UserLoggedIn implements ShouldBroadcastNow
     }
 
     /**
-     * @return array<int, \Illuminate\Broadcasting\PrivateChannel>
+     * @return array<int, PrivateChannel>
      */
     public function broadcastOn(): array
     {

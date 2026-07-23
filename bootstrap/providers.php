@@ -1,10 +1,17 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\DashboardServiceProvider;
+use App\Providers\HorizonServiceProvider;
+use App\Providers\ImportExportServiceProvider;
+use App\Providers\NavigationServiceProvider;
+use App\Providers\SearchServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\DashboardServiceProvider::class,
-    App\Providers\HorizonServiceProvider::class,
-    App\Providers\ImportExportServiceProvider::class,
-    App\Providers\NavigationServiceProvider::class,
-    App\Providers\SearchServiceProvider::class,
+    AppServiceProvider::class,
+    DashboardServiceProvider::class,
+    HorizonServiceProvider::class,
+    ImportExportServiceProvider::class,
+    NavigationServiceProvider::class,
+    SearchServiceProvider::class,
 ];

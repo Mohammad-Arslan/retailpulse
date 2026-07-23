@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Accounting;
 
+use App\DTOs\Accounting\CreateFixedAssetData;
 use App\Enums\FixedAssetStatus;
 use App\Models\AccountingEvent;
+use App\Models\AccountMapping;
 use App\Models\AssetCategory;
 use App\Models\Branch;
 use App\Models\ChartOfAccount;
@@ -14,6 +16,7 @@ use App\Models\JournalEntry;
 use App\Models\User;
 use App\Services\Accounting\AssetDepreciationService;
 use App\Services\Accounting\AssetDisposalService;
+use App\Services\Accounting\FixedAssetService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\SeedsAccounting;
@@ -83,8 +86,8 @@ final class FixedAssetsTest extends TestCase
         $category = AssetCategory::query()->firstOrFail();
         $branchId = $this->asset->branch_id;
 
-        $asset = app(\App\Services\Accounting\FixedAssetService::class)->create(
-            new \App\DTOs\Accounting\CreateFixedAssetData(
+        $asset = app(FixedAssetService::class)->create(
+            new CreateFixedAssetData(
                 assetCode: 'FA-NEW-100',
                 name: 'Scanner',
                 categoryId: $category->id,
@@ -112,7 +115,7 @@ final class FixedAssetsTest extends TestCase
         );
 
         $assetAccountId = (int) $asset->asset_account_id;
-        $payableAccountId = (int) \App\Models\AccountMapping::query()
+        $payableAccountId = (int) AccountMapping::query()
             ->where('mapping_key', 'accounts_payable')
             ->value('account_id');
 

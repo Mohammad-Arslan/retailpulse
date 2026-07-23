@@ -7,7 +7,6 @@ namespace App\Services\Attendance;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceSource;
 use App\Models\Employee;
-use App\Models\User;
 use App\Services\Attendance\Contracts\AttendanceSourceProvider;
 use App\Services\PosPinService;
 use Carbon\CarbonImmutable;

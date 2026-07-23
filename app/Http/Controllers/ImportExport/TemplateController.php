@@ -8,8 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Services\ImportExport\ImportExportRegistry;
 use App\Support\ImportExportAuthorization;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Rap2hpoutre\FastExcel\FastExcel;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class TemplateController extends Controller
@@ -37,7 +37,7 @@ final class TemplateController extends Controller
         $headers = collect($columns)->pluck('key')->all();
         $row = array_fill_keys($headers, '');
 
-        return response()->streamDownload(function () use ($row, $headers) {
+        return response()->streamDownload(function () use ($headers) {
             $tmp = tempnam(sys_get_temp_dir(), 'template_').'.xlsx';
             (new FastExcel([array_combine($headers, array_fill(0, count($headers), ''))]))->export($tmp);
             readfile($tmp);

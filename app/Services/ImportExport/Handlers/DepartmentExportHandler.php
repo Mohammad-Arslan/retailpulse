@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ImportExport\Handlers;
 
 use App\Models\Department;
+use App\Services\Hr\DepartmentService;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,7 +14,7 @@ final class DepartmentExportHandler implements ExportHandler
 {
     public function columns(): array
     {
-        return (new DepartmentImportHandler(app(\App\Services\Hr\DepartmentService::class)))->columns();
+        return (new DepartmentImportHandler(app(DepartmentService::class)))->columns();
     }
 
     public function query(ExportContext $context): Builder
