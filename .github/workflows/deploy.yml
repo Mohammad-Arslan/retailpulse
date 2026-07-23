@@ -27,11 +27,13 @@ jobs:
             cd /var/www/retailpulse
             git pull origin main
             bash setup.sh production --rebuild
-            # entrypoint.sh already runs these on container (re)start, but
-            # --rebuild always forces a new app image, so this is a visible
-            # explicit step/safety-net rather than something strictly new.
-            docker compose exec -T app php artisan migrate --force
-            docker compose exec -T app php artisan db:seed --force
+            # Do NOT add explicit migrate/db:seed steps here: entrypoint.sh
+            # already runs both on every container (re)start, and --rebuild
+            # always forces one. Running db:seed a second time in the same
+            # deploy hits a duplicate-key error on role_has_permissions
+            # (RoleSeeder::syncPermissions against already-seeded, Redis-
+            # cached role/permission state) -- confirmed by hitting exactly
+            # that failure when this was added, then removed, 2026-07-23.
             docker compose exec -T app php artisan config:cache
             docker compose exec -T app php artisan route:cache
             docker compose exec -T app php artisan view:cache
