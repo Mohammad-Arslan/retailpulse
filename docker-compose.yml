@@ -50,9 +50,9 @@ services:
       CHOKIDAR_USEPOLLING: "true"
       VITE_USE_POLLING: "true"
     ports:
-      - "${APP_HOST_PORT:-8000}:8000"
-      - "${REVERB_HOST_PORT:-8080}:8080"
-      - "${VITE_HOST_PORT:-5173}:5173"
+      - "127.0.0.1:${APP_HOST_PORT:-8000}:8000"
+      - "127.0.0.1:${REVERB_HOST_PORT:-8080}:8080"
+      - "127.0.0.1:${VITE_HOST_PORT:-5173}:5173"
     healthcheck:
       test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 8000) ? 0 : 1);"]
       interval: 10s
@@ -90,7 +90,7 @@ services:
     volumes:
       - retailpulse_mysql:/var/lib/mysql
     ports:
-      - "${MYSQL_HOST_PORT:-3306}:3306"
+      - "127.0.0.1:${MYSQL_HOST_PORT:-3306}:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 5s
@@ -111,7 +111,7 @@ services:
       UPLOAD_LIMIT: 64M
       MEMORY_LIMIT: 512M
     ports:
-      - "${PHPMYADMIN_HOST_PORT:-8081}:80"
+      - "127.0.0.1:${PHPMYADMIN_HOST_PORT:-8081}:80"
     depends_on:
       mysql:
         condition: service_healthy
@@ -126,7 +126,7 @@ services:
     volumes:
       - retailpulse_redis:/data
     ports:
-      - "${REDIS_HOST_PORT:-6379}:6379"
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -141,8 +141,8 @@ services:
     container_name: retailpulse-mailpit
     image: axllent/mailpit:latest
     ports:
-      - "${MAILPIT_SMTP_HOST_PORT:-1025}:1025"
-      - "${MAILPIT_UI_HOST_PORT:-8025}:8025"
+      - "127.0.0.1:${MAILPIT_SMTP_HOST_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_HOST_PORT:-8025}:8025"
     networks:
       - retailpulse
     restart: unless-stopped
@@ -157,8 +157,10 @@ services:
     volumes:
       - retailpulse_minio:/data
     ports:
+      # API port is intentionally public (0.0.0.0) — serves anonymous-download
+      # product/media images directly; see docs/deployment-guidelines.md §8.2.
       - "${MINIO_API_HOST_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_HOST_PORT:-9001}:9001"
+      - "127.0.0.1:${MINIO_CONSOLE_HOST_PORT:-9001}:9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
