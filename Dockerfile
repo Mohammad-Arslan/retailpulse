@@ -126,7 +126,16 @@ ENV APP_ENV=production
 # a newer laravel/framework than composer.lock specifies, whose new built-in
 # `Illuminate\Image` component collides with intervention/image-laravel's
 # container binding and broke every image/attachment upload in production.)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
+#
+# --ignore-platform-reqs matches the `vendor` stage and CI exactly: composer.lock
+# pins symfony/psr-http-message-bridge to a version requiring PHP >=8.4.1, but this
+# project runs PHP 8.3 everywhere (composer.json's own "php": "^8.3", this image,
+# Laragon locally) — a pre-existing, deliberately-deferred gap (see
+# docs/deployment-guidelines.md's Document history, 2026-07-23 entry), not
+# something to fix as a side effect of a Dockerfile cleanup. This flag skips
+# the version CHECK only — it does not change which package versions get
+# installed; those still come straight from the lock file.
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --ignore-platform-reqs \
     && cp .env.example .env \
     && php artisan key:generate --force --no-interaction \
     && php artisan octane:install --server=frankenphp --no-interaction \
