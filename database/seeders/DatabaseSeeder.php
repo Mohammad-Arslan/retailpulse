@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             PostingRulesSeeder::class,
             FiscalYearSeeder::class,
             FinancialSettingsSeeder::class,
+            FileStorageSettingsSeeder::class,
             CurrenciesSeeder::class,
             GradeSeeder::class,
             HrEmploymentTypeSeeder::class,
