@@ -33,7 +33,14 @@ jobs:
           restore-keys: composer-
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+        # --ignore-platform-reqs matches Dockerfile's vendor stage exactly.
+        # composer.lock pins symfony/psr-http-message-bridge v8.1.0, which
+        # declares a PHP >=8.4.1 requirement even though this project runs
+        # PHP 8.3 everywhere (Dockerfile, Laragon, this workflow) -- a
+        # pre-existing lock-file/PHP-version mismatch, flagged but not fixed
+        # here since changing it would touch an already-deployed dependency
+        # version. See docs/deployment-guidelines.md changelog.
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: Run Pint
         run: ./vendor/bin/pint --test
@@ -77,7 +84,14 @@ jobs:
           restore-keys: composer-
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+        # --ignore-platform-reqs matches Dockerfile's vendor stage exactly.
+        # composer.lock pins symfony/psr-http-message-bridge v8.1.0, which
+        # declares a PHP >=8.4.1 requirement even though this project runs
+        # PHP 8.3 everywhere (Dockerfile, Laragon, this workflow) -- a
+        # pre-existing lock-file/PHP-version mismatch, flagged but not fixed
+        # here since changing it would touch an already-deployed dependency
+        # version. See docs/deployment-guidelines.md changelog.
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: Setup Node
         uses: actions/setup-node@v4
