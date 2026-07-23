@@ -258,7 +258,11 @@ MINIO_CONSOLE_HOST_PORT="$(resolve_host_port MINIO_CONSOLE_HOST_PORT 9001)"
 PHPMYADMIN_HOST_PORT="$(resolve_host_port PHPMYADMIN_HOST_PORT 8081)"
 
 # Keep browser-facing settings aligned with published ports.
-set_env_key "APP_URL" "http://localhost:${APP_HOST_PORT}"
+# APP_URL is dev-convenience only — production sets its own real domain/scheme in .env
+# and must not have it overwritten to localhost on every run.
+if [[ "${MODE}" == "local" ]]; then
+  set_env_key "APP_URL" "http://localhost:${APP_HOST_PORT}"
+fi
 set_env_key "REVERB_CLIENT_PORT" "${REVERB_HOST_PORT}"
 set_env_key "VITE_HOST_PORT" "${VITE_HOST_PORT}"
 # Keep DB_PORT as the in-container MySQL port (compose overrides host→mysql).

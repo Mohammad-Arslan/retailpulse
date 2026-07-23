@@ -523,3 +523,4 @@ This runbook is the **practical Contabo path** for the Docker Compose topology c
 | Date | Change |
 | :--- | :--- |
 | 2026-07-23 | Initial Contabo VPS + Docker production deployment guidelines |
+| 2026-07-23 | Fixed `setup.sh` gap: `APP_URL` was being unconditionally reset to `http://localhost:<APP_HOST_PORT>` on every run (including `production`), overwriting the real domain/scheme set per §6.1. Now only auto-set in `local` mode. |
