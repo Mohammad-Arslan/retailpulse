@@ -280,7 +280,12 @@ PHPMYADMIN_HOST_PORT="$(resolve_host_port PHPMYADMIN_HOST_PORT 8081)"
 if [[ "${MODE}" == "local" ]]; then
   set_env_key "APP_URL" "http://localhost:${APP_HOST_PORT}"
 fi
-set_env_key "REVERB_CLIENT_PORT" "${REVERB_HOST_PORT}"
+# Same class of gap as APP_URL above: local dev wants REVERB_CLIENT_PORT tied
+# to the published host port, but production sets its own (e.g. 80/443 when
+# Reverb is reverse-proxied) and must not have it overwritten on every run.
+if [[ "${MODE}" == "local" ]]; then
+  set_env_key "REVERB_CLIENT_PORT" "${REVERB_HOST_PORT}"
+fi
 set_env_key "VITE_HOST_PORT" "${VITE_HOST_PORT}"
 # Keep DB_PORT as the in-container MySQL port (compose overrides host→mysql).
 # Host tools use MYSQL_HOST_PORT for the published mapping.
@@ -288,9 +293,14 @@ set_env_key "DB_PORT" "3306"
 set_env_key "REDIS_PORT" "${REDIS_HOST_PORT}"
 set_env_key "MAIL_PORT" "${MAILPIT_SMTP_HOST_PORT}"
 set_env_key "MINIO_ENDPOINT" "http://127.0.0.1:${MINIO_API_HOST_PORT}"
-set_env_key "MINIO_URL" "http://localhost:${MINIO_API_HOST_PORT}/$(get_env_key MINIO_BUCKET retailpulse)"
 set_env_key "AWS_ENDPOINT" "http://127.0.0.1:${MINIO_API_HOST_PORT}"
-set_env_key "AWS_URL" "http://localhost:${MINIO_API_HOST_PORT}/$(get_env_key MINIO_BUCKET retailpulse)"
+# Same class of gap as APP_URL/REVERB_CLIENT_PORT above: MINIO_URL/AWS_URL are
+# the browser-facing media URLs, which production points at its own real
+# host/scheme and must not have overwritten to localhost on every run.
+if [[ "${MODE}" == "local" ]]; then
+  set_env_key "MINIO_URL" "http://localhost:${MINIO_API_HOST_PORT}/$(get_env_key MINIO_BUCKET retailpulse)"
+  set_env_key "AWS_URL" "http://localhost:${MINIO_API_HOST_PORT}/$(get_env_key MINIO_BUCKET retailpulse)"
+fi
 
 # Ensure Sanctum allows the remapped app + Vite origins.
 SANCTUM_DOMAINS="$(get_env_key SANCTUM_STATEFUL_DOMAINS "localhost,127.0.0.1")"
