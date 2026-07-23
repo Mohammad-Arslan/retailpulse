@@ -362,7 +362,7 @@ Cross-reference: Phase 12's `P12-08` Enterprise HRMS expansion and any future br
 
 ## Pre-existing test failures surfaced by first CI run (2026-07-23)
 
-**Not new regressions.** `.github/workflows/ci.yml` (added 2026-07-23) is the first time this project's full test suite has run in CI — per `.ai/rules/testing.mdc`, agents don't run `composer test`/`php artisan test` unless explicitly asked, so this backlog accumulated silently. Confirmed identical locally (`php artisan test`, same 48 failures) — not a CI-environment artifact. The `test` job is currently `continue-on-error: true` specifically because of this backlog (see that workflow file); flip it back to blocking once these are worked down. 457 tests total, 409 passing (89.5%).
+**Not new regressions.** `.github/workflows/ci.yml` (added 2026-07-23) is the first time this project's full test suite has run in CI — per `.ai/rules/testing.mdc`, agents don't run `composer test`/`php artisan test` unless explicitly asked, so this backlog accumulated silently. Confirmed identical locally (`php artisan test`, same 48 failures) — not a CI-environment artifact. The `test` job is currently disabled (`if: false`) specifically because of this backlog (see that workflow file); re-enable once these are worked down. 457 tests total, 409 passing (89.5%).
 
 | Test | Failure |
 | :--- | :--- |
