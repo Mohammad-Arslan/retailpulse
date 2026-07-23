@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Storage\FileStorageDiskRegistrar;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -59,6 +60,8 @@ class Image extends Model
         if ($path === null || $path === '') {
             return null;
         }
+
+        app(FileStorageDiskRegistrar::class)->ensureRegistered($this->disk);
 
         $disk = Storage::disk($this->disk);
 

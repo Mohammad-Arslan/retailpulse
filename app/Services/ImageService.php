@@ -6,10 +6,10 @@ namespace App\Services;
 
 use App\Models\Image;
 use App\Repositories\Contracts\ImageRepositoryInterface;
+use App\Services\Storage\FileStorageDiskRegistrar;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Interfaces\ImageInterface;
 use Intervention\Image\Laravel\Facades\Image as ImageFacade;
@@ -18,6 +18,7 @@ final class ImageService
 {
     public function __construct(
         private readonly ImageRepositoryInterface $images,
+        private readonly FileStorageDiskRegistrar $storage,
     ) {}
 
     /**
@@ -125,7 +126,7 @@ final class ImageService
         bool $isPrimary,
         ?string $alt = null,
     ): Image {
-        $disk = (string) config('media.disk', 'public');
+        $disk = $this->storage->diskNameFor('media');
         $directory = $this->directoryFor($model);
         $basename = Str::ulid()->toString();
 
@@ -140,14 +141,14 @@ final class ImageService
         $thumbPath = "{$directory}/{$basename}_thumb.{$extension}";
 
         $encodedMain = $this->encode($mainImage, $extension);
-        Storage::disk($disk)->put($mainPath, $encodedMain);
+        $this->storage->resolve($disk)->put($mainPath, $encodedMain);
 
         $thumbnail = ImageFacade::decodePath($file->getRealPath());
         $thumbnail->cover(
             (int) config('media.thumbnail_width', 300),
             (int) config('media.thumbnail_height', 300),
         );
-        Storage::disk($disk)->put($thumbPath, $this->encode($thumbnail, $extension));
+        $this->storage->resolve($disk)->put($thumbPath, $this->encode($thumbnail, $extension));
 
         if ($isPrimary) {
             $this->images->clearPrimaryForModel($model);
@@ -203,7 +204,7 @@ final class ImageService
 
     private function deleteFiles(Image $image): void
     {
-        $disk = Storage::disk($image->disk);
+        $disk = $this->storage->resolve($image->disk);
 
         if ($image->path !== '') {
             $disk->delete($image->path);

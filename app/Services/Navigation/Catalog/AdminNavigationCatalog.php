@@ -513,7 +513,7 @@ final class AdminNavigationCatalog
                     'settings.general.update',
                     'settings.company.update',
                     'settings.notifications.update',
-                    'settings.import-export.update',
+                    'settings.file-storage.update',
                 ],
                 'routePattern' => 'admin.settings.*',
                 'keywords' => ['configuration', 'preferences', 'global'],

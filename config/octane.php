@@ -1,5 +1,7 @@
 <?php
 
+use App\Services\ImportExport\Storage\ImportExportStorageManager;
+use App\Services\Storage\FileStorageDiskRegistrar;
 use Laravel\Octane\Contracts\OperationTerminated;
 use Laravel\Octane\Events\RequestHandled;
 use Laravel\Octane\Events\RequestReceived;
@@ -135,7 +137,8 @@ return [
     ],
 
     'flush' => [
-        //
+        FileStorageDiskRegistrar::class,
+        ImportExportStorageManager::class,
     ],
 
     /*

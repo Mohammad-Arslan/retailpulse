@@ -434,11 +434,11 @@ return [
             ],
         ],
 
-        'import_export' => [
-            'label' => 'Import / export storage',
-            'description' => 'File storage backend for spreadsheet imports, exports, and error reports.',
+        'file_storage' => [
+            'label' => 'File Storage',
+            'description' => 'Shared storage backend for all uploaded files: product/employee images, supplier and expense attachments, and import/export spreadsheets.',
             'icon' => 'database',
-            'permission' => 'settings.import-export.update',
+            'permission' => 'settings.file-storage.update',
             'test_connection' => true,
             'fields' => [
                 'disk' => [
@@ -453,11 +453,35 @@ return [
                     ],
                     'rules' => ['required', 'in:local,s3,minio,sftp'],
                 ],
-                'local_root' => [
+                'import_export_local_root' => [
                     'type' => 'string',
-                    'label' => 'Local root folder',
+                    'label' => 'Import/export local root folder',
                     'default' => 'import_exports',
                     'rules' => ['required_if:values.disk,local', 'nullable', 'string', 'max:128'],
+                ],
+                'import_export_prefix' => [
+                    'type' => 'string',
+                    'label' => 'Import/export remote path prefix',
+                    'default' => 'import_exports',
+                    'rules' => ['nullable', 'string', 'max:128'],
+                ],
+                'media_prefix' => [
+                    'type' => 'string',
+                    'label' => 'Images remote path prefix',
+                    'default' => 'media',
+                    'rules' => ['nullable', 'string', 'max:128'],
+                ],
+                'supplier_attachments_prefix' => [
+                    'type' => 'string',
+                    'label' => 'Supplier attachments remote path prefix',
+                    'default' => 'supplier-attachments',
+                    'rules' => ['nullable', 'string', 'max:128'],
+                ],
+                'expense_attachments_prefix' => [
+                    'type' => 'string',
+                    'label' => 'Expense attachments remote path prefix',
+                    'default' => 'expense-attachments',
+                    'rules' => ['nullable', 'string', 'max:128'],
                 ],
                 's3_bucket' => [
                     'type' => 'string',

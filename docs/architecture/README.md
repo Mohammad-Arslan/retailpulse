@@ -64,6 +64,7 @@ So any ADR can be read the same way regardless of topic:
 | [ADR-016](./adr-016-reporting-bi.md) | Reporting & Business Intelligence | Operational vs. analytical reporting, data mart, Power BI/Tableau, predictive analytics |
 | [ADR-017](./adr-017-ai-architecture.md) | AI Architecture | AI assistants, prompt strategy, AI permissions/safety, extensibility, future Copilot |
 | [ADR-018](./adr-018-deployment.md) | Deployment | Environments, shared vs. dedicated topology, CI/CD, DR/RTO/RPO |
+| [ADR-019](./adr-019-shared-file-storage.md) | Shared File Storage | One admin-configurable storage backend for images/attachments/import-export, per-row disk permanence, Octane `flush` rule |
 
 [**Glossary**](./glossary.md) — definitions for terminology used consistently across the SRS, phase docs, ADRs, and code.
 

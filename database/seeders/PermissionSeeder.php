@@ -90,7 +90,7 @@ final class PermissionSeeder extends Seeder
             ['name' => 'settings.general.update', 'description' => 'Update general settings'],
             ['name' => 'settings.company.update', 'description' => 'Update company profile settings'],
             ['name' => 'settings.notifications.update', 'description' => 'Update notification settings'],
-            ['name' => 'settings.import-export.update', 'description' => 'Update import/export storage settings'],
+            ['name' => 'settings.file-storage.update', 'description' => 'Update shared file storage settings (images, attachments, import/export)'],
             ['name' => 'settings.tax.update', 'description' => 'Update tax calculation settings'],
             ['name' => 'settings.checkout.update', 'description' => 'Update checkout, payment, and invoice settings'],
             ['name' => 'settings.fbr.update', 'description' => 'Update FBR IRIS integration settings'],

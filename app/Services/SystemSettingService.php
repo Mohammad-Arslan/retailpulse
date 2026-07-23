@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Repositories\Contracts\SystemSettingRepositoryInterface;
 use App\Services\ImportExport\Storage\ImportExportStorageManager;
 use App\Services\ImportExport\Storage\StorageConnectionTester;
+use App\Services\Storage\FileStorageDiskRegistrar;
 use App\Support\Settings\SettingFieldType;
 use App\Support\Settings\SettingGroupRegistry;
 use Illuminate\Support\Facades\DB;
@@ -124,6 +125,10 @@ final class SystemSettingService
 
         if ($group === 'general') {
             $this->validateLocaleSettings($data->values);
+        }
+
+        if ($group === FileStorageDiskRegistrar::GROUP) {
+            app()->forgetInstance(FileStorageDiskRegistrar::class);
         }
 
         if (SettingGroupRegistry::testsConnection($group)) {

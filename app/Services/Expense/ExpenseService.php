@@ -10,6 +10,7 @@ use App\Models\ExpenseCategory;
 use App\Services\Accounting\AccountingEventService;
 use App\Services\Accounting\CurrencyConversionService;
 use App\Services\Accounting\DocumentNumberService;
+use App\Services\Storage\FileStorageDiskRegistrar;
 use DomainException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ final class ExpenseService
         private readonly ExpenseApprovalPolicyResolver $approvalPolicies,
         private readonly AccountingEventService $accountingEvents,
         private readonly CurrencyConversionService $currencyConversion,
+        private readonly FileStorageDiskRegistrar $storage,
     ) {}
 
     /**
@@ -113,7 +115,7 @@ final class ExpenseService
 
     public function attachReceipt(Expense $expense, UploadedFile $file, int $userId): ExpenseAttachment
     {
-        $disk = (string) config('expenses.attachments_disk', 'local');
+        $disk = $this->storage->diskNameFor('expense_attachments');
         $path = $file->store("expenses/{$expense->id}", $disk);
 
         return $expense->attachments()->create([

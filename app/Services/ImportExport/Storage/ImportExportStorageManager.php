@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ImportExport\Storage;
 
 use App\Models\SystemSetting;
+use App\Services\Storage\FileStorageDiskRegistrar;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -15,9 +16,10 @@ final class ImportExportStorageManager
 {
     private string $diskName;
 
-    public function __construct()
-    {
-        $this->diskName = (string) SystemSetting::get('import_export', 'disk', 'local');
+    public function __construct(
+        private readonly FileStorageDiskRegistrar $storage,
+    ) {
+        $this->diskName = $this->storage->diskType();
         config(['filesystems.disks.import_export' => $this->buildDiskConfig($this->diskName)]);
     }
 
@@ -71,7 +73,7 @@ final class ImportExportStorageManager
             throw new \InvalidArgumentException("Cannot generate a download URL; file not found: {$path}");
         }
 
-        $ttl ??= (int) SystemSetting::get('import_export', 'signed_url_ttl', 30);
+        $ttl ??= (int) SystemSetting::get(FileStorageDiskRegistrar::GROUP, 'signed_url_ttl', 30);
 
         if ($this->diskName === 'local') {
             return url()->temporarySignedRoute(
@@ -123,12 +125,13 @@ final class ImportExportStorageManager
      */
     private function buildDiskConfig(string $disk): array
     {
-        return match ($disk) {
-            's3' => $this->s3Config(),
-            'minio' => $this->minioConfig(),
-            'sftp' => $this->sftpConfig(),
-            default => $this->localConfig(),
-        };
+        if ($disk === 'local') {
+            return $this->localConfig();
+        }
+
+        $prefix = (string) SystemSetting::get(FileStorageDiskRegistrar::GROUP, 'import_export_prefix', 'import_exports');
+
+        return $this->storage->remoteDiskConfig($prefix);
     }
 
     /**
@@ -136,72 +139,13 @@ final class ImportExportStorageManager
      */
     private function localConfig(): array
     {
-        $root = (string) SystemSetting::get('import_export', 'local_root', 'import_exports');
+        $root = (string) SystemSetting::get(FileStorageDiskRegistrar::GROUP, 'import_export_local_root', 'import_exports');
 
         return [
             'driver' => 'local',
             'root' => storage_path('app/'.$root),
             'throw' => true,
         ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function s3Config(): array
-    {
-        return [
-            'driver' => 's3',
-            'key' => (string) SystemSetting::get('import_export', 's3_key', ''),
-            'secret' => SystemSetting::getEncrypted('import_export', 's3_secret') ?? '',
-            'region' => (string) SystemSetting::get('import_export', 's3_region', 'us-east-1'),
-            'bucket' => (string) SystemSetting::get('import_export', 's3_bucket', ''),
-            'url' => (string) SystemSetting::get('import_export', 's3_url', ''),
-            'throw' => true,
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function minioConfig(): array
-    {
-        return [
-            'driver' => 's3',
-            'key' => (string) SystemSetting::get('import_export', 'minio_key', ''),
-            'secret' => SystemSetting::getEncrypted('import_export', 'minio_secret') ?? '',
-            'region' => (string) SystemSetting::get('import_export', 's3_region', 'us-east-1'),
-            'bucket' => (string) SystemSetting::get('import_export', 'minio_bucket', ''),
-            'endpoint' => (string) SystemSetting::get('import_export', 'minio_endpoint', ''),
-            'use_path_style_endpoint' => true,
-            'use_ssl' => (bool) SystemSetting::get('import_export', 'minio_use_ssl', true),
-            'throw' => true,
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function sftpConfig(): array
-    {
-        $config = [
-            'driver' => 'sftp',
-            'host' => (string) SystemSetting::get('import_export', 'sftp_host', ''),
-            'username' => (string) SystemSetting::get('import_export', 'sftp_user', ''),
-            'root' => (string) SystemSetting::get('import_export', 'sftp_root', '/imports'),
-            'throw' => true,
-        ];
-
-        $keyPath = (string) SystemSetting::get('import_export', 'sftp_key_path', '');
-        $password = SystemSetting::getEncrypted('import_export', 'sftp_pass');
-
-        if ($keyPath !== '') {
-            $config['privateKey'] = $keyPath;
-        } elseif ($password !== null && $password !== '') {
-            $config['password'] = $password;
-        }
-
-        return $config;
     }
 
     private function disk(): string

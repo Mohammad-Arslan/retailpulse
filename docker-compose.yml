@@ -35,7 +35,6 @@ services:
       MAIL_USERNAME: null
       MAIL_PASSWORD: null
       MAIL_SCHEME: null
-      MEDIA_DISK: minio
       MINIO_ENDPOINT: http://minio:9000
       MINIO_URL: ${MINIO_URL:-http://localhost:${MINIO_API_HOST_PORT:-9000}/${MINIO_BUCKET:-retailpulse}}
       AWS_ENDPOINT: http://minio:9000

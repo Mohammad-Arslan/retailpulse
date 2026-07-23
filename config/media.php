@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 return [
 
-    'disk' => env('MEDIA_DISK', 'public'),
+    // Storage disk is resolved dynamically via FileStorageDiskRegistrar (admin-configurable
+    // "File Storage" settings screen), not read from here.
 
     'max_upload_kb' => (int) env('MEDIA_MAX_UPLOAD_KB', 5120),
 

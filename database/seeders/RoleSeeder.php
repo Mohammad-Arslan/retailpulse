@@ -215,7 +215,7 @@ final class RoleSeeder extends Seeder
                 'settings.general.update',
                 'settings.company.update',
                 'settings.notifications.update',
-                'settings.import-export.update',
+                'settings.file-storage.update',
                 'settings.tax.update',
                 'settings.checkout.update',
                 'settings.fbr.update',

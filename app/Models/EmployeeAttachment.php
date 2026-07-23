@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Storage\FileStorageDiskRegistrar;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'tenant_id',
@@ -44,6 +44,6 @@ class EmployeeAttachment extends Model
 
     public function absolutePath(): string
     {
-        return Storage::disk($this->disk)->path($this->path);
+        return app(FileStorageDiskRegistrar::class)->resolve($this->disk)->path($this->path);
     }
 }

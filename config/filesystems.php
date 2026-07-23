@@ -61,7 +61,9 @@ return [
             'report' => false,
         ],
 
-        // S3-compatible MinIO (Docker: retailpulse-minio). Used when MEDIA_DISK=minio.
+        // S3-compatible MinIO (Docker: retailpulse-minio). Static env-driven config, kept only
+        // so pre-existing rows with disk='minio' (from before the admin-configurable
+        // "File Storage" settings screen) keep resolving. New uploads never write here.
         'minio' => [
             'driver' => 's3',
             'key' => env('MINIO_ACCESS_KEY', env('AWS_ACCESS_KEY_ID')),
