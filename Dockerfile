@@ -116,10 +116,17 @@ FROM base AS production
 
 ENV APP_ENV=production
 
-# Packages are already in composer.json/lock; re-require keeps the image
-# aligned if lock drifts, then install a clean production tree.
-RUN composer require laravel/octane laravel/horizon --no-interaction --no-scripts --update-with-all-dependencies \
-    && composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
+# laravel/octane and laravel/horizon are already normal, locked dependencies in
+# composer.json/composer.lock — just install exactly what's committed, so
+# production runs the same package versions as local dev and CI. (Previously
+# this ran `composer require ... --update-with-all-dependencies` "to keep the
+# image aligned if lock drifts" — that flag does the opposite: it re-resolves
+# the ENTIRE dependency graph against whatever's on Packagist at build time,
+# ignoring the committed lock file. That's how production silently ended up on
+# a newer laravel/framework than composer.lock specifies, whose new built-in
+# `Illuminate\Image` component collides with intervention/image-laravel's
+# container binding and broke every image/attachment upload in production.)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
     && cp .env.example .env \
     && php artisan key:generate --force --no-interaction \
     && php artisan octane:install --server=frankenphp --no-interaction \
