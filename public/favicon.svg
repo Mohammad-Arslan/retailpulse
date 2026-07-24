@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" role="img" aria-label="RetailPulse">
+  <defs>
+    <linearGradient id="rp" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4db8a8"/>
+      <stop offset="100%" stop-color="#2a7c6f"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="9" fill="url(#rp)"/>
+  <g transform="translate(6 6)">
+    <rect x="2" y="12" width="4" height="7" rx="1.25" fill="#fff" fill-opacity="0.4"/>
+    <rect x="8" y="7.5" width="4" height="11.5" rx="1.25" fill="#fff" fill-opacity="0.65"/>
+    <rect x="14" y="3" width="4" height="16" rx="1.25" fill="#fff"/>
+    <circle cx="16" cy="2.5" r="1.5" fill="#fff" fill-opacity="0.9"/>
+  </g>
+</svg>
