@@ -146,17 +146,20 @@ export function ImportJobsProvider({ children }) {
         };
     }, [userId, refreshJobs]);
 
+    const hasActiveJobs = jobs.some(isTrayActiveJob);
+
+    // Poll only while tray-active jobs exist. Idle pages must not keep hitting
+    // /jobs (completed exports from earlier sessions were re-fetched forever).
+    // Discovery of new work: mount fetch, trackJob(), and Echo user channel.
     useEffect(() => {
-        if (!userId) {
+        if (!userId || !hasActiveJobs) {
             return undefined;
         }
 
-        const hasActive = jobs.some(isTrayActiveJob);
-        const intervalMs = hasActive || open ? 2000 : 15000;
-        const interval = setInterval(refreshJobs, intervalMs);
+        const interval = setInterval(refreshJobs, 2000);
 
         return () => clearInterval(interval);
-    }, [userId, open, jobs, refreshJobs]);
+    }, [userId, hasActiveJobs, refreshJobs]);
 
     return (
         <ImportJobsContext.Provider value={{ trackJob, refreshJobs }}>

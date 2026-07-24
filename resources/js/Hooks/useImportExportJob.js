@@ -133,25 +133,38 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
                 const job = await fetchJob(ulid);
 
                 if (!active || !job) {
-                    return;
+                    return false;
                 }
 
                 applyJob(job);
 
-                if (TERMINAL_STATUSES.includes(job.status) && intervalId) {
-                    clearInterval(intervalId);
-                }
+                return !TERMINAL_STATUSES.includes(job.status);
             } catch {
-                // Polling failed — keep last known state.
+                // Polling failed — keep last known state; continue polling.
+                return active;
             }
         };
 
-        poll();
-        intervalId = setInterval(poll, 2000);
+        void poll().then((shouldContinue) => {
+            if (!active || !shouldContinue) {
+                return;
+            }
+
+            intervalId = setInterval(() => {
+                void poll().then((keepGoing) => {
+                    if (!keepGoing && intervalId) {
+                        clearInterval(intervalId);
+                        intervalId = undefined;
+                    }
+                });
+            }, 2000);
+        });
 
         return () => {
             active = false;
-            clearInterval(intervalId);
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
         };
     }, [ulid, applyJob]);
 
