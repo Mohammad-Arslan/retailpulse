@@ -34,6 +34,17 @@ export function poStatusLabel(t, status) {
     return label === key ? titleCaseEnum(status) : label;
 }
 
+export function prStatusLabel(t, status) {
+    if (!status) {
+        return '';
+    }
+
+    const key = `pages.purchaseRequests.statuses.${status}`;
+    const label = t(key);
+
+    return label === key ? titleCaseEnum(status) : label;
+}
+
 export function matchStatusLabel(t, status) {
     if (!status) {
         return '';

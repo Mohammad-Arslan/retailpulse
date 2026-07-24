@@ -203,7 +203,7 @@
 | Phase | Module | Key Deliverables |
 | :--- | :--- | :--- |
 | **9** | Customers & Loyalty | CRM, 360° profile, tiered loyalty (Silver/Gold/Platinum), wallet, credit limit, bulk import |
-| **10** | Suppliers & Procurement | PO → GRN → supplier invoice → payment, approval workflow, supplier ledger |
+| **10** | Suppliers & Procurement | PR → PO → GRN → supplier invoice → payment, approval workflow, supplier ledger |
 | **11** | Accounting & Finance | Double-entry COA, auto journal rules, bank reconciliation, P&L/Balance Sheet, cost centres, fiscal year close |
 | **12** | Expenses & HR | Recurring expenses, receipt vault, POS clock-in/out, payroll generation + journal post |
 | **13** | Reporting & Analytics | Inventory valuation, cashier performance, dynamic report builder, data mart ETL |

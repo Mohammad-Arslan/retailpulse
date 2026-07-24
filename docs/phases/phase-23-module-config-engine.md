@@ -99,6 +99,14 @@ Build the runtime infrastructure that makes the system modular: a module registr
 | saas | saas | No | auth |
 | workflow | enterprise | No | rbac |
 
+**Seeded `module_features` under `procurement` (non-exhaustive; extend as features land):**
+
+| Feature slug | Name | Notes |
+| :--- | :--- | :--- |
+| `procurement.purchase_request` | Purchase Requests | Internal requisitions → convert to PO. Interim pre-Phase-23 kill-switch: `SystemSetting` `feature_flags.procurement.purchase_requests`. |
+| `procurement.three_way_match` | 3-Way Matching | Already shipped; register when ModuleSeeder lands. |
+| `procurement.drop_ship` | Drop-Shipping | Already shipped (partial). |
+
 ---
 
 ## 3. ModuleRegistry Service

@@ -151,6 +151,8 @@ Do NOT treat `tenant_id` as enforced isolation. There is no `TenantScope` / `Ten
 - product_variants
 - purchase_order_items
 - purchase_orders
+- purchase_request_items
+- purchase_requests
 - purchase_return_items
 - purchase_returns
 - recurring_expense_occurrences

@@ -9,6 +9,7 @@ use App\Models\DebitNote;
 use App\Models\GoodsReceivingNote;
 use App\Models\ProcurementDocumentSequence;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseRequest;
 use App\Models\PurchaseReturn;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierPayment;
@@ -89,6 +90,7 @@ final class ProcurementDocumentNumberService
     {
         return match ($type) {
             ProcurementDocumentType::PurchaseOrder => PurchaseOrder::class,
+            ProcurementDocumentType::PurchaseRequest => PurchaseRequest::class,
             ProcurementDocumentType::Grn => GoodsReceivingNote::class,
             ProcurementDocumentType::SupplierInvoice => SupplierInvoice::class,
             ProcurementDocumentType::SupplierPayment => SupplierPayment::class,
@@ -101,6 +103,7 @@ final class ProcurementDocumentNumberService
     {
         return match ($type) {
             ProcurementDocumentType::PurchaseOrder => (string) SystemSetting::get('procurement', 'po_number_prefix', 'PO'),
+            ProcurementDocumentType::PurchaseRequest => (string) SystemSetting::get('procurement', 'pr_number_prefix', 'PREQ'),
             ProcurementDocumentType::Grn => (string) SystemSetting::get('procurement', 'grn_number_prefix', 'GRN'),
             ProcurementDocumentType::SupplierInvoice => (string) SystemSetting::get('procurement', 'invoice_number_prefix', 'SINV'),
             ProcurementDocumentType::SupplierPayment => (string) SystemSetting::get('procurement', 'payment_number_prefix', 'SPAY'),

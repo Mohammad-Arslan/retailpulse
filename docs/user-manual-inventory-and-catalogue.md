@@ -149,8 +149,9 @@ Menu items appear only if the user’s role has the required permission. If a cu
 | **UoM** | Unit of Measure |
 | **POS** | Point of Sale (cash register screen) |
 | **QC** | Quality Control |
-| **GRN** | Goods Received Note (supplier delivery — future procurement phase) |
+| **GRN** | Goods Received Note (supplier delivery) |
 | **PO** | Purchase Order |
+| **PR** | Purchase Request (internal requisition; converts to a draft PO after approval) |
 | **RBAC** | Role-Based Access Control (permissions system) |
 | **CSV** | Comma-separated values (spreadsheet file) |
 | **TTL** | Time To Live (e.g. cart reservation expires after N minutes) |
@@ -462,7 +463,9 @@ Result: On hand decreases by 3; movement recorded permanently.
 
 **Path:** Stock levels → **Receive stock**
 
-Use when goods arrive (manual receive — full GRN workflow is a future procurement feature).
+Use when goods arrive (manual receive — full GRN against a Purchase Order is under **Procurement**).
+
+For internal demand before a supplier order, use **Procurement → Purchase Requests** (create → submit → approve → convert to a draft PO). Purchase Requests are never sent to suppliers.
 
 | Field | Guidance |
 |-------|----------|
@@ -884,6 +887,7 @@ Movements are **permanent audit records** — they are not edited or deleted.
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.6 | July 2026 | Purchase Requests: create → submit → approve → convert to draft PO |
 | 1.5 | July 2026 | Manage bins: zone capacity, bulk Add more + save, auto-generated zone/bin codes |
 | 1.4 | July 2026 | Global Search (Ctrl/Cmd+K) searches pages and business records via permission-aware providers; sidebar uses shared Navigation Registry |
 | 1.3 | July 2026 | Home dashboard layout: health strip, sales trends, revenue bar chart, Operations stat-group cards |

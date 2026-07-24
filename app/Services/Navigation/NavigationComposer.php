@@ -7,6 +7,7 @@ namespace App\Services\Navigation;
 use App\Models\User;
 use App\Services\Accounting\Contracts\AccountingModuleGate;
 use App\Services\Hr\Contracts\HrPayrollModuleGate;
+use App\Services\Procurement\ProcurementConfigService;
 
 final class NavigationComposer
 {
@@ -14,6 +15,7 @@ final class NavigationComposer
         private readonly NavigationRegistry $registry,
         private readonly AccountingModuleGate $accountingModules,
         private readonly HrPayrollModuleGate $hrModules,
+        private readonly ProcurementConfigService $procurementConfig,
     ) {}
 
     /**
@@ -73,6 +75,10 @@ final class NavigationComposer
      */
     public function itemVisible(User $user, NavigationItem $item, array $enabledModules): bool
     {
+        if ($item->id === 'purchase-requests' && ! $this->procurementConfig->purchaseRequestsEnabled()) {
+            return false;
+        }
+
         if ($item->module !== null && ! in_array($item->module, $enabledModules, true)) {
             return false;
         }

@@ -165,6 +165,8 @@ final class PermissionSeeder extends Seeder
             ['name' => 'procurement.update', 'description' => 'Update draft procurement documents'],
             ['name' => 'procurement.delete', 'description' => 'Delete draft procurement documents'],
             ['name' => 'procurement.approve-po', 'description' => 'Approve purchase orders above threshold'],
+            ['name' => 'procurement.approve-pr', 'description' => 'Approve purchase requests above threshold'],
+            ['name' => 'procurement.convert-pr', 'description' => 'Convert approved purchase requests to purchase orders'],
             ['name' => 'procurement.resolve-match-exception', 'description' => 'Resolve three-way match exceptions'],
             ['name' => 'procurement.receive-grn', 'description' => 'Post goods receiving notes'],
             ['name' => 'procurement.manage-suppliers', 'description' => 'Manage supplier master data'],

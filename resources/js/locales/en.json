@@ -46,6 +46,7 @@
         "stockTransfers": "Transfers",
         "suppliers": "Suppliers",
         "purchaseOrders": "Purchase Orders",
+        "purchaseRequests": "Purchase Requests",
         "goodsReceiving": "Goods Receiving",
         "supplierPriceLists": "Supplier Price Lists",
         "procurementReports": "Procurement Reports",
@@ -3297,6 +3298,87 @@
             "receiveGrnTitle": "Receive goods (GRN)",
             "postReceipt": "Post receipt"
         },
+        "purchaseRequests": {
+            "title": "Purchase Requests",
+            "description": "Internal demand requests. Approve, then convert to a draft purchase order.",
+            "empty": "No purchase requests found.",
+            "searchPlaceholder": "Search reference…",
+            "createTitle": "New Purchase Request",
+            "createDescription": "Capture branch demand. Submit for approval when ready; convert approved requests to a draft PO.",
+            "noPreferredSupplier": "No Preferred Supplier",
+            "noWarehouse": "Any Warehouse",
+            "approvalHint": "Purchase requests above {{threshold}} require manager PIN approval.",
+            "createSubmit": "Create Draft Request",
+            "addLine": "Add Line",
+            "estimatedTotal": "Estimated Total",
+            "convertedPo": "Converted PO",
+            "rejection": "Rejection",
+            "convertHint": "Choose the supplier for the draft purchase order. Estimated costs become unit prices.",
+            "backToList": "Back to list",
+            "totalLabel": "Total",
+            "cancelConfirm": "Cancel {{reference}}?",
+            "confirmReject": "Confirm reject",
+            "pinHint": "Enter the 6-digit POS PIN from your user profile (Admin → Users → Edit).",
+            "pinRequired": "Enter your 6-digit manager PIN to approve this purchase request.",
+            "noPinConfigured": "No POS PIN is set on your account. Set one under Admin → Users → Edit your profile before approving.",
+            "fields": {
+                "branch": "Branch",
+                "warehouse": "Warehouse",
+                "currency": "Currency",
+                "neededBy": "Needed By",
+                "notes": "Notes",
+                "quantity": "Quantity",
+                "preferredSupplier": "Preferred Supplier",
+                "managerPin": "Manager PIN (Required — Request Exceeds Approval Threshold)",
+                "rejectionReason": "Rejection Reason",
+                "supplier": "Supplier"
+            },
+            "validation": {
+                "selectBranch": "Select a branch for this purchase request.",
+                "addLine": "Add at least one product line.",
+                "invalidQty": "Enter a valid quantity on line {{line}}.",
+                "invalidCost": "Enter an estimated unit cost on line {{line}}."
+            },
+            "statuses": {
+                "draft": "Draft",
+                "submitted": "Submitted",
+                "approved": "Approved",
+                "rejected": "Rejected",
+                "cancelled": "Cancelled",
+                "converted": "Converted"
+            },
+            "actions": {
+                "submit": "Submit for Approval",
+                "approve": "Approve",
+                "reject": "Reject",
+                "cancel": "Cancel Request",
+                "convert": "Convert to PO"
+            },
+            "sections": {
+                "actions": "Actions",
+                "lineItems": "Line Items"
+            },
+            "placeholders": {
+                "notes": "Internal notes for this purchase request…",
+                "managerPin": "Enter 6-Digit PIN",
+                "supplier": "Select supplier…"
+            },
+            "columns": {
+                "reference": "Reference",
+                "status": "Status",
+                "total": "Total",
+                "neededBy": "Needed By",
+                "lines": "Lines",
+                "created": "Created"
+            },
+            "lineColumns": {
+                "sku": "SKU",
+                "product": "Product",
+                "qty": "Qty",
+                "estimatedCost": "Est. Unit Cost",
+                "lineTotal": "Line Total"
+            }
+        },
         "goodsReceiving": {
             "title": "Goods Receiving Notes",
             "description": "GRN history and pending receipts.",
@@ -4388,6 +4470,7 @@
         "stockTransfers": "Transfers",
         "suppliers": "Suppliers",
         "purchaseOrders": "Purchase Orders",
+        "purchaseRequests": "Purchase Requests",
         "goodsReceiving": "Goods Receiving",
         "supplierPriceLists": "Supplier Price Lists",
         "procurementReports": "Procurement Reports",

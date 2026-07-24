@@ -74,6 +74,11 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.purchase-orders.*',
                 'keywords' => ['po', 'purchase', 'order', 'procurement'],
             ]),
+            self::item('purchase-requests', 'purchaseRequests', 'admin.purchase-requests.index', 'file-input', 'inventory', 35, [
+                'permission' => 'procurement.view',
+                'routePattern' => 'admin.purchase-requests.*',
+                'keywords' => ['pr', 'purchase request', 'requisition', 'procurement'],
+            ]),
             self::item('goods-receiving', 'goodsReceiving', 'admin.goods-receiving-notes.index', 'package', 'inventory', 50, [
                 'permission' => 'procurement.view',
                 'routePattern' => 'admin.goods-receiving-notes.*',

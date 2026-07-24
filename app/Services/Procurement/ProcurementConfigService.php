@@ -16,6 +16,7 @@ final class ProcurementConfigService
     {
         return [
             'po_approval_threshold' => $this->resolveThreshold($branchId, $tenantId),
+            'pr_approval_threshold' => $this->resolvePrThreshold($branchId, $tenantId),
             'po_approval_escalation_hours' => (int) SystemSetting::get('procurement', 'po_approval_escalation_hours', 24),
             'matching_price_tolerance_percent' => (float) SystemSetting::get('procurement', 'matching_price_tolerance_percent', 2),
             'matching_quantity_tolerance_percent' => (float) SystemSetting::get('procurement', 'matching_quantity_tolerance_percent', 0),
@@ -33,10 +34,17 @@ final class ProcurementConfigService
             'landed_cost_charge_types' => $this->jsonSetting('landed_cost_charge_types', ['freight', 'duty', 'insurance', 'customs', 'handling', 'other']),
             'landed_cost_allocation_methods' => $this->jsonSetting('landed_cost_allocation_methods', ['quantity', 'weight', 'value', 'manual']),
             'workflow_approval_enabled' => (bool) SystemSetting::get('feature_flags', 'procurement.workflow_approval', false),
+            'pr_workflow_approval_enabled' => (bool) SystemSetting::get('feature_flags', 'procurement.pr_workflow_approval', false),
+            'purchase_requests_enabled' => (bool) SystemSetting::get('feature_flags', 'procurement.purchase_requests', true),
             'performance_on_time_weight' => (int) SystemSetting::get('procurement', 'performance_on_time_weight', 40),
             'performance_quality_weight' => (int) SystemSetting::get('procurement', 'performance_quality_weight', 30),
             'performance_lead_time_weight' => (int) SystemSetting::get('procurement', 'performance_lead_time_weight', 30),
         ];
+    }
+
+    public function purchaseRequestsEnabled(): bool
+    {
+        return (bool) SystemSetting::get('feature_flags', 'procurement.purchase_requests', true);
     }
 
     public function requiresApproval(float $total, ?int $branchId = null, ?int $tenantId = null): bool
@@ -46,10 +54,23 @@ final class ProcurementConfigService
         return $total > $threshold;
     }
 
+    public function requiresPrApproval(float $total, ?int $branchId = null, ?int $tenantId = null): bool
+    {
+        $threshold = $this->resolvePrThreshold($branchId, $tenantId);
+
+        return $total > $threshold;
+    }
+
     private function resolveThreshold(?int $branchId, ?int $tenantId): float
     {
         // Future: branch/tenant overrides via Phase 23 ConfigService
         return (float) SystemSetting::get('procurement', 'po_approval_threshold', 5000);
+    }
+
+    private function resolvePrThreshold(?int $branchId, ?int $tenantId): float
+    {
+        // Future: branch/tenant overrides via Phase 23 ConfigService
+        return (float) SystemSetting::get('procurement', 'pr_approval_threshold', 5000);
     }
 
     /**

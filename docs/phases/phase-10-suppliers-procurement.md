@@ -8,6 +8,7 @@
 | Area | Status | Notes |
 |------|--------|-------|
 | **Core cycle** (PO → GRN → invoice → payment → ledger) | ✅ Complete | Ledger posts on `fully_matched` only; idempotent post on match resolve |
+| **Purchase Requests** | ✅ Complete | Internal demand: draft → submit → approve → convert to draft PO; PIN approval; Phase 29 strategy stub |
 | **PO send gating** | ✅ Complete | PDF/email only when `approved` or `closed` (unless `is_historical`) |
 | **3-way matching** | ✅ Complete | `ThreeWayMatchingService`, resolve on GRN/PO/reports |
 | **v4.0 functional UI** | ✅ Complete | Manual landed cost, partial returns, GRN/price-list polish, badges, dashboard drill-down |
@@ -15,7 +16,7 @@
 | **i18n / ur locale** | ✅ Complete | PO/GRN/Dashboard/Supplier ledger wired; `ur.json` procurement parity |
 | **Notification alerts** | 🔶 Stub | `procurement_alerts` table + jobs + dashboard strip; full delivery Phase 14 |
 | **Phase 11 integration** | 🔶 Stubbed | `ProcurementPostingHook` + `NullProcurementPostingHook` for GL and FIFO cost layers |
-| **Workflow approval (Phase 29)** | ⏸ Deferred | `WorkflowPoApprovalStrategy` disabled until workflow engine exists |
+| **Workflow approval (Phase 29)** | ⏸ Deferred | `WorkflowPoApprovalStrategy` / `WorkflowPrApprovalStrategy` disabled until workflow engine exists |
 | **Report CSV/Excel exports** | ⏸ Deferred | P2 polish |
 | **Historical PO bulk import** | ⏸ Deferred | `is_historical` column exists; import handler not built |
 
@@ -23,11 +24,12 @@
 
 ## Objective
 
-Full **procurement cycle** with approval workflows and supplier ledger.
+Full **procurement cycle** with approval workflows and supplier ledger — including optional internal **Purchase Requests** that convert to Purchase Orders.
 
 ## Database (key tables)
 
 - `suppliers` — contact, terms, balance
+- `purchase_requests`, `purchase_request_items` — internal demand (nullable `tenant_id`; never sent to suppliers)
 - `purchase_orders`, `purchase_order_items`
 - `goods_receiving_notes`, `grn_items`
 - `supplier_invoices`, `supplier_payments`
@@ -41,12 +43,13 @@ Full **procurement cycle** with approval workflows and supplier ledger.
 
 ## Features
 
+- **Purchase Request:** create → submit → approve (PIN if over `pr_approval_threshold`) → convert to draft PO (supplier required at convert). Statuses: `draft`, `submitted`, `approved`, `rejected`, `cancelled`, `converted`. Feature kill-switch: `feature_flags.procurement.purchase_requests` (interim until Phase 23 `procurement.purchase_request` module feature). Workflow stub: `feature_flags.procurement.pr_workflow_approval`.
 - PO create → send (email/PDF) → approval if amount > threshold
 - GRN against PO → updates inventory (stock movement `purchase_receive`) at selected **warehouse** (active warehouses for branch via Phase 3 warehouse CRUD)
 - Supplier invoice against GRN
 - Payment recording against invoice
 - Approval: Branch Manager / Owner PIN or permission
-- Permissions: `procurement.*`, `procurement.approve-po`
+- Permissions: `procurement.*`, `procurement.approve-po`, `procurement.approve-pr`, `procurement.convert-pr`
 - **Bulk import/export (§3.18):** suppliers CSV/Excel; optional historical purchase headers with `is_historical` (reporting only); `suppliers.import`, `suppliers.export`
 - UI strings: use i18n keys in **camelCase** with **Title Case** English values (see `.ai/rules/frontend.mdc`). Map dynamic dropdown values (status, payment method) through `resources/js/lib/procurementI18n.js` — never show raw `snake_case` from the API.
 
@@ -54,6 +57,7 @@ Full **procurement cycle** with approval workflows and supplier ledger.
 
 | Feature | Backend | Frontend |
 |---------|---------|----------|
+| Purchase Requests | `PurchaseRequestController`, `PurchaseRequestService`, `PrApprovalStrategyFactory` | `PurchaseRequests/*` |
 | Suppliers + ledger | `SupplierController`, `SupplierService` | `Suppliers/*` |
 | Attachments | `SupplierAttachmentController` | `Suppliers/Show.jsx` |
 | Price lists | `SupplierPriceListController`, `SupplierPriceListService` | `SupplierPriceLists/*` |
@@ -69,6 +73,13 @@ Full **procurement cycle** with approval workflows and supplier ledger.
 1. PO → GRN → Invoice → Payment flow updates stock and supplier balance correctly. ✅
 2. PO over configured amount requires approval before send. ✅
 3. Supplier list import creates 50+ suppliers with validation errors surfaced per row. ✅ (runtime; dedicated 50+ row test optional)
+4. Approved Purchase Request converts to a draft PO with mapped lines; PR becomes `converted`. ✅
+5. PR over `pr_approval_threshold` requires PIN (or Phase 29 workflow when flag on). ✅
+
+### Phase 23 / 29 hooks
+
+- **Phase 23:** feature slug `procurement.purchase_request` under module `procurement` (documented for future `ModuleSeeder` / `module_features`). Today gated by `SystemSetting` `feature_flags.procurement.purchase_requests`.
+- **Phase 29:** `pr.approval` workflow definition; `WorkflowPrApprovalStrategy` is a stub until the engine ships (same pattern as PO).
 
 ---
 

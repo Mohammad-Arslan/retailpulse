@@ -93,7 +93,8 @@ Step definition JSON structure (within `steps_json`):
 | Slug | Trigger | Condition | Steps |
 | :--- | :--- | :--- | :--- |
 | `refund.approval` | `RefundInitiated` | `amount > settings.returns.approval_threshold` | 1: Branch Manager → approve/reject |
-| `po.approval` | `PurchaseOrderCreated` | `total > settings.procurement.approval_threshold` | 1: Branch Manager; 2 (if > higher threshold): Owner |
+| `po.approval` | `PurchaseOrderCreated` / submitted PO | `total > settings.procurement.approval_threshold` | 1: Branch Manager; 2 (if > higher threshold): Owner |
+| `pr.approval` | `PurchaseRequestSubmitted` | `total > settings.procurement.pr_approval_threshold` | 1: Branch Manager; 2 (if > higher threshold): Owner |
 | `discount.approval` | `DiscountApplied` | `discount_pct > settings.pos.max_discount_pct` | 1: Branch Manager |
 | `payroll.approval` | `PayrollRunCreated` | Always | 1: Owner or Accountant |
 | `expense.approval` | `expense.submitted` | `amount > settings.expenses.approval_threshold` | 1: Branch Manager |
@@ -197,6 +198,8 @@ Aligns with full Workflow Engine specification added in SRS v4.0 (previously tab
 ### Acceptance Criteria (v4.0)
 
 1. PO over threshold triggers `po.approval` workflow when feature flag enabled; PIN fallback when disabled.
-2. SLA breach escalates to configured role and logs `outcome = escalated`.
-3. Drag-and-drop builder persists valid `steps_json` and activates definition.
-4. `supplier_invoice.pending_match` workflow routes unmatched invoice to Procurement Officer.
+2. Purchase Request over threshold triggers `pr.approval` when `feature_flags.procurement.pr_workflow_approval` enabled; PIN fallback via `PinPrApprovalStrategy` when disabled (`WorkflowPrApprovalStrategy` stubs until this phase).
+3. Blind close requires manager PIN when flag off; workflow when on.
+4. SLA breach escalates to configured role and logs `outcome = escalated`.
+5. Drag-and-drop builder persists valid `steps_json` and activates definition.
+6. `supplier_invoice.pending_match` workflow routes unmatched invoice to Procurement Officer.

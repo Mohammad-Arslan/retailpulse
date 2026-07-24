@@ -203,7 +203,9 @@ The system will follow a **modular, domain-driven, API-first monolith** architec
 
 #### 3.10. Supplier & Purchase Order Management
 
-- **Full Procurement Cycle:** Create PO → Send to Supplier → GRN against PO → 3-Way Match → Supplier Invoice → Payment.
+- **Full Procurement Cycle:** Create Purchase Request (optional internal demand) → Approve → Convert to PO → Send to Supplier → GRN against PO → 3-Way Match → Supplier Invoice → Payment.
+- **Purchase Requests (internal requisitions):** Branch/warehouse staff raise a PR for needed stock. PRs are never sent to suppliers. Statuses: `draft` → `submitted` → `approved` | `rejected` → `converted` | `cancelled`. Only an **approved** PR can be converted into a **draft** Purchase Order (supplier chosen at conversion). Estimated line costs support approval thresholds; they do not update inventory.
+- **Purchase Request Approval:** PRs over a configurable amount (`procurement.pr_approval_threshold`) require Branch Manager / Owner approval (manager PIN today; Phase 29 workflow when `feature_flags.procurement.pr_workflow_approval` is enabled).
 - **Purchase Approval Workflows:** POs over a configurable amount require Branch Manager or Owner approval. Escalation after N hours if approver is unresponsive (configurable per branch).
 - **Dynamic Ledger:** A running payable/receivable ledger for each supplier showing invoices, payments, debit notes, and net balance.
 
@@ -616,7 +618,7 @@ The core transactional model is highly normalized. All tables include `created_a
 | **Fiscal** | `fiscal_invoices`, `fiscal_logs`, `fbr_invoice_sequences`, `fbr_invoice_queues`, `payment_gateway_configs` |
 | **Customers & Loyalty** | `customers`, `customer_wallets`, `loyalty_points`, `loyalty_tiers`, `customer_groups`, `ar_aging_snapshots` |
 | **Gift Cards & Store Credits** | `gift_cards`, `gift_card_transactions`, `store_credits` |
-| **Procurement** | `purchase_orders`, `purchase_order_items`, `goods_receiving_notes`, `grn_items`, `suppliers`, `supplier_payments`, `supplier_price_lists`, `supplier_price_list_items`, `purchase_returns`, `purchase_return_items`, `po_match_results`, `landed_cost_entries`, `landed_cost_allocations`, `debit_notes` |
+| **Procurement** | `purchase_requests`, `purchase_request_items`, `purchase_orders`, `purchase_order_items`, `goods_receiving_notes`, `grn_items`, `suppliers`, `supplier_payments`, `supplier_price_lists`, `supplier_price_list_items`, `purchase_returns`, `purchase_return_items`, `po_match_results`, `landed_cost_entries`, `landed_cost_allocations`, `debit_notes` |
 | **Accounting** | `chart_of_accounts`, `journal_entries`, `journal_transactions`, `cost_centres`, `budget_lines`, `bank_accounts`, `bank_statement_lines`, `cheques`, `fixed_assets`, `asset_depreciation_schedules`, `currencies`, `exchange_rates`, `intercompany_transactions`, `wht_rates` |
 | **Expenses & HR** | `expense_categories`, `expense_entries`, `employees`, `employee_contracts`, `attendance_records`, `payroll_runs`, `payroll_items`, `leave_types`, `leave_entitlements`, `leave_requests`, `overtime_records` |
 | **Shift & Register** | `registers`, `shifts`, `shift_cash_movements`, `no_sale_logs` |

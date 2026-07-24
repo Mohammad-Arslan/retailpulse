@@ -46,6 +46,7 @@
         "stockTransfers": "ٹرانسفرز",
         "suppliers": "سپلائرز",
         "purchaseOrders": "خریداری کے آرڈر",
+        "purchaseRequests": "خریداری کی درخواستیں",
         "goodsReceiving": "سامان وصولی",
         "supplierPriceLists": "سپلائر قیمت فہرستیں",
         "procurementReports": "خریداری رپورٹس",
@@ -430,6 +431,87 @@
             "confirmReject": "مستردی کی تصدیق",
             "receiveGrnTitle": "سامان وصول کریں (GRN)",
             "postReceipt": "وصولی پوسٹ کریں"
+        },
+        "purchaseRequests": {
+            "title": "خریداری کی درخواستیں",
+            "description": "اندرونی طلب کی درخواستیں۔ منظور کریں، پھر ڈرافٹ خریداری آرڈر میں تبدیل کریں۔",
+            "empty": "کوئی خریداری درخواست نہیں ملی۔",
+            "searchPlaceholder": "حوالہ تلاش کریں…",
+            "createTitle": "نئی خریداری درخواست",
+            "createDescription": "برانچ کی طلب درج کریں۔ تیار ہونے پر منظوری کے لیے جمع کریں۔",
+            "noPreferredSupplier": "کوئی ترجیحی سپلائر نہیں",
+            "noWarehouse": "کوئی بھی گودام",
+            "approvalHint": "{{threshold}} سے زیادہ خریداری درخواستوں کے لیے مینیجر PIN درکار ہے۔",
+            "createSubmit": "ڈرافٹ درخواست بنائیں",
+            "addLine": "لائن شامل کریں",
+            "estimatedTotal": "تخمینی کل",
+            "convertedPo": "تبدیل شدہ PO",
+            "rejection": "مستردی",
+            "convertHint": "ڈرافٹ خریداری آرڈر کے لیے سپلائر منتخب کریں۔",
+            "backToList": "فہرست پر واپس",
+            "totalLabel": "کل",
+            "cancelConfirm": "{{reference}} منسوخ کریں؟",
+            "confirmReject": "مستردی کی تصدیق",
+            "pinHint": "اپنے یوزر پروفائل سے 6 ہندسوں کا POS PIN درج کریں۔",
+            "pinRequired": "اس خریداری درخواست کی منظوری کے لیے اپنا 6 ہندسوں کا مینیجر PIN درج کریں۔",
+            "noPinConfigured": "آپ کے اکاؤنٹ پر POS PIN سیٹ نہیں ہے۔ منظوری سے پہلے پروفائل میں سیٹ کریں۔",
+            "fields": {
+                "branch": "برانچ",
+                "warehouse": "گودام",
+                "currency": "کرنسی",
+                "neededBy": "ضرورت کی تاریخ",
+                "notes": "نوٹس",
+                "quantity": "مقدار",
+                "preferredSupplier": "ترجیحی سپلائر",
+                "managerPin": "مینیجر PIN",
+                "rejectionReason": "مستردی کی وجہ",
+                "supplier": "سپلائر"
+            },
+            "validation": {
+                "selectBranch": "اس خریداری درخواست کے لیے برانچ منتخب کریں۔",
+                "addLine": "کم از کم ایک پروڈکٹ لائن شامل کریں۔",
+                "invalidQty": "لائن {{line}} پر درست مقدار درج کریں۔",
+                "invalidCost": "لائن {{line}} پر تخمینی یونٹ لاگت درج کریں۔"
+            },
+            "statuses": {
+                "draft": "ڈرافٹ",
+                "submitted": "جمع شدہ",
+                "approved": "منظور شدہ",
+                "rejected": "مسترد",
+                "cancelled": "منسوخ",
+                "converted": "تبدیل شدہ"
+            },
+            "actions": {
+                "submit": "منظوری کے لیے جمع کریں",
+                "approve": "منظور کریں",
+                "reject": "مسترد کریں",
+                "cancel": "درخواست منسوخ کریں",
+                "convert": "PO میں تبدیل کریں"
+            },
+            "sections": {
+                "actions": "اعمال",
+                "lineItems": "لائن آئٹمز"
+            },
+            "placeholders": {
+                "notes": "اس خریداری درخواست کے لیے اندرونی نوٹس…",
+                "managerPin": "6 ہندسوں کا PIN درج کریں",
+                "supplier": "سپلائر منتخب کریں…"
+            },
+            "columns": {
+                "reference": "حوالہ",
+                "status": "اسٹیٹس",
+                "total": "کل",
+                "neededBy": "ضرورت",
+                "lines": "لائنیں",
+                "created": "تخلیق"
+            },
+            "lineColumns": {
+                "sku": "SKU",
+                "product": "پروڈکٹ",
+                "qty": "مقدار",
+                "estimatedCost": "تخمینی یونٹ لاگت",
+                "lineTotal": "لائن کل"
+            }
         },
         "suppliers": {
             "title": "سپلائرز",

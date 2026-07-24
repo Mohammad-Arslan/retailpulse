@@ -243,10 +243,12 @@ Cross-reference: Phase 12's `P12-08` Enterprise HRMS expansion and any future br
 | P10-03 | **Procurement alert delivery** — DB alerts only; email/SMS deferred Phase 14 | **Medium** | |
 | P10-04 | **Procurement report export queue** — in-app reports only | **Low** | |
 | P10-05 | **Drop-ship customer invoice** — virtual GRN stub; no customer invoice generation | **Medium** | |
+| P10-06 | **Purchase Request Phase 29 / 23 wiring** — PR PIN approval + convert shipped; `WorkflowPrApprovalStrategy` stubs until Phase 29; `ModuleSeeder` / `procurement.purchase_request` feature registry deferred to Phase 23 (interim `feature_flags.procurement.purchase_requests`) | **Low** | Not an accidental omission of PR itself — PR is a Phase 10 extension (2026-07-24). |
 
 ### Phase 10 — Implemented (not gaps)
 
 - PO → approval → GRN → supplier invoice → payment workflow
+- Purchase Request → approve → convert to draft PO (PIN approval; Phase 29/23 hooks stubbed)
 - `SupplierImportHandler`, match exceptions, purchase returns, landed cost entries
 
 ---

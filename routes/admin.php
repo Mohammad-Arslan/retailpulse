@@ -75,6 +75,7 @@ use App\Http\Controllers\Admin\ProcurementReportController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
+use App\Http\Controllers\Admin\PurchaseRequestController;
 use App\Http\Controllers\Admin\PurchaseReturnController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SaleController;
@@ -329,6 +330,18 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             ->name('purchase-orders.email');
         Route::post('purchase-orders/{purchase_order}/receive', [PurchaseOrderController::class, 'receive'])
             ->name('purchase-orders.receive');
+
+        Route::resource('purchase-requests', PurchaseRequestController::class)->only(['index', 'create', 'store', 'show']);
+        Route::post('purchase-requests/{purchase_request}/submit', [PurchaseRequestController::class, 'submit'])
+            ->name('purchase-requests.submit');
+        Route::post('purchase-requests/{purchase_request}/approve', [PurchaseRequestController::class, 'approve'])
+            ->name('purchase-requests.approve');
+        Route::post('purchase-requests/{purchase_request}/reject', [PurchaseRequestController::class, 'reject'])
+            ->name('purchase-requests.reject');
+        Route::post('purchase-requests/{purchase_request}/cancel', [PurchaseRequestController::class, 'cancel'])
+            ->name('purchase-requests.cancel');
+        Route::post('purchase-requests/{purchase_request}/convert', [PurchaseRequestController::class, 'convert'])
+            ->name('purchase-requests.convert');
 
         Route::resource('goods-receiving-notes', GoodsReceivingNoteController::class)
             ->only(['index', 'show']);

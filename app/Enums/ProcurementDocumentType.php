@@ -7,6 +7,7 @@ namespace App\Enums;
 enum ProcurementDocumentType: string
 {
     case PurchaseOrder = 'purchase_order';
+    case PurchaseRequest = 'purchase_request';
     case Grn = 'grn';
     case SupplierInvoice = 'supplier_invoice';
     case SupplierPayment = 'supplier_payment';
