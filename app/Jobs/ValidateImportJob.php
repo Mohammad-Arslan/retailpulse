@@ -113,6 +113,15 @@ final class ValidateImportJob implements ShouldQueue
         }
     }
 
+    public function failed(Throwable $exception): void
+    {
+        $job = ImportExportJob::query()->find($this->jobId);
+
+        if ($job !== null && ! in_array($job->status, ['completed', 'failed'], true)) {
+            $job->markFailed($exception->getMessage());
+        }
+    }
+
     /**
      * @param  array<string, mixed>  $transformed
      * @param  list<array<string, mixed>>  $columnRules

@@ -131,6 +131,11 @@ export function ImportJobsProvider({ children }) {
 
         const channel = window.Echo.private(`user.${userId}.import-jobs`);
 
+        // Fires on initial subscribe and again on every reconnect, so this
+        // both seeds the tray on mount and resyncs anything missed while the
+        // socket was briefly disconnected — no polling loop needed.
+        channel.subscribed(() => refreshJobs());
+
         channel.listen('.progress.updated', () => refreshJobs());
         channel.listen('.import.completed', () => refreshJobs());
         channel.listen('.export.completed', (payload) => {
@@ -145,21 +150,6 @@ export function ImportJobsProvider({ children }) {
             window.Echo.leave(`user.${userId}.import-jobs`);
         };
     }, [userId, refreshJobs]);
-
-    const hasActiveJobs = jobs.some(isTrayActiveJob);
-
-    // Poll only while tray-active jobs exist. Idle pages must not keep hitting
-    // /jobs (completed exports from earlier sessions were re-fetched forever).
-    // Discovery of new work: mount fetch, trackJob(), and Echo user channel.
-    useEffect(() => {
-        if (!userId || !hasActiveJobs) {
-            return undefined;
-        }
-
-        const interval = setInterval(refreshJobs, 2000);
-
-        return () => clearInterval(interval);
-    }, [userId, hasActiveJobs, refreshJobs]);
 
     return (
         <ImportJobsContext.Provider value={{ trackJob, refreshJobs }}>

@@ -140,6 +140,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('import-export:prune')->dailyAt('02:00');
+        $schedule->command('import-export:reconcile-stuck')->everyFifteenMinutes();
         $schedule->command('inventory:release-expired-reservations')->everyMinute();
         $schedule->job(CreateScheduledCountSessionsJob::class)->dailyAt('01:00');
         $schedule->job(BuildArAgingSnapshotsJob::class)->dailyAt('02:30');

@@ -197,9 +197,11 @@ return [
     */
 
     'defaults' => [
-        'supervisor-1' => [
+        // Short, interactive jobs (notifications, snapshots, etc). Worker
+        // timeout intentionally stays low so a stuck job fails fast.
+        'supervisor-default' => [
             'connection' => 'redis',
-            'queue' => ['default', 'exports', 'imports-heavy', 'imports-validation', 'imports-reports'],
+            'queue' => ['default'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
             'maxProcesses' => 1,
@@ -210,20 +212,92 @@ return [
             'timeout' => 60,
             'nice' => 0,
         ],
+
+        // ProcessExportJob and ProcessImportJob both declare $timeout = 3600.
+        // Worker timeout must be >= the job's own timeout or Horizon kills
+        // the worker mid-job long before the job gets a chance to time out
+        // itself, leaving the import/export DB row stuck in "processing".
+        'supervisor-heavy' => [
+            'connection' => 'redis',
+            'queue' => ['exports', 'imports-heavy'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 128,
+            'tries' => 1,
+            'timeout' => 3660,
+            'nice' => 0,
+        ],
+
+        // ValidateImportJob declares $timeout = 300.
+        'supervisor-validation' => [
+            'connection' => 'redis',
+            'queue' => ['imports-validation'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 128,
+            'tries' => 1,
+            'timeout' => 360,
+            'nice' => 0,
+        ],
+
+        // GenerateErrorReportJob declares $timeout = 120.
+        'supervisor-reports' => [
+            'connection' => 'redis',
+            'queue' => ['imports-reports'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 128,
+            'tries' => 2,
+            'timeout' => 180,
+            'nice' => 0,
+        ],
     ],
 
     'environments' => [
         'production' => [
-            'supervisor-1' => [
-                'maxProcesses' => 10,
+            'supervisor-default' => [
+                'maxProcesses' => 4,
+                'balanceMaxShift' => 1,
+                'balanceCooldown' => 3,
+            ],
+            'supervisor-heavy' => [
+                'maxProcesses' => 4,
+                'balanceMaxShift' => 1,
+                'balanceCooldown' => 3,
+            ],
+            'supervisor-validation' => [
+                'maxProcesses' => 1,
+                'balanceMaxShift' => 1,
+                'balanceCooldown' => 3,
+            ],
+            'supervisor-reports' => [
+                'maxProcesses' => 1,
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
         ],
 
         'local' => [
-            'supervisor-1' => [
-                'maxProcesses' => 3,
+            'supervisor-default' => [
+                'maxProcesses' => 1,
+            ],
+            'supervisor-heavy' => [
+                'maxProcesses' => 1,
+            ],
+            'supervisor-validation' => [
+                'maxProcesses' => 1,
+            ],
+            'supervisor-reports' => [
+                'maxProcesses' => 1,
             ],
         ],
     ],

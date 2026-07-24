@@ -138,4 +138,13 @@ final class ProcessImportJob implements ShouldQueue
             throw $e;
         }
     }
+
+    public function failed(Throwable $exception): void
+    {
+        $job = ImportExportJob::query()->find($this->jobId);
+
+        if ($job !== null && ! in_array($job->status, ['completed', 'failed'], true)) {
+            $job->markFailed($exception->getMessage());
+        }
+    }
 }

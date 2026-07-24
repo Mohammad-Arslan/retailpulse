@@ -2,8 +2,6 @@ import { fetchJob } from '@/lib/importExportApi';
 import { cumulativeImportProgress, mergeImportProgress } from '@/lib/importProgress';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const TERMINAL_STATUSES = ['completed', 'failed', 'cancelled'];
-
 function progressFromJob(job) {
     const phase = job.status === 'validated' ? 'validated' : job.status;
 
@@ -90,6 +88,13 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
 
         const channel = window.Echo.private(`import-job.${ulid}`);
 
+        // Fires on initial subscribe and again on every reconnect, so this
+        // both seeds state on mount and resyncs anything missed while the
+        // socket was briefly disconnected — no polling loop needed.
+        channel.subscribed(() => {
+            refresh();
+        });
+
         channel.listen('.progress.updated', (payload) => {
             applyProgress(payload, payload.phase ?? 'processing');
             setStatus(payload.phase ?? 'processing');
@@ -118,55 +123,7 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
         return () => {
             window.Echo.leave(`import-job.${ulid}`);
         };
-    }, [ulid, applyProgress]);
-
-    useEffect(() => {
-        if (!ulid) {
-            return undefined;
-        }
-
-        let active = true;
-        let intervalId;
-
-        const poll = async () => {
-            try {
-                const job = await fetchJob(ulid);
-
-                if (!active || !job) {
-                    return false;
-                }
-
-                applyJob(job);
-
-                return !TERMINAL_STATUSES.includes(job.status);
-            } catch {
-                // Polling failed — keep last known state; continue polling.
-                return active;
-            }
-        };
-
-        void poll().then((shouldContinue) => {
-            if (!active || !shouldContinue) {
-                return;
-            }
-
-            intervalId = setInterval(() => {
-                void poll().then((keepGoing) => {
-                    if (!keepGoing && intervalId) {
-                        clearInterval(intervalId);
-                        intervalId = undefined;
-                    }
-                });
-            }, 2000);
-        });
-
-        return () => {
-            active = false;
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
-        };
-    }, [ulid, applyJob]);
+    }, [ulid, applyProgress, refresh]);
 
     return { progress, status, refresh };
 }
