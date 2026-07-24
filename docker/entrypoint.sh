@@ -61,24 +61,50 @@ if [[ ! -f vendor/autoload.php ]] || [[ "${LOCK_HASH}" != "${STORED_HASH}" ]]; t
   echo "${LOCK_HASH}" > vendor/.composer-lock-hash
 fi
 
-if [[ "${MODE}" == "local" ]]; then
-  # Vite watcher needs node_modules; skip a full production build (HMR serves assets).
-  if [[ ! -x node_modules/.bin/vite ]]; then
-    log "node_modules incomplete — installing npm deps for Vite watcher"
-    if [[ -f package-lock.json ]]; then
-      npm ci
-    else
-      npm install
-    fi
-  fi
-elif [[ ! -d public/build ]] || [[ -z "$(ls -A public/build 2>/dev/null || true)" ]]; then
-  log "public/build empty — installing npm deps and building assets"
+# ---------------------------------------------------------------------------
+# Safety net for the persistent `retailpulse_build` named volume (mirrors the
+# vendor/.composer-lock-hash logic above). The volume is created once and kept
+# across image rebuilds / `docker compose restart`, so an empty-only check left
+# browsers on stale Vite bundles forever after frontend fixes were deployed.
+# Re-run `npm run build` whenever package/lock/vite config or resources/{js,css}
+# change relative to the hash stored in the volume on the last successful build.
+# ---------------------------------------------------------------------------
+frontend_source_hash() {
+  find package.json package-lock.json vite.config.js resources/js resources/css \
+    -type f 2>/dev/null \
+    | sort \
+    | xargs sha256sum 2>/dev/null \
+    | sha256sum \
+    | awk '{print $1}'
+}
+
+install_npm_deps() {
   if [[ -f package-lock.json ]]; then
     npm ci
   else
     npm install
   fi
-  npm run build
+}
+
+if [[ "${MODE}" == "local" ]]; then
+  # Vite watcher needs node_modules; skip a full production build (HMR serves assets).
+  if [[ ! -x node_modules/.bin/vite ]]; then
+    log "node_modules incomplete — installing npm deps for Vite watcher"
+    install_npm_deps
+  fi
+else
+  ASSET_HASH="$(frontend_source_hash)"
+  STORED_ASSET_HASH="$(cat public/build/.frontend-source-hash 2>/dev/null || true)"
+
+  if [[ ! -d public/build ]] \
+    || [[ -z "$(ls -A public/build 2>/dev/null || true)" ]] \
+    || [[ -z "${ASSET_HASH}" ]] \
+    || [[ "${ASSET_HASH}" != "${STORED_ASSET_HASH}" ]]; then
+    log "public/build missing or frontend sources changed — installing npm deps and building assets"
+    install_npm_deps
+    npm run build
+    echo "${ASSET_HASH}" > public/build/.frontend-source-hash
+  fi
 fi
 
 # ---------------------------------------------------------------------------

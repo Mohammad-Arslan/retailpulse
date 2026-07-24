@@ -396,13 +396,18 @@ bash setup.sh production --rebuild
 
 # Or, if only PHP/JS bind-mount matters and image is current:
 docker compose up -d --no-build
+# Frontend JS/CSS lives in the `retailpulse_build` named volume. A plain
+# restart does NOT rebuild it. After pulling frontend changes, either recreate
+# the app container so entrypoint.sh sees the new source hash and runs
+# `npm run build`, or force it once:
+docker compose exec app bash -lc 'npm ci && npm run build'
 docker compose exec app php artisan migrate --force
 docker compose exec app php artisan config:cache
 docker compose exec app php artisan route:cache
 docker compose exec app php artisan view:cache
 ```
 
-> Production entrypoint already runs migrate + seed on container start. For production go-lives with existing data, prefer **idempotent seeders** or temporarily skip seed by adjusting the entrypoint / using a dedicated release script once you harden Phase 16.
+> Production entrypoint already runs migrate + seed on container start, and (as of 2026-07-24) rebuilds `public/build` whenever frontend sources diverge from `public/build/.frontend-source-hash`. For production go-lives with existing data, prefer **idempotent seeders** or temporarily skip seed by adjusting the entrypoint / using a dedicated release script once you harden Phase 16.
 
 ### 9.2 Logs
 
@@ -452,10 +457,12 @@ Enable Contabo snapshots / automatic backups in the panel as a second layer.
 ### 9.5 Restart / stop
 
 ```bash
-docker compose restart app
+docker compose restart app   # process restart only — does NOT rebuild Vite assets
 docker compose down          # stop stack, keep data volumes
-docker compose up -d
+docker compose up -d         # recreate containers; entrypoint refreshes vendor + public/build when hashes change
 ```
+
+> If a frontend fix is live in git but the browser still shows old behaviour, force `docker compose exec app bash -lc 'npm ci && npm run build'` (or `docker compose up -d --force-recreate app` after the entrypoint hash fix is deployed), then hard-refresh.
 
 ---
 
@@ -549,3 +556,4 @@ This runbook is the **practical Contabo path** for the Docker Compose topology c
 | 2026-07-24 | **Root-caused and fixed the actual production image/attachment-upload 500**: `Dockerfile`'s `production` stage ran `composer require laravel/octane laravel/horizon --update-with-all-dependencies` before `composer install`, with a comment claiming this "keeps the image aligned if lock drifts." Both packages were already normal, committed `composer.json`/`composer.lock` dependencies — the `require` step was dead weight, and `--update-with-all-dependencies` does the *opposite* of what the comment claimed: it re-resolves the entire dependency graph against whatever's on Packagist at build time, ignoring the committed lock file for every package, not just the two named. Confirmed on the live server: `laravel/framework` was running `v13.21.1` while the committed `composer.lock` pins `v13.9.0` — a newer minor that ships a built-in `Illuminate\Image\ImageServiceProvider` binding the same `'image'` container key `intervention/image-laravel` uses. Laravel's deferred-provider loading unconditionally overwrites that key on first resolution, so every image decode call (`Image::decodePath()`) hit Laravel's own `Illuminate\Image\Drivers\GdDriver` instead — which has no such method — throwing before any file ever reached storage (hence the empty MinIO bucket despite no visible upload-path bug). Fixed by deleting the `composer require --update-with-all-dependencies` line; the production build now runs a plain `composer install`, installing exactly what's committed, matching local dev and CI. **Requires a production image rebuild** (`bash setup.sh production --rebuild`) to take effect — the running container still has the drifted `vendor/` until then. |
 | 2026-07-24 | **Follow-up to the fix above**: removing the drift-causing `composer require --update-with-all-dependencies` line surfaced the *already-flagged* 2026-07-23 gap directly in the production build — a plain `composer install` correctly enforces platform requirements, and `composer.lock`'s `symfony/psr-http-message-bridge` pin needs PHP >=8.4.1 against this image's PHP 8.3, failing CI's deploy step outright (`Problem: laravel/octane is locked to v2.18.0 -> requires symfony/psr-http-message-bridge v8.1.0 -> requires php >=8.4.1`). The `--update-with-all-dependencies` flag had been accidentally papering over this by letting composer re-resolve to a different, PHP-8.3-compatible version instead of the broken locked one. Added `--ignore-platform-reqs` to the production stage's `composer install` instead — the same flag the `vendor` stage and CI already use for this exact reason — which installs the exact locked versions (no re-resolution) while skipping only the platform-version check. This restores the deliberate deferral from the original 2026-07-23 entry (downgrade the lock or move to PHP 8.4 is still a dependency-owner decision) without reintroducing the uncontrolled dependency drift the line above fixed. |
 | 2026-07-24 | **Found the actual reason the two fixes above didn't take effect on redeploy**: `docker-compose.yml`'s `app` service mounts `retailpulse_vendor` as a named volume over `/var/www/html/vendor` — this applies to *every* target (`local` and `production` share one service definition), not just local dev's Windows bind-mount performance workaround it was added for. A named volume is populated from the image exactly once, when first created; every subsequent image rebuild's `vendor/` is invisible, shadowed by the volume's stale content. So after fixing the `Dockerfile` (above), and after `bash setup.sh production --rebuild` succeeded and redeployed a freshly-built image whose own `vendor/` was correct, the *running container* still resolved `laravel/framework` to the old, drifted `v13.21.1` — verified directly: the image's `composer.lock` said `v13.9.0`, but `vendor/composer/installed.json` (read through the volume) still said `v13.21.1`. Manually ran `composer install --ignore-platform-reqs` inside the live container to refresh the volume in place (confirmed: `installed.json` now `v13.9.0`, `Illuminate/Image` gone) and restarted the app container so Octane's workers loaded the corrected code. **Durable fix**: `docker/entrypoint.sh` no longer only checks "is `vendor/` empty" — it now hashes `composer.lock` and reinstalls whenever the hash differs from what's recorded (in `vendor/.composer-lock-hash`, inside the same volume) the last time it ran, so the volume self-heals to match whatever `composer.lock` is currently deployed on every container start, not just the first. Also added the same `--ignore-platform-reqs` fix from the entry above to this script's own production branch, which had the identical PHP-8.3-vs-8.4.1 gap. |
+| 2026-07-24 | **Same named-volume trap for frontend assets**: `retailpulse_build` mounts over `/var/www/html/public/build`. Entrypoint only ran `npm run build` when that directory was empty, so after deploying the idle `/jobs` polling fix (`ImportJobsTray`), `docker compose restart app` (and even image rebuilds) kept serving the old Vite bundle — browsers still polled completed import/export jobs on every admin page. **Durable fix**: entrypoint now hashes `package.json` / `package-lock.json` / `vite.config.js` / `resources/js` / `resources/css`, compares to `public/build/.frontend-source-hash`, and rebuilds when they differ. **Immediate unblock without waiting for this entrypoint change**: `docker compose exec app bash -lc 'npm ci && npm run build'` then hard-refresh the browser. `docker compose restart app` alone is not enough. |
