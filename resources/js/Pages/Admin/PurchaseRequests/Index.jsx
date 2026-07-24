@@ -131,7 +131,7 @@ function Index({ requests, filters, statuses = [] }) {
                     options={statusFilterOptions}
                 />
                 <button type="submit" className="rp-btn-outline">
-                    {t('common.filter')}
+                    {t('common.search')}
                 </button>
             </form>
 
