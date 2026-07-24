@@ -37,5 +37,6 @@ final class FileStorageSettingsSeeder extends Seeder
         SystemSetting::set($group, 'minio_key', (string) env('MINIO_ACCESS_KEY', env('AWS_ACCESS_KEY_ID', '')), 'string');
         SystemSetting::set($group, 'minio_secret', (string) env('MINIO_SECRET_KEY', env('AWS_SECRET_ACCESS_KEY', '')), 'encrypted');
         SystemSetting::set($group, 'minio_use_ssl', str_starts_with($endpoint, 'https://'), 'boolean');
+        SystemSetting::set($group, 'minio_url', (string) env('MINIO_URL', env('AWS_URL', '')), 'string');
     }
 }

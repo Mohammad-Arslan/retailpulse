@@ -148,7 +148,7 @@ final class FileStorageDiskRegistrar
      */
     private function minioConfig(string $prefix): array
     {
-        return [
+        $config = [
             'driver' => 's3',
             'key' => (string) SystemSetting::get(self::GROUP, 'minio_key', ''),
             'secret' => SystemSetting::getEncrypted(self::GROUP, 'minio_secret') ?? '',
@@ -160,6 +160,17 @@ final class FileStorageDiskRegistrar
             'root' => trim($prefix, '/'),
             'throw' => true,
         ];
+
+        // 'endpoint' is often a Docker-internal host (e.g. http://minio:9000), unreachable
+        // from a browser — 'url' is what Storage::disk(...)->url() actually builds public
+        // URLs from, so it must be set explicitly whenever the two differ.
+        $publicUrl = (string) SystemSetting::get(self::GROUP, 'minio_url', '');
+
+        if ($publicUrl !== '') {
+            $config['url'] = $publicUrl;
+        }
+
+        return $config;
     }
 
     /**

@@ -467,8 +467,9 @@ return [
                 ],
                 'media_prefix' => [
                     'type' => 'string',
-                    'label' => 'Images remote path prefix',
-                    'default' => 'media',
+                    'label' => 'Images remote path prefix (optional)',
+                    'description' => 'Leave blank unless you need images under a sub-path — uploads already land under media/ (ImageService\'s own convention), so a prefix here would double it up (media/media/...).',
+                    'default' => '',
                     'rules' => ['nullable', 'string', 'max:128'],
                 ],
                 'supplier_attachments_prefix' => [
@@ -539,6 +540,13 @@ return [
                     'type' => 'boolean',
                     'label' => 'MinIO use SSL',
                     'default' => true,
+                ],
+                'minio_url' => [
+                    'type' => 'string',
+                    'label' => 'MinIO public URL (browser-reachable, optional)',
+                    'description' => 'Only needed if the MinIO endpoint above is a Docker-internal host (e.g. http://minio:9000) unreachable from a browser. Set to the public-facing base URL, e.g. http://your-host:9000/your-bucket.',
+                    'default' => '',
+                    'rules' => ['nullable', 'string', 'max:512'],
                 ],
                 'sftp_host' => [
                     'type' => 'string',

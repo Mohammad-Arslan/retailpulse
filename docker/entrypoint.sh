@@ -39,15 +39,26 @@ if [[ ! -f .env ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Safety nets for empty named volumes (first run overlays empty vendor/build)
+# Safety net for the persistent `vendor` named volume: it's created once and
+# never auto-refreshed by an image rebuild, so a stale volume can silently
+# keep running old package versions forever regardless of how many times the
+# image is rebuilt (this caused a real production incident: the volume kept
+# a drifted laravel/framework installed long after the Dockerfile/composer.lock
+# were fixed). Re-run composer install whenever composer.lock's content
+# differs from the hash recorded the last time this ran, not just when
+# vendor/ is completely empty.
 # ---------------------------------------------------------------------------
-if [[ ! -f vendor/autoload.php ]]; then
-  log "vendor/ empty — running composer install"
+LOCK_HASH="$(sha256sum composer.lock | awk '{print $1}')"
+STORED_HASH="$(cat vendor/.composer-lock-hash 2>/dev/null || true)"
+
+if [[ ! -f vendor/autoload.php ]] || [[ "${LOCK_HASH}" != "${STORED_HASH}" ]]; then
+  log "vendor/ missing or composer.lock changed — running composer install"
   if [[ "${MODE}" == "production" ]]; then
-    composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+    composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --ignore-platform-reqs
   else
     composer install --no-interaction --prefer-dist --ignore-platform-reqs
   fi
+  echo "${LOCK_HASH}" > vendor/.composer-lock-hash
 fi
 
 if [[ "${MODE}" == "local" ]]; then
