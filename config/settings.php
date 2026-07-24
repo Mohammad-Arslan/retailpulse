@@ -543,8 +543,8 @@ return [
                 ],
                 'minio_url' => [
                     'type' => 'string',
-                    'label' => 'MinIO public URL (browser-reachable, optional)',
-                    'description' => 'Only needed if the MinIO endpoint above is a Docker-internal host (e.g. http://minio:9000) unreachable from a browser. Set to the public-facing base URL, e.g. http://your-host:9000/your-bucket.',
+                    'label' => 'MinIO public URL (browser-reachable)',
+                    'description' => 'Required when MinIO endpoint is Docker-internal (e.g. http://minio:9000). Use the host browsers can open, e.g. http://your-host:9000/your-bucket. Used for public object URLs and for rewriting export/import temporary download links.',
                     'default' => '',
                     'rules' => ['nullable', 'string', 'max:512'],
                 ],

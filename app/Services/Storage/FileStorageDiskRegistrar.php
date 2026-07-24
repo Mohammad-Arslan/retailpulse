@@ -162,12 +162,14 @@ final class FileStorageDiskRegistrar
         ];
 
         // 'endpoint' is often a Docker-internal host (e.g. http://minio:9000), unreachable
-        // from a browser — 'url' is what Storage::disk(...)->url() actually builds public
-        // URLs from, so it must be set explicitly whenever the two differ.
+        // from a browser. Laravel's AwsS3V3Adapter builds public object URLs from 'url',
+        // and rewrites temporaryUrl() hosts from 'temporary_url' (scheme/host/port only).
+        // Both must be set whenever the browser-facing base differs from the API endpoint.
         $publicUrl = (string) SystemSetting::get(self::GROUP, 'minio_url', '');
 
         if ($publicUrl !== '') {
             $config['url'] = $publicUrl;
+            $config['temporary_url'] = $publicUrl;
         }
 
         return $config;

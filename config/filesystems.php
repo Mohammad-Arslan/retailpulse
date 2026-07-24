@@ -71,6 +71,8 @@ return [
             'region' => env('MINIO_REGION', 'us-east-1'),
             'bucket' => env('MINIO_BUCKET', 'retailpulse'),
             'url' => env('MINIO_URL', env('AWS_URL')),
+            // Browser-facing base for temporaryUrl() rewrite when endpoint is Docker-internal.
+            'temporary_url' => env('MINIO_URL', env('AWS_URL')),
             'endpoint' => env('MINIO_ENDPOINT', env('AWS_ENDPOINT')),
             'use_path_style_endpoint' => true,
             'throw' => false,

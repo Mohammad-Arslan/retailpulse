@@ -14,11 +14,11 @@ use App\Support\ImportExportAuthorization;
 use App\Support\TenantImportScope;
 use App\Traits\AuthorizesImportExportJob;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ExportController extends Controller
 {
@@ -69,7 +69,7 @@ final class ExportController extends Controller
         ]);
     }
 
-    public function download(Request $request, string $ulid): RedirectResponse
+    public function download(Request $request, string $ulid): StreamedResponse
     {
         $job = ImportExportJob::query()
             ->forCurrentTenant()
@@ -83,10 +83,10 @@ final class ExportController extends Controller
             abort(Response::HTTP_FORBIDDEN);
         }
 
-        return $this->redirectToOutputFile($job);
+        return $this->streamOutputFile($job);
     }
 
-    public function errors(Request $request, string $ulid): RedirectResponse
+    public function errors(Request $request, string $ulid): StreamedResponse
     {
         $job = ImportExportJob::query()
             ->forCurrentTenant()
@@ -99,10 +99,14 @@ final class ExportController extends Controller
             abort(Response::HTTP_FORBIDDEN);
         }
 
-        return $this->redirectToOutputFile($job);
+        return $this->streamOutputFile($job);
     }
 
-    private function redirectToOutputFile(ImportExportJob $job): RedirectResponse
+    /**
+     * Stream through the app (server → MinIO via Docker DNS) instead of redirecting
+     * the browser to a presigned URL that may use an internal hostname like `minio`.
+     */
+    private function streamOutputFile(ImportExportJob $job): StreamedResponse
     {
         $path = $job->output_file_path;
 
@@ -116,6 +120,6 @@ final class ExportController extends Controller
             abort(404, 'The file for this job could not be found.');
         }
 
-        return redirect()->away($storage->temporaryUrl($path));
+        return $storage->download($path);
     }
 }

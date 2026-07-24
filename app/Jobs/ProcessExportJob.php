@@ -84,10 +84,10 @@ final class ProcessExportJob implements ShouldQueue
             $job->update(['output_file_path' => $path]);
             $job->markCompleted();
 
-            $downloadUrl = $storage->temporaryUrl($path);
-
+            // App route streams the file server-side. Do not hand the browser a MinIO
+            // presigned URL — with Docker-internal endpoints that becomes http://minio:9000/...
             ExportCompleted::dispatch($job->ulid, (int) $job->user_id, [
-                'download_url' => $downloadUrl,
+                'download_url' => route('admin.import-export.jobs.download', $job->ulid),
                 'row_count' => $job->processed_rows,
                 'job_ulid' => $job->ulid,
             ]);
