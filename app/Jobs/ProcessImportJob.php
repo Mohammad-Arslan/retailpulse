@@ -63,15 +63,36 @@ final class ProcessImportJob implements ShouldQueue
         }
 
         try {
-            $this->processImport($ruleEngine);
+            $job = ImportExportJob::query()->findOrFail($this->jobId);
+
+            // Entity-level advisory lock prevents the same logical import
+            // (same entity type + tenant) from running concurrently.
+            $entityLockKey = sprintf(
+                'import-entity:%s:%s',
+                $job->entity_type,
+                $job->tenant_id,
+            );
+            $entityLock = Cache::lock($entityLockKey, $this->timeout + 60);
+
+            if (! $entityLock->get()) {
+                $lock->forceRelease();
+                $this->release(15);
+
+                return;
+            }
+
+            try {
+                $this->processImport($ruleEngine, $job);
+            } finally {
+                $entityLock->forceRelease();
+            }
         } finally {
             $lock->forceRelease();
         }
     }
 
-    private function processImport(DynamicRuleEngine $ruleEngine): void
+    private function processImport(DynamicRuleEngine $ruleEngine, ImportExportJob $job): void
     {
-        $job = ImportExportJob::query()->findOrFail($this->jobId);
 
         if ($job->status !== 'processing') {
             $job->markProcessing();
