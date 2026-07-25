@@ -9,6 +9,7 @@ use App\Models\PayrollItem;
 use App\Models\PayrollRun;
 use App\Services\Accounting\AccountingEventService;
 use App\Services\Accounting\DocumentNumberService;
+use App\Services\Accounting\JournalValidationService;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 
@@ -22,6 +23,7 @@ final class PayrollRunService
         private readonly PayrollCalculationService $calculation,
         private readonly AccountingEventService $accountingEvents,
         private readonly DocumentNumberService $documentNumbers,
+        private readonly JournalValidationService $journalValidation,
     ) {}
 
     /**
@@ -96,6 +98,8 @@ final class PayrollRunService
         if ($run->status !== 'approved') {
             throw new DomainException('Only Approved Payroll Runs Can Be Posted.');
         }
+
+        $this->journalValidation->assertFiscalYearOpenForDate($run->period_end ?? now());
 
         return DB::transaction(function () use ($run, $userId): PayrollRun {
             $existing = $this->accountingEvents->findForSource('payroll.posted', PayrollRun::class, $run->id);

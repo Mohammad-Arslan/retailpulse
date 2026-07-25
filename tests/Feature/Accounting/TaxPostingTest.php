@@ -6,12 +6,14 @@ namespace Tests\Feature\Accounting;
 
 use App\Enums\AccountResolutionType;
 use App\Enums\AmountSource;
+use App\Enums\FiscalYearStatus;
 use App\Enums\JournalEntryStatus;
 use App\Enums\PostingRuleEntrySide;
 use App\Enums\TaxCalculationMethod;
 use App\Enums\TaxDirection;
 use App\Models\AccountMapping;
 use App\Models\ChartOfAccount;
+use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalTransaction;
 use App\Models\PostingRuleSet;
@@ -100,6 +102,13 @@ final class TaxPostingTest extends TestCase
             'account_mapping_key' => 'output_tax',
             'amount_source' => AmountSource::TaxAmount,
             'required' => false,
+        ]);
+
+        FiscalYear::query()->create([
+            'name' => 'FY2020-2030',
+            'start_date' => '2020-01-01',
+            'end_date' => '2030-12-31',
+            'status' => FiscalYearStatus::Open,
         ]);
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Checkout;
 
 use App\Enums\FbrInvoiceStatus;
+use App\Enums\FiscalYearStatus;
 use App\Enums\PosCartStatus;
 use App\Enums\ProductType;
 use App\Enums\SaleStatus;
@@ -12,6 +13,7 @@ use App\Enums\TaxMode;
 use App\Jobs\SubmitFbrInvoiceJob;
 use App\Models\Branch;
 use App\Models\Customer;
+use App\Models\FiscalYear;
 use App\Models\Inventory;
 use App\Models\InventoryMovement;
 use App\Models\PosCart;
@@ -96,6 +98,13 @@ final class CheckoutEdgeCasesTest extends TestCase
         $this->cashier = User::factory()->create(['is_active' => true]);
         $this->cashier->assignRole('cashier');
         $this->cashier->branches()->attach($this->branch->id);
+
+        FiscalYear::query()->create([
+            'name' => 'FY2020-2030',
+            'start_date' => '2020-01-01',
+            'end_date' => '2030-12-31',
+            'status' => FiscalYearStatus::Open,
+        ]);
 
         $this->artisan('migrate', ['--path' => 'database/migrations/2026_05_26_100004_seed_checkout_settings.php']);
     }

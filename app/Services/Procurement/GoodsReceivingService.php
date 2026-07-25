@@ -11,12 +11,14 @@ use App\Enums\GrnStatus;
 use App\Enums\ProcurementDocumentType;
 use App\Enums\PurchaseOrderStatus;
 use App\Events\Procurement\GoodsReceived;
+use App\Exceptions\Accounting\NoOpenFiscalYearException;
 use App\Models\GoodsReceivingNote;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\PurchaseOrderRepositoryInterface;
 use App\Services\Accounting\CostService;
+use App\Services\Accounting\JournalValidationService;
 use App\Services\InventoryService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -31,12 +33,19 @@ final class GoodsReceivingService
         private readonly PurchaseOrderRepositoryInterface $orders,
         private readonly SupplierInvoiceService $invoices,
         private readonly CostService $costService,
+        private readonly JournalValidationService $journalValidation,
     ) {}
 
     public function receive(PurchaseOrder $order, ReceiveGrnData $data): GoodsReceivingNote
     {
         if (! $order->status->canReceive()) {
             throw ValidationException::withMessages(['status' => __('Purchase order must be approved before receiving.')]);
+        }
+
+        try {
+            $this->journalValidation->assertFiscalYearOpenForDate(now());
+        } catch (NoOpenFiscalYearException $e) {
+            throw ValidationException::withMessages(['fiscal_year' => $e->getMessage()]);
         }
 
         $order->load('items');

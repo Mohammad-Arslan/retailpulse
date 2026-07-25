@@ -15,6 +15,7 @@ use App\Enums\SaleStatus;
 use App\Enums\StockMovementReason;
 use App\Enums\TaxMode;
 use App\Events\SaleCompleted;
+use App\Exceptions\Accounting\NoOpenFiscalYearException;
 use App\Jobs\SubmitFbrInvoiceJob;
 use App\Models\Customer;
 use App\Models\PosCart;
@@ -25,6 +26,7 @@ use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Repositories\Contracts\PosCartRepositoryInterface;
+use App\Services\Accounting\JournalValidationService;
 use App\Services\Customer\CustomerCreditService;
 use App\Services\Customer\StoreCreditService;
 use App\Services\Customer\WalletService;
@@ -50,6 +52,7 @@ final class CheckoutService
         private readonly StoreCreditService $storeCredit,
         private readonly CustomerCreditService $customerCredit,
         private readonly CheckoutLoyaltyService $checkoutLoyalty,
+        private readonly JournalValidationService $journalValidation,
     ) {}
 
     /**
@@ -646,6 +649,12 @@ final class CheckoutService
     {
         if ($sale->status === SaleStatus::Completed) {
             return $sale->fresh(['items', 'payments', 'invoice']);
+        }
+
+        try {
+            $this->journalValidation->assertFiscalYearOpenForDate(now());
+        } catch (NoOpenFiscalYearException $e) {
+            throw ValidationException::withMessages(['fiscal_year' => $e->getMessage()]);
         }
 
         $settings = $this->config->resolve($sale->branch_id);

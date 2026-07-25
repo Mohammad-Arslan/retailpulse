@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Tests\Feature\Pos;
 
 use App\DTOs\Pos\AddCartItemData;
+use App\Enums\FiscalYearStatus;
 use App\Enums\PosCartStatus;
 use App\Enums\ProductType;
 use App\Models\Branch;
+use App\Models\FiscalYear;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -87,6 +89,13 @@ final class PosCartReservationTest extends TestCase
         $this->cashier = User::factory()->create(['is_active' => true]);
         $this->cashier->assignRole('cashier');
         $this->cashier->branches()->attach($this->branch->id);
+
+        FiscalYear::query()->create([
+            'name' => 'FY2020-2030',
+            'start_date' => '2020-01-01',
+            'end_date' => '2030-12-31',
+            'status' => FiscalYearStatus::Open,
+        ]);
     }
 
     public function test_adding_cart_item_reserves_stock(): void

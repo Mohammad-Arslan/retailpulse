@@ -6,8 +6,10 @@ namespace App\Services\Accounting;
 
 use App\Enums\FiscalYearStatus;
 use App\Enums\JournalEntryStatus;
+use App\Exceptions\Accounting\NoOpenFiscalYearException;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
+use Carbon\CarbonInterface;
 use DomainException;
 
 final class JournalValidationService
@@ -80,10 +82,23 @@ final class JournalValidationService
 
     public function assertFiscalYearOpen(JournalEntry $entry): void
     {
-        $fiscalYear = $this->resolveFiscalYear($entry);
+        $this->assertFiscalYearUsable($this->resolveFiscalYear($entry), $entry->journal_date);
+    }
 
+    /**
+     * Preflight check usable by operational modules (Checkout, Goods Receiving, Payroll)
+     * before mutating stock/state, so a missing fiscal year is caught before anything
+     * is written rather than surfacing only once the accounting event tries to post.
+     */
+    public function assertFiscalYearOpenForDate(CarbonInterface $date): void
+    {
+        $this->assertFiscalYearUsable($this->fiscalYearCoveringDate($date), $date);
+    }
+
+    private function assertFiscalYearUsable(?FiscalYear $fiscalYear, CarbonInterface $date): void
+    {
         if ($fiscalYear === null) {
-            return;
+            throw new NoOpenFiscalYearException($date);
         }
 
         if (in_array($fiscalYear->status, [FiscalYearStatus::Open, FiscalYearStatus::Closing], true)) {
@@ -120,10 +135,20 @@ final class JournalValidationService
                 ->find($entry->fiscal_year_id);
         }
 
+        return $this->fiscalYearCoveringDate($entry->journal_date);
+    }
+
+    private function fiscalYearCoveringDate(CarbonInterface $date): ?FiscalYear
+    {
         return FiscalYear::query()
             ->with('closedByUser')
-            ->whereDate('start_date', '<=', $entry->journal_date)
-            ->whereDate('end_date', '>=', $entry->journal_date)
+            ->whereIn('status', [
+                FiscalYearStatus::Open,
+                FiscalYearStatus::Reopening,
+                FiscalYearStatus::Closing,
+            ])
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
             ->orderByDesc('start_date')
             ->first();
     }

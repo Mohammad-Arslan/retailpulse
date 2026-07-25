@@ -7,9 +7,11 @@ namespace Tests\Feature\Accounting;
 use App\Enums\AccountingEventStatus;
 use App\Enums\AccountResolutionType;
 use App\Enums\AmountSource;
+use App\Enums\FiscalYearStatus;
 use App\Enums\PostingRuleEntrySide;
 use App\Models\AccountingEvent;
 use App\Models\ChartOfAccount;
+use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\PostingRuleSet;
 use App\Models\User;
@@ -62,6 +64,13 @@ final class AccountingEventServiceTest extends TestCase
             'account_id' => $revenue->id,
             'amount_source' => AmountSource::GrossAmount,
             'required' => true,
+        ]);
+
+        FiscalYear::query()->create([
+            'name' => 'FY2020-2030',
+            'start_date' => '2020-01-01',
+            'end_date' => '2030-12-31',
+            'status' => FiscalYearStatus::Open,
         ]);
     }
 

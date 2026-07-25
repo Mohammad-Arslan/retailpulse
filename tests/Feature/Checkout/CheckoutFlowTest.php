@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Checkout;
 
+use App\Enums\FiscalYearStatus;
 use App\Enums\PosCartStatus;
 use App\Enums\ProductType;
 use App\Models\Branch;
+use App\Models\FiscalYear;
 use App\Models\Inventory;
 use App\Models\PosCart;
 use App\Models\PosCartItem;
@@ -87,6 +89,13 @@ final class CheckoutFlowTest extends TestCase
         $this->cashier = User::factory()->create(['is_active' => true]);
         $this->cashier->assignRole('cashier');
         $this->cashier->branches()->attach($this->branch->id);
+
+        FiscalYear::query()->create([
+            'name' => 'FY2020-2030',
+            'start_date' => '2020-01-01',
+            'end_date' => '2030-12-31',
+            'status' => FiscalYearStatus::Open,
+        ]);
 
         $this->runCheckoutSettingsMigration();
     }

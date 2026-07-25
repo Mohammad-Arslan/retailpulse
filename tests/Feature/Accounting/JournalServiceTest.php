@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Accounting;
 
+use App\Enums\FiscalYearStatus;
 use App\Enums\JournalEntryStatus;
 use App\Models\ChartOfAccount;
+use App\Models\FiscalYear;
 use App\Models\User;
 use App\Services\Accounting\JournalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,6 +30,13 @@ final class JournalServiceTest extends TestCase
         $this->cash = ChartOfAccount::query()->create(['code' => '1000', 'name' => 'Cash', 'type' => 'asset']);
         $this->revenue = ChartOfAccount::query()->create(['code' => '4000', 'name' => 'Revenue', 'type' => 'revenue']);
         $this->user = User::factory()->create(['is_active' => true]);
+
+        FiscalYear::query()->create([
+            'name' => 'FY2020-2030',
+            'start_date' => '2020-01-01',
+            'end_date' => '2030-12-31',
+            'status' => FiscalYearStatus::Open,
+        ]);
     }
 
     /**

@@ -6,9 +6,11 @@ namespace Tests\Feature\Accounting;
 
 use App\Enums\AccountResolutionType;
 use App\Enums\AmountSource;
+use App\Enums\FiscalYearStatus;
 use App\Enums\JournalEntryStatus;
 use App\Enums\PostingRuleEntrySide;
 use App\Models\ChartOfAccount;
+use App\Models\FiscalYear;
 use App\Models\JournalTransaction;
 use App\Models\PostingRuleSet;
 use App\Models\User;
@@ -45,6 +47,13 @@ final class JournalPostingTest extends TestCase
         ]);
 
         $this->user = User::factory()->create(['is_active' => true]);
+
+        FiscalYear::query()->create([
+            'name' => 'FY2020-2030',
+            'start_date' => '2020-01-01',
+            'end_date' => '2030-12-31',
+            'status' => FiscalYearStatus::Open,
+        ]);
     }
 
     public function test_posting_rule_built_journal_posts_successfully_when_balanced(): void

@@ -8,6 +8,7 @@ use App\DTOs\Procurement\CreatePurchaseOrderData;
 use App\DTOs\Procurement\PurchaseOrderLineData;
 use App\DTOs\Procurement\ReceiveGrnData;
 use App\DTOs\Procurement\ReceiveGrnLineData;
+use App\Enums\FiscalYearStatus;
 use App\Enums\LandedCostAllocationMethod;
 use App\Enums\PoMatchStatus;
 use App\Enums\ProductType;
@@ -16,6 +17,7 @@ use App\Enums\SupplierInvoiceStatus;
 use App\Events\Procurement\GoodsReceived;
 use App\Events\Procurement\PurchaseOrderApproved;
 use App\Models\Branch;
+use App\Models\FiscalYear;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Supplier;
@@ -94,6 +96,13 @@ final class ProcurementWorkflowTest extends TestCase
             'sku' => 'WDG-001',
             'sell_price' => 100,
             'is_default' => true,
+        ]);
+
+        FiscalYear::query()->create([
+            'name' => 'FY2020-2030',
+            'start_date' => '2020-01-01',
+            'end_date' => '2030-12-31',
+            'status' => FiscalYearStatus::Open,
         ]);
     }
 

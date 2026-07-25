@@ -6,12 +6,14 @@ namespace Tests\Feature\Accounting;
 
 use App\Enums\FiscalYearStatus;
 use App\Enums\JournalEntryStatus;
+use App\Exceptions\Accounting\NoOpenFiscalYearException;
 use App\Models\ChartOfAccount;
 use App\Models\FinancialSetting;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalTransaction;
 use App\Services\Accounting\JournalValidationService;
+use Carbon\Carbon;
 use DomainException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -38,6 +40,16 @@ final class JournalValidationServiceTest extends TestCase
             'code' => '4000',
             'name' => 'Revenue',
             'type' => 'revenue',
+        ]);
+
+        // Default open fiscal year covering the '2026-06-15' date used by createEntry()'s
+        // default — tests that specifically exercise fiscal-year rejection create their
+        // own explicit FiscalYear row and reference it via fiscal_year_id.
+        FiscalYear::query()->create([
+            'name' => 'FY2020-2030',
+            'start_date' => '2020-01-01',
+            'end_date' => '2030-12-31',
+            'status' => FiscalYearStatus::Open,
         ]);
     }
 
@@ -186,6 +198,44 @@ final class JournalValidationServiceTest extends TestCase
         $this->expectException(DomainException::class);
 
         app(JournalValidationService::class)->assertCanPost($entry->fresh());
+    }
+
+    public function test_assert_can_post_rejects_journal_when_no_fiscal_years_exist_at_all(): void
+    {
+        FiscalYear::query()->delete();
+
+        $entry = $this->createEntry();
+        $this->addBalancedLines($entry);
+
+        $this->expectException(NoOpenFiscalYearException::class);
+        $this->expectExceptionMessage('No open fiscal year covers 2026-06-15');
+
+        app(JournalValidationService::class)->assertCanPost($entry->fresh());
+    }
+
+    public function test_assert_can_post_rejects_journal_when_no_fiscal_year_covers_the_date(): void
+    {
+        // The default setUp() fiscal year covers 2020-2030 but not this date.
+        $entry = $this->createEntry(['journal_date' => '2015-01-01']);
+        $this->addBalancedLines($entry);
+
+        $this->expectException(NoOpenFiscalYearException::class);
+
+        app(JournalValidationService::class)->assertCanPost($entry->fresh());
+    }
+
+    public function test_assert_fiscal_year_open_for_date_throws_when_uncovered(): void
+    {
+        $this->expectException(NoOpenFiscalYearException::class);
+
+        app(JournalValidationService::class)->assertFiscalYearOpenForDate(Carbon::parse('2015-01-01'));
+    }
+
+    public function test_assert_fiscal_year_open_for_date_passes_when_covered(): void
+    {
+        app(JournalValidationService::class)->assertFiscalYearOpenForDate(Carbon::parse('2026-06-15'));
+
+        $this->addToAssertionCount(1);
     }
 
     public function test_assert_can_post_rejects_journal_before_cutover_date(): void
