@@ -39,7 +39,12 @@ return function (string $namePrefix): void {
         Route::post('exports', [ExportController::class, 'initiate'])->name('exports.initiate');
         Route::get('templates/{entity}', [TemplateController::class, 'download'])->name('templates.download');
 
-        Route::get('stream', [ImportJobController::class, 'stream'])
+        Route::get('download-signed', [ImportJobController::class, 'downloadSigned'])
+            ->middleware('signed')
+            ->name('download-signed');
+
+        // Legacy alias for backward compatibility
+        Route::get('stream', [ImportJobController::class, 'downloadSigned'])
             ->middleware('signed')
             ->name('stream');
     });

@@ -42,6 +42,10 @@ final class ProcessImportJob implements ShouldQueue
 
     private const int ROW_TRANSIENT_RETRIES = 3;
 
+    private const int PROGRESS_BROADCAST_INTERVAL_SECONDS = 3;
+
+    private float $lastProgressBroadcastAt = 0;
+
     public function __construct(
         public int $jobId,
     ) {
@@ -176,16 +180,31 @@ final class ProcessImportJob implements ShouldQueue
 
                 $job->refresh();
 
-                ImportProgressUpdated::dispatch($job->ulid, (int) $job->user_id, [
-                    'phase' => 'processing',
-                    'processed' => (int) $job->processed_rows,
-                    'total' => (int) $job->total_rows,
-                    'success' => (int) $job->success_rows,
-                    'failed' => (int) $job->failed_rows,
-                    'skipped' => (int) $job->skipped_rows,
-                    'errors' => (int) $job->failed_rows,
-                ]);
+                $now = microtime(true);
+                if (($now - $this->lastProgressBroadcastAt) >= self::PROGRESS_BROADCAST_INTERVAL_SECONDS) {
+                    $this->lastProgressBroadcastAt = $now;
+                    ImportProgressUpdated::dispatch($job->ulid, (int) $job->user_id, [
+                        'phase' => 'processing',
+                        'processed' => (int) $job->processed_rows,
+                        'total' => (int) $job->total_rows,
+                        'success' => (int) $job->success_rows,
+                        'failed' => (int) $job->failed_rows,
+                        'skipped' => (int) $job->skipped_rows,
+                        'errors' => (int) $job->failed_rows,
+                    ]);
+                }
             }
+
+            // Final progress broadcast to ensure the last state is sent
+            ImportProgressUpdated::dispatch($job->ulid, (int) $job->user_id, [
+                'phase' => 'processing',
+                'processed' => (int) $job->processed_rows,
+                'total' => (int) $job->total_rows,
+                'success' => (int) $job->success_rows,
+                'failed' => (int) $job->failed_rows,
+                'skipped' => (int) $job->skipped_rows,
+                'errors' => (int) $job->failed_rows,
+            ]);
 
             $handler->afterImport($context);
             $job->refresh();

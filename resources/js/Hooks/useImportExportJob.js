@@ -81,6 +81,7 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
         maxPercentRef.current = 0;
     }, [ulid]);
 
+    // WebSocket channel subscription
     useEffect(() => {
         if (!ulid || typeof window.Echo === 'undefined') {
             return undefined;
@@ -88,9 +89,6 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
 
         const channel = window.Echo.private(`import-job.${ulid}`);
 
-        // Fires on initial subscribe and again on every reconnect, so this
-        // both seeds state on mount and resyncs anything missed while the
-        // socket was briefly disconnected — no polling loop needed.
         channel.subscribed(() => {
             refresh();
         });
@@ -124,6 +122,26 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
             window.Echo.leave(`import-job.${ulid}`);
         };
     }, [ulid, applyProgress, refresh]);
+
+    // Polling fallback: if Echo is unavailable or as a safety net for missed events.
+    // BROADCAST_CONNECTION must be set to 'reverb' (or equivalent) in .env for
+    // real-time to work; otherwise this poll is the sole progress mechanism.
+    useEffect(() => {
+        if (!ulid || completedRef.current) {
+            return undefined;
+        }
+
+        const echoAvailable = typeof window.Echo !== 'undefined';
+        const intervalMs = echoAvailable ? 15000 : 5000;
+
+        const timer = setInterval(() => {
+            if (!completedRef.current) {
+                refresh();
+            }
+        }, intervalMs);
+
+        return () => clearInterval(timer);
+    }, [ulid, refresh]);
 
     return { progress, status, refresh };
 }

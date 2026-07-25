@@ -131,12 +131,26 @@ export function ImportJobsProvider({ children }) {
 
         const channel = window.Echo.private(`user.${userId}.import-jobs`);
 
-        // Fires on initial subscribe and again on every reconnect, so this
-        // both seeds the tray on mount and resyncs anything missed while the
-        // socket was briefly disconnected — no polling loop needed.
         channel.subscribed(() => refreshJobs());
 
-        channel.listen('.progress.updated', () => refreshJobs());
+        // Only refresh on lifecycle transitions, not progress ticks
+        channel.listen('.progress.updated', (payload) => {
+            // Update inline progress without a full refresh — apply counters
+            setJobs((prev) =>
+                prev.map((job) =>
+                    job.ulid === payload.job_ulid
+                        ? {
+                              ...job,
+                              processed_rows: payload.processed ?? job.processed_rows,
+                              total_rows: payload.total ?? job.total_rows,
+                              success_rows: payload.success ?? job.success_rows,
+                              failed_rows: payload.failed ?? job.failed_rows,
+                              status: payload.phase ?? job.status,
+                          }
+                        : job,
+                ),
+            );
+        });
         channel.listen('.import.completed', () => refreshJobs());
         channel.listen('.export.completed', (payload) => {
             refreshJobs();

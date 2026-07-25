@@ -161,12 +161,26 @@ final class ImportJobController extends Controller
         return response()->json(['job' => $job]);
     }
 
-    public function stream(Request $request): StreamedResponse
+    public function downloadSigned(Request $request): StreamedResponse
     {
         $path = trim(decrypt((string) $request->query('path')));
 
         if ($path === '' || ! $this->importFileExists($path)) {
             abort(404);
+        }
+
+        $jobUlid = (string) $request->query('job');
+        if ($jobUlid !== '') {
+            $job = ImportExportJob::query()->byUlid($jobUlid)->first();
+            if ($job !== null) {
+                $user = $request->user();
+                if ($user === null || (int) $job->user_id !== (int) $user->id) {
+                    abort(403);
+                }
+                if ((int) $job->tenant_id !== (int) $user->tenant_id) {
+                    abort(403);
+                }
+            }
         }
 
         return $this->storageManager()->download($path);
