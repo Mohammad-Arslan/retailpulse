@@ -83,24 +83,27 @@ function Index({ requests, filters, statuses = [] }) {
         [t],
     );
 
-    const rowActions = useMemo(
-        () => [
+    const rowActions = (row) => {
+        const actions = [
             {
-                id: 'view',
                 label: t('common.view'),
-                onClick: (row) => router.visit(route('admin.purchase-requests.show', row.id)),
+                type: 'view',
+                href: route('admin.purchase-requests.show', row.id),
+                permission: 'procurement.view',
             },
-            {
-                id: 'submit',
+        ];
+
+        if (can('procurement.create') && row.status === 'draft') {
+            actions.push({
                 label: t('pages.purchaseRequests.actions.submit'),
-                show: (row) => can('procurement.create') && row.status === 'draft',
-                onClick: (row) => {
-                    router.post(route('admin.purchase-requests.submit', row.id));
-                },
-            },
-        ],
-        [can, t],
-    );
+                type: 'edit',
+                onClick: () => router.post(route('admin.purchase-requests.submit', row.id)),
+                permission: 'procurement.create',
+            });
+        }
+
+        return actions;
+    };
 
     return (
         <>
