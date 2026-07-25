@@ -85,6 +85,7 @@
         "overtimePolicies": "Overtime Policies",
         "overtimeRecords": "Overtime Records",
         "payComponents": "Pay Components",
+        "salaryStructures": "Salary Structures",
         "taxSlabs": "Tax Slabs",
         "statutorySchemes": "Statutory Schemes",
         "payrollRuns": "Payroll Runs",
@@ -1601,6 +1602,43 @@
                 "fixed": "Fixed Amount",
                 "percentage_of": "Percentage Of",
                 "table_lookup": "Table Lookup"
+            },
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive"
+            }
+        },
+        "salaryStructures": {
+            "indexTitle": "Salary Structures",
+            "indexDescription": "Define Salary Structures And Their Pay Component Line Items For Payroll.",
+            "createTitle": "New Salary Structure",
+            "createSubmit": "Create Structure",
+            "editTitle": "Edit Salary Structure",
+            "searchPlaceholder": "Search By Code Or Name…",
+            "empty": "No Salary Structures Found.",
+            "allStatuses": "All Statuses",
+            "fields": {
+                "code": "Code",
+                "codeAutoHint": "Auto-Generated On Save",
+                "name": "Name",
+                "namePlaceholder": "Enter Structure Name",
+                "legalEntity": "Legal Entity",
+                "noLegalEntity": "All Legal Entities"
+            },
+            "columns": {
+                "name": "Name",
+                "legalEntity": "Legal Entity",
+                "components": "Components",
+                "status": "Status"
+            },
+            "components": {
+                "title": "Pay Component Lines",
+                "addLine": "Add Component",
+                "payComponent": "Pay Component",
+                "noPayComponent": "Select A Pay Component",
+                "amountOrRate": "Amount / Rate",
+                "sequence": "Sequence",
+                "remove": "Remove"
             },
             "statuses": {
                 "active": "Active",
@@ -4524,6 +4562,7 @@
         "attendanceSources": "Attendance Sources",
         "payrollRuns": "Payroll Runs",
         "payComponents": "Pay Components",
+        "salaryStructures": "Salary Structures",
         "taxSlabs": "Tax Slabs",
         "statutorySchemes": "Statutory Schemes",
         "selfServicePayslips": "My Payslips"

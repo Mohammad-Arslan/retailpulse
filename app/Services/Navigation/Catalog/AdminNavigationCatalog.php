@@ -355,6 +355,13 @@ final class AdminNavigationCatalog
                 'routePattern' => 'admin.payroll.pay-components.*',
                 'keywords' => ['pay component', 'earning', 'deduction', 'salary', 'payroll'],
             ]),
+            self::item('salary-structures', 'salaryStructures', 'admin.payroll.salary-structures.index', 'layers', 'payroll', 115, [
+                'permission' => 'payroll.manage-structures',
+                'permissionsAny' => ['payroll.manage-structures', 'payroll.view'],
+                'module' => 'payroll',
+                'routePattern' => 'admin.payroll.salary-structures.*',
+                'keywords' => ['salary structure', 'compensation', 'payroll', 'components'],
+            ]),
             self::item('tax-slabs', 'taxSlabs', 'admin.payroll.tax-slabs.index', 'layers', 'payroll', 120, [
                 'permission' => 'payroll.manage-tax-slabs',
                 'permissionsAny' => ['payroll.manage-tax-slabs', 'payroll.view'],

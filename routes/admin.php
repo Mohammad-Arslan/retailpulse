@@ -65,6 +65,7 @@ use App\Http\Controllers\Admin\Overtime\ToilCashClaimController;
 use App\Http\Controllers\Admin\Payroll\PayComponentController;
 use App\Http\Controllers\Admin\Payroll\PayrollRunController;
 use App\Http\Controllers\Admin\Payroll\PayslipController;
+use App\Http\Controllers\Admin\Payroll\SalaryStructureController;
 use App\Http\Controllers\Admin\Payroll\StatutorySchemeController;
 use App\Http\Controllers\Admin\Payroll\TaxSlabController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -232,6 +233,10 @@ Route::middleware(['auth', 'admin', 'branch.context'])
             Route::post('pay-components', [PayComponentController::class, 'store'])->name('pay-components.store');
             Route::put('pay-components/{pay_component}', [PayComponentController::class, 'update'])->name('pay-components.update');
             Route::delete('pay-components/{pay_component}', [PayComponentController::class, 'destroy'])->name('pay-components.destroy');
+
+            Route::get('salary-structures', [SalaryStructureController::class, 'index'])->name('salary-structures.index');
+            Route::post('salary-structures', [SalaryStructureController::class, 'store'])->name('salary-structures.store');
+            Route::put('salary-structures/{salary_structure}', [SalaryStructureController::class, 'update'])->name('salary-structures.update');
 
             Route::get('tax-slabs', [TaxSlabController::class, 'index'])->name('tax-slabs.index');
             Route::post('tax-slabs', [TaxSlabController::class, 'store'])->name('tax-slabs.store');

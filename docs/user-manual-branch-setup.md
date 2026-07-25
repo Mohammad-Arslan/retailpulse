@@ -149,9 +149,13 @@ Go to **Users**, create the accounts this branch needs, and **assign each user t
 
 Set up **Departments**, **Designations**, and **Grades** under HR. A **Holiday Calendar** is optional but recommended if this branch has different holidays than others.
 
-### Step 4 — Employees
+### Step 4 — Salary Structures (if payroll is enabled)
 
-Create employees under **HR → Employees**. If an employee should be able to log in, link them to their user account via the **Linked User** field on the employee form — no database editing needed.
+Go to **Payroll → Salary Structures** and define the pay component line items (basic pay, allowances, deductions) that make up each structure. Every employee who should run through payroll needs a structure assigned.
+
+### Step 5 — Employees
+
+Create employees under **HR → Employees**. If an employee should be able to log in, link them to their user account via the **Linked User** field on the employee form — no database editing needed. Assign a **Salary Structure** on the employee form if payroll applies to them.
 
 ---
 
