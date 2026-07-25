@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\DB;
     'success_rows',
     'failed_rows',
     'skipped_rows',
+    'last_processed_row_index',
     'summary',
     'error_message',
     'options',

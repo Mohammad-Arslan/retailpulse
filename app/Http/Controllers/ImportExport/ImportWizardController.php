@@ -45,6 +45,17 @@ final class ImportWizardController extends Controller
         $path = $this->storeImportFile($request->file('file'), $entityType);
         $preview = SpreadsheetReader::preview($path);
         $totalRows = SpreadsheetReader::for($path, 'import_export')->count();
+
+        $maxRows = (int) config('import-export.max_row_count', 50000);
+        if ($totalRows > $maxRows) {
+            $this->deleteImportFile($path);
+
+            return response()->json([
+                'message' => __('importExport.rowCountExceeded', ['max' => number_format($maxRows)]),
+                'errors' => ['file' => [__('importExport.rowCountExceeded', ['max' => number_format($maxRows)])]],
+            ], 422);
+        }
+
         $tenantId = TenantImportScope::normalize($user->tenant_id);
         $defaultProfile = ImportValidationProfile::defaultFor($tenantId, $entityType);
 

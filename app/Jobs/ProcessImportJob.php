@@ -25,6 +25,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -32,9 +33,12 @@ final class ProcessImportJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 1;
+    public int $tries = 3;
 
     public int $timeout = 3600;
+
+    /** @var list<int> */
+    public array $backoff = [30, 120];
 
     private const int ROW_TRANSIENT_RETRIES = 3;
 
@@ -46,8 +50,28 @@ final class ProcessImportJob implements ShouldQueue
 
     public function handle(DynamicRuleEngine $ruleEngine): void
     {
+        $lock = Cache::lock("import-job-processing:{$this->jobId}", $this->timeout + 60);
+
+        if (! $lock->get()) {
+            $this->release(30);
+
+            return;
+        }
+
+        try {
+            $this->processImport($ruleEngine);
+        } finally {
+            $lock->forceRelease();
+        }
+    }
+
+    private function processImport(DynamicRuleEngine $ruleEngine): void
+    {
         $job = ImportExportJob::query()->findOrFail($this->jobId);
-        $job->markProcessing();
+
+        if ($job->status !== 'processing') {
+            $job->markProcessing();
+        }
 
         try {
             $handler = ImportExportRegistry::importHandler($job->entity_type);
@@ -56,6 +80,8 @@ final class ProcessImportJob implements ShouldQueue
             $columnRules = $job->column_rules_snapshot ?? [];
             $mapping = $job->column_mapping ?? [];
             $formatter = ImportErrorFormatter::forJob($job);
+
+            $checkpoint = $job->last_processed_row_index;
 
             $errorIndexes = ImportRowError::query()
                 ->where('job_id', $job->id)
@@ -81,8 +107,13 @@ final class ProcessImportJob implements ShouldQueue
                 $chunkFailed = 0;
                 $chunkSkipped = 0;
                 $newSuccessRows = [];
+                $chunkMaxRowIndex = null;
 
                 foreach ($chunk as $rowIndex => $row) {
+                    if ($checkpoint !== null && $rowIndex <= $checkpoint) {
+                        continue;
+                    }
+
                     if (isset($errorIndexes[$rowIndex])) {
                         $chunkSkipped++;
 
@@ -90,11 +121,6 @@ final class ProcessImportJob implements ShouldQueue
                     }
 
                     if (isset($successIndexes[$rowIndex])) {
-                        // Already succeeded in a prior attempt at this same job (e.g. a
-                        // Horizon retry after the worker died mid-import). Don't
-                        // reprocess it — re-applying it could trip a business
-                        // idempotency guard (e.g. "opening balance already exists")
-                        // and record a false failure for a row that already succeeded.
                         $chunkSuccess++;
 
                         continue;
@@ -127,6 +153,8 @@ final class ProcessImportJob implements ShouldQueue
                             'errors' => $outcome['errors'],
                         ]);
                     }
+
+                    $chunkMaxRowIndex = $rowIndex;
                 }
 
                 if ($newSuccessRows !== []) {
@@ -139,6 +167,13 @@ final class ProcessImportJob implements ShouldQueue
                 $skipped += $chunkSkipped;
 
                 $job->incrementCounters($chunkProcessed, $chunkSuccess, $chunkFailed, $chunkSkipped);
+
+                if ($chunkMaxRowIndex !== null) {
+                    ImportExportJob::query()
+                        ->whereKey($job->id)
+                        ->update(['last_processed_row_index' => $chunkMaxRowIndex]);
+                }
+
                 $job->refresh();
 
                 ImportProgressUpdated::dispatch($job->ulid, (int) $job->user_id, [
@@ -148,7 +183,7 @@ final class ProcessImportJob implements ShouldQueue
                     'success' => (int) $job->success_rows,
                     'failed' => (int) $job->failed_rows,
                     'skipped' => (int) $job->skipped_rows,
-                    'errors' => (int) ImportRowError::query()->where('job_id', $job->id)->count(),
+                    'errors' => (int) $job->failed_rows,
                 ]);
             }
 
@@ -178,6 +213,8 @@ final class ProcessImportJob implements ShouldQueue
         if ($job !== null && ! in_array($job->status, ['completed', 'failed'], true)) {
             $job->markFailed($exception->getMessage());
         }
+
+        Cache::lock("import-job-processing:{$this->jobId}")->forceRelease();
     }
 
     /**
