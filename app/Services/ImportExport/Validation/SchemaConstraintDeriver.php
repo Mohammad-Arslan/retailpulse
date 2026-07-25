@@ -118,6 +118,7 @@ final class SchemaConstraintDeriver
 
                 if (count($businessColumns) > 1) {
                     $inexpressible[] = 'composite_unique:'.$table;
+
                     continue;
                 }
 
@@ -126,6 +127,7 @@ final class SchemaConstraintDeriver
 
                 if ($logical === null) {
                     $inexpressible[] = 'unmapped_unique:'.$table;
+
                     continue;
                 }
 

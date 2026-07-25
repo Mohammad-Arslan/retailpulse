@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\ImportExport;
 
-use App\Jobs\ProcessImportJob;
 use App\Models\ImportExportJob;
+use App\Repositories\Eloquent\InventoryRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -71,11 +71,11 @@ final class ImportConcurrencyTest extends TestCase
         // and returns an Inventory instance (actual lock behavior requires a
         // real MySQL connection with concurrent connections to demonstrate).
         $this->assertTrue(
-            method_exists(\App\Repositories\Eloquent\InventoryRepository::class, 'lockOrCreate'),
+            method_exists(InventoryRepository::class, 'lockOrCreate'),
             'InventoryRepository must have lockOrCreate for atomic stock mutations'
         );
         $this->assertTrue(
-            method_exists(\App\Repositories\Eloquent\InventoryRepository::class, 'findForUpdate'),
+            method_exists(InventoryRepository::class, 'findForUpdate'),
             'InventoryRepository must have findForUpdate for SELECT FOR UPDATE'
         );
     }

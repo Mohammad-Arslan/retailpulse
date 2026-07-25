@@ -10,6 +10,7 @@ use App\Models\ImportRowError;
 use App\Models\ImportRowSuccess;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
@@ -75,7 +76,7 @@ final class ImportResumeAndGuardrailsTest extends TestCase
             [
                 'entity_type' => 'brands',
                 'mode' => 'create',
-                'file' => \Illuminate\Http\UploadedFile::fake()->create('test.csv', 100),
+                'file' => UploadedFile::fake()->create('test.csv', 100),
             ]
         );
 
