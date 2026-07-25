@@ -10,16 +10,22 @@ use App\Exceptions\ImportExport\ImportRowException;
 use App\Models\ImportExportJob;
 use App\Models\ImportRowError;
 use App\Models\ImportRowSuccess;
+use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
+use App\Services\ImportExport\ImportErrorFormatter;
 use App\Services\ImportExport\ImportExportRegistry;
+use App\Services\ImportExport\ImportQueryExceptionClassifier;
+use App\Services\ImportExport\ImportRowResult;
 use App\Services\ImportExport\RowMapper;
 use App\Services\ImportExport\SpreadsheetReader;
 use App\Services\ImportExport\Validation\DynamicRuleEngine;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 final class ProcessImportJob implements ShouldQueue
@@ -29,6 +35,8 @@ final class ProcessImportJob implements ShouldQueue
     public int $tries = 1;
 
     public int $timeout = 3600;
+
+    private const int ROW_TRANSIENT_RETRIES = 3;
 
     public function __construct(
         public int $jobId,
@@ -47,6 +55,7 @@ final class ProcessImportJob implements ShouldQueue
             $reader = SpreadsheetReader::for((string) $job->input_file_path, 'import_export');
             $columnRules = $job->column_rules_snapshot ?? [];
             $mapping = $job->column_mapping ?? [];
+            $formatter = ImportErrorFormatter::forJob($job);
 
             $errorIndexes = ImportRowError::query()
                 ->where('job_id', $job->id)
@@ -95,32 +104,27 @@ final class ProcessImportJob implements ShouldQueue
                     $transformed = $ruleEngine->applyTransforms($row, $columnRules);
                     $systemRow = RowMapper::toSystemKeys($transformed, $mapping);
 
-                    try {
-                        $result = $handler->processRow($systemRow, $context);
+                    $outcome = $this->processRowWithIsolation(
+                        $handler,
+                        $systemRow,
+                        $context,
+                        $formatter,
+                    );
 
-                        if ($result->success) {
-                            $chunkSuccess++;
-                            $newSuccessRows[] = [
-                                'job_id' => $job->id,
-                                'row_index' => $rowIndex,
-                                'created_at' => now(),
-                            ];
-                        } else {
-                            $chunkFailed++;
-                            ImportRowError::query()->create([
-                                'job_id' => $job->id,
-                                'row_index' => $rowIndex,
-                                'row_data' => $transformed,
-                                'errors' => ['_row' => [$result->message ?? 'Processing failed']],
-                            ]);
-                        }
-                    } catch (ImportRowException $e) {
+                    if ($outcome['ok']) {
+                        $chunkSuccess++;
+                        $newSuccessRows[] = [
+                            'job_id' => $job->id,
+                            'row_index' => $rowIndex,
+                            'created_at' => now(),
+                        ];
+                    } else {
                         $chunkFailed++;
                         ImportRowError::query()->create([
                             'job_id' => $job->id,
                             'row_index' => $rowIndex,
                             'row_data' => $transformed,
-                            'errors' => ['_row' => [$e->getMessage()]],
+                            'errors' => $outcome['errors'],
                         ]);
                     }
                 }
@@ -173,6 +177,66 @@ final class ProcessImportJob implements ShouldQueue
 
         if ($job !== null && ! in_array($job->status, ['completed', 'failed'], true)) {
             $job->markFailed($exception->getMessage());
+        }
+    }
+
+    /**
+     * Process a single row inside its own transaction/savepoint. Integrity and exhausted
+     * transient DB errors become row failures; systemic QueryExceptions rethrow.
+     *
+     * @param  array<string, mixed>  $systemRow
+     * @return array{ok: bool, errors?: array<string, list<string>>}
+     */
+    private function processRowWithIsolation(
+        ImportHandler $handler,
+        array $systemRow,
+        ImportContext $context,
+        ImportErrorFormatter $formatter,
+    ): array {
+        $attempts = 0;
+
+        while (true) {
+            try {
+                /** @var ImportRowResult $result */
+                $result = DB::transaction(
+                    fn () => $handler->processRow($systemRow, $context)
+                );
+
+                if ($result->success) {
+                    return ['ok' => true];
+                }
+
+                return [
+                    'ok' => false,
+                    'errors' => ['_row' => [$result->message ?? 'Processing failed']],
+                ];
+            } catch (ImportRowException $e) {
+                return [
+                    'ok' => false,
+                    'errors' => ['_row' => [$e->getMessage()]],
+                ];
+            } catch (QueryException $e) {
+                $kind = ImportQueryExceptionClassifier::classify($e);
+
+                if ($kind === ImportQueryExceptionClassifier::KIND_TRANSIENT && $attempts < self::ROW_TRANSIENT_RETRIES) {
+                    $attempts++;
+                    usleep(50_000 * $attempts);
+
+                    continue;
+                }
+
+                if (
+                    $kind === ImportQueryExceptionClassifier::KIND_INTEGRITY
+                    || $kind === ImportQueryExceptionClassifier::KIND_TRANSIENT
+                ) {
+                    return [
+                        'ok' => false,
+                        'errors' => $formatter->fromQueryException($e),
+                    ];
+                }
+
+                throw $e;
+            }
         }
     }
 }

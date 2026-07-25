@@ -1,7 +1,7 @@
 # RetailPulse — Phase Gaps Register
 
 Tracked gaps between **phase specifications** (`docs/phases/`) and the **current codebase**.  
-Last reviewed: 2026-07-22 (Phase 3: P3-03 cross-branch data access documented; HR Employees `BranchContext` enforcement closed. Phase 11 correctness bugs P11-27–P11-31 closed 2026-07-14; P11-16/P11-25 resolved; P11-26 Intercompany remains open).
+Last reviewed: 2026-07-26 (Import/export engine hardening Workstream A: per-row QueryException isolation).
 
 ## Severity legend
 
@@ -359,6 +359,7 @@ Cross-reference: Phase 12's `P12-08` Enterprise HRMS expansion and any future br
 | X-06 | COA / opening balance import | — | **Resolved** — see P11-05. |
 | X-07 | Report Excel/PDF export queue | **Medium** | Phase 13 |
 | X-08 | Import/export API endpoints | **Low** | Partial — admin session routes exist; Phase 15 external API TBD. |
+| IE-A | **One bad DB row crashed the whole import** — `ProcessImportJob` only caught `ImportRowException`; `QueryException` integrity violations (SQLSTATE class `23`: unique/not-null/FK) bubbled to job failure (`tries = 1`), abandoning remaining rows | — | **Resolved 2026-07-26 (Workstream A)** — per-row transaction/savepoint; integrity → `ImportRowError` + continue; transient (`40001`/`40P01`/MySQL `1213`/`1205`) retried then row-error; systemic (e.g. `42S22` unknown column) still fails the job. `ImportErrorFormatter::fromQueryException` maps without leaking table/index/constraint names. Correctness floor for later locked-rules work (Workstream B). |
 
 **Onboarding critical path (new retailer):** Product import → opening stock → POS go-live (Phase 7) → optional historical sales for charts.
 
