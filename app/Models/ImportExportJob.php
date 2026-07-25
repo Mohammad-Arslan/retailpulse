@@ -71,6 +71,11 @@ class ImportExportJob extends Model
         return $this->hasMany(ImportRowError::class, 'job_id');
     }
 
+    public function rowSuccesses(): HasMany
+    {
+        return $this->hasMany(ImportRowSuccess::class, 'job_id');
+    }
+
     /**
      * @param  Builder<self>  $query
      * @return Builder<self>
@@ -135,6 +140,10 @@ class ImportExportJob extends Model
     public function markProcessing(): void
     {
         $this->status = 'processing';
+        $this->processed_rows = 0;
+        $this->success_rows = 0;
+        $this->failed_rows = 0;
+        $this->skipped_rows = 0;
         $this->save();
     }
 

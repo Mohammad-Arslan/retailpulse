@@ -9,6 +9,7 @@ use App\Events\ImportExport\ImportProgressUpdated;
 use App\Exceptions\ImportExport\ImportRowException;
 use App\Models\ImportExportJob;
 use App\Models\ImportRowError;
+use App\Models\ImportRowSuccess;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportExportRegistry;
 use App\Services\ImportExport\RowMapper;
@@ -53,6 +54,12 @@ final class ProcessImportJob implements ShouldQueue
                 ->flip()
                 ->all();
 
+            $successIndexes = ImportRowSuccess::query()
+                ->where('job_id', $job->id)
+                ->pluck('row_index')
+                ->flip()
+                ->all();
+
             $chunkSize = $handler->chunkSize();
             $processed = 0;
             $success = 0;
@@ -64,10 +71,22 @@ final class ProcessImportJob implements ShouldQueue
                 $chunkSuccess = 0;
                 $chunkFailed = 0;
                 $chunkSkipped = 0;
+                $newSuccessRows = [];
 
                 foreach ($chunk as $rowIndex => $row) {
                     if (isset($errorIndexes[$rowIndex])) {
                         $chunkSkipped++;
+
+                        continue;
+                    }
+
+                    if (isset($successIndexes[$rowIndex])) {
+                        // Already succeeded in a prior attempt at this same job (e.g. a
+                        // Horizon retry after the worker died mid-import). Don't
+                        // reprocess it — re-applying it could trip a business
+                        // idempotency guard (e.g. "opening balance already exists")
+                        // and record a false failure for a row that already succeeded.
+                        $chunkSuccess++;
 
                         continue;
                     }
@@ -81,6 +100,11 @@ final class ProcessImportJob implements ShouldQueue
 
                         if ($result->success) {
                             $chunkSuccess++;
+                            $newSuccessRows[] = [
+                                'job_id' => $job->id,
+                                'row_index' => $rowIndex,
+                                'created_at' => now(),
+                            ];
                         } else {
                             $chunkFailed++;
                             ImportRowError::query()->create([
@@ -99,6 +123,10 @@ final class ProcessImportJob implements ShouldQueue
                             'errors' => ['_row' => [$e->getMessage()]],
                         ]);
                     }
+                }
+
+                if ($newSuccessRows !== []) {
+                    ImportRowSuccess::query()->insert($newSuccessRows);
                 }
 
                 $processed += $chunkProcessed;

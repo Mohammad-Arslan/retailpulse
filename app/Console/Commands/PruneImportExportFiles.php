@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Models\ImportExportJob;
 use App\Models\ImportRowError;
+use App\Models\ImportRowSuccess;
 use App\Traits\HandlesImportExportStorage;
 use Illuminate\Console\Command;
 
@@ -43,6 +44,7 @@ final class PruneImportExportFiles extends Command
             }
 
             ImportRowError::query()->where('job_id', $job->id)->delete();
+            ImportRowSuccess::query()->where('job_id', $job->id)->delete();
             $count++;
         }
 
