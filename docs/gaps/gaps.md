@@ -119,7 +119,7 @@ Cross-reference: Phase 12's `P12-08` Enterprise HRMS expansion and any future br
 
 | ID | Gap | Severity | Notes |
 | :--- | :--- | :---: | :--- |
-| P4-01 | **`reorder_point` not editable in product/variant UI** — DB column exists on `product_variants` | **High** | Blocks low-stock alerts (Phase 5/6); operators cannot set thresholds. |
+| P4-01 | **`reorder_point` not editable in product/variant UI** — DB column exists on `product_variants` | — | **Resolved** — already fully wired (found already-implemented 2026-07-26 while auditing this gap; closed by an earlier catalogue-completion pass, this entry was stale): `default_reorder_point` + per-variant `reorder_point` fields in `ProductFormFields.jsx`/`VariantPricingMatrix.jsx`, validated in `Store`/`UpdateProductRequest` (`nullable\|integer\|min:0`), carried through `CreateProductData`/`UpdateProductData`, and persisted via `ProductService::resolveReorderPoint()`. Added `tests/Feature/Admin/ProductReorderPointTest.php` for regression coverage (round-trip + validation), since none existed. |
 | P4-02 | **Serial capture on stock receive** — `product_serials` + serialized type exist; receive flow has no serial input | **High** | Phase 4: “serial capture on receive (Phase 5)”. |
 | P4-03 | **`tax_group_id`** nullable, no tax UI | **Low** | Deferred to Phase 14 per phase doc. |
 
@@ -133,7 +133,7 @@ Cross-reference: Phase 12's `P12-08` Enterprise HRMS expansion and any future br
 | ID | Gap | Severity | Notes |
 | :--- | :--- | :---: | :--- |
 | P5-01 | **FEFO/FIFO picking strategy** — `allocateDeductionLines` uses branch strategy; FEFO join column ambiguity fixed | — | **Resolved 2026-07-06** (service tests added) |
-| P5-02 | **Low-stock detection depends on `reorder_point`** — see P4-01 | **High** | Count/query logic exists in `DashboardService` / broadcast payload; data entry missing. |
+| P5-02 | **Low-stock detection depends on `reorder_point`** — see P4-01 | — | **Resolved** — see P4-01; data entry is available, `DashboardService::inventoryHealth()` already counts against it. |
 | P5-03 | **Reserve/release on cart hold** — wired in `PosCartService` | — | **Resolved** — implemented with Phase 7 POS. |
 | P5-04 | Stock availability API exists (`POST /api/v1/inventory/check-availability`) | — | **Not a gap** — acceptance criterion met. |
 | P5-05 | **Stock mutation single source of truth** — `BinLocationService` / `QuarantineService` route through `InventoryService` | — | **Resolved 2026-07-06** |
