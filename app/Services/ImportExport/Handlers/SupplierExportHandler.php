@@ -7,6 +7,7 @@ namespace App\Services\ImportExport\Handlers;
 use App\Models\Supplier;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\TenantImportScope;
 use Illuminate\Database\Eloquent\Builder;
 
 final class SupplierExportHandler implements ExportHandler
@@ -27,7 +28,8 @@ final class SupplierExportHandler implements ExportHandler
 
     public function query(ExportContext $context): Builder
     {
-        return Supplier::query()->orderBy('name');
+        return TenantImportScope::constrain(Supplier::query(), $context->tenantId)
+            ->orderBy('name');
     }
 
     public function map(mixed $record, ExportContext $context): array

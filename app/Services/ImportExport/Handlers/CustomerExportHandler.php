@@ -11,6 +11,7 @@ use App\Services\Customer\StoreCreditService;
 use App\Services\Customer\WalletService;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\TenantImportScope;
 use Illuminate\Database\Eloquent\Builder;
 
 final class CustomerExportHandler implements ExportHandler
@@ -31,7 +32,7 @@ final class CustomerExportHandler implements ExportHandler
 
     public function query(ExportContext $context): Builder
     {
-        $query = Customer::query()
+        $query = TenantImportScope::constrain(Customer::query(), $context->tenantId)
             ->with(['loyaltyTier', 'customerGroup'])
             ->orderBy('name');
 

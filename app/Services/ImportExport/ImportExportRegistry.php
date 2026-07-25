@@ -50,4 +50,16 @@ final class ImportExportRegistry
     {
         return array_keys(self::$entities);
     }
+
+    /**
+     * Clear all registrations. For use in test isolation only.
+     *
+     * NOTE: The static registry will need rework for SaaS per-plan gating
+     * (e.g. tenant A has product import disabled). This is tracked as a known
+     * gap — don't attempt to fix here without ADR-level discussion.
+     */
+    public static function resetForTesting(): void
+    {
+        self::$entities = [];
+    }
 }

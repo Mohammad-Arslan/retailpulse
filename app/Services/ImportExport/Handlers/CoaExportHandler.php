@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\ChartOfAccount;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\TenantImportScope;
 use Illuminate\Database\Eloquent\Builder;
 
 final class CoaExportHandler implements ExportHandler
@@ -29,7 +30,8 @@ final class CoaExportHandler implements ExportHandler
 
     public function query(ExportContext $context): Builder
     {
-        return ChartOfAccount::query()->orderBy('code');
+        return TenantImportScope::constrain(ChartOfAccount::query(), $context->tenantId)
+            ->orderBy('code');
     }
 
     public function map(mixed $record, ExportContext $context): array

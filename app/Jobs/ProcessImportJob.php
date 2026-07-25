@@ -206,7 +206,15 @@ final class ProcessImportJob implements ShouldQueue
                 'errors' => (int) $job->failed_rows,
             ]);
 
-            $handler->afterImport($context);
+            $job->refresh();
+
+            // Only run afterImport if at least one row succeeded; handlers may
+            // finalize batch state (e.g. OpeningBalanceImportHandler::finalize)
+            // that would be meaningless or harmful on a fully-failed import.
+            if ((int) $job->success_rows > 0) {
+                $handler->afterImport($context);
+            }
+
             $job->refresh();
 
             if (ImportRowError::query()->where('job_id', $job->id)->exists()) {
