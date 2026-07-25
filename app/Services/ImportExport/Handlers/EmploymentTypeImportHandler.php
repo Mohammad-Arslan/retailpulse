@@ -6,6 +6,7 @@ namespace App\Services\ImportExport\Handlers;
 
 use App\Models\HrEmploymentType;
 use App\Models\OrganizationEntity;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -13,6 +14,13 @@ use Illuminate\Support\Facades\DB;
 
 final class EmploymentTypeImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
+    public function targetModels(): array
+    {
+        return [HrEmploymentType::class];
+    }
+
     public function columns(): array
     {
         return [

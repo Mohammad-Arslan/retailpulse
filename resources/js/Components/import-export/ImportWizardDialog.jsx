@@ -91,6 +91,7 @@ export default function ImportWizardDialog({
     const [systemFields, setSystemFields] = useState([]);
     const [mapping, setMapping] = useState({});
     const [columnRules, setColumnRules] = useState([]);
+    const [lockedConstraints, setLockedConstraints] = useState({ fields: [] });
     const [availableRules, setAvailableRules] = useState([]);
     const [availableTransforms, setAvailableTransforms] = useState([]);
     const [importBehaviors, setImportBehaviors] = useState([]);
@@ -133,6 +134,7 @@ export default function ImportWizardDialog({
             setSystemFields([]);
             setMapping({});
             setColumnRules([]);
+            setLockedConstraints({ fields: [] });
             setAvailableRules([]);
             setAvailableTransforms([]);
             setImportBehaviors([]);
@@ -203,6 +205,7 @@ export default function ImportWizardDialog({
             await saveMapping(ulid, mapping);
             const rulesData = await fetchRules(ulid);
             setColumnRules(rulesData.column_rules ?? []);
+            setLockedConstraints(rulesData.locked_constraints ?? { fields: [] });
             setAvailableRules(rulesData.available_rules ?? []);
             setAvailableTransforms(rulesData.available_transforms ?? []);
             const behaviors = rulesData.import_behaviors ?? [];
@@ -424,6 +427,7 @@ export default function ImportWizardDialog({
                     <div className="space-y-5">
                         <ImportValidationConfig
                             columnRules={columnRules}
+                            lockedConstraints={lockedConstraints}
                             availableRules={availableRules}
                             availableTransforms={availableTransforms}
                             importBehaviors={importBehaviors}

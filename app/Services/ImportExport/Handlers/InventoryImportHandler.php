@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\ImportExport\Handlers;
 
 use App\Exceptions\ImportExport\ImportRowException;
+use App\Models\Inventory;
 use App\Services\Accounting\CostService;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -16,11 +18,25 @@ use Illuminate\Validation\ValidationException;
 
 final class InventoryImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
     public function __construct(
         private readonly InventoryService $inventory,
         private readonly InventoryImportSupport $support,
         private readonly CostService $costService,
     ) {}
+
+    public function targetModels(): array
+    {
+        return [Inventory::class];
+    }
+
+    public function columnMap(): array
+    {
+        return [
+            'qty' => 'quantity_on_hand',
+        ];
+    }
 
     public function columns(): array
     {

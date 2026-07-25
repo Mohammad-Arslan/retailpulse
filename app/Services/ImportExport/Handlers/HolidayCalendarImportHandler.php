@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\HolidayCalendar;
 use App\Models\HolidayDate;
 use App\Models\OrganizationEntity;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -15,6 +16,25 @@ use Illuminate\Support\Facades\DB;
 
 final class HolidayCalendarImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
+    public function targetModels(): array
+    {
+        return [HolidayCalendar::class, HolidayDate::class];
+    }
+
+    public function columnMap(): array
+    {
+        return [
+            'calendar_code' => 'code',
+            'calendar_name' => 'name',
+            'holiday_date' => HolidayDate::class.'.holiday_date',
+            'holiday_name' => HolidayDate::class.'.name',
+            'holiday_type' => HolidayDate::class.'.holiday_type',
+            'is_paid' => HolidayDate::class.'.is_paid',
+        ];
+    }
+
     public function columns(): array
     {
         return [

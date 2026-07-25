@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ImportExport\Handlers;
 
 use App\Models\Unit;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -13,6 +14,13 @@ use Illuminate\Support\Facades\DB;
 
 final class UnitImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
+    public function targetModels(): array
+    {
+        return [Unit::class];
+    }
+
     public function columns(): array
     {
         return [

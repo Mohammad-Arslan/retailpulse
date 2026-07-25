@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\Accounting\DocumentNumberService;
 use App\Services\BranchContextService;
 use App\Services\Hr\ReportingHierarchyService;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -25,11 +26,46 @@ use Illuminate\Validation\ValidationException;
 
 final class EmployeeImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
     public function __construct(
         private readonly DocumentNumberService $documentNumbers,
         private readonly ReportingHierarchyService $hierarchy,
         private readonly BranchContextService $branchContext,
     ) {}
+
+    public function targetModels(): array
+    {
+        return [Employee::class];
+    }
+
+    public function columnMap(): array
+    {
+        return [
+            'employee_code' => 'employee_code',
+            'first_name' => 'first_name',
+            'last_name' => 'last_name',
+            'middle_name' => 'middle_name',
+            'preferred_name' => 'preferred_name',
+            'title' => 'title',
+            'email' => 'email',
+            'phone' => 'phone',
+            'gender' => 'gender',
+            'date_of_birth' => 'date_of_birth',
+            'marital_status' => 'marital_status',
+            'nationality' => 'nationality',
+            'national_id' => 'national_id_encrypted',
+            'hire_date' => 'hire_date',
+            'probation_end_date' => 'probation_end_date',
+            'confirmation_date' => 'confirmation_date',
+            'contract_end_date' => 'contract_end_date',
+            'termination_date' => 'termination_date',
+            'employment_type' => 'employment_type',
+            'joined_as' => 'joined_as',
+            'payment_method' => 'payment_method',
+            'status' => 'status',
+        ];
+    }
 
     public function columns(): array
     {

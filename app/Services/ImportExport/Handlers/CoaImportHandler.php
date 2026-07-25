@@ -4,16 +4,38 @@ declare(strict_types=1);
 
 namespace App\Services\ImportExport\Handlers;
 
+use App\Models\ChartOfAccount;
 use App\Services\Accounting\CoaImportService;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
 
 final class CoaImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
     public function __construct(
         private readonly CoaImportService $coaImport,
     ) {}
+
+    public function targetModels(): array
+    {
+        return [ChartOfAccount::class];
+    }
+
+    public function columnMap(): array
+    {
+        return [
+            'code' => 'code',
+            'name' => 'name',
+            'type' => 'type',
+            'is_group' => 'is_group',
+            'is_postable' => 'is_postable',
+            'currency_code' => 'currency_code',
+            'status' => 'status',
+        ];
+    }
 
     public function columns(): array
     {

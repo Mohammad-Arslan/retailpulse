@@ -7,6 +7,7 @@ namespace App\Services\ImportExport\Handlers;
 use App\Models\Designation;
 use App\Models\Grade;
 use App\Models\OrganizationEntity;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -14,6 +15,13 @@ use Illuminate\Support\Facades\DB;
 
 final class DesignationImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
+    public function targetModels(): array
+    {
+        return [Designation::class];
+    }
+
     public function columns(): array
     {
         return [

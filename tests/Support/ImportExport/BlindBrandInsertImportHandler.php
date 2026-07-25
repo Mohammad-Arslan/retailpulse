@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Support\ImportExport;
 
 use App\Models\Brand;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ExportContext;
@@ -19,6 +20,8 @@ use Illuminate\Database\QueryException;
  */
 final class BlindBrandInsertImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
     /** @var array<int, int> */
     private static array $transientFailRemaining = [];
 
@@ -30,6 +33,19 @@ final class BlindBrandInsertImportHandler implements ImportHandler
     public static function failTransientTimes(int $times): void
     {
         self::$transientFailRemaining[0] = $times;
+    }
+
+    public function targetModels(): array
+    {
+        return [Brand::class];
+    }
+
+    public function columnMap(): array
+    {
+        return [
+            'code' => 'slug',
+            'name' => 'name',
+        ];
     }
 
     public function columns(): array

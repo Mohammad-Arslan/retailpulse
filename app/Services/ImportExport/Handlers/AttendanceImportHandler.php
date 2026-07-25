@@ -8,6 +8,7 @@ use App\Models\AttendanceRecord;
 use App\Models\AttendanceSource;
 use App\Models\Branch;
 use App\Models\Employee;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -22,6 +23,22 @@ use Illuminate\Support\Facades\DB;
  */
 final class AttendanceImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
+    public function targetModels(): array
+    {
+        return [AttendanceRecord::class];
+    }
+
+    public function columnMap(): array
+    {
+        return [
+            'clock_in' => 'clock_in',
+            'clock_out' => 'clock_out',
+            'worked_minutes' => 'worked_minutes',
+        ];
+    }
+
     public function columns(): array
     {
         return [

@@ -1,7 +1,7 @@
 # RetailPulse — Phase Gaps Register
 
 Tracked gaps between **phase specifications** (`docs/phases/`) and the **current codebase**.  
-Last reviewed: 2026-07-26 (Import/export engine hardening Workstream A: per-row QueryException isolation).
+Last reviewed: 2026-07-26 (Import/export engine hardening Workstreams A–B).
 
 ## Severity legend
 
@@ -360,6 +360,7 @@ Cross-reference: Phase 12's `P12-08` Enterprise HRMS expansion and any future br
 | X-07 | Report Excel/PDF export queue | **Medium** | Phase 13 |
 | X-08 | Import/export API endpoints | **Low** | Partial — admin session routes exist; Phase 15 external API TBD. |
 | IE-A | **One bad DB row crashed the whole import** — `ProcessImportJob` only caught `ImportRowException`; `QueryException` integrity violations (SQLSTATE class `23`: unique/not-null/FK) bubbled to job failure (`tries = 1`), abandoning remaining rows | — | **Resolved 2026-07-26 (Workstream A)** — per-row transaction/savepoint; integrity → `ImportRowError` + continue; transient (`40001`/`40P01`/MySQL `1213`/`1205`) retried then row-error; systemic (e.g. `42S22` unknown column) still fails the job. `ImportErrorFormatter::fromQueryException` maps without leaking table/index/constraint names. Correctness floor for later locked-rules work (Workstream B). |
+| IE-B | **Import validation rules could drift from DB schema** — wizard rules were fully editable; removing unique/required in UI (or via API) left the DB as the only backstop, with no honest pre-flight signal | — | **Resolved 2026-07-26 (Workstream B)** — `SchemaConstraintDeriver` + `ValidationConstraintDTO` (no schema identifiers in response); locked rules on Rules screen; `saveRules`/`confirm` re-impose locked set server-side; handler `targetModels()`/`columnMap()`; parity test over all registered import handlers. Unique is advisory (`enforced_at: save`). |
 
 **Onboarding critical path (new retailer):** Product import → opening stock → POS go-live (Phase 7) → optional historical sales for charts.
 

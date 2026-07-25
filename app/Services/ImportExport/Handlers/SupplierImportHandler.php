@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\ImportExport\Handlers;
 
+use App\Models\Supplier;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -11,9 +13,16 @@ use App\Services\Procurement\SupplierService;
 
 final class SupplierImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
     public function __construct(
         private readonly SupplierService $suppliers,
     ) {}
+
+    public function targetModels(): array
+    {
+        return [Supplier::class];
+    }
 
     public function columns(): array
     {

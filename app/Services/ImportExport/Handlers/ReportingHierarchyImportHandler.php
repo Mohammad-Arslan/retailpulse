@@ -6,6 +6,7 @@ namespace App\Services\ImportExport\Handlers;
 
 use App\Models\Employee;
 use App\Services\Hr\ReportingHierarchyService;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -14,9 +15,16 @@ use Illuminate\Support\Facades\DB;
 
 final class ReportingHierarchyImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
     public function __construct(
         private readonly ReportingHierarchyService $hierarchy,
     ) {}
+
+    public function targetModels(): array
+    {
+        return [Employee::class];
+    }
 
     public function columns(): array
     {

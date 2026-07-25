@@ -4,16 +4,34 @@ declare(strict_types=1);
 
 namespace App\Services\ImportExport\Handlers;
 
+use App\Models\OpeningBalanceImportLine;
 use App\Services\Accounting\OpeningBalanceImportService;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
 
 final class OpeningBalanceImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
     public function __construct(
         private readonly OpeningBalanceImportService $openingBalances,
     ) {}
+
+    public function targetModels(): array
+    {
+        return [OpeningBalanceImportLine::class];
+    }
+
+    public function columnMap(): array
+    {
+        return [
+            'debit' => 'debit',
+            'credit' => 'credit',
+            'party_type' => 'party_type',
+        ];
+    }
 
     public function columns(): array
     {

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\ImportExport\Handlers;
 
+use App\Models\SupplierPriceList;
+use App\Models\SupplierPriceListItem;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -11,9 +14,30 @@ use App\Services\Procurement\SupplierPriceListService;
 
 final class SupplierPriceListImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
     public function __construct(
         private readonly SupplierPriceListService $priceLists,
     ) {}
+
+    public function targetModels(): array
+    {
+        return [SupplierPriceList::class, SupplierPriceListItem::class];
+    }
+
+    public function columnMap(): array
+    {
+        return [
+            'list_name' => 'name',
+            'valid_from' => 'valid_from',
+            'valid_to' => 'valid_to',
+            'currency_code' => 'currency_code',
+            'is_active' => 'is_active',
+            'unit_price' => SupplierPriceListItem::class.'.unit_price',
+            'min_qty' => SupplierPriceListItem::class.'.min_qty',
+            'lead_time_days' => SupplierPriceListItem::class.'.lead_time_days',
+        ];
+    }
 
     public function columns(): array
     {

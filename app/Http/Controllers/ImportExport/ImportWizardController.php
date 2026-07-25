@@ -17,9 +17,11 @@ use App\Services\ImportExport\SpreadsheetReader;
 use App\Services\ImportExport\Storage\ImportExportStorageManager;
 use App\Services\ImportExport\Validation\ImportBehaviorMetaRegistry;
 use App\Services\ImportExport\Validation\RuleMetaRegistry;
+use App\Services\ImportExport\Validation\SchemaConstraintDeriver;
 use App\Services\ImportExport\Validation\TransformPipeline;
 use App\Support\ImportExportAuthorization;
 use App\Support\TenantImportScope;
+use App\Traits\AuthorizesImportExportJob;
 use App\Traits\HandlesImportExportStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,6 +30,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class ImportWizardController extends Controller
 {
+    use AuthorizesImportExportJob;
     use HandlesImportExportStorage;
 
     public function upload(UploadImportFileRequest $request): JsonResponse
@@ -103,12 +106,14 @@ final class ImportWizardController extends Controller
 
     public function getRules(string $ulid): JsonResponse
     {
-        $job = $this->findJob($ulid);
+        $job = $this->findOwnedJob(request(), $ulid);
         $this->authorizeImport(request(), $job->entity_type);
         $handler = ImportExportRegistry::importHandler($job->entity_type);
         $tenantId = TenantImportScope::normalize($job->tenant_id);
         $defaultProfile = ImportValidationProfile::defaultFor($tenantId, $job->entity_type);
         $columnRules = $this->buildColumnRules($handler->columns(), $defaultProfile, $job->column_mapping ?? []);
+        $deriver = app(SchemaConstraintDeriver::class);
+        $columnRules = $deriver->mergeLockedIntoColumnRules($handler, $columnRules);
 
         $savedProfiles = ImportValidationProfile::forTenantAndEntity($tenantId, $job->entity_type)
             ->with('columnRules')
@@ -119,6 +124,7 @@ final class ImportWizardController extends Controller
         return response()->json([
             'ulid' => $job->ulid,
             'column_rules' => $columnRules,
+            'locked_constraints' => $deriver->dtoFor($handler)->toArray(),
             'available_rules' => RuleMetaRegistry::allRuleMeta(),
             'available_transforms' => TransformPipeline::allMeta(),
             'import_behaviors' => ImportBehaviorMetaRegistry::allBehaviorMeta(),
@@ -129,9 +135,12 @@ final class ImportWizardController extends Controller
 
     public function saveRules(SaveRulesRequest $request, string $ulid): JsonResponse
     {
-        $job = $this->findJob($ulid);
+        $job = $this->findOwnedJob($request, $ulid);
         $this->authorizeImport($request, $job->entity_type);
+        $handler = ImportExportRegistry::importHandler($job->entity_type);
         $columnRules = $this->enrichColumnRules($job->entity_type, $request->validated('column_rules'));
+        // Server owns locked schema rules — re-derive and merge; client cannot remove/weaken them.
+        $columnRules = app(SchemaConstraintDeriver::class)->mergeLockedIntoColumnRules($handler, $columnRules);
 
         $job->update([
             'column_rules_snapshot' => $columnRules,
@@ -151,14 +160,17 @@ final class ImportWizardController extends Controller
 
         return response()->json([
             'ulid' => $job->ulid,
+            'column_rules' => $columnRules,
+            'locked_constraints' => app(SchemaConstraintDeriver::class)->dtoFor($handler)->toArray(),
             'step' => 3,
         ]);
     }
 
     public function confirm(ConfirmImportRequest $request, string $ulid): JsonResponse
     {
-        $job = $this->findJob($ulid);
+        $job = $this->findOwnedJob($request, $ulid);
         $this->authorizeImport($request, $job->entity_type);
+        $handler = ImportExportRegistry::importHandler($job->entity_type);
 
         $options = $request->validated('options', []);
         $mapping = $job->column_mapping ?? [];
@@ -173,7 +185,6 @@ final class ImportWizardController extends Controller
         }
 
         if ($columnRules === null || $columnRules === []) {
-            $handler = ImportExportRegistry::importHandler($job->entity_type);
             $defaultProfile = ImportValidationProfile::defaultFor(
                 TenantImportScope::normalize($job->tenant_id),
                 $job->entity_type,
@@ -190,6 +201,9 @@ final class ImportWizardController extends Controller
         if (($options['duplicate_check'] ?? true) !== true) {
             $columnRules = $this->stripDuplicateRules($columnRules);
         }
+
+        // Locked schema uniqueness is always re-imposed after optional duplicate_check stripping.
+        $columnRules = app(SchemaConstraintDeriver::class)->mergeLockedIntoColumnRules($handler, $columnRules);
 
         $job->update([
             'is_dry_run' => $request->boolean('is_dry_run'),
@@ -284,6 +298,7 @@ final class ImportWizardController extends Controller
 
             $rules[] = [
                 'column_key' => $mappedTo,
+                'system_key' => $key,
                 'mapped_to' => $mappedTo,
                 'display_label' => $column['label'],
                 'rules' => $existing['rules'] ?? $column['default_rules'] ?? [],

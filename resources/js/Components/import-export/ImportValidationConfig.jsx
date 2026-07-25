@@ -1,6 +1,6 @@
 import Select from '@/Components/ui/select';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
+import { ChevronDown, ChevronUp, Lock, ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -19,9 +19,107 @@ function ruleLabel(rule, availableRules) {
     return meta?.label ?? key;
 }
 
-function ColumnRuleEditor({ column, availableRules, availableTransforms, onChange }) {
+function lockedRuleLabel(rule, t) {
+    const type = rule?.type ?? '';
+
+    if (type === 'required') {
+        return t('importExport.lockedRuleTypes.required');
+    }
+
+    if (type === 'string') {
+        return t('importExport.lockedRuleTypes.string');
+    }
+
+    if (type === 'integer') {
+        return t('importExport.lockedRuleTypes.integer');
+    }
+
+    if (type === 'numeric') {
+        return t('importExport.lockedRuleTypes.numeric');
+    }
+
+    if (type === 'boolean') {
+        return t('importExport.lockedRuleTypes.boolean');
+    }
+
+    if (type === 'date') {
+        return t('importExport.lockedRuleTypes.date');
+    }
+
+    if (type === 'max') {
+        return t('importExport.lockedRuleTypes.max', { value: rule.value });
+    }
+
+    if (type === 'in') {
+        return t('importExport.lockedRuleTypes.in', {
+            values: Array.isArray(rule.value) ? rule.value.join(', ') : rule.value,
+        });
+    }
+
+    if (type === 'unique') {
+        return t('importExport.lockedRuleTypes.uniqueAdvisory');
+    }
+
+    return type;
+}
+
+function LockedRuleChips({ fieldConstraints, t }) {
+    if (!fieldConstraints?.rules?.length) {
+        return null;
+    }
+
+    return (
+        <div className="mb-3">
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-rp-text-muted">
+                <Lock className="h-3 w-3" aria-hidden />
+                {t('importExport.lockedRules')}
+            </p>
+            <div className="flex flex-wrap gap-2">
+                {fieldConstraints.rules.map((rule, index) => {
+                    const isUnique = rule.type === 'unique';
+
+                    return (
+                        <span
+                            key={`${rule.type}-${index}`}
+                            className={cn(
+                                'inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium',
+                                isUnique
+                                    ? 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200'
+                                    : 'border-rp-border bg-rp-surface-inset text-rp-text-secondary',
+                            )}
+                            title={
+                                isUnique
+                                    ? t('importExport.lockedUniqueHint')
+                                    : t('importExport.lockedRuleHint')
+                            }
+                        >
+                            <Lock className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+                            {lockedRuleLabel(rule, t)}
+                        </span>
+                    );
+                })}
+            </div>
+            {fieldConstraints.rules.some((rule) => rule.type === 'unique') ? (
+                <p className="mt-1.5 text-xs text-rp-text-muted">{t('importExport.lockedUniqueHint')}</p>
+            ) : null}
+        </div>
+    );
+}
+
+function ColumnRuleEditor({
+    column,
+    availableRules,
+    availableTransforms,
+    lockedConstraints,
+    onChange,
+}) {
     const { t } = useTranslation();
     const [expanded, setExpanded] = useState(column.is_required ?? false);
+
+    const systemKey = column.system_key ?? column.mapped_to ?? column.column_key;
+    const fieldLocked = (lockedConstraints?.fields ?? []).find(
+        (entry) => entry.field === systemKey || entry.field === column.column_key,
+    );
 
     const enabledRules = column.rules ?? [];
     const enabledTransforms = Array.isArray(column.transform)
@@ -73,6 +171,12 @@ function ColumnRuleEditor({ column, availableRules, availableTransforms, onChang
                     <p className="text-sm font-medium text-rp-text">
                         {column.display_label ?? column.column_key}
                         {column.is_required ? <span className="text-destructive"> *</span> : null}
+                        {fieldLocked ? (
+                            <Lock
+                                className="ml-1.5 inline h-3.5 w-3.5 text-rp-text-muted"
+                                aria-label={t('importExport.lockedRules')}
+                            />
+                        ) : null}
                     </p>
                     <p className="text-xs text-rp-text-muted">
                         {t('importExport.mappedTo', { column: column.mapped_to ?? column.column_key })}
@@ -89,19 +193,22 @@ function ColumnRuleEditor({ column, availableRules, availableTransforms, onChang
 
             {expanded && (
                 <div className="space-y-4 border-t border-rp-border px-4 py-4">
+                    <LockedRuleChips fieldConstraints={fieldLocked} t={t} />
+
                     <label className="flex items-center gap-2 text-sm text-rp-text">
                         <input
                             type="checkbox"
                             className="rounded border-rp-border text-teal-500 focus:ring-teal-500/30"
                             checked={Boolean(column.is_required)}
                             onChange={(event) => setRequired(event.target.checked)}
+                            disabled={fieldLocked?.rules?.some((rule) => rule.type === 'required')}
                         />
                         {t('importExport.requiredField')}
                     </label>
 
                     <div>
                         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-rp-text-muted">
-                            {t('importExport.validationRules')}
+                            {t('importExport.customRules')}
                         </p>
                         {enabledRules.length === 0 ? (
                             <p className="text-xs text-rp-text-muted">{t('importExport.noRulesEnabled')}</p>
@@ -110,21 +217,39 @@ function ColumnRuleEditor({ column, availableRules, availableTransforms, onChang
                                 {enabledRules.map((rule, index) => {
                                     const name = ruleKey(rule);
                                     const meta = availableRules.find((entry) => entry.rule === name);
+                                    const isLockedEngineRule =
+                                        name === 'required' ||
+                                        name === 'unique_in_db' ||
+                                        (name === 'string' &&
+                                            fieldLocked?.rules?.some((r) => r.type === 'string'));
 
                                     return (
                                         <label
                                             key={`${name}-${index}`}
-                                            className="flex cursor-pointer items-start gap-3 rounded-md border border-teal-500/30 bg-teal-500/5 px-3 py-2"
+                                            className={cn(
+                                                'flex items-start gap-3 rounded-md border px-3 py-2',
+                                                isLockedEngineRule
+                                                    ? 'cursor-not-allowed border-rp-border bg-rp-surface-inset opacity-80'
+                                                    : 'cursor-pointer border-teal-500/30 bg-teal-500/5',
+                                            )}
                                         >
                                             <input
                                                 type="checkbox"
                                                 className="mt-0.5 rounded border-rp-border text-teal-500 focus:ring-teal-500/30"
                                                 checked
-                                                onChange={() => toggleRule(name, false)}
+                                                disabled={isLockedEngineRule}
+                                                onChange={() => {
+                                                    if (!isLockedEngineRule) {
+                                                        toggleRule(name, false);
+                                                    }
+                                                }}
                                             />
                                             <span className="min-w-0">
                                                 <span className="block text-sm font-medium text-rp-text">
                                                     {meta?.label ?? name}
+                                                    {isLockedEngineRule ? (
+                                                        <Lock className="ml-1 inline h-3 w-3 opacity-70" />
+                                                    ) : null}
                                                 </span>
                                                 {meta?.description ? (
                                                     <span className="block text-xs text-rp-text-muted">
@@ -211,6 +336,7 @@ function ColumnRuleEditor({ column, availableRules, availableTransforms, onChang
 
 export default function ImportValidationConfig({
     columnRules,
+    lockedConstraints,
     availableRules,
     availableTransforms,
     importBehaviors,
@@ -326,6 +452,7 @@ export default function ImportValidationConfig({
                             column={column}
                             availableRules={availableRules}
                             availableTransforms={availableTransforms}
+                            lockedConstraints={lockedConstraints}
                             onChange={(next) => updateColumn(index, next)}
                         />
                     ))}
