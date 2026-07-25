@@ -40,6 +40,10 @@ final class GuideContextService
                 base_path('docs/user-manual-accounting-and-finance.md'),
                 title: 'Accounting & Financial Management',
             ),
+            'branch-setup' => $this->fromMarkdownDoc(
+                base_path('docs/user-manual-branch-setup.md'),
+                title: 'Branch Setup & Onboarding',
+            ),
             default => throw new UnknownGuideException,
         };
 

@@ -50,6 +50,8 @@ Route::middleware('auth')->group(function () {
             ->name('guides.inventory-catalogue');
         Route::get('/guides/put-product-in-stock', [HelpSupportController::class, 'putProductInStockGuide'])
             ->name('guides.put-product-in-stock');
+        Route::get('/guides/branch-setup', [HelpSupportController::class, 'branchSetupGuide'])
+            ->name('guides.branch-setup');
         Route::post('/guides/{guide}/ask', [HelpSupportController::class, 'ask'])
             ->middleware('throttle:ai-guide-ask')
             ->name('guides.ask');

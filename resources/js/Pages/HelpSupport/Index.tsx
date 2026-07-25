@@ -77,8 +77,8 @@ export default function Index() {
                     title="Branches & Organization"
                     description="Learn branches, warehouses, users, roles, permissions, and business configuration."
                     icon={Building2}
-                    status="comingSoon"
-                    badge={<ComingSoonBadge />}
+                    status="available"
+                    href="/help-support/guides/branch-setup"
                 />
 
                 <GuideCard
@@ -121,6 +121,14 @@ export default function Index() {
                         icon={Package}
                         status="available"
                         href="/help-support/guides/put-product-in-stock"
+                    />
+
+                    <GuideCard
+                        title="Branch Setup & Onboarding"
+                        description="The order of operations to take a brand-new branch from created to selling on POS with accounting posting correctly."
+                        icon={Building2}
+                        status="available"
+                        href="/help-support/guides/branch-setup"
                     />
                 </div>
             </div>

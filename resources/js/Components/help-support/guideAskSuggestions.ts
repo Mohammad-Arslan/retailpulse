@@ -1,4 +1,9 @@
-export type GuideKey = 'accounting' | 'customers-loyalty' | 'inventory-catalogue' | 'put-product-in-stock';
+export type GuideKey =
+    | 'accounting'
+    | 'customers-loyalty'
+    | 'inventory-catalogue'
+    | 'put-product-in-stock'
+    | 'branch-setup';
 
 type SectionLike = {
     title?: string | null;
@@ -44,6 +49,15 @@ const CURATED: Record<GuideKey, string[]> = {
         'How Do I Transfer Stock From Another Branch?',
         'How Do I Verify A Product Is Sellable On POS?',
         'What Should I Check If The Product Is Not Sellable?',
+    ],
+    'branch-setup': [
+        'What Order Do I Set Up A Branch In?',
+        'Why Is A Menu Missing During Setup?',
+        'Do I Need A Fiscal Year Before Selling?',
+        'How Do I Link An Employee To A Login?',
+        'What Modules Do I Need To Enable For Payroll?',
+        'Does A Single-Currency Branch Need The Currencies Screen?',
+        'What Happens If A User Has No Branch Assigned?',
     ],
 };
 

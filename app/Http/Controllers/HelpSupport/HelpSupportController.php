@@ -102,4 +102,9 @@ final class HelpSupportController extends Controller
     {
         return Inertia::render('HelpSupport/Guides/PutProductInStock');
     }
+
+    public function branchSetupGuide(): Response
+    {
+        return Inertia::render('HelpSupport/Guides/BranchSetup');
+    }
 }

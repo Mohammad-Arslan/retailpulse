@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import styles from './GuideLayout.module.css';
 
 type Props = {
-    guideKey: 'accounting' | 'customers-loyalty' | 'inventory-catalogue' | 'put-product-in-stock';
+    guideKey: 'accounting' | 'customers-loyalty' | 'inventory-catalogue' | 'put-product-in-stock' | 'branch-setup';
     guideTitle: string;
     guideSubtitle: string;
     hero: {
