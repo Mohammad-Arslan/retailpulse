@@ -141,10 +141,21 @@ class ImportExportJob extends Model
     public function markProcessing(): void
     {
         $this->status = 'processing';
-        $this->processed_rows = 0;
-        $this->success_rows = 0;
-        $this->failed_rows = 0;
-        $this->skipped_rows = 0;
+        $this->completed_at = null;
+        $this->error_message = null;
+
+        // Preserve counters when resuming from a checkpoint (queue retry / re-dispatch).
+        if ($this->last_processed_row_index === null) {
+            $this->processed_rows = 0;
+            $this->success_rows = 0;
+            $this->failed_rows = 0;
+            $this->skipped_rows = 0;
+        }
+
+        if ($this->started_at === null) {
+            $this->started_at = now();
+        }
+
         $this->save();
     }
 

@@ -65,12 +65,13 @@ final class ProcessImportJob implements ShouldQueue
         try {
             $job = ImportExportJob::query()->findOrFail($this->jobId);
 
-            // Entity-level advisory lock prevents the same logical import
-            // (same entity type + tenant) from running concurrently.
+            // Entity+file advisory lock: same uploaded file cannot run on two workers.
+            // Different files for the same entity_type may still run concurrently.
             $entityLockKey = sprintf(
-                'import-entity:%s:%s',
+                'import-entity:%s:%s:%s',
                 $job->entity_type,
-                $job->tenant_id,
+                (string) $job->tenant_id,
+                sha1((string) $job->input_file_path),
             );
             $entityLock = Cache::lock($entityLockKey, $this->timeout + 60);
 
@@ -249,7 +250,7 @@ final class ProcessImportJob implements ShouldQueue
 
             ImportCompleted::dispatch($job->ulid, (int) $job->user_id, $job->buildSummary());
         } catch (Throwable $e) {
-            $job->markFailed($e->getMessage());
+            // Do not markFailed here — retries remain. Terminal failure is handled in failed().
             throw $e;
         }
     }

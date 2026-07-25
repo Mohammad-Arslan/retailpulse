@@ -170,17 +170,25 @@ final class ImportJobController extends Controller
         }
 
         $jobUlid = (string) $request->query('job');
-        if ($jobUlid !== '') {
-            $job = ImportExportJob::query()->byUlid($jobUlid)->first();
-            if ($job !== null) {
-                $user = $request->user();
-                if ($user === null || (int) $job->user_id !== (int) $user->id) {
-                    abort(403);
-                }
-                if ((int) $job->tenant_id !== (int) $user->tenant_id) {
-                    abort(403);
-                }
-            }
+        if ($jobUlid === '') {
+            abort(403, 'Job ownership is required for signed downloads.');
+        }
+
+        $job = ImportExportJob::query()->byUlid($jobUlid)->first();
+        if ($job === null) {
+            abort(403);
+        }
+
+        $this->assertJobOwnership($job, $request->user());
+
+        $allowedPaths = array_filter([
+            $job->input_file_path,
+            $job->output_file_path,
+            "errors/{$job->ulid}/error-report.xlsx",
+        ]);
+
+        if (! in_array($path, $allowedPaths, true)) {
+            abort(403);
         }
 
         return $this->storageManager()->download($path);
