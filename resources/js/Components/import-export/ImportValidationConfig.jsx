@@ -69,11 +69,12 @@ function LockedRuleChips({ fieldConstraints, t }) {
     }
 
     return (
-        <div className="mb-3">
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-rp-text-muted">
+        <div className="mb-3 rounded-md border border-rp-border bg-rp-surface-inset px-3 py-2.5">
+            <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-rp-text-muted">
                 <Lock className="h-3 w-3" aria-hidden />
                 {t('importExport.lockedRules')}
             </p>
+            <p className="mb-2 text-xs text-rp-text-muted">{t('importExport.lockedRuleHint')}</p>
             <div className="flex flex-wrap gap-2">
                 {fieldConstraints.rules.map((rule, index) => {
                     const isUnique = rule.type === 'unique';
@@ -122,6 +123,21 @@ function ColumnRuleEditor({
     );
 
     const enabledRules = column.rules ?? [];
+
+    // Required-ness is fully represented by the "Required Field" toggle above,
+    // and any schema/engine-locked rule already has its own explanation in the
+    // "Schema Rules (Locked)" chips — so neither belongs in the interactive
+    // custom-rules checklist below. This is what keeps that list unambiguous:
+    // everything shown there is something the user actually controls.
+    const isEngineLocked = (name) =>
+        name === 'unique_in_db' || Boolean(fieldLocked?.rules?.some((rule) => rule.type === name));
+    const isRequiredLocked = Boolean(fieldLocked?.rules?.some((rule) => rule.type === 'required'));
+    const customRules = enabledRules.filter((rule) => {
+        const name = ruleKey(rule);
+
+        return name !== 'required' && !isEngineLocked(name);
+    });
+
     const enabledTransforms = Array.isArray(column.transform)
         ? column.transform
         : column.transform
@@ -195,61 +211,51 @@ function ColumnRuleEditor({
                 <div className="space-y-4 border-t border-rp-border px-4 py-4">
                     <LockedRuleChips fieldConstraints={fieldLocked} t={t} />
 
-                    <label className="flex items-center gap-2 text-sm text-rp-text">
-                        <input
-                            type="checkbox"
-                            className="rounded border-rp-border text-teal-500 focus:ring-teal-500/30"
-                            checked={Boolean(column.is_required)}
-                            onChange={(event) => setRequired(event.target.checked)}
-                            disabled={fieldLocked?.rules?.some((rule) => rule.type === 'required')}
-                        />
-                        {t('importExport.requiredField')}
-                    </label>
+                    <div>
+                        <label className="flex items-center gap-2 text-sm text-rp-text">
+                            <input
+                                type="checkbox"
+                                className="rounded border-rp-border text-teal-500 focus:ring-teal-500/30"
+                                checked={Boolean(column.is_required)}
+                                onChange={(event) => setRequired(event.target.checked)}
+                                disabled={isRequiredLocked}
+                            />
+                            {t('importExport.requiredField')}
+                            {isRequiredLocked ? <Lock className="h-3 w-3 opacity-70" aria-hidden /> : null}
+                        </label>
+                        {isRequiredLocked && (
+                            <p className="mt-1 pl-6 text-xs text-rp-text-muted">
+                                {t('importExport.lockedRuleHint')}
+                            </p>
+                        )}
+                    </div>
 
                     <div>
                         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-rp-text-muted">
                             {t('importExport.customRules')}
                         </p>
-                        {enabledRules.length === 0 ? (
+                        {customRules.length === 0 ? (
                             <p className="text-xs text-rp-text-muted">{t('importExport.noRulesEnabled')}</p>
                         ) : (
                             <div className="space-y-2">
-                                {enabledRules.map((rule, index) => {
+                                {customRules.map((rule, index) => {
                                     const name = ruleKey(rule);
                                     const meta = availableRules.find((entry) => entry.rule === name);
-                                    const isLockedEngineRule =
-                                        name === 'required' ||
-                                        name === 'unique_in_db' ||
-                                        (name === 'string' &&
-                                            fieldLocked?.rules?.some((r) => r.type === 'string'));
 
                                     return (
                                         <label
                                             key={`${name}-${index}`}
-                                            className={cn(
-                                                'flex items-start gap-3 rounded-md border px-3 py-2',
-                                                isLockedEngineRule
-                                                    ? 'cursor-not-allowed border-rp-border bg-rp-surface-inset opacity-80'
-                                                    : 'cursor-pointer border-teal-500/30 bg-teal-500/5',
-                                            )}
+                                            className="flex cursor-pointer items-start gap-3 rounded-md border border-teal-500/30 bg-teal-500/5 px-3 py-2"
                                         >
                                             <input
                                                 type="checkbox"
                                                 className="mt-0.5 rounded border-rp-border text-teal-500 focus:ring-teal-500/30"
                                                 checked
-                                                disabled={isLockedEngineRule}
-                                                onChange={() => {
-                                                    if (!isLockedEngineRule) {
-                                                        toggleRule(name, false);
-                                                    }
-                                                }}
+                                                onChange={() => toggleRule(name, false)}
                                             />
                                             <span className="min-w-0">
                                                 <span className="block text-sm font-medium text-rp-text">
                                                     {meta?.label ?? name}
-                                                    {isLockedEngineRule ? (
-                                                        <Lock className="ml-1 inline h-3 w-3 opacity-70" />
-                                                    ) : null}
                                                 </span>
                                                 {meta?.description ? (
                                                     <span className="block text-xs text-rp-text-muted">
