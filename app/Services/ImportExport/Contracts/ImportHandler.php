@@ -8,6 +8,20 @@ use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * A row's own effects and its ImportRowSuccess bookkeeping marker are written in the
+ * same DB transaction (see ProcessImportJob::processRowWithIsolation), so a given row
+ * is processed at most once across the life of a job — including retries after the
+ * worker dies mid-chunk (tries = 3). processRow() therefore does not need to guard
+ * against being replayed for a row it already succeeded on in an earlier attempt.
+ *
+ * That guarantee is per-row, not per *value*: two different rows that happen to
+ * describe the same natural key (e.g. the same product code twice in one file) are
+ * still two separate calls to processRow(). Handlers that create rather than upsert
+ * must still detect and reject that case themselves (see BrandImportHandler's
+ * find-by-natural-key-before-create pattern) — this contract does not deduplicate
+ * on content, only on (job, row index).
+ */
 interface ImportHandler
 {
     /**

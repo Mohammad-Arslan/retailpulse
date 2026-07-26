@@ -132,7 +132,6 @@ final class ProcessImportJob implements ShouldQueue
                 $chunkSuccess = 0;
                 $chunkFailed = 0;
                 $chunkSkipped = 0;
-                $newSuccessRows = [];
                 $chunkMaxRowIndex = null;
 
                 foreach ($chunk as $rowIndex => $row) {
@@ -161,15 +160,12 @@ final class ProcessImportJob implements ShouldQueue
                         $systemRow,
                         $context,
                         $formatter,
+                        $job->id,
+                        $rowIndex,
                     );
 
                     if ($outcome['ok']) {
                         $chunkSuccess++;
-                        $newSuccessRows[] = [
-                            'job_id' => $job->id,
-                            'row_index' => $rowIndex,
-                            'created_at' => now(),
-                        ];
                     } else {
                         $chunkFailed++;
                         ImportRowError::query()->create([
@@ -181,10 +177,6 @@ final class ProcessImportJob implements ShouldQueue
                     }
 
                     $chunkMaxRowIndex = $rowIndex;
-                }
-
-                if ($newSuccessRows !== []) {
-                    ImportRowSuccess::query()->insert($newSuccessRows);
                 }
 
                 $processed += $chunkProcessed;
@@ -265,6 +257,14 @@ final class ProcessImportJob implements ShouldQueue
      * Process a single row inside its own transaction/savepoint. Integrity and exhausted
      * transient DB errors become row failures; systemic QueryExceptions rethrow.
      *
+     * The ImportRowSuccess marker is written in the *same* transaction as the row's own
+     * business writes, not batched at the end of the chunk. Processing is at-least-once
+     * per row (a worker can die mid-chunk and the row gets replayed on retry) — some
+     * handlers apply deltas rather than upserting on a natural key (e.g.
+     * InventoryAdjustmentImportHandler's stock adjustments aren't safe to reapply), so the
+     * success marker must be durable at the exact moment the row's effects are, or a
+     * replay can't tell "already applied" from "never attempted".
+     *
      * @param  array<string, mixed>  $systemRow
      * @return array{ok: bool, errors?: array<string, list<string>>}
      */
@@ -273,15 +273,26 @@ final class ProcessImportJob implements ShouldQueue
         array $systemRow,
         ImportContext $context,
         ImportErrorFormatter $formatter,
+        int $jobId,
+        int $rowIndex,
     ): array {
         $attempts = 0;
 
         while (true) {
             try {
                 /** @var ImportRowResult $result */
-                $result = DB::transaction(
-                    fn () => $handler->processRow($systemRow, $context)
-                );
+                $result = DB::transaction(function () use ($handler, $systemRow, $context, $jobId, $rowIndex) {
+                    $result = $handler->processRow($systemRow, $context);
+
+                    if ($result->success) {
+                        ImportRowSuccess::query()->create([
+                            'job_id' => $jobId,
+                            'row_index' => $rowIndex,
+                        ]);
+                    }
+
+                    return $result;
+                });
 
                 if ($result->success) {
                     return ['ok' => true];

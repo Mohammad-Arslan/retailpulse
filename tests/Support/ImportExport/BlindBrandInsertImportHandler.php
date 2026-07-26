@@ -25,14 +25,29 @@ final class BlindBrandInsertImportHandler implements ImportHandler
     /** @var array<int, int> */
     private static array $transientFailRemaining = [];
 
+    private static bool $crashOnceArmed = false;
+
     public static function reset(): void
     {
         self::$transientFailRemaining = [];
+        self::$crashOnceArmed = false;
     }
 
     public static function failTransientTimes(int $times): void
     {
         self::$transientFailRemaining[0] = $times;
+    }
+
+    /**
+     * Arms a one-shot, uncaught crash on the next row with code `__crash_once__`.
+     * Unlike failTransientTimes (retried inside the same row's isolation loop),
+     * this simulates the whole worker process dying mid-job — it throws a plain
+     * RuntimeException that escapes ProcessImportJob entirely, leaving whatever
+     * rows already committed before this point as the only durable state.
+     */
+    public static function crashOnce(): void
+    {
+        self::$crashOnceArmed = true;
     }
 
     public function targetModels(): array
@@ -77,6 +92,12 @@ final class BlindBrandInsertImportHandler implements ImportHandler
     {
         if ($context->isDryRun) {
             return ImportRowResult::success(null);
+        }
+
+        if (($row['code'] ?? null) === '__crash_once__' && self::$crashOnceArmed) {
+            self::$crashOnceArmed = false;
+
+            throw new \RuntimeException('Simulated worker crash mid-job.');
         }
 
         if ((self::$transientFailRemaining[0] ?? 0) > 0) {

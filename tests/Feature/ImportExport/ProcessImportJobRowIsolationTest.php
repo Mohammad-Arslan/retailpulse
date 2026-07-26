@@ -9,6 +9,7 @@ use App\Jobs\ProcessImportJob;
 use App\Models\Brand;
 use App\Models\ImportExportJob;
 use App\Models\ImportRowError;
+use App\Models\ImportRowSuccess;
 use App\Models\User;
 use App\Services\ImportExport\ImportExportRegistry;
 use App\Services\ImportExport\Storage\ImportExportStorageManager;
@@ -150,6 +151,48 @@ final class ProcessImportJobRowIsolationTest extends TestCase
         $this->assertSame('completed', $job->status);
         $this->assertSame(1, Brand::query()->where('slug', 'retry-brand')->count());
         $this->assertSame(0, ImportRowError::query()->where('job_id', $job->id)->count());
+    }
+
+    public function test_resume_after_mid_job_crash_does_not_duplicate_already_succeeded_rows(): void
+    {
+        Queue::fake([GenerateErrorReportJob::class]);
+        BlindBrandInsertImportHandler::crashOnce();
+
+        $job = $this->createJob($this->csv([
+            ['code' => 'ok-1', 'name' => 'OK One'],
+            ['code' => 'ok-2', 'name' => 'OK Two'],
+            ['code' => '__crash_once__', 'name' => 'Crashes The First Time'],
+            ['code' => 'ok-3', 'name' => 'OK Three'],
+        ]));
+
+        try {
+            (new ProcessImportJob($job->id))->handle(app(DynamicRuleEngine::class));
+            $this->fail('Expected the simulated mid-job crash to escape.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('Simulated worker crash mid-job.', $e->getMessage());
+        }
+
+        // Rows before the crash already committed — both their business row
+        // and their ImportRowSuccess marker, in the same transaction.
+        $this->assertSame(2, Brand::query()->whereIn('slug', ['ok-1', 'ok-2'])->count());
+        $this->assertSame(2, ImportRowSuccess::query()->where('job_id', $job->id)->count());
+
+        // Simulate the queue's automatic retry (tries = 3): re-run the same job.
+        (new ProcessImportJob($job->id))->handle(app(DynamicRuleEngine::class));
+
+        $job->refresh();
+
+        $this->assertSame('completed', $job->status);
+        $this->assertSame(0, ImportRowError::query()->where('job_id', $job->id)->count());
+        $this->assertSame(4, ImportRowSuccess::query()->where('job_id', $job->id)->count());
+        // The row count matches the input exactly — the two rows that already
+        // succeeded before the crash were not reprocessed into duplicates.
+        $this->assertSame(
+            4,
+            Brand::query()->whereIn('slug', ['ok-1', 'ok-2', '__crash_once__', 'ok-3'])->count(),
+        );
+        $this->assertSame(1, Brand::query()->where('slug', 'ok-1')->count());
+        $this->assertSame(1, Brand::query()->where('slug', 'ok-2')->count());
     }
 
     /**
