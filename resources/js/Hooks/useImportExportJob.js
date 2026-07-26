@@ -107,7 +107,14 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
             refresh();
         });
 
+        // Terminal status is sticky: a progress event delivered after
+        // completion (out of order, or from a stray reconnect resync) must
+        // never revert the job back to a running phase.
         channel.listen('.progress.updated', (payload) => {
+            if (completedRef.current) {
+                return;
+            }
+
             applyProgress(payload, payload.phase ?? 'processing');
             setStatus(payload.phase ?? 'processing');
         });

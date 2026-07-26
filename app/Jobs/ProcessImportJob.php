@@ -217,18 +217,13 @@ final class ProcessImportJob implements ShouldQueue
                 }
             }
 
-            // Final progress broadcast to ensure the last state is sent
-            ImportProgressUpdated::dispatch($job->ulid, (int) $job->user_id, [
-                'phase' => 'processing',
-                'processed' => (int) $job->processed_rows,
-                'total' => (int) $job->total_rows,
-                'success' => (int) $job->success_rows,
-                'failed' => (int) $job->failed_rows,
-                'skipped' => (int) $job->skipped_rows,
-                'errors' => (int) $job->failed_rows,
-            ]);
-
-            $job->refresh();
+            // No trailing progress broadcast here: ImportCompleted (dispatched
+            // below) already carries the final counts via buildSummary(), and
+            // GenerateErrorReportJob dispatches its own ImportCompleted when
+            // there are row errors. Emitting one more `.progress.updated` at
+            // this point would risk being delivered after the completed event,
+            // which the client must never allow to un-complete a finished job —
+            // simplest is to not send a redundant one at all.
 
             // Only run afterImport if at least one row succeeded; handlers may
             // finalize batch state (e.g. OpeningBalanceImportHandler::finalize)

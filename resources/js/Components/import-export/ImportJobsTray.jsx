@@ -1,7 +1,7 @@
 import { openExportDownload } from '@/Components/import-export/ImportExportToolbar';
 import ScrollArea from '@/Components/common/ScrollArea';
 import { fetchJobs } from '@/lib/importExportApi';
-import { filterTrayActiveJobs, isTrayActiveJob } from '@/lib/importJobStatus';
+import { applyProgressUpdate, filterTrayActiveJobs, isTrayActiveJob } from '@/lib/importJobStatus';
 import { cumulativeImportProgress } from '@/lib/importProgress';
 import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
@@ -133,23 +133,11 @@ export function ImportJobsProvider({ children }) {
 
         channel.subscribed(() => refreshJobs());
 
-        // Only refresh on lifecycle transitions, not progress ticks
+        // Only refresh on lifecycle transitions, not progress ticks. A
+        // terminal job's status is sticky — a progress event delivered after
+        // completion must never downgrade it back to a running phase.
         channel.listen('.progress.updated', (payload) => {
-            // Update inline progress without a full refresh — apply counters
-            setJobs((prev) =>
-                prev.map((job) =>
-                    job.ulid === payload.job_ulid
-                        ? {
-                              ...job,
-                              processed_rows: payload.processed ?? job.processed_rows,
-                              total_rows: payload.total ?? job.total_rows,
-                              success_rows: payload.success ?? job.success_rows,
-                              failed_rows: payload.failed ?? job.failed_rows,
-                              status: payload.phase ?? job.status,
-                          }
-                        : job,
-                ),
-            );
+            setJobs((prev) => applyProgressUpdate(prev, payload));
         });
         channel.listen('.import.completed', () => refreshJobs());
         channel.listen('.export.completed', (payload) => {
