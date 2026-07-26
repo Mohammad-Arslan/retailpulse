@@ -2,7 +2,7 @@ import { openExportDownload } from '@/Components/import-export/ImportExportToolb
 import ScrollArea from '@/Components/common/ScrollArea';
 import { fetchJobs } from '@/lib/importExportApi';
 import { applyProgressUpdate, filterTrayActiveJobs, isTrayActiveJob } from '@/lib/importJobStatus';
-import { cumulativeImportProgress } from '@/lib/importProgress';
+import { combinedProcessed, cumulativeImportProgress } from '@/lib/importProgress';
 import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
@@ -19,23 +19,26 @@ export function useImportJobsTray() {
     return useContext(ImportJobsContext);
 }
 
-function jobProgressPercent(job) {
+function jobProgress(job) {
+    const total = job.total_rows ?? 0;
+    const snapshot = { phase: job.status, processed: job.processed_rows ?? 0, total };
+
     if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') {
-        return 100;
+        return { percent: 100, processed: total };
     }
 
-    return cumulativeImportProgress(
-        {
-            phase: job.status,
-            processed: job.processed_rows ?? 0,
-            total: job.total_rows ?? 0,
-        },
-        job.status,
-    );
+    return {
+        percent: cumulativeImportProgress(snapshot, job.status),
+        // Validation and processing are one task — show the blended count
+        // across both passes, not either phase's own 0-total count, so it
+        // never appears to jump backwards at the validation -> processing
+        // handoff (matches ImportProgressPanel's same treatment).
+        processed: Math.min(total, Math.round(combinedProcessed(snapshot, job.status))),
+    };
 }
 
 function JobProgressBar({ job }) {
-    const percent = jobProgressPercent(job);
+    const { percent, processed } = jobProgress(job);
     const isActive = isTrayActiveJob(job);
     const isFailed = job.status === 'failed';
 
@@ -43,7 +46,7 @@ function JobProgressBar({ job }) {
         <div className="mt-2 space-y-1">
             <div className="flex justify-between text-[10px] text-rp-text-muted">
                 <span>
-                    {job.processed_rows ?? 0} / {job.total_rows ?? 0}
+                    {processed} / {job.total_rows ?? 0}
                 </span>
                 <span>{percent}%</span>
             </div>
