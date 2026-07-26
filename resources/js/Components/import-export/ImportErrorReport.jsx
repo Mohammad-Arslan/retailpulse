@@ -143,7 +143,9 @@ export default function ImportErrorReport({ ulid }) {
                                     <TableCell className="max-w-[160px] truncate" title={row.value}>
                                         {row.value}
                                     </TableCell>
-                                    <TableCell className="max-w-[240px]">{row.message}</TableCell>
+                                    <TableCell className="max-w-[320px] whitespace-normal wrap-break-word">
+                                        {row.message}
+                                    </TableCell>
                                     <TableCell className="capitalize">{row.severity}</TableCell>
                                 </TableRow>
                             ))
