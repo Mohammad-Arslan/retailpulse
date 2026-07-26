@@ -52,6 +52,22 @@ final class ProcessImportJob implements ShouldQueue
         $this->onQueue('imports-heavy');
     }
 
+    /**
+     * The advisory lock key for "this uploaded file, for this entity type and
+     * tenant, is currently being processed". Same file cannot run on two
+     * workers at once; different files for the same entity_type may still run
+     * concurrently. Shared between the job and its tests so they cannot drift.
+     */
+    public static function entityLockKey(ImportExportJob $job): string
+    {
+        return sprintf(
+            'import-entity:%s:%s:%s',
+            $job->entity_type,
+            (string) $job->tenant_id,
+            sha1((string) $job->input_file_path),
+        );
+    }
+
     public function handle(DynamicRuleEngine $ruleEngine): void
     {
         $lock = Cache::lock("import-job-processing:{$this->jobId}", $this->timeout + 60);
@@ -67,13 +83,7 @@ final class ProcessImportJob implements ShouldQueue
 
             // Entity+file advisory lock: same uploaded file cannot run on two workers.
             // Different files for the same entity_type may still run concurrently.
-            $entityLockKey = sprintf(
-                'import-entity:%s:%s:%s',
-                $job->entity_type,
-                (string) $job->tenant_id,
-                sha1((string) $job->input_file_path),
-            );
-            $entityLock = Cache::lock($entityLockKey, $this->timeout + 60);
+            $entityLock = Cache::lock(self::entityLockKey($job), $this->timeout + 60);
 
             if (! $entityLock->get()) {
                 $lock->forceRelease();

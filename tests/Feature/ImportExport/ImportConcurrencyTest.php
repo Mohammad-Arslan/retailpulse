@@ -4,79 +4,155 @@ declare(strict_types=1);
 
 namespace Tests\Feature\ImportExport;
 
+use App\Jobs\ProcessImportJob;
 use App\Models\ImportExportJob;
+use App\Models\User;
 use App\Repositories\Eloquent\InventoryRepository;
+use App\Services\ImportExport\ImportExportRegistry;
+use App\Services\ImportExport\Storage\ImportExportStorageManager;
+use App\Services\ImportExport\Validation\DynamicRuleEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
+use Tests\Support\ImportExport\BlindBrandInsertExportHandler;
+use Tests\Support\ImportExport\BlindBrandInsertImportHandler;
 use Tests\TestCase;
 
+/**
+ * ProcessImportJob's advisory lock is per (entity_type, tenant_id, file hash) —
+ * a second worker picking up the *same uploaded file* must not process it
+ * concurrently, but a different file for the same entity_type is independent
+ * (e.g. two unrelated product imports for the same tenant can run at once).
+ *
+ * These tests drive the job's real lock acquisition via
+ * ProcessImportJob::entityLockKey() rather than hand-rolling the key string,
+ * so they cannot silently drift from what the job actually locks on.
+ */
 final class ImportConcurrencyTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_entity_level_lock_prevents_concurrent_same_entity_import(): void
-    {
-        $job = ImportExportJob::factory()->create([
-            'type' => 'import',
-            'entity_type' => 'products',
-            'tenant_id' => 1,
-            'status' => 'processing',
-        ]);
+    private User $user;
 
-        // Simulate the entity lock being held (another import of same entity+tenant)
-        $entityLockKey = "import-entity:{$job->entity_type}:{$job->tenant_id}";
-        $lock = Cache::lock($entityLockKey, 3600);
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        BlindBrandInsertImportHandler::reset();
+        ImportExportRegistry::register(
+            'test-blind-brands',
+            BlindBrandInsertImportHandler::class,
+            BlindBrandInsertExportHandler::class,
+        );
+
+        $this->user = User::factory()->create(['is_active' => true]);
+    }
+
+    public function test_same_file_cannot_be_processed_by_a_second_worker(): void
+    {
+        $job = $this->createJob($this->csv([['code' => 'brand-a', 'name' => 'Brand A']]));
+
+        // Simulate another worker already holding the real lock key for this job.
+        $lock = Cache::lock(ProcessImportJob::entityLockKey($job), 3600);
         $this->assertTrue($lock->get());
 
-        // The job should not be able to acquire the entity lock
-        $this->assertTrue(Cache::has($entityLockKey));
+        (new ProcessImportJob($job->id))->handle(app(DynamicRuleEngine::class));
+
+        $job->refresh();
+
+        // The job bailed out before doing any work — it never left its
+        // pre-processing status, because it could not acquire the real key.
+        $this->assertSame('validated', $job->status);
 
         $lock->forceRelease();
     }
 
-    public function test_different_entity_types_can_run_concurrently(): void
+    public function test_same_entity_and_tenant_different_file_can_run_concurrently(): void
     {
-        $job1 = ImportExportJob::factory()->create([
-            'type' => 'import',
-            'entity_type' => 'products',
-            'tenant_id' => 1,
-            'status' => 'processing',
-        ]);
-        $job2 = ImportExportJob::factory()->create([
-            'type' => 'import',
-            'entity_type' => 'brands',
-            'tenant_id' => 1,
-            'status' => 'processing',
-        ]);
+        $jobA = $this->createJob($this->csv([['code' => 'brand-a', 'name' => 'Brand A']]));
+        $jobB = $this->createJob($this->csv([['code' => 'brand-b', 'name' => 'Brand B']]));
 
-        $lock1 = Cache::lock("import-entity:{$job1->entity_type}:{$job1->tenant_id}", 3600);
-        $lock2 = Cache::lock("import-entity:{$job2->entity_type}:{$job2->tenant_id}", 3600);
+        $this->assertNotSame(
+            ProcessImportJob::entityLockKey($jobA),
+            ProcessImportJob::entityLockKey($jobB),
+            'Two different uploaded files must not share a lock key.',
+        );
 
-        // Both locks can be acquired simultaneously
-        $this->assertTrue($lock1->get());
-        $this->assertTrue($lock2->get());
+        $lockA = Cache::lock(ProcessImportJob::entityLockKey($jobA), 3600);
+        $this->assertTrue($lockA->get());
 
-        $lock1->forceRelease();
-        $lock2->forceRelease();
+        // jobB's file is different, so it must be free to process despite
+        // jobA (same entity_type, same tenant) still "running".
+        (new ProcessImportJob($jobB->id))->handle(app(DynamicRuleEngine::class));
+
+        $jobB->refresh();
+
+        $this->assertSame('completed', $jobB->status);
+
+        $lockA->forceRelease();
     }
 
-    public function test_inventory_service_uses_select_for_update(): void
+    public function test_inventory_repository_locks_rows_for_update(): void
     {
-        // This test verifies the architectural invariant: InventoryService's
-        // applyDelta and setOpeningBalance use lockOrCreate (lockForUpdate)
-        // inside DB::transaction. The lock prevents read-modify-write races
-        // on quantity_on_hand.
-        //
-        // We verify this structurally by confirming the repository method exists
-        // and returns an Inventory instance (actual lock behavior requires a
-        // real MySQL connection with concurrent connections to demonstrate).
+        // Structural invariant: InventoryService's applyDelta/setOpeningBalance
+        // read through lockOrCreate/findForUpdate (SELECT ... FOR UPDATE) inside
+        // DB::transaction, which serializes concurrent read-modify-write on
+        // quantity_on_hand. Exercising the actual row lock requires two
+        // concurrent DB connections, which isn't practical in this suite —
+        // this confirms the invariant's entry points still exist.
         $this->assertTrue(
             method_exists(InventoryRepository::class, 'lockOrCreate'),
-            'InventoryRepository must have lockOrCreate for atomic stock mutations'
+            'InventoryRepository must have lockOrCreate for atomic stock mutations.',
         );
         $this->assertTrue(
             method_exists(InventoryRepository::class, 'findForUpdate'),
-            'InventoryRepository must have findForUpdate for SELECT FOR UPDATE'
+            'InventoryRepository must have findForUpdate for SELECT FOR UPDATE.',
         );
+    }
+
+    /**
+     * @param  list<array{code: string, name: string}>  $rows
+     */
+    private function csv(array $rows): string
+    {
+        $lines = ['code,name'];
+
+        foreach ($rows as $row) {
+            $lines[] = $row['code'].','.$row['name'];
+        }
+
+        return implode("\n", $lines)."\n";
+    }
+
+    private function createJob(string $csvContent): ImportExportJob
+    {
+        $path = app(ImportExportStorageManager::class)->storeContent(
+            $csvContent,
+            'imports/test-blind-brands/'.Str::ulid().'.csv',
+        );
+
+        return ImportExportJob::query()->create([
+            'tenant_id' => 0,
+            'user_id' => $this->user->id,
+            'ulid' => (string) Str::ulid(),
+            'type' => 'import',
+            'entity_type' => 'test-blind-brands',
+            'mode' => 'create',
+            'is_dry_run' => false,
+            'input_file_path' => $path,
+            'original_filename' => 'brands.csv',
+            'disk' => 'local',
+            'status' => 'validated',
+            'total_rows' => substr_count($csvContent, "\n") - 1,
+            'column_rules_snapshot' => [
+                ['column_key' => 'code', 'mapped_to' => 'code', 'display_label' => 'Brand Code', 'rules' => []],
+                ['column_key' => 'name', 'mapped_to' => 'name', 'display_label' => 'Name', 'rules' => []],
+            ],
+            'column_mapping' => [
+                'code' => 'code',
+                'name' => 'name',
+            ],
+            'queued_at' => now(),
+        ]);
     }
 }
