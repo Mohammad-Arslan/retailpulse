@@ -284,6 +284,8 @@
         "progressDetail": "{{processed}} / {{total}} rows · {{errors}} errors",
         "progressRecords": "Processing {{processed}} / {{total}} records ({{percent}}%)",
         "progressHint": "Progress is cumulative across validation and import phases.",
+        "realtimeUnavailable": "Real-time updates are unavailable right now. Refresh to see the latest status.",
+        "refreshNow": "Refresh",
         "phases": {
             "validating": "Validating rows",
             "validated": "Validation complete",

@@ -32,7 +32,7 @@ export default function ImportLogsDialog({
 
     const activeUlid = job?.ulid ?? preferredUlid ?? null;
 
-    const { progress, status } = useImportExportJob(activeUlid, {
+    const { progress, status, refresh: refreshProgress, realtimeUnavailable } = useImportExportJob(activeUlid, {
         onCompleted: (payload) => {
             setSummary(payload);
             setJob((current) =>
@@ -171,7 +171,12 @@ export default function ImportLogsDialog({
                         </div>
 
                         {isRunning && (
-                            <ImportProgressPanel progress={progress} status={status} />
+                            <ImportProgressPanel
+                                progress={progress}
+                                status={status}
+                                realtimeUnavailable={realtimeUnavailable}
+                                onRefresh={refreshProgress}
+                            />
                         )}
 
                         {resultSummary && TERMINAL_STATUSES.includes(status) && (

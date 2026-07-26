@@ -111,7 +111,7 @@ export default function ImportWizardDialog({
         [t],
     );
 
-    const { progress, status } = useImportExportJob(ulid, {
+    const { progress, status, refresh, realtimeUnavailable } = useImportExportJob(ulid, {
         onCompleted: (payload) => {
             setSummary(payload);
             setStep(6);
@@ -514,7 +514,12 @@ export default function ImportWizardDialog({
                 )}
 
                 {step === 5 && (
-                    <ImportProgressPanel progress={progress} status={status} />
+                    <ImportProgressPanel
+                        progress={progress}
+                        status={status}
+                        realtimeUnavailable={realtimeUnavailable}
+                        onRefresh={refresh}
+                    />
                 )}
 
                 {step === 6 && (

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export default function ImportProgressPanel({ progress, status }) {
+export default function ImportProgressPanel({ progress, status, realtimeUnavailable, onRefresh }) {
     const { t } = useTranslation();
 
     const percent = useMemo(
@@ -29,6 +29,20 @@ export default function ImportProgressPanel({ progress, status }) {
 
     return (
         <div className="space-y-5">
+            {realtimeUnavailable && (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+                    <span>{t('importExport.realtimeUnavailable')}</span>
+                    {onRefresh && (
+                        <button
+                            type="button"
+                            onClick={onRefresh}
+                            className="shrink-0 rounded-md border border-amber-500/40 px-2.5 py-1 text-xs font-medium hover:bg-amber-500/10"
+                        >
+                            {t('importExport.refreshNow')}
+                        </button>
+                    )}
+                </div>
+            )}
             <div className="rounded-lg border border-rp-border bg-rp-surface-subtle px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
                     <div>
