@@ -197,7 +197,7 @@ function ColumnRuleEditor({
                     <p className="text-xs text-rp-text-muted">
                         {t('importExport.mappedTo', { column: column.mapped_to ?? column.column_key })}
                         {' · '}
-                        {t('importExport.rulesEnabled', { count: enabledRules.length })}
+                        {t('importExport.rulesEnabled', { count: customRules.length })}
                     </p>
                 </div>
                 {expanded ? (
