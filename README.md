@@ -133,9 +133,32 @@ OLLAMA_MODEL=qwen2.5-coder:7b
 
 3. Local-only test endpoint: `POST /api/dev/ai/ask` (404 unless `APP_ENV=local`).
 
+## Container credentials
+
+> **Never fill in real passwords here.** This file is committed to git. Real per-environment
+> secrets live only in `.env` (local) or `DEPLOYMENT-CREDENTIALS.md` (VPS — both gitignored,
+> never committed). The values below are the `.env.example` **local-dev placeholders only**.
+
+| Container | Credential | Env var(s) | Local-dev default | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| `retailpulse-app` | Super Admin login | `SUPER_ADMIN_EMAIL` / `SUPER_ADMIN_PASSWORD` | `admin@retailpulse.local` / *(blank — set your own)* | Seeded on first migrate |
+| `retailpulse-mysql` | App DB user | `DB_USERNAME` / `DB_PASSWORD` | `retailpulse` / `secret` | |
+| `retailpulse-mysql` | Root | `MYSQL_ROOT_PASSWORD` | `secret` | Also used by `mysqld-exporter` if observability is on |
+| `retailpulse-phpmyadmin` | Login | *(same as MySQL above)* | — | No separate account of its own |
+| `retailpulse-redis` | — | — | none | No auth — internal Docker network only |
+| `retailpulse-minio` | Root / S3 keys | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` | `minio` / `minioSecret` | Mirrored to `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` |
+| `retailpulse-mailpit` | — | — | none | Dev-only mail catcher, no real delivery |
+| `retailpulse-app` (Reverb) | WebSocket app key/secret | `REVERB_APP_KEY` / `REVERB_APP_SECRET` | `local-reverb-key` / `local-reverb-secret` | |
+| `retailpulse-portainer` | Admin | — (set in UI) | — | Must be created within 5 minutes of first start |
+| `retailpulse-jenkins` | Admin | `JENKINS_ADMIN_USER` / `JENKINS_ADMIN_PASSWORD` | *(blank — falls back to setup wizard)* | See [docs/ops-stack.md §4](docs/ops-stack.md) |
+| `retailpulse-jenkins` | Outbound SMTP | `JENKINS_SMTP_USERNAME` / `JENKINS_SMTP_PASSWORD` | *(blank — Mailpit, no auth)* | |
+| `retailpulse-uptime-kuma` | Admin | — (set in UI) | — | |
+| `retailpulse-grafana` | Admin | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` | `admin` / `changeme` | **Change before enabling observability** |
+
 ## Security notes
 
-- Never commit `.env` or real secrets.
+- Never commit `.env` or real secrets — including into this README. The table above documents env var *names*, not values.
+- Production/staging real values live in `.env` on that host, or in a local, gitignored `DEPLOYMENT-CREDENTIALS.md` if you keep one — never in a tracked file.
 - Production: use strong `APP_KEY`, DB, MinIO, and Reverb secrets; set `APP_DEBUG=false`.
 - Prefer putting MySQL/Redis/MinIO behind a firewall and exposing only HTTP(S) via a reverse proxy (see deployment guidelines).
 
