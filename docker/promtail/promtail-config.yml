@@ -1,0 +1,72 @@
+# Promtail — ship Docker, Nginx, and Laravel logs to Loki.
+# Paths inside the container are mapped by docker-compose.observability.yml.
+
+server:
+  http_listen_address: 0.0.0.0
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    backoff_config:
+      min_period: 500ms
+      max_period: 5m
+      max_retries: 10
+    batchwait: 1s
+    batchsize: 1048576
+
+scrape_configs:
+  # ---------------------------------------------------------------------------
+  # Docker container logs (json-file via Docker logging driver)
+  # Includes Supervisor stdout/stderr from retailpulse-app (Octane, Horizon,
+  # Reverb, schedule) because supervisord logs to stdout.
+  # ---------------------------------------------------------------------------
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: container
+      - source_labels: ["__meta_docker_container_log_stream"]
+        target_label: stream
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: compose_service
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_project"]
+        target_label: compose_project
+      - replacement: docker
+        target_label: job
+    pipeline_stages:
+      - docker: {}
+      - labels:
+          container:
+          stream:
+          compose_service:
+
+  # ---------------------------------------------------------------------------
+  # Host Nginx logs (optional bind-mount). Ship raw lines — no fragile regex.
+  # ---------------------------------------------------------------------------
+  - job_name: nginx
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: nginx
+          __path__: /var/log/nginx/*.log
+
+  # ---------------------------------------------------------------------------
+  # Laravel storage/logs (bind-mounted to /var/log/laravel)
+  # ---------------------------------------------------------------------------
+  - job_name: laravel
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: laravel
+          __path__: /var/log/laravel/*.log
+    pipeline_stages:
+      - multiline:
+          firstline: '^\[\d{4}-\d{2}-\d{2}'
+          max_wait_time: 3s

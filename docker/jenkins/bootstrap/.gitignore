@@ -1,0 +1,4 @@
+# Never commit the deploy key or the auto-synced Jenkinsfile copy.
+*
+!.gitignore
+!README.md

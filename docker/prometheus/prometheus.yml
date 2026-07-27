@@ -1,0 +1,125 @@
+# RetailPulse Prometheus scrape configuration
+# Docs: docs/ops-stack.md §Prometheus
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+  external_labels:
+    cluster: retailpulse
+    env: production
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # ---------------------------------------------------------------------------
+  # Prometheus self-monitoring
+  # ---------------------------------------------------------------------------
+  - job_name: prometheus
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  # ---------------------------------------------------------------------------
+  # Host / infrastructure (P5)
+  # ---------------------------------------------------------------------------
+  - job_name: node-exporter
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          service: host
+
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+        labels:
+          service: docker
+
+  # ---------------------------------------------------------------------------
+  # Data stores
+  # ---------------------------------------------------------------------------
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+        labels:
+          service: redis
+
+  - job_name: mysql
+    static_configs:
+      - targets: ["mysqld-exporter:9104"]
+        labels:
+          service: mysql
+
+  # MinIO cluster metrics (enable with MINIO_PROMETHEUS_AUTH_TYPE=public on minio)
+  - job_name: minio
+    metrics_path: /minio/v2/metrics/cluster
+    static_configs:
+      - targets: ["minio:9000"]
+        labels:
+          service: minio
+
+  # ---------------------------------------------------------------------------
+  # Application availability via Blackbox (Laravel / Octane / Reverb / Horizon)
+  #
+  # Laravel does not expose a native Prometheus /metrics endpoint today.
+  # Blackbox probes /up (Octane health) and TCP ports for Reverb. Container
+  # CPU/RAM for the app process comes from cAdvisor (job: cadvisor).
+  # ---------------------------------------------------------------------------
+  - job_name: blackbox-http
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://app:8000/up
+          - http://minio:9000/minio/health/live
+          - http://portainer:9000/api/status
+          - http://jenkins:8080/login
+          - http://uptime-kuma:3001/
+          - http://grafana:3000/api/health
+        labels:
+          probe_type: http
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  - job_name: blackbox-tcp
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets:
+          - app:8000          # Octane / FrankenPHP
+          - app:8080          # Reverb
+          - mysql:3306
+          - redis:6379
+          - minio:9000
+        labels:
+          probe_type: tcp
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Horizon is an in-process worker (no HTTP listener). Availability is
+  # inferred from: (1) app container health via cAdvisor + /up, (2) Redis
+  # queue depth via redis-exporter, (3) Uptime Kuma push/heartbeat if configured.
+  # Optional: scrape Horizon via a future authenticated metrics route.
+
+  # ---------------------------------------------------------------------------
+  # Loki / Grafana self metrics
+  # ---------------------------------------------------------------------------
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]
+
+  - job_name: grafana
+    static_configs:
+      - targets: ["grafana:3000"]

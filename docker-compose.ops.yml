@@ -1,0 +1,151 @@
+# -----------------------------------------------------------------------------
+# RetailPulse — Ops tooling (Portainer, Jenkins, Uptime Kuma)
+#
+# IMPORTANT: Start with a SEPARATE Compose project so `bash setup.sh production
+# --rebuild` (which runs `docker compose up --remove-orphans` on the app stack)
+# never treats these containers as orphans and removes them.
+#
+#   bash scripts/ops-up.sh
+#   # equivalent:
+#   docker compose -p retailpulse-ops -f docker-compose.ops.yml up -d
+#
+# Requires the core stack network (`retailpulse`) to already exist
+# (created by the main docker-compose.yml).
+# -----------------------------------------------------------------------------
+
+name: retailpulse-ops
+
+services:
+  portainer:
+    container_name: retailpulse-portainer
+    image: portainer/portainer-ce:2.27.4
+    command:
+      - --http-enabled
+      - --data=/data
+    volumes:
+      - retailpulse_portainer:/data
+      # Docker socket: Portainer needs write access to manage the engine.
+      # Equivalent to root on the host — protect via localhost bind + Nginx auth
+      # + strong Portainer admin password. See docs/ops-stack.md §Security.
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:${PORTAINER_HOST_PORT:-9010}:9000"
+      - "127.0.0.1:${PORTAINER_HTTPS_HOST_PORT:-9443}:9443"
+    # Portainer CE is a scratch-like image (no /bin/sh, no wget/curl).
+    # Exec-form probe of the binary is the only reliable in-container check;
+    # confirm HTTP with: curl -fsS http://127.0.0.1:9010/api/status
+    healthcheck:
+      test: ["CMD", "/portainer", "--version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  jenkins:
+    container_name: retailpulse-jenkins
+    build:
+      context: ./docker/jenkins
+      dockerfile: Dockerfile
+    image: retailpulse-jenkins:lts
+    environment:
+      JAVA_OPTS: >-
+        -Djava.awt.headless=true
+        -Dhudson.model.DirectoryBrowserSupport.CSP=
+        -Djenkins.install.runSetupWizard=true
+      JENKINS_OPTS: "--httpListenAddress=0.0.0.0"
+      TZ: ${TZ:-UTC}
+      # CASC is optional — only set CASC_JENKINS_CONFIG in .env when you have
+      # real YAML under casc_configs. An empty/missing path crashes Jenkins on boot.
+      #
+      # Jenkins admin bootstrap (docker/jenkins/security.groovy). When both are
+      # set, Jenkins skips the manual setup wizard and boots straight into a
+      # matrix-secured instance (this admin only; anonymous gets nothing) with
+      # CSRF protection on. Leave blank to keep the normal setup wizard (its
+      # file-based initialAdminPassword unlock is itself secure by default) —
+      # there is intentionally no baked-in default admin password.
+      JENKINS_ADMIN_USER: ${JENKINS_ADMIN_USER:-}
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:-}
+      #
+      # Build/deploy notification email (jenkins/Jenkinsfile -> docker/jenkins/scripts/send-mail.py).
+      # Defaults below point at the local Mailpit catcher (docker-compose.yml) — it only
+      # catches mail, it does not deliver. Switching to a real SMTP provider later is an
+      # .env-only change (then `docker compose -p retailpulse-ops -f docker-compose.ops.yml
+      # up -d jenkins` to pick up the new values) — send-mail.py and the Jenkinsfile never change.
+      JENKINS_SMTP_HOST: ${JENKINS_SMTP_HOST:-mailpit}
+      JENKINS_SMTP_PORT: ${JENKINS_SMTP_PORT:-1025}
+      JENKINS_SMTP_USE_SSL: ${JENKINS_SMTP_USE_SSL:-false}
+      JENKINS_SMTP_USE_TLS: ${JENKINS_SMTP_USE_TLS:-false}
+      JENKINS_SMTP_USERNAME: ${JENKINS_SMTP_USERNAME:-}
+      JENKINS_SMTP_PASSWORD: ${JENKINS_SMTP_PASSWORD:-}
+      JENKINS_MAIL_FROM: ${JENKINS_MAIL_FROM:-jenkins@retailpulse.local}
+      JENKINS_NOTIFY_EMAIL: ${JENKINS_NOTIFY_EMAIL:-}
+    volumes:
+      - retailpulse_jenkins:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Bootstrap inputs for docker/jenkins/bootstrap-credentials.groovy (baked into
+      # the image at /usr/share/jenkins/ref/init.groovy.d/, runs once against a fresh
+      # volume): the Jenkinsfile copy (auto-synced by scripts/ops-up.sh) and the
+      # operator-supplied deploy key. See docker/jenkins/bootstrap/README.md.
+      - ./docker/jenkins/bootstrap:/var/jenkins_home/bootstrap:ro
+      # Optional: mount the RetailPulse repo for pipeline checkout without
+      # re-cloning when developing pipelines locally (commented by default).
+      # - ${RETAILPULSE_REPO_PATH:-.}:/workspace/retailpulse:ro
+    group_add:
+      # Docker socket group:
+      #   Contabo/Ubuntu — usually 999 (docker group); override via JENKINS_DOCKER_GID
+      #   Docker Desktop (Windows/macOS) — socket is often root:root → use 0
+      # Detect: stat -c '%g' /var/run/docker.sock   (Linux)
+      - "${JENKINS_DOCKER_GID:-999}"
+    ports:
+      - "127.0.0.1:${JENKINS_HOST_PORT:-9080}:8080"
+      - "127.0.0.1:${JENKINS_AGENT_HOST_PORT:-50000}:50000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1:8080/login >/dev/null || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  uptime-kuma:
+    container_name: retailpulse-uptime-kuma
+    image: louislam/uptime-kuma:1.23.16
+    volumes:
+      - retailpulse_uptime_kuma:/app/data
+    ports:
+      - "127.0.0.1:${UPTIME_KUMA_HOST_PORT:-3001}:3001"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "extra/healthcheck || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+networks:
+  retailpulse:
+    external: true
+    name: retailpulse
+
+volumes:
+  retailpulse_portainer:
+    name: retailpulse_portainer
+  retailpulse_jenkins:
+    name: retailpulse_jenkins
+  retailpulse_uptime_kuma:
+    name: retailpulse_uptime_kuma

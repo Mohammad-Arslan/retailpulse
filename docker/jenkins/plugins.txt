@@ -1,0 +1,26 @@
+# Core pipeline + SCM
+workflow-aggregator:latest
+git:latest
+git-client:latest
+credentials-binding:latest
+ssh-agent:latest
+configuration-as-code:latest
+
+# Docker / Compose builds
+docker-workflow:latest
+docker-plugin:latest
+
+# UI / quality-of-life
+blueocean:latest
+pipeline-stage-view:latest
+timestamper:latest
+ws-cleanup:latest
+ansicolor:latest
+
+# Notifications (enable channels as needed)
+email-ext:latest
+slack:latest
+
+# Security / auth helpers
+matrix-auth:latest
+role-strategy:latest
