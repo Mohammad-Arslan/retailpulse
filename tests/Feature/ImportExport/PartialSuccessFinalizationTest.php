@@ -97,6 +97,11 @@ final class PartialSuccessFinalizationTest extends TestCase
         $this->assertSame(1, ImportRowError::query()->where('job_id', $job->id)->count());
         $this->assertIsArray($job->summary);
         $this->assertSame(1, $job->summary['failed'] ?? null);
+        $this->assertSame(
+            $job->total_rows,
+            $job->success_rows + $job->failed_rows + $job->skipped_rows,
+            'success + failed + skipped must equal total.',
+        );
 
         Event::assertDispatched(ImportCompleted::class, fn ($event) => $event->jobUlid === $job->ulid);
     }
