@@ -265,6 +265,8 @@
             "upsert": "Create or update (upsert)"
         },
         "modeHint": "Create adds new records, update modifies existing ones, upsert does both.",
+        "insertOnlyHint": "This import inserts new records only; existing rows will be rejected. Switch to Update or Upsert to replace an existing balance instead.",
+        "insertOnlyReplaceHint": "Existing balances for the same warehouse, variant, and batch will be replaced instead of rejected.",
         "matchField": "Match existing records by",
         "barcode": "Barcode",
         "selectFile": "Choose a spreadsheet file to upload.",

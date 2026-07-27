@@ -131,6 +131,32 @@ final class InventoryImportCompositeConstraintTest extends TestCase
         $this->assertSame([], $errors);
     }
 
+    public function test_replace_mode_does_not_flag_an_existing_balance_as_an_error(): void
+    {
+        app(InventoryService::class)->setOpeningBalance(
+            warehouseId: $this->warehouse->id,
+            variantId: $this->variant->id,
+            batchId: null,
+            quantity: 10,
+        );
+
+        $handler = app(InventoryImportHandler::class);
+        $context = new ImportContext(
+            jobId: 1,
+            tenantId: null,
+            userId: 1,
+            mode: 'update',
+            isDryRun: false,
+            filePath: 'irrelevant.csv',
+            disk: 'local',
+            options: [],
+        );
+
+        $errors = $handler->validateRow($this->row(), $context);
+
+        $this->assertSame([], $errors);
+    }
+
     public function test_second_occurrence_of_the_same_combination_in_one_file_is_flagged_at_validation(): void
     {
         $handler = app(InventoryImportHandler::class);

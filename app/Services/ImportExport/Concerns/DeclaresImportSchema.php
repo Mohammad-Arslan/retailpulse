@@ -45,4 +45,9 @@ trait DeclaresImportSchema
     {
         return [];
     }
+
+    public function isInsertOnly(): bool
+    {
+        return false;
+    }
 }

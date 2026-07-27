@@ -51,6 +51,19 @@ final class OpeningBalanceImportHandler implements ImportHandler
         return [];
     }
 
+    /**
+     * True in the sense that addLine() only ever appends staging rows — but unlike
+     * InventoryImportHandler, there is no "replace" mode here yet: re-importing the
+     * same file does not fail (no per-row uniqueness check), it silently appends
+     * duplicate staging lines that finalize() would post twice. That is a real,
+     * currently-unmitigated risk, tracked in docs/gaps/gaps.md rather than fixed
+     * here — correcting it needs ledger-reversal semantics, not a row-level replace.
+     */
+    public function isInsertOnly(): bool
+    {
+        return true;
+    }
+
     public function processRow(array $row, ImportContext $context): ImportRowResult
     {
         if ($context->isDryRun) {

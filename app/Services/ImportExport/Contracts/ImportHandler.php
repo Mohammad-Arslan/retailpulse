@@ -58,6 +58,15 @@ interface ImportHandler
     public function compositeConstraintAdvisories(): array;
 
     /**
+     * True when this handler only ever inserts new records — a re-import in the
+     * default "create" mode rejects every row that already exists rather than
+     * updating it. Drives an explanatory notice in the import wizard; handlers
+     * that support a "replace" mode should branch on {@see ImportContext::$mode}
+     * themselves in processRow()/validateRow() (e.g. InventoryImportHandler).
+     */
+    public function isInsertOnly(): bool;
+
+    /**
      * @param  array<string, mixed>  $row
      * @return array<string, list<string>>
      */

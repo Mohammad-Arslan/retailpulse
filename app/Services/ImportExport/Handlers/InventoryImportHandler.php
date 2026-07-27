@@ -62,6 +62,12 @@ final class InventoryImportHandler implements ImportHandler
             return ['sku' => ['This warehouse, variant, batch, and bin combination is duplicated elsewhere in this file.']];
         }
 
+        if (in_array($context->mode, ['update', 'upsert'], true)) {
+            // Replace mode expects — and exists specifically to correct — an
+            // existing balance, so finding one here is not a validation error.
+            return [];
+        }
+
         $batchId = $this->support->findExistingBatchId($variant, $row);
 
         if ($this->inventory->hasExistingOpeningBalance($warehouse->id, $variant->id, $batchId, $binId)) {
@@ -80,6 +86,11 @@ final class InventoryImportHandler implements ImportHandler
         return [
             'This import enforces uniqueness on Warehouse + Variant + Batch (and Bin, when provided) — duplicate rows are rejected on import.',
         ];
+    }
+
+    public function isInsertOnly(): bool
+    {
+        return true;
     }
 
     public function processRow(array $row, ImportContext $context): ImportRowResult
@@ -107,6 +118,7 @@ final class InventoryImportHandler implements ImportHandler
 
         $batchId = $this->support->resolveBatchId($variant, $row);
         $binId = $this->support->resolveBinId($warehouse->id, $row);
+        $replace = in_array($context->mode, ['update', 'upsert'], true);
 
         try {
             DB::transaction(function () use (
@@ -117,7 +129,26 @@ final class InventoryImportHandler implements ImportHandler
                 $batchId,
                 $binId,
                 $context,
+                $replace,
             ) {
+                if ($replace) {
+                    // Deliberate re-import correcting a balance: update it in place.
+                    // Cost layers are not touched here — reconciling unit cost/COGS
+                    // after replacing an opening balance is a separate accounting
+                    // concern, handled via the existing Cost Layer admin tools.
+                    $this->inventory->replaceOpeningBalance(
+                        warehouseId: $warehouse->id,
+                        variantId: $variant->id,
+                        batchId: $batchId,
+                        quantity: $qty,
+                        userId: $context->userId,
+                        notes: 'Opening balance import (replace)',
+                        binLocationId: $binId,
+                    );
+
+                    return;
+                }
+
                 $this->inventory->setOpeningBalance(
                     warehouseId: $warehouse->id,
                     variantId: $variant->id,

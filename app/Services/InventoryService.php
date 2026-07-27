@@ -226,6 +226,46 @@ final class InventoryService
             ]);
         }
 
+        return $this->writeOpeningBalance($warehouseId, $variantId, $batchId, $quantity, $userId, $notes, $binLocationId);
+    }
+
+    /**
+     * Explicit "replace" counterpart to {@see setOpeningBalance()} for a deliberate
+     * re-import: skips the already-exists guard and updates the existing balance
+     * instead. Opt-in only (import wizard "update"/"upsert" mode) — never the
+     * default create-mode path, which must keep failing loudly on a duplicate.
+     */
+    public function replaceOpeningBalance(
+        int $warehouseId,
+        int $variantId,
+        ?int $batchId,
+        int $quantity,
+        ?int $userId = null,
+        ?string $notes = null,
+        ?int $binLocationId = null,
+    ): Inventory {
+        if ($quantity < 0) {
+            throw ValidationException::withMessages([
+                'quantity' => __('Opening balance quantity cannot be negative.'),
+            ]);
+        }
+
+        $this->assertTracksInventory($variantId);
+        $this->assertBatchProvidedForTrackedVariant($variantId, $batchId);
+        InventoryFreezeGuard::assertNotFrozen($warehouseId, $binLocationId);
+
+        return $this->writeOpeningBalance($warehouseId, $variantId, $batchId, $quantity, $userId, $notes, $binLocationId);
+    }
+
+    private function writeOpeningBalance(
+        int $warehouseId,
+        int $variantId,
+        ?int $batchId,
+        int $quantity,
+        ?int $userId,
+        ?string $notes,
+        ?int $binLocationId,
+    ): Inventory {
         return DB::transaction(function () use (
             $warehouseId,
             $variantId,

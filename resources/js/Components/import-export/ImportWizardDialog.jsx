@@ -24,6 +24,17 @@ import { toast } from 'sonner';
 
 const TOTAL_STEPS = 6;
 
+// Entities whose handler only ever inserts new records — re-uploading the same
+// file in the default "create" mode fails every row that already exists rather
+// than silently overwriting it. "Update"/"Upsert" here means "replace the
+// existing balance" for these entities specifically, not a generic field patch.
+// 'opening-balances' (accounting GL opening balances) is also insert-only on the
+// backend (OpeningBalanceImportHandler::isInsertOnly()), but has no working
+// "replace" mode yet — surfacing this hint for it would point users at a mode
+// the handler doesn't actually implement. Only list entities with a real
+// replace path here.
+const INSERT_ONLY_ENTITY_TYPES = ['inventory'];
+
 function guessMapping(systemFields, headers) {
     const mapping = {};
 
@@ -77,12 +88,13 @@ export default function ImportWizardDialog({
 }) {
     const { t } = useTranslation();
     const { refreshJobs } = useImportJobsTray();
+    const isInsertOnlyEntity = INSERT_ONLY_ENTITY_TYPES.includes(entityType);
     const [step, setStep] = useState(1);
     const [uploading, setUploading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [file, setFile] = useState(null);
     const [filename, setFilename] = useState('');
-    const [mode, setMode] = useState('upsert');
+    const [mode, setMode] = useState(isInsertOnlyEntity ? 'create' : 'upsert');
     const [matchField, setMatchField] = useState('sku');
     const [isDryRun, setIsDryRun] = useState(false);
     const [ulid, setUlid] = useState(null);
@@ -141,11 +153,11 @@ export default function ImportWizardDialog({
             setBehaviorOptions({});
             setSummary(null);
             setTotalRows(0);
-            setMode('upsert');
+            setMode(isInsertOnlyEntity ? 'create' : 'upsert');
             setMatchField('sku');
             setIsDryRun(false);
         }
-    }, [open]);
+    }, [open, isInsertOnlyEntity]);
 
     useEffect(() => {
         if (step === 5 && ['completed', 'failed', 'cancelled'].includes(status)) {
@@ -337,6 +349,13 @@ export default function ImportWizardDialog({
                                 ]}
                             />
                             <p className="mt-1 text-xs text-rp-text-muted">{t('importExport.modeHint')}</p>
+                            {isInsertOnlyEntity && (
+                                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                                    {mode === 'create'
+                                        ? t('importExport.insertOnlyHint')
+                                        : t('importExport.insertOnlyReplaceHint')}
+                                </p>
+                            )}
                         </div>
                         {showMatchField && (
                             <div>
