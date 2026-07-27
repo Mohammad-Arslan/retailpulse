@@ -1,20 +1,18 @@
 name: Deploy to Staging
 
-# Runs after CI finishes on main -- deploy never happens on an unvalidated
-# commit. First activation of a workflow_run trigger requires this file to
-# already be merged to the default branch once (a GitHub quirk, not a bug
-# here) -- see docs/deployment-guidelines.md for the manual fallback.
+# Manual / break-glass only. Jenkins (jenkins/Jenkinsfile, retailpulse-jenkins
+# container) is now the CI/CD source of truth for deploys -- it polls `main`
+# and auto-deploys on every new commit (see docs/ops-stack.md §4). This
+# workflow no longer auto-triggers on `workflow_run`, so it can't race
+# Jenkins into two concurrent `setup.sh production --rebuild` runs on the
+# same VPS. Use "Run workflow" from the Actions tab if Jenkins is down.
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main]
+  workflow_dispatch: {}
 
 jobs:
   deploy:
     name: Deploy to staging VPS
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1

@@ -64,6 +64,7 @@ The core stack is already production-shaped for a single VPS: localhost port bin
 | GitHub Actions SSH key | Medium | Deploy key with least privilege; rotate | Process |
 | Grafana default `changeme` | High if exposed | Force change via `.env` before `ops-up` | Documented |
 | MySQL exporter using root DSN | Medium | Create `exporter@'%'` with PROCESS/REPLICATION CLIENT/SELECT only | Recommend |
+| Jenkins now holds the `retailpulse-vps-ssh` deploy key **and** `JENKINS_SMTP_PASSWORD` (2026-07-28: Jenkins became the deploy source of truth, see ADR-018) | Medium–High | Same key already had full sudo on the VPS via GitHub Actions before this change — blast radius is unchanged in kind, but is now reachable via anyone who can trigger/modify the Jenkins job, not just GitHub. Restrict Jenkins job-configuration permissions (matrix/role strategy, already in `plugins.txt`); rotate the SMTP credential like any other secret once real SMTP replaces Mailpit | Recommend |
 
 Example monitoring user:
 
@@ -107,7 +108,8 @@ Core and ops services define health checks. Gaps (acceptable):
 - [ ] UFW: only 22/80/443 public  
 - [ ] Ops UIs only via Nginx + TLS (+ IP allowlist)  
 - [ ] Portainer admin created; 2FA if available  
-- [ ] Jenkins: disable signup; use matrix/role strategy; protect `DEPLOY_PRODUCTION`  
+- [x] Jenkins: disable signup; use matrix/role strategy — automated via `docker/jenkins/security.groovy` when `JENKINS_ADMIN_USER`/`JENKINS_ADMIN_PASSWORD` are set (2026-07-28); falls back to the manual wizard (still no anonymous access) if they're left blank  
+- [ ] Jenkins: protect `DEPLOY_PRODUCTION` (restrict who can trigger/edit the job beyond the sole admin above, once more than one operator has Jenkins access)  
 - [ ] Grafana admin password changed; anonymous auth off (default in compose)  
 - [ ] MySQL exporter dedicated user  
 - [ ] Contabo snapshots before first ops enable  
@@ -131,4 +133,5 @@ Core and ops services define health checks. Gaps (acceptable):
 
 | Date | Change |
 | :--- | :--- |
+| 2026-07-28 | Flagged elevated Jenkins blast radius now that it holds deploy authority (§2.5) — same VPS SSH key as before, more paths to trigger it |
 | 2026-07-27 | Initial production-grade Docker security audit for core + ops + observability stacks |

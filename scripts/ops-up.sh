@@ -65,6 +65,51 @@ fi
 # special characters in the password).
 # MYSQL_EXPORTER_DSN=exporter:ENCODED_PASSWORD@(mysql:3306)/
 
+# -----------------------------------------------------------------------------
+# Resource estimate — informational only, never blocks the deploy.
+# docs/ops-stack.md §9 has the source numbers.
+# -----------------------------------------------------------------------------
+echo "[ops] Estimated additional memory footprint:"
+if [[ "${WITH_OPS}" -eq 1 ]]; then
+  echo "[ops]   Portainer + Jenkins + Uptime Kuma : ~1-2 GB (Jenkins dominates, more during an active build)"
+fi
+if [[ "${WITH_OBS}" -eq 1 ]]; then
+  echo "[ops]   Prometheus/Grafana/Loki/Promtail/exporters/cAdvisor : ~1.5-3 GB"
+fi
+
+if command -v free >/dev/null 2>&1; then
+  echo "[ops] Current memory:"
+  free -h | sed 's/^/[ops]   /'
+  if [[ "${WITH_OBS}" -eq 1 ]]; then
+    total_mb="$(free -m | awk '/^Mem:/{print $2}')"
+    if [[ -n "${total_mb}" ]] && (( total_mb < 16384 )); then
+      echo "[ops] WARNING: this host has ${total_mb} MB RAM. Documentation recommends at least 16 GB RAM"
+      echo "[ops]          when Jenkins and the full observability stack run alongside production MySQL."
+      echo "[ops]          Continuing anyway — this is a warning, not a blocker. Watch 'free -h' after this comes up."
+    fi
+  fi
+else
+  echo "[ops]   ('free' not available on this host — skipping live memory check; see docs/ops-stack.md §9)"
+fi
+
+if [[ "${WITH_OBS}" -eq 1 ]] && [[ "${GRAFANA_ADMIN_PASSWORD:-changeme}" == "changeme" ]]; then
+  echo "[ops] WARNING: GRAFANA_ADMIN_PASSWORD is unset or still the default 'changeme'."
+  echo "[ops]          Set GRAFANA_ADMIN_USER and a real GRAFANA_ADMIN_PASSWORD in .env before"
+  echo "[ops]          exposing Grafana beyond your own SSH tunnel. Continuing anyway."
+fi
+
+# Keep the Jenkins bootstrap job definition in sync with the real Jenkinsfile.
+# docker/jenkins/bootstrap/ is bind-mounted read-only into the container and
+# gitignores this copy on purpose -- jenkins/Jenkinsfile is the only source of truth.
+mkdir -p docker/jenkins/bootstrap
+cp jenkins/Jenkinsfile docker/jenkins/bootstrap/Jenkinsfile
+echo "[ops] Synced jenkins/Jenkinsfile -> docker/jenkins/bootstrap/Jenkinsfile"
+if [[ ! -f docker/jenkins/bootstrap/retailpulse_staging_ed25519 ]]; then
+  echo "[ops] NOTE: docker/jenkins/bootstrap/retailpulse_staging_ed25519 is missing."
+  echo "[ops]       Jenkins will start, but the retailpulse-vps-ssh credential bootstrap"
+  echo "[ops]       will skip itself until you add that key and restart the jenkins container."
+fi
+
 if [[ "${WITH_OPS}" -eq 1 ]]; then
   echo "[ops] Starting Portainer + Jenkins + Uptime Kuma (project retailpulse-ops)..."
   if [[ "${REBUILD_JENKINS}" -eq 1 ]]; then
@@ -74,8 +119,12 @@ if [[ "${WITH_OPS}" -eq 1 ]]; then
   echo "[ops] Portainer:  http://127.0.0.1:${PORTAINER_HOST_PORT:-9010}"
   echo "[ops] Jenkins:    http://127.0.0.1:${JENKINS_HOST_PORT:-9080}"
   echo "[ops] Uptime Kuma: http://127.0.0.1:${UPTIME_KUMA_HOST_PORT:-3001}"
-  echo "[ops] Jenkins initial password (first boot):"
-  echo "[ops]   docker exec retailpulse-jenkins cat /var/jenkins_home/secrets/initialAdminPassword"
+  if [[ -n "${JENKINS_ADMIN_USER:-}" ]] && [[ -n "${JENKINS_ADMIN_PASSWORD:-}" ]]; then
+    echo "[ops] Jenkins: pre-secured via docker/jenkins/security.groovy — log in as '${JENKINS_ADMIN_USER}'."
+  else
+    echo "[ops] Jenkins initial password (JENKINS_ADMIN_USER/PASSWORD not set — normal setup wizard applies):"
+    echo "[ops]   docker exec retailpulse-jenkins cat /var/jenkins_home/secrets/initialAdminPassword"
+  fi
 fi
 
 if [[ "${WITH_OBS}" -eq 1 ]]; then

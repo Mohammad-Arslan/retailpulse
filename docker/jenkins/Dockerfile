@@ -85,6 +85,23 @@ RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
 # Quick sanity path for pipeline agents (php/composer already on PATH)
 RUN ln -sf /usr/bin/php${PHP_VERSION} /usr/local/bin/php || true
 
+# Security bootstrap (matrix auth, no anonymous access, CSRF crumb issuer,
+# skips the setup wizard once real admin credentials exist) -- idempotent,
+# re-applied every boot. Numbered to run before the one-shot bootstrap below.
+COPY security.groovy /usr/share/jenkins/ref/init.groovy.d/00-retailpulse-security.groovy
+
+# One-shot bootstrap (creates the retailpulse-vps-ssh credential + the
+# `retailpulse` Pipeline job, then self-deletes). Seeded via Jenkins' own
+# /usr/share/jenkins/ref/ convention: the entrypoint copies this into
+# $JENKINS_HOME/init.groovy.d/ on first boot ONLY if it's not already there --
+# safe against a fresh/deleted volume, and the self-delete acts on the volume
+# copy, never on this read-only image layer or a bind-mounted repo file.
+# Needs docker-compose.ops.yml's `./docker/jenkins/bootstrap:/var/jenkins_home/bootstrap:ro`
+# mount to contain the Jenkinsfile (auto-synced by scripts/ops-up.sh) and the
+# operator-supplied retailpulse_staging_ed25519 private key. Missing either is
+# a soft-fail logged at boot, not a crash -- see docs/ops-stack.md §4.
+COPY bootstrap-credentials.groovy /usr/share/jenkins/ref/init.groovy.d/99-retailpulse-bootstrap.groovy
+
 USER jenkins
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \

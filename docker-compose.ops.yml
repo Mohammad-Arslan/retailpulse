@@ -59,9 +59,37 @@ services:
       TZ: ${TZ:-UTC}
       # CASC is optional — only set CASC_JENKINS_CONFIG in .env when you have
       # real YAML under casc_configs. An empty/missing path crashes Jenkins on boot.
+      #
+      # Jenkins admin bootstrap (docker/jenkins/security.groovy). When both are
+      # set, Jenkins skips the manual setup wizard and boots straight into a
+      # matrix-secured instance (this admin only; anonymous gets nothing) with
+      # CSRF protection on. Leave blank to keep the normal setup wizard (its
+      # file-based initialAdminPassword unlock is itself secure by default) —
+      # there is intentionally no baked-in default admin password.
+      JENKINS_ADMIN_USER: ${JENKINS_ADMIN_USER:-}
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:-}
+      #
+      # Build/deploy notification email (jenkins/Jenkinsfile -> docker/jenkins/scripts/send-mail.py).
+      # Defaults below point at the local Mailpit catcher (docker-compose.yml) — it only
+      # catches mail, it does not deliver. Switching to a real SMTP provider later is an
+      # .env-only change (then `docker compose -p retailpulse-ops -f docker-compose.ops.yml
+      # up -d jenkins` to pick up the new values) — send-mail.py and the Jenkinsfile never change.
+      JENKINS_SMTP_HOST: ${JENKINS_SMTP_HOST:-mailpit}
+      JENKINS_SMTP_PORT: ${JENKINS_SMTP_PORT:-1025}
+      JENKINS_SMTP_USE_SSL: ${JENKINS_SMTP_USE_SSL:-false}
+      JENKINS_SMTP_USE_TLS: ${JENKINS_SMTP_USE_TLS:-false}
+      JENKINS_SMTP_USERNAME: ${JENKINS_SMTP_USERNAME:-}
+      JENKINS_SMTP_PASSWORD: ${JENKINS_SMTP_PASSWORD:-}
+      JENKINS_MAIL_FROM: ${JENKINS_MAIL_FROM:-jenkins@retailpulse.local}
+      JENKINS_NOTIFY_EMAIL: ${JENKINS_NOTIFY_EMAIL:-}
     volumes:
       - retailpulse_jenkins:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+      # Bootstrap inputs for docker/jenkins/bootstrap-credentials.groovy (baked into
+      # the image at /usr/share/jenkins/ref/init.groovy.d/, runs once against a fresh
+      # volume): the Jenkinsfile copy (auto-synced by scripts/ops-up.sh) and the
+      # operator-supplied deploy key. See docker/jenkins/bootstrap/README.md.
+      - ./docker/jenkins/bootstrap:/var/jenkins_home/bootstrap:ro
       # Optional: mount the RetailPulse repo for pipeline checkout without
       # re-cloning when developing pipelines locally (commented by default).
       # - ${RETAILPULSE_REPO_PATH:-.}:/workspace/retailpulse:ro

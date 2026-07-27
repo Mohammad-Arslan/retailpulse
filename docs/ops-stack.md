@@ -185,7 +185,18 @@ See `docker/nginx/retailpulse.conf` server block `portainer.example.com` (WebSoc
 | Node.js 20 + npm | Frontend build / tests |
 | Suggested plugins | `docker/jenkins/plugins.txt` |
 
-### First login
+### First login — two paths
+
+**Pre-secured (recommended):** set `JENKINS_ADMIN_USER` / `JENKINS_ADMIN_PASSWORD` in `.env` before the first `ops-up`. `docker/jenkins/security.groovy` (baked into the image, idempotent on every boot) then:
+
+- creates that admin user via `HudsonPrivateSecurityRealm` (no self-signup),
+- sets a `GlobalMatrixAuthorizationStrategy` granting **only** that admin `ADMINISTER` — anonymous gets nothing, matching this stack's "127.0.0.1 + SSH tunnel only" access model,
+- turns on the CSRF crumb issuer explicitly,
+- and marks the install state complete, so the manual setup wizard never shows.
+
+Log in directly at `http://127.0.0.1:9080` with those credentials.
+
+**Manual (default if the two env vars are blank):** the normal Jenkins setup wizard applies — itself secure by default (no anonymous access until unlocked with the file-based password below):
 
 ```bash
 docker compose -p retailpulse-ops -f docker-compose.ops.yml logs jenkins | grep -i password
@@ -193,32 +204,35 @@ docker compose -p retailpulse-ops -f docker-compose.ops.yml logs jenkins | grep 
 docker exec retailpulse-jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 ```
 
-Unlock Jenkins → install suggested plugins (also pre-seeded) → create admin.
+Unlock Jenkins → install suggested plugins (also pre-seeded) → create admin by hand. There is intentionally no baked-in default admin password for either path.
 
 ### Docker group GID
 
-Jenkins must share the host `docker` socket group:
+Jenkins must share the host `docker` socket group. `scripts/ops-up.sh` auto-detects this (`stat -c '%g' /var/run/docker.sock`) whenever `JENKINS_DOCKER_GID` is unset in `.env` — set it explicitly only to override the detection. Do **not** leave a stale hardcoded value in `.env`: this repo's own Contabo staging box uses GID `988`, not the `999` shown in `.env.example` as a generic default — a hardcoded wrong value skips auto-detection and breaks Jenkins' access to the socket.
 
 ```bash
-stat -c '%g' /var/run/docker.sock   # Linux
-# set in .env:
-JENKINS_DOCKER_GID=999
+stat -c '%g' /var/run/docker.sock   # Linux — confirm the real value for this host
 ```
 
 Then recreate: `bash scripts/ops-up.sh --rebuild-jenkins`.
 
-### Sample pipeline
+### Pipeline — CI/CD source of truth
 
 Committed at [`jenkins/Jenkinsfile`](../jenkins/Jenkinsfile):
 
-1. Clone repository  
-2. `composer install --ignore-platform-reqs` (matches Dockerfile/CI)  
-3. `npm ci`  
-4. Pint (`./vendor/bin/pint --test`)  
-5. PHPUnit (`composer test`) — optional via parameter  
-6. `docker build --target production`  
-7. Optional: SSH → `bash setup.sh production --rebuild`  
-8. Optimize caches + `curl http://127.0.0.1:8000/up` health check  
+1. Clone repository (full history — release notes need it, not a shallow clone)
+2. Generate release notes (`git log <last-deployed-sha>..HEAD`)
+3. `composer install --ignore-platform-reqs` (matches Dockerfile/CI)
+4. `npm ci`
+5. Pint (`./vendor/bin/pint --test`)
+6. PHPUnit (`composer test`) — optional via parameter
+7. `docker build --target production`
+8. SSH → `bash setup.sh production --rebuild` (on by default — see below)
+9. Optimize caches + `curl http://127.0.0.1:8000/up` health check, then record the deployed commit for the next run's release notes
+
+**Auto-trigger:** the Jenkinsfile declares `triggers { pollSCM('H/2 * * * *') }` — Jenkins polls this job's configured SCM (`main`) every ~2 minutes and builds on new commits, with `DEPLOY_PRODUCTION` defaulting to `true`. No GitHub webhook is used: Jenkins stays `127.0.0.1`-only (per §1/§2.1) and only needs outbound internet, which it already has for `git`/`composer`/`npm`. This trades a small trigger latency for not exposing Jenkins to the internet on a box with no domain/TLS yet. Instant webhook triggering is possible later if a domain + TLS + a shared secret are set up, but it isn't done here — see [docker-security-audit.md](./docker-security-audit.md).
+
+**Email notifications:** every build sends a success/failure email via `docker/jenkins/scripts/send-mail.py`, called once from a single `sendBuildNotification()` function in the Jenkinsfile (used by both the `success` and `failure` `post` blocks — no duplicated notification logic). On success, that day's release notes (commits since the last successful deploy) are attached as a text file. **SMTP transport is entirely env-driven** — `JENKINS_SMTP_HOST/PORT/USE_SSL/USE_TLS/USERNAME/PASSWORD`, `JENKINS_MAIL_FROM`, and the recipient list `JENKINS_NOTIFY_EMAIL`, all set on the `jenkins` service in `docker-compose.ops.yml` from `.env`. Defaults point at the local Mailpit catcher (it does not deliver real mail — dev/staging only). **Moving to a real SMTP provider is a `.env` change only**: set the real host/port/credentials, then `docker compose -p retailpulse-ops -f docker-compose.ops.yml up -d jenkins` to pick them up — the Jenkinsfile and `send-mail.py` never change.
 
 **Credentials to create in Jenkins:**
 
@@ -227,9 +241,27 @@ Committed at [`jenkins/Jenkinsfile`](../jenkins/Jenkinsfile):
 | `retailpulse-git` | Username/password or SSH | Checkout |
 | `retailpulse-vps-ssh` | SSH private key | Deploy stage |
 
-Create a Pipeline job → “Pipeline script from SCM” → point at `jenkins/Jenkinsfile`, **or** paste/copy the file into a Multibranch Pipeline.
+Create a Pipeline job → “Pipeline script from SCM” → point at `jenkins/Jenkinsfile` **once**, on `main`. That first build registers the `pollSCM` trigger; it's automatic from then on (same one-time-activation quirk GitHub Actions' `workflow_run` trigger has).
 
-> GitHub Actions remains the default CI/CD path ([deployment-guidelines.md](./deployment-guidelines.md) §9.1). Jenkins is an optional on-VPS controller for environments that require it (air-gapped builds, Contabo-local orchestration, enterprise change windows).
+> **This flips the previous default.** Jenkins is now the CI/CD source of truth for deploys. `.github/workflows/deploy.yml` no longer auto-triggers (`workflow_dispatch` only) — it's a manual/break-glass fallback if Jenkins is down. `.github/workflows/ci.yml` still lints/tests every push and PR; it does not deploy. See [deployment-guidelines.md §9.1](./deployment-guidelines.md) and [ADR-018](./architecture/adr-018-deployment.md).
+
+### Bootstrap scripts — wired up (2026-07-28)
+
+`docker/jenkins/bootstrap-credentials.groovy` auto-creates the `retailpulse-vps-ssh` credential and the `retailpulse` Pipeline job on first boot against a **fresh** `retailpulse_jenkins` volume, then self-deletes. It's baked into the image at `/usr/share/jenkins/ref/init.groovy.d/99-retailpulse-bootstrap.groovy` — Jenkins' own entrypoint copies anything under `/usr/share/jenkins/ref/` into `$JENKINS_HOME` **once**, only if the destination doesn't already exist, which is what makes the self-delete safe (it deletes the writable volume copy, never this read-only image layer or a bind-mounted repo file).
+
+It needs two inputs at `/var/jenkins_home/bootstrap/` (bind-mounted read-only from `docker/jenkins/bootstrap/`, per `docker-compose.ops.yml`):
+
+- **`Jenkinsfile`** — auto-synced from `jenkins/Jenkinsfile` by `scripts/ops-up.sh` every time it runs. Never hand-edit the copy; edit the real file.
+- **`retailpulse_staging_ed25519`** — the private key for VPS SSH access. **You** place this here manually before first boot (never committed — `docker/jenkins/bootstrap/.gitignore` blocks it). If it's missing, the bootstrap script logs an error and skips credential creation; Jenkins still starts. Add the key and `docker compose -p retailpulse-ops -f docker-compose.ops.yml restart jenkins` once it's there.
+
+`docker/jenkins/refresh-job.groovy` is a **manual** companion tool, not baked into the image — use it to push a newer Jenkinsfile into an already-bootstrapped Jenkins without touching the credential:
+
+```bash
+docker cp docker/jenkins/refresh-job.groovy retailpulse-jenkins:/var/jenkins_home/init.groovy.d/99-refresh-retailpulse-job.groovy
+docker restart retailpulse-jenkins
+```
+
+(In practice this is rarely needed — the Pipeline job re-reads `jenkins/Jenkinsfile` from SCM on every build anyway; `refresh-job.groovy` only matters if you changed how the job itself is defined, not the pipeline steps.)
 
 ---
 
@@ -414,9 +446,83 @@ This stack implements the **Monitoring and alerting** expectations of [ADR-018](
 
 ---
 
+## 11. Deployment order & rollout checklist
+
+Phased, not all-at-once — each phase should be confirmed stable before starting the next:
+
+1. **Portainer + Jenkins + Uptime Kuma** (`bash scripts/ops-up.sh`) — fits comfortably in the ~8.5 GB available on the current 11 GB Contabo box.
+2. **Let a real Jenkins build run** (composer + npm + `docker build` together spike well above Jenkins' idle footprint) and check `free -h` before deciding on step 3.
+3. **Observability, optional** (`bash scripts/ops-up.sh --with-observability`) — only once step 2 shows comfortable headroom, or after upgrading the VPS. The script prints a RAM warning (not a block) if total system memory is under 16 GB when this flag is used.
+
+### Pre-flight (do before the first `ops-up` on this VPS)
+
+- [ ] `.env`: `JENKINS_DOCKER_GID` unset (let auto-detect find `988` on this box) or set to the confirmed real value — **not** the generic `999` default.
+- [ ] `.env`: `JENKINS_ADMIN_USER` / `JENKINS_ADMIN_PASSWORD` set, so Jenkins boots pre-secured instead of via the manual wizard (§4).
+- [ ] `.env`: `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` set to real values before ever using `--with-observability` (`ops-up.sh` warns if left at `changeme`, but does not block).
+- [ ] `docker/jenkins/bootstrap/retailpulse_staging_ed25519` placed on the VPS (never committed).
+- [ ] `.env`: `JENKINS_NOTIFY_EMAIL` set to a real recipient if you want build emails (Mailpit by default — doesn't deliver, only catches).
+- [ ] A Contabo snapshot taken before first enabling any of this on the production box.
+
+### Smoke test after `ops-up.sh`
+
+- [ ] Portainer reaches the Docker socket — `http://127.0.0.1:9010` → environment shows the host's running containers (including the existing `retailpulse-*` app containers).
+- [ ] Jenkins can run Docker — a manual build of the `retailpulse` job completes the "Build Docker image" stage without a permission error (confirms `JENKINS_DOCKER_GID` is correct).
+- [ ] Jenkins can build and (if `DEPLOY_PRODUCTION` is on) deploy RetailPulse — job succeeds end to end, `/up` health check in the "Optimize & verify health" stage passes.
+- [ ] The success email arrives (Mailpit UI at `http://127.0.0.1:8025` via tunnel, or the real inbox once SMTP is configured) with `release-notes.txt` attached.
+- [ ] Uptime Kuma (`bash scripts/setup-uptime-kuma.sh`) reports all seeded `RP *` monitors up.
+- [ ] **Existing app containers unaffected**: `docker compose -p retailpulse ps` still shows `retailpulse-app`, `mysql`, `redis`, `minio`, `mailpit`, `phpmyadmin` all healthy, none restarted, same `Up <duration>` as before `ops-up.sh` ran.
+- [ ] `docker network inspect retailpulse` shows the ops/observability containers joined alongside the app containers — no new network created, no IP conflicts.
+- [ ] `docker volume ls` shows only the new named `retailpulse_portainer` / `retailpulse_jenkins` / `retailpulse_uptime_kuma` (and, if observability is on, `retailpulse_prometheus` / `retailpulse_grafana` / `retailpulse_loki`) volumes added — nothing renamed or removed from the app stack's own volumes.
+- [ ] No unexpected container restarts in `docker compose -p retailpulse ps` or `-p retailpulse-ops ps` over the following hour (`docker events` or Uptime Kuma's own uptime % is the easiest way to check after the fact).
+
+## 12. Upgrade
+
+Ops/observability images are pinned by tag (e.g. `grafana/grafana:11.5.2`, `portainer/portainer-ce:2.27.4`) — nothing auto-updates. To bump a version:
+
+1. Edit the tag in `docker-compose.ops.yml` / `docker-compose.observability.yml`.
+2. `docker compose -p retailpulse-ops -f docker-compose.ops.yml pull` (or the `-obs` equivalent).
+3. `docker compose -p retailpulse-ops -f docker-compose.ops.yml up -d --remove-orphans` — recreates only the changed service(s); named volumes persist, the app stack is untouched (separate project).
+4. Jenkins specifically: `bash scripts/ops-up.sh --rebuild-jenkins` after changing `docker/jenkins/Dockerfile` (new plugin, new PHP/Node version, etc.) — rebuilds the image, then recreates the container against the same `retailpulse_jenkins` volume (job/credential/build history survive).
+
+## 13. Rollback
+
+Because ops/observability are separate Compose projects, rolling back never touches the running app:
+
+- **Roll back one service to a prior image tag:** edit the tag back, `docker compose ... up -d` — same as an upgrade, in reverse.
+- **Stop everything ops-related, keep data:** `bash scripts/ops-down.sh [--with-observability]` — volumes untouched, safe to `ops-up.sh` again later.
+- **Full removal including data (destructive):** `bash scripts/ops-down.sh --with-observability --volumes` — deletes Jenkins job history/credentials, Grafana dashboards state, Prometheus/Loki retained metrics/logs, Portainer config, Uptime Kuma monitor history. The app's own data (MySQL, Redis, MinIO) is in entirely separate named volumes and is never touched by this command.
+- **Jenkins credential/job state specifically:** re-running `bash scripts/ops-up.sh` against a fresh `retailpulse_jenkins` volume re-bootstraps the admin security config and (if the deploy key is present at `docker/jenkins/bootstrap/`) the `retailpulse-vps-ssh` credential and `retailpulse` job automatically — no manual Jenkins UI work needed to recover.
+
+## 14. Troubleshooting
+
+| Symptom | Likely cause | Fix |
+| :--- | :--- | :--- |
+| Jenkins can't run `docker build` / `docker compose` steps (`permission denied` on the socket) | `JENKINS_DOCKER_GID` doesn't match this host's real docker group | `stat -c '%g' /var/run/docker.sock`, set `JENKINS_DOCKER_GID` to that value (or unset it and let `ops-up.sh` auto-detect), then `docker compose -p retailpulse-ops -f docker-compose.ops.yml up -d jenkins` |
+| Jenkins boots straight to the manual setup wizard even though you set admin credentials | `.env` wasn't sourced before the container started, or the container predates the env var (old container still running with old env) | Confirm `docker exec retailpulse-jenkins printenv \| grep JENKINS_ADMIN`, then recreate: `docker compose -p retailpulse-ops -f docker-compose.ops.yml up -d --force-recreate jenkins` |
+| `retailpulse-vps-ssh` credential never appears in Jenkins | `docker/jenkins/bootstrap/retailpulse_staging_ed25519` is missing | Add the key file, `docker compose -p retailpulse-ops -f docker-compose.ops.yml restart jenkins`, check `docker compose ... logs jenkins \| grep bootstrap` |
+| Jenkins container crashes on boot citing `CASC_JENKINS_CONFIG` | That env var is set in `.env` but points at a missing/empty file | Unset `CASC_JENKINS_CONFIG` unless you have real YAML under `casc_configs` — it's optional, not required by anything in this stack |
+| Grafana/Prometheus/Loki fail to start under `retailpulse-obs` | Started before the core app network exists | `docker network inspect retailpulse` must succeed first — start the core app (`bash setup.sh production`) before `ops-up.sh` |
+| Ops containers get removed unexpectedly after an app redeploy | Something merged ops/observability services into `docker-compose.yml` itself | Don't — see §1; they must stay separate projects, or `setup.sh`'s `--remove-orphans` will remove them |
+| Email notifications never arrive | `JENKINS_NOTIFY_EMAIL` blank, or Mailpit is the transport (it only catches, never delivers) | Set `JENKINS_NOTIFY_EMAIL`; check the Mailpit UI (`http://127.0.0.1:8025` via tunnel) to confirm the pipeline is actually sending; switch to real SMTP via `JENKINS_SMTP_*` when ready |
+| `ops-up.sh` reports the wrong current memory / no warning shown | Running on Docker Desktop (macOS has no `free` command) | Expected — the script skips the live check there and says so; the warning only fires on Linux hosts where `free` exists |
+
+## 15. Known limitations
+
+- No coverage/load-test gate, no staging-vs-production two-tier deploy, no secrets manager — all explicitly Phase 16 scope; see [ADR-018](./architecture/adr-018-deployment.md)'s "Current implementation state."
+- Jenkins auto-trigger is polling (`pollSCM`, ~2 min latency), not an instant webhook — deliberate, to avoid exposing Jenkins publicly on a box with no domain/TLS yet (§4).
+- `docker/jenkins/refresh-job.groovy` is a manual companion tool, not wired into the image — see §4.
+- Mailpit is the default mail transport for Jenkins notifications; it does not deliver real email until `JENKINS_SMTP_*` point at a real provider.
+- Uptime Kuma has no dedicated Horizon monitor (no standalone HTTP port) — covered today by the Jenkins deploy health check and Redis queue depth via Prometheus if observability is enabled; a push-heartbeat monitor is the documented option if a dedicated check is wanted (§5).
+- MySQL exporter (observability) authenticates as `root`; a scoped `exporter` user is recommended but not yet created (`docs/docker-security-audit.md` §2.5).
+- Nginx templates document Uptime Kuma under `status.example.com`, not `kuma.example.com` — a deliberate naming choice (it's a public status page), not an oversight; rename in `docker/nginx/retailpulse.conf` if you'd rather match the tool name.
+
+---
+
 ## Document history
 
 | Date | Change |
 | :--- | :--- |
+| 2026-07-28 | Jenkins security bootstrap (`docker/jenkins/security.groovy`: matrix auth, no anonymous access, CSRF, skips the setup wizard once `JENKINS_ADMIN_USER`/`PASSWORD` are set — never a baked-in default). `scripts/ops-up.sh` now prints a resource estimate, warns (doesn't block) if observability is requested on <16 GB RAM, and warns on a default Grafana password. Added §11–§15 (rollout checklist, smoke test, upgrade, rollback, troubleshooting, known limitations). |
+| 2026-07-28 | Jenkins promoted to CI/CD source of truth: `pollSCM` auto-trigger on `main` (no inbound webhook — Jenkins stays localhost-only), success/failure email via env-driven `docker/jenkins/scripts/send-mail.py` (Mailpit today, real SMTP later is a `.env`-only change), release notes attached on success. `.github/workflows/deploy.yml` demoted to manual/break-glass (`workflow_dispatch`) so it can't race Jenkins. Also fixed the previously-dead `bootstrap-credentials.groovy` wiring (§4) via Jenkins' `/usr/share/jenkins/ref/` first-boot seed convention + a new `docker/jenkins/bootstrap/` mount. |
 | 2026-07-27 | Initial ops + observability integration (Portainer, Jenkins, Uptime Kuma, Prometheus, Grafana, Loki, Promtail, Node Exporter, cAdvisor, Nginx hardening) |
 | 2026-07-27 | Staging Contabo zero-downtime rules (§2.1) + `docker/nginx/retailpulse.staging.conf` matching live IP/HTTP Nginx; SSH-tunnel access for ops UIs until DNS/TLS |

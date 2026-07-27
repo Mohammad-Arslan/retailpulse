@@ -416,13 +416,13 @@ Ensure Laravel trusts the reverse proxy (`TrustProxies` / Laravel 13 defaults). 
 
 ### 9.1 Deploy a new release
 
-**Automatic (default):** merging to `main` runs `.github/workflows/ci.yml` (lint → build → test); on success, `.github/workflows/deploy.yml` SSHes to the VPS and redeploys. Nothing to do manually — watch the Actions tab.
+**Automatic (default, since 2026-07-28): Jenkins.** `retailpulse-jenkins` (see [ops-stack.md §4](./ops-stack.md)) polls `main` every ~2 minutes via `jenkins/Jenkinsfile`'s `pollSCM` trigger and, on a new commit, builds, deploys (`setup.sh production --rebuild`), verifies `/up`, and emails success/failure to `JENKINS_NOTIFY_EMAIL` — with release notes attached on success. Nothing to do manually — watch the Jenkins job (`http://127.0.0.1:9080/job/retailpulse/`, via SSH tunnel) or your inbox.
 
-Requires these GitHub repo secrets to be set once (Settings → Secrets and variables → Actions): `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` (a private key already trusted on the VPS for that user).
+`.github/workflows/ci.yml` still lints/tests every push and PR to `main` — that gate is unchanged. `.github/workflows/deploy.yml` no longer auto-deploys; it's `workflow_dispatch`-only now, a manual/break-glass path for when Jenkins itself is down (Settings → Secrets and variables → Actions still needs `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` set for that fallback to work).
 
-> `workflow_run`-triggered workflows only activate once `deploy.yml` itself has been merged to the default branch — the very first push after adding it won't trigger a deploy. Run it manually once via the Actions tab ("Run workflow" won't be available for `workflow_run` triggers, so instead re-run the CI workflow, or just do one manual deploy per below) to confirm the wiring, then it's automatic from then on.
+> The Jenkins Pipeline job must be created once ("Pipeline script from SCM" → `jenkins/Jenkinsfile`, branch `main`) before `pollSCM` starts firing — same one-time-activation quirk GitHub Actions' old `workflow_run` trigger had. See [ops-stack.md §4](./ops-stack.md).
 
-**Manual fallback** (if Actions is down, or you want to deploy without waiting for CI):
+**Manual fallback** (if Jenkins and Actions are both down):
 
 ```bash
 cd /var/www/retailpulse
@@ -609,6 +609,7 @@ Full install, monitors, scrape config, Nginx hardening, and security notes:
 
 | Date | Change |
 | :--- | :--- |
+| 2026-07-28 | Jenkins is now the CI/CD source of truth for deploys (`pollSCM` auto-trigger on `main`, env-driven SMTP notification with release-notes attachment on success — see `jenkins/Jenkinsfile`, `docker/jenkins/scripts/send-mail.py`, [ops-stack.md §4](./ops-stack.md)). `.github/workflows/deploy.yml` demoted from auto (`workflow_run`) to manual (`workflow_dispatch`) so the two systems can't both redeploy the same VPS concurrently — see the 2026-07-23 race-condition entry below for why that matters. `ci.yml` (lint/test gate) is unchanged. |
 | 2026-07-27 | Added optional ops/observability stack (Portainer, Jenkins, Uptime Kuma, Prometheus, Grafana, Loki, Promtail, Node Exporter, cAdvisor), hardened Nginx templates under `docker/nginx/`, `scripts/ops-up.sh` / `ops-down.sh`, and cross-links to `ops-stack.md` + `docker-security-audit.md`. MinIO gains `MINIO_PROMETHEUS_AUTH_TYPE` for scrape. Core `setup.sh` / app Compose behavior unchanged. Added `retailpulse.staging.conf` mirroring live Contabo HTTP/IP Nginx so staging is not overwritten by the multi-vhost TLS template. |
 | 2026-07-23 | Initial Contabo VPS + Docker production deployment guidelines |
 | 2026-07-23 | Fixed `setup.sh` gap: `APP_URL` was being unconditionally reset to `http://localhost:<APP_HOST_PORT>` on every run (including `production`), overwriting the real domain/scheme set per §6.1. Now only auto-set in `local` mode. |
