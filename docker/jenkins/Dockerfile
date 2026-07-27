@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         openssh-client \
         python3 \
         lsb-release \
+        xz-utils \
         apt-transport-https \
     && install -m 0755 -d /etc/apt/keyrings \
     # Docker CLI
@@ -42,8 +43,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
         https://download.docker.com/linux/debian bookworm stable" \
         > /etc/apt/sources.list.d/docker.list \
-    # Node.js 20
-    && curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - \
+    # Node.js — NodeSource's legacy setup_${NODE_MAJOR}.x script chains to their
+    # own GPG-key endpoint, which returns 403 (confirmed from a live Contabo VPS,
+    # 2026-07-28 -- not codename-specific: gpgkey and nodistro paths both 403,
+    # nodejs.org's own dist does not). Install the official prebuilt tarball
+    # directly instead of depending on that third-party apt repo at all.
+    && NODE_TARBALL="$(curl -fsSL https://nodejs.org/dist/latest-v${NODE_MAJOR}.x/ \
+        | grep -oE "node-v${NODE_MAJOR}\.[0-9]+\.[0-9]+-linux-x64\.tar\.xz" | head -1)" \
+    && curl -fsSL "https://nodejs.org/dist/latest-v${NODE_MAJOR}.x/${NODE_TARBALL}" -o /tmp/node.tar.xz \
+    && tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 \
+    && rm -f /tmp/node.tar.xz \
     # PHP 8.3 (Sury) — bookworm default is 8.2; RetailPulse targets 8.3
     && curl -fsSLo /tmp/debsuryorg-archive-keyring.deb \
         https://packages.sury.org/debsuryorg-archive-keyring.deb \
@@ -54,7 +63,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get install -y --no-install-recommends \
         docker-ce-cli \
         docker-compose-plugin \
-        nodejs \
         php${PHP_VERSION}-cli \
         php${PHP_VERSION}-bcmath \
         php${PHP_VERSION}-curl \
