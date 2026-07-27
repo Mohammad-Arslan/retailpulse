@@ -37,4 +37,12 @@ trait DeclaresImportSchema
 
         return $map;
     }
+
+    /**
+     * @return list<string>
+     */
+    public function compositeConstraintAdvisories(): array
+    {
+        return [];
+    }
 }

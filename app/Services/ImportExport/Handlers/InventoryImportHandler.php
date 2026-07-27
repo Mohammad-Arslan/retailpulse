@@ -45,7 +45,41 @@ final class InventoryImportHandler implements ImportHandler
 
     public function validateRow(array $row, ImportContext $context): array
     {
+        try {
+            $warehouse = $this->support->resolveWarehouse($row, $context);
+            $variant = $this->support->resolveVariant($row, $context);
+            $binId = $this->support->resolveBinId($warehouse->id, $row);
+        } catch (ImportRowException $e) {
+            return ['_row' => [$e->getMessage()]];
+        }
+
+        $batchNo = trim((string) ($row['batch_no'] ?? ''));
+        $binCode = trim((string) ($row['bin_code'] ?? ''));
+
+        $dedupeKey = implode('|', ['inventory-opening-balance', $warehouse->id, $variant->id, $batchNo, $binCode]);
+
+        if ($context->duplicateTracker->isDuplicate($dedupeKey)) {
+            return ['sku' => ['This warehouse, variant, batch, and bin combination is duplicated elsewhere in this file.']];
+        }
+
+        $batchId = $this->support->findExistingBatchId($variant, $row);
+
+        if ($this->inventory->hasExistingOpeningBalance($warehouse->id, $variant->id, $batchId, $binId)) {
+            return ['sku' => [
+                $binId !== null
+                    ? 'Opening balance already exists for this warehouse, variant, batch, and bin.'
+                    : 'Opening balance already exists for this warehouse, variant, and batch.',
+            ]];
+        }
+
         return [];
+    }
+
+    public function compositeConstraintAdvisories(): array
+    {
+        return [
+            'This import enforces uniqueness on Warehouse + Variant + Batch (and Bin, when provided) — duplicate rows are rejected on import.',
+        ];
     }
 
     public function processRow(array $row, ImportContext $context): ImportRowResult

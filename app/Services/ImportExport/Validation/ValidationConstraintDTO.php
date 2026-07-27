@@ -15,14 +15,18 @@ final class ValidationConstraintDTO
     /**
      * @param  list<FieldConstraints>  $fields
      * @param  list<string>  $inexpressible  Opaque flags for parity tests (not shown to end users as schema names)
+     * @param  list<string>  $advisories  Sanitized, human-readable notes about constraints not
+     *                                    expressed as a per-field locked rule (e.g. composite
+     *                                    uniqueness) — plain English only, never schema identifiers.
      */
     public function __construct(
         public readonly array $fields,
         public readonly array $inexpressible = [],
+        public readonly array $advisories = [],
     ) {}
 
     /**
-     * @return array{fields: list<FieldConstraints>, inexpressible_count: int}
+     * @return array{fields: list<FieldConstraints>, inexpressible_count: int, advisories: list<string>}
      */
     public function toArray(): array
     {
@@ -30,6 +34,7 @@ final class ValidationConstraintDTO
             'fields' => $this->fields,
             // Count only — never leak what could not be expressed as schema identifiers.
             'inexpressible_count' => count($this->inexpressible),
+            'advisories' => $this->advisories,
         ];
     }
 }

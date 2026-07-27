@@ -179,6 +179,26 @@ final class InventoryService
         );
     }
 
+    /**
+     * Read-only check for the same "already exists" rule {@see setOpeningBalance()}
+     * enforces, so callers (e.g. import validation) can flag the conflict before
+     * attempting to write, without duplicating the business rule.
+     */
+    public function hasExistingOpeningBalance(
+        int $warehouseId,
+        int $variantId,
+        ?int $batchId,
+        ?int $binLocationId = null,
+    ): bool {
+        if ($binLocationId !== null) {
+            $existing = $this->inventories->findForUpdate($warehouseId, $variantId, $batchId, $binLocationId);
+
+            return $existing !== null && $existing->quantity_on_hand > 0;
+        }
+
+        return $this->movements->hasOpeningBalance($warehouseId, $variantId, $batchId);
+    }
+
     public function setOpeningBalance(
         int $warehouseId,
         int $variantId,
@@ -198,17 +218,11 @@ final class InventoryService
         $this->assertBatchProvidedForTrackedVariant($variantId, $batchId);
         InventoryFreezeGuard::assertNotFrozen($warehouseId, $binLocationId);
 
-        if ($binLocationId !== null) {
-            $existing = $this->inventories->findForUpdate($warehouseId, $variantId, $batchId, $binLocationId);
-
-            if ($existing !== null && $existing->quantity_on_hand > 0) {
-                throw ValidationException::withMessages([
-                    'sku' => __('Opening balance already exists for this warehouse, variant, batch, and bin.'),
-                ]);
-            }
-        } elseif ($this->movements->hasOpeningBalance($warehouseId, $variantId, $batchId)) {
+        if ($this->hasExistingOpeningBalance($warehouseId, $variantId, $batchId, $binLocationId)) {
             throw ValidationException::withMessages([
-                'sku' => __('Opening balance already exists for this warehouse, variant, and batch.'),
+                'sku' => $binLocationId !== null
+                    ? __('Opening balance already exists for this warehouse, variant, batch, and bin.')
+                    : __('Opening balance already exists for this warehouse, variant, and batch.'),
             ]);
         }
 

@@ -7,6 +7,7 @@ namespace App\Services\ImportExport\Validation;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 /**
@@ -39,7 +40,7 @@ final class SchemaConstraintDeriver
 
         if ($models === [] || $columnMap === []) {
             $empty = [
-                'dto' => new ValidationConstraintDTO([]),
+                'dto' => new ValidationConstraintDTO([], [], $handler->compositeConstraintAdvisories()),
                 'engine_by_field' => [],
                 'inexpressible' => [],
             ];
@@ -52,6 +53,8 @@ final class SchemaConstraintDeriver
         /** @var array<string, list<array<string, mixed>>> $engineByField */
         $engineByField = [];
         $inexpressible = [];
+        /** @var list<string> $advisories */
+        $advisories = [];
 
         $physicalToLogical = $this->invertColumnMap($columnMap, $models);
         $modelTables = $this->modelTables($models);
@@ -116,8 +119,50 @@ final class SchemaConstraintDeriver
                     continue;
                 }
 
+                $tenantScoped = in_array('tenant_id', $indexColumns, true);
+
                 if (count($businessColumns) > 1) {
-                    $inexpressible[] = 'composite_unique:'.$table;
+                    $mapped = [];
+                    foreach ($businessColumns as $physicalColumn) {
+                        $logicalColumn = $physicalToLogical[$table.'.'.$physicalColumn] ?? $physicalToLogical[$physicalColumn] ?? null;
+
+                        if ($logicalColumn === null) {
+                            $mapped = null;
+
+                            break;
+                        }
+
+                        $mapped[] = ['column' => $physicalColumn, 'field' => $logicalColumn];
+                    }
+
+                    if ($mapped === null) {
+                        // Not every column maps to a logical CSV field (e.g. resolved
+                        // through an FK lookup) — cannot be expressed as a locked
+                        // rule against submitted row values.
+                        $inexpressible[] = 'composite_unique:'.$table;
+
+                        continue;
+                    }
+
+                    // Anchor the engine rule + advisory on the first mapped column;
+                    // its siblings are enforced via additional ->where() constraints.
+                    $anchor = $mapped[0];
+                    $siblings = array_slice($mapped, 1);
+
+                    $engineByField[$anchor['field']] = array_merge($engineByField[$anchor['field']] ?? [], [
+                        [
+                            'rule' => 'unique_in_db',
+                            'table' => $table,
+                            'column' => $anchor['column'],
+                            'composite' => $siblings,
+                            'scope' => $tenantScoped ? 'tenant' : null,
+                            'except_on' => 'update',
+                        ],
+                    ]);
+
+                    $labels = array_map(fn (array $m): string => $this->humanizeField($m['field']), $mapped);
+                    $advisories[] = 'This import enforces uniqueness on '.implode(' + ', $labels)
+                        .' — duplicate rows are rejected on import.';
 
                     continue;
                 }
@@ -131,7 +176,6 @@ final class SchemaConstraintDeriver
                     continue;
                 }
 
-                $tenantScoped = in_array('tenant_id', $indexColumns, true);
                 $scope = $tenantScoped ? 'tenant' : 'global';
 
                 $dtoByField[$logical] = array_merge($dtoByField[$logical] ?? [], [
@@ -154,6 +198,19 @@ final class SchemaConstraintDeriver
             }
         }
 
+        // Genuinely inexpressible constraints still get a sanitized, plain-English
+        // advisory — either from the handler (it knows the domain semantics of its
+        // own FK-resolved lookups) or a generic fallback that names no identifiers.
+        if ($inexpressible !== []) {
+            $handlerAdvisories = $handler->compositeConstraintAdvisories();
+
+            if ($handlerAdvisories !== []) {
+                array_push($advisories, ...$handlerAdvisories);
+            } else {
+                $advisories[] = 'This import enforces additional uniqueness constraints not shown above — some duplicate combinations may be rejected on save.';
+            }
+        }
+
         // Deduplicate rule types per field (keep first of each type; unique is distinct).
         $fields = [];
         foreach ($dtoByField as $field => $rules) {
@@ -173,7 +230,7 @@ final class SchemaConstraintDeriver
         unset($modelTables); // used for clarity in invert only
 
         $result = [
-            'dto' => new ValidationConstraintDTO($fields, $inexpressible),
+            'dto' => new ValidationConstraintDTO($fields, $inexpressible, $advisories),
             'engine_by_field' => $engineByField,
             'inexpressible' => $inexpressible,
         ];
@@ -340,6 +397,17 @@ final class SchemaConstraintDeriver
         }
 
         return $tables;
+    }
+
+    /**
+     * Human-readable label for a logical field, for advisory text only — never a
+     * physical column/table/index name. E.g. 'product_variant_id' → 'Product Variant'.
+     */
+    private function humanizeField(string $field): string
+    {
+        $field = preg_replace('/_id$/', '', $field) ?? $field;
+
+        return Str::of($field)->replace(['_', '-'], ' ')->title()->toString();
     }
 
     private function shouldSkipPhysicalColumn(string $physical): bool

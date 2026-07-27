@@ -6,6 +6,7 @@ namespace App\Services\ImportExport\Contracts;
 
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
+use App\Services\ImportExport\Validation\SchemaConstraintDeriver;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -45,6 +46,16 @@ interface ImportHandler
      * @return array<string, string>
      */
     public function columnMap(): array;
+
+    /**
+     * Sanitized, plain-English advisories for constraints {@see SchemaConstraintDeriver}
+     * cannot express as a locked rule (e.g. composite uniqueness resolved through an
+     * FK lookup, like inventory's warehouse+variant+batch). Only the handler knows
+     * the domain semantics of its own lookup columns — never table/column/index names.
+     *
+     * @return list<string>
+     */
+    public function compositeConstraintAdvisories(): array;
 
     /**
      * @param  array<string, mixed>  $row

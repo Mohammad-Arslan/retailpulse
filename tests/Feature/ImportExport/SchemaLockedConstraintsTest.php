@@ -7,6 +7,7 @@ namespace Tests\Feature\ImportExport;
 use App\Models\ImportExportJob;
 use App\Models\User;
 use App\Services\ImportExport\Handlers\BrandImportHandler;
+use App\Services\ImportExport\Handlers\InventoryImportHandler;
 use App\Services\ImportExport\Handlers\ProductImportHandler;
 use App\Services\ImportExport\ImportExportRegistry;
 use App\Services\ImportExport\Validation\SchemaConstraintDeriver;
@@ -157,6 +158,26 @@ final class SchemaLockedConstraintsTest extends TestCase
         $this->assertTrue((bool) ($codeRules['is_required'] ?? false));
     }
 
+    public function test_inventory_composite_uniqueness_surfaces_sanitized_advisory(): void
+    {
+        $dto = app(SchemaConstraintDeriver::class)->dtoFor(app(InventoryImportHandler::class));
+        $payload = $dto->toArray();
+
+        $this->assertNotEmpty($payload['advisories']);
+
+        $json = json_encode($payload);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/\binventories\b|\bwarehouse_id\b|\bproduct_variant_id\b|\bbatch_id\b|\bbin_location_id\b|_unique\b|CREATE TABLE/i',
+            (string) $json,
+        );
+
+        $advisoryText = implode(' ', $payload['advisories']);
+        $this->assertStringContainsString('Warehouse', $advisoryText);
+        $this->assertStringContainsString('Variant', $advisoryText);
+        $this->assertStringContainsString('Batch', $advisoryText);
+    }
+
     public function test_parity_covers_not_null_and_unique_for_mapped_columns(): void
     {
         SchemaConstraintDeriver::clearCache();
@@ -225,17 +246,46 @@ final class SchemaLockedConstraintsTest extends TestCase
                         fn (string $c): bool => ! in_array($c, ['id', 'tenant_id'], true),
                     ));
 
-                    if (count($cols) !== 1 || ! isset($physicalToLogical[$cols[0]])) {
+                    if ($cols === []) {
                         continue;
                     }
 
-                    $logical = $physicalToLogical[$cols[0]];
-                    $names = collect($engineByField[$logical] ?? [])->pluck('rule')->all();
-                    $this->assertContains(
-                        'unique_in_db',
-                        $names,
-                        "{$entityType}.{$logical} must lock unique for {$table}.".$cols[0],
-                    );
+                    if (count($cols) === 1) {
+                        if (! isset($physicalToLogical[$cols[0]])) {
+                            continue;
+                        }
+
+                        $logical = $physicalToLogical[$cols[0]];
+                        $names = collect($engineByField[$logical] ?? [])->pluck('rule')->all();
+                        $this->assertContains(
+                            'unique_in_db',
+                            $names,
+                            "{$entityType}.{$logical} must lock unique for {$table}.".$cols[0],
+                        );
+
+                        continue;
+                    }
+
+                    // Composite unique index: must be covered by either a multi-column
+                    // locked rule (every column maps to a logical field) or a sanitized
+                    // advisory (genuinely inexpressible, e.g. FK-resolved lookups) —
+                    // never silently dropped with no signal at all.
+                    $allMapped = collect($cols)->every(fn (string $c): bool => isset($physicalToLogical[$c]));
+
+                    if ($allMapped) {
+                        $anchorLogical = $physicalToLogical[$cols[0]];
+                        $names = collect($engineByField[$anchorLogical] ?? [])->pluck('rule')->all();
+                        $this->assertContains(
+                            'unique_in_db',
+                            $names,
+                            "{$entityType}.{$anchorLogical} must lock composite unique for {$table}.".implode(',', $cols),
+                        );
+                    } else {
+                        $this->assertNotEmpty(
+                            $derived['dto']->advisories,
+                            "{$entityType} composite unique on {$table}.".implode(',', $cols).' must surface an advisory when inexpressible.',
+                        );
+                    }
                 }
             }
         }
