@@ -321,6 +321,7 @@
         "validationIntroDescription": "Schema-backed locked rules are always enforced. Add custom rules and import behaviors for this job only.",
         "lockedRules": "Schema Rules (Locked)",
         "lockedRuleHint": "Derived from the database schema and cannot be removed.",
+        "compositeConstraints": "Additional Constraints",
         "lockedUniqueHint": "Uniqueness is verified on import (save), not as a guaranteed pre-flight pass.",
         "customRules": "Custom Rules",
         "lockedRuleTypes": {

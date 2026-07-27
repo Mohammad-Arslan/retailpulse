@@ -107,6 +107,26 @@ function LockedRuleChips({ fieldConstraints, t }) {
     );
 }
 
+function CompositeAdvisories({ advisories, t }) {
+    if (!advisories?.length) {
+        return null;
+    }
+
+    return (
+        <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2.5">
+            <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200">
+                <Lock className="h-3 w-3" aria-hidden />
+                {t('importExport.compositeConstraints')}
+            </p>
+            <ul className="space-y-1 text-xs text-rp-text-secondary">
+                {advisories.map((advisory) => (
+                    <li key={advisory}>{advisory}</li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 function ColumnRuleEditor({
     column,
     availableRules,
@@ -144,9 +164,15 @@ function ColumnRuleEditor({
           ? [column.transform]
           : [];
 
+    // A rule type already locked for this field must never be offered here — adding
+    // it would enter enabledRules, then vanish from the customRules list above
+    // (filtered out by isEngineLocked), reading as "the rule I just added disappeared."
     const addableRules = availableRules.filter(
-        (meta) => !enabledRules.some((rule) => ruleKey(rule) === meta.rule),
+        (meta) => !enabledRules.some((rule) => ruleKey(rule) === meta.rule) && !isEngineLocked(meta.rule),
     );
+
+    const lockedRuleCount = fieldLocked?.rules?.length ?? 0;
+    const totalRuleCount = lockedRuleCount + customRules.length;
 
     const toggleRule = (ruleName, enabled, templateRule = null) => {
         if (enabled) {
@@ -197,7 +223,7 @@ function ColumnRuleEditor({
                     <p className="text-xs text-rp-text-muted">
                         {t('importExport.mappedTo', { column: column.mapped_to ?? column.column_key })}
                         {' · '}
-                        {t('importExport.rulesEnabled', { count: customRules.length })}
+                        {t('importExport.rulesEnabled', { count: totalRuleCount })}
                     </p>
                 </div>
                 {expanded ? (
@@ -451,6 +477,7 @@ export default function ImportValidationConfig({
                         {t('importExport.columnValidationRulesHint')}
                     </p>
                 </div>
+                <CompositeAdvisories advisories={lockedConstraints?.advisories} t={t} />
                 <div className="space-y-3">
                     {columnRules.map((column, index) => (
                         <ColumnRuleEditor
