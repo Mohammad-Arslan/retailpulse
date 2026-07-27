@@ -61,6 +61,17 @@ If a preferred port is already in use, `setup.sh` remaps it and writes the chose
 
 Named volumes: `retailpulse_mysql`, `retailpulse_redis`, `retailpulse_minio`, `retailpulse_vendor`, `retailpulse_node_modules`, `retailpulse_build`.
 
+### Optional ops & observability
+
+Separate Compose projects (do not interfere with `setup.sh` redeploys):
+
+```bash
+bash scripts/ops-up.sh                      # Portainer :9010, Jenkins :9080, Uptime Kuma :3001
+bash scripts/ops-up.sh --with-observability # + Grafana :3000, Prometheus :9090, …
+```
+
+See [docs/ops-stack.md](docs/ops-stack.md).
+
 ### Useful Compose commands
 
 ```bash
@@ -97,6 +108,8 @@ SUPER_ADMIN_PASSWORD=...
 | [docs/phases/](docs/phases/README.md) | Phase roadmap |
 | [docs/implementation-status.md](docs/implementation-status.md) | What’s built today |
 | [docs/deployment-guidelines.md](docs/deployment-guidelines.md) | **Deploy to Contabo VPS with Docker** |
+| [docs/ops-stack.md](docs/ops-stack.md) | **Portainer / Jenkins / Uptime Kuma / Prometheus / Grafana / Loki** |
+| [docs/docker-security-audit.md](docs/docker-security-audit.md) | Docker security audit & hardening recommendations |
 | [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md) | AI agent onboarding |
 
 ## Local AI (Ollama)

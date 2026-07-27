@@ -19,6 +19,8 @@ This guide takes you from a blank Contabo VPS to a running RetailPulse stack beh
 | Mail (dev/staging) | `retailpulse-mailpit` — **replace with real SMTP in production** |
 | DB UI (optional) | `retailpulse-phpmyadmin` — **do not expose publicly in production** |
 | TLS / reverse proxy | Nginx or Caddy on the host (recommended) terminating HTTPS → app `:8000` |
+| Ops UI (optional) | Portainer, Jenkins, Uptime Kuma — **separate Compose project**; see [ops-stack.md](./ops-stack.md) |
+| Observability (optional) | Prometheus, Grafana, Loki, Promtail, Node Exporter, cAdvisor — see [ops-stack.md](./ops-stack.md) |
 
 One command boots the application stack:
 
@@ -58,6 +60,10 @@ Example hostnames used in this guide:
 - App: `https://erp.example.com`
 - Reverb (WebSockets): `wss://erp.example.com` (proxied) **or** `wss://ws.example.com`
 - MinIO (if public media URLs required): `https://media.example.com`
+- Portainer (optional): `https://portainer.example.com`
+- Jenkins (optional): `https://jenkins.example.com`
+- Uptime Kuma (optional): `https://status.example.com`
+- Grafana (optional): `https://grafana.example.com`
 
 ---
 
@@ -285,7 +291,33 @@ Run **Nginx or Caddy on the host** (not inside the app container). Proxy to `127
 sudo apt install -y nginx certbot python3-certbot-nginx
 ```
 
-Example site `/etc/nginx/sites-available/retailpulse`:
+**Recommended (hardened) config** lives in the repo and covers RetailPulse, Reverb WebSockets, Portainer, Jenkins, Uptime Kuma, and Grafana:
+
+- [`docker/nginx/retailpulse.conf`](../docker/nginx/retailpulse.conf) — multi-hostname **HTTPS** template (use when DNS + Certbot are ready)
+- [`docker/nginx/retailpulse.staging.conf`](../docker/nginx/retailpulse.staging.conf) — **matches Contabo staging today** (HTTP :80, IP `server_name`, Octane + Reverb only)
+- [`docker/nginx/snippets/`](../docker/nginx/snippets/) — TLS, security headers, proxy params
+
+> **Staging warning:** the live Contabo VPS currently serves on port 80 with the public IPv4 as `server_name` and **no TLS**. Do **not** copy the multi-vhost HTTPS file over `/etc/nginx/sites-available/retailpulse` until domains exist — that will break the site. Refresh staging with `retailpulse.staging.conf` only; access Portainer/Jenkins/Grafana via SSH tunnels (see [ops-stack.md §2.1](./ops-stack.md)).
+
+```bash
+# Staging (IP / HTTP) — safe refresh of the existing shape:
+sudo cp docker/nginx/retailpulse.staging.conf /etc/nginx/sites-available/retailpulse
+sudo nginx -t && sudo systemctl reload nginx
+
+# Production-shaped (domains + TLS) — only after DNS:
+sudo mkdir -p /etc/nginx/snippets
+sudo cp docker/nginx/snippets/*.conf /etc/nginx/snippets/
+sudo cp docker/nginx/retailpulse.conf /etc/nginx/sites-available/retailpulse
+# Edit server_name values; enable ssl_certificate lines after certbot
+sudo ln -sf /etc/nginx/sites-available/retailpulse /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+sudo certbot --nginx -d erp.example.com \
+  -d portainer.example.com -d jenkins.example.com \
+  -d status.example.com -d grafana.example.com
+```
+
+Minimal app-only example (if you are not enabling ops hostnames yet):
 
 ```nginx
 map $http_upgrade $connection_upgrade {
@@ -309,7 +341,8 @@ server {
 }
 
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
     server_name erp.example.com;
 
     # certbot will manage these lines:
@@ -328,6 +361,7 @@ server {
         proxy_set_header Connection $connection_upgrade;
         proxy_pass http://retailpulse_reverb;
         proxy_read_timeout 60s;
+        proxy_buffering off;
     }
 
     location / {
@@ -337,13 +371,14 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header Connection "";
         proxy_pass http://retailpulse_app;
         proxy_read_timeout 120s;
     }
 }
 ```
 
-Enable and obtain certificates:
+Enable and obtain certificates (app-only):
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/retailpulse /etc/nginx/sites-enabled/
@@ -351,6 +386,8 @@ sudo nginx -t
 sudo systemctl reload nginx
 sudo certbot --nginx -d erp.example.com
 ```
+
+Full ops reverse-proxy, rate limits, CSP, and HTTP/2 notes: [ops-stack.md §8](./ops-stack.md).
 
 ### 8.2 MinIO public URL (media)
 
@@ -476,9 +513,11 @@ docker compose up -d         # recreate containers; entrypoint refreshes vendor 
 | phpMyAdmin / Mailpit | Off or localhost + SSH tunnel |
 | Horizon | Restricted to admins (already gated) |
 | SSH | Key-only; Fail2ban; disable root password auth |
-| TLS | Let’s Encrypt; HSTS optional via Nginx |
+| TLS | Let’s Encrypt; HSTS via Nginx snippets (`docker/nginx/`) |
 | Backups | Nightly DB + offsite copy; monthly restore test |
 | Updates | Unattended security updates or weekly patch window |
+| Ops UIs | Portainer/Jenkins/Grafana localhost-only + Nginx allowlist; see [ops-stack.md](./ops-stack.md) |
+| Docker socket | Never expose Portainer/Jenkins publicly; audit in [docker-security-audit.md](./docker-security-audit.md) |
 
 ---
 
@@ -506,14 +545,21 @@ Internet
 Contabo VPS firewall (22, 80, 443)
    │
    ▼
-Nginx / Caddy (TLS)
+Nginx (TLS, HTTP/2, rate limits — docker/nginx/)
    ├─ https://erp.example.com  ──────► 127.0.0.1:8000  (Octane)
-   └─ /app/ (WebSocket) ─────────────► 127.0.0.1:8080  (Reverb)
+   ├─ /app/ (WebSocket) ─────────────► 127.0.0.1:8080  (Reverb)
+   ├─ portainer.example.com ─────────► 127.0.0.1:9010  (optional ops)
+   ├─ jenkins.example.com ───────────► 127.0.0.1:9080  (optional ops)
+   ├─ status.example.com ────────────► 127.0.0.1:3001  (Uptime Kuma)
+   └─ grafana.example.com ───────────► 127.0.0.1:3000  (Grafana)
                                               │
                                     Docker network "retailpulse"
                           ┌───────────────────┼───────────────────┐
                           ▼                   ▼                   ▼
                        mysql:3306          redis:6379          minio:9000
+                          │
+              Compose projects retailpulse-ops / retailpulse-obs
+              (Portainer, Jenkins, Kuma, Prometheus, Loki, …)
 ```
 
 ---
@@ -525,6 +571,7 @@ Nginx / Caddy (TLS)
 3. **DNS** — Contabo DNS or external DNS (Cloudflare); if using Cloudflare proxy (orange cloud), set SSL mode to **Full (strict)** and still terminate TLS on the VPS or at Cloudflare consistently.  
 4. **IPv6** — if Contabo assigns IPv6, add AAAA records and listen on `[::]:443` in Nginx when ready.  
 5. **Support** — keep Contabo VPS ID and panel 2FA enabled on your Contabo account.
+6. **Ops RAM** — enable Jenkins + full observability only on ≥16 GB RAM hosts; see [ops-stack.md](./ops-stack.md) §9.
 
 ---
 
@@ -534,7 +581,27 @@ This runbook is the **practical Contabo path** for the Docker Compose topology c
 
 - Staging ≈ this stack with synthetic data and `APP_DEBUG` careful  
 - Production ≈ same images + TLS + secrets + backups + no public admin sidecars  
+- Optional ops/observability projects implement ADR-018 monitoring expectations without changing the app Compose file  
 - Phase 16 still owns CI/CD gates, secrets manager migration, and formal RTO/RPO drills — use this document as the interim operator guide until that pipeline exists
+
+---
+
+## 15. Optional ops & observability
+
+After the core stack is healthy:
+
+```bash
+bash scripts/ops-up.sh                      # Portainer + Jenkins + Uptime Kuma
+bash scripts/ops-up.sh --with-observability # + Prometheus/Grafana/Loki/…
+```
+
+These use **separate Compose projects** so `bash setup.sh production --rebuild` and GitHub Actions deploys never remove them via `--remove-orphans`.
+
+Full install, monitors, scrape config, Nginx hardening, and security notes:
+
+- [ops-stack.md](./ops-stack.md)  
+- [docker-security-audit.md](./docker-security-audit.md)  
+- Sample Jenkins pipeline: [`jenkins/Jenkinsfile`](../jenkins/Jenkinsfile)
 
 ---
 
@@ -542,6 +609,7 @@ This runbook is the **practical Contabo path** for the Docker Compose topology c
 
 | Date | Change |
 | :--- | :--- |
+| 2026-07-27 | Added optional ops/observability stack (Portainer, Jenkins, Uptime Kuma, Prometheus, Grafana, Loki, Promtail, Node Exporter, cAdvisor), hardened Nginx templates under `docker/nginx/`, `scripts/ops-up.sh` / `ops-down.sh`, and cross-links to `ops-stack.md` + `docker-security-audit.md`. MinIO gains `MINIO_PROMETHEUS_AUTH_TYPE` for scrape. Core `setup.sh` / app Compose behavior unchanged. Added `retailpulse.staging.conf` mirroring live Contabo HTTP/IP Nginx so staging is not overwritten by the multi-vhost TLS template. |
 | 2026-07-23 | Initial Contabo VPS + Docker production deployment guidelines |
 | 2026-07-23 | Fixed `setup.sh` gap: `APP_URL` was being unconditionally reset to `http://localhost:<APP_HOST_PORT>` on every run (including `production`), overwriting the real domain/scheme set per §6.1. Now only auto-set in `local` mode. |
 | 2026-07-23 | Fixed `docker-compose.yml` gap: the `app` service's `environment:` block hardcoded `APP_URL`, `REVERB_CLIENT_HOST`, `MINIO_URL`, `AWS_URL` to `localhost`-based values with no `.env` override path (`environment:` always wins over `env_file:`). `REVERB_CLIENT_HOST` in particular had no `${...}` substitution at all, so real-time/WebSocket features (Reverb, §12 architecture map) could never work off of `localhost`. Now `${VAR:-default}`, matching the existing pattern used for `APP_HOST_PORT` etc. — local dev defaults unchanged, production `.env` values now take effect. |

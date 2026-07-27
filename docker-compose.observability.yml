@@ -1,0 +1,283 @@
+# -----------------------------------------------------------------------------
+# RetailPulse — Observability stack
+#   Prometheus · Grafana · Loki · Promtail · Node Exporter · cAdvisor
+#   + Redis/MySQL/Blackbox exporters
+#
+# Separate Compose project (retailpulse-obs) so app redeploys with
+# `--remove-orphans` never remove these containers.
+#
+#   bash scripts/ops-up.sh --with-observability
+#   docker compose -p retailpulse-obs -f docker-compose.observability.yml up -d
+#
+# Requires external network `retailpulse` from the core stack.
+# -----------------------------------------------------------------------------
+
+name: retailpulse-obs
+
+services:
+  prometheus:
+    container_name: retailpulse-prometheus
+    image: prom/prometheus:v3.2.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-lifecycle
+      - --web.listen-address=0.0.0.0:9090
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - retailpulse_prometheus:/prometheus
+    ports:
+      - "127.0.0.1:${PROMETHEUS_HOST_PORT:-9090}:9090"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://127.0.0.1:9090/-/healthy",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  grafana:
+    container_name: retailpulse-grafana
+    image: grafana/grafana:11.5.2
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://127.0.0.1:3000}
+      GF_SERVER_HTTP_ADDR: 0.0.0.0
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_INSTALL_PLUGINS: ""
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_LOG_MODE: console
+    volumes:
+      - retailpulse_grafana:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:${GRAFANA_HOST_PORT:-3000}:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --spider -q http://127.0.0.1:3000/api/health || exit 1",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  loki:
+    container_name: retailpulse-loki
+    image: grafana/loki:3.4.2
+    command: ["-config.file=/etc/loki/loki-config.yml"]
+    volumes:
+      - ./docker/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - retailpulse_loki:/loki
+    ports:
+      - "127.0.0.1:${LOKI_HOST_PORT:-3100}:3100"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://127.0.0.1:3100/ready",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  promtail:
+    container_name: retailpulse-promtail
+    image: grafana/promtail:3.4.2
+    command: ["-config.file=/etc/promtail/promtail-config.yml"]
+    volumes:
+      - ./docker/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      # Host Docker containers' json-file logs
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Host Nginx access/error logs (Contabo VPS path)
+      - ${NGINX_LOG_PATH:-/var/log/nginx}:/var/log/nginx:ro
+      # Laravel log volume path via bind from the app host dir when present
+      - ${LARAVEL_LOG_PATH:-./storage/logs}:/var/log/laravel:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+    # Image has no wget — binary/version probe only
+    healthcheck:
+      test: ["CMD", "promtail", "-version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  node-exporter:
+    container_name: retailpulse-node-exporter
+    image: prom/node-exporter:v1.9.0
+    # Requires a real Linux host rootfs mount (shared/slave). Skip on Docker
+    # Desktop Windows/macOS — start with: --profile linux-host
+    profiles: ["linux-host"]
+    command:
+      - --path.rootfs=/host
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - "127.0.0.1:${NODE_EXPORTER_HOST_PORT:-9100}:9100"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://127.0.0.1:9100/metrics",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  cadvisor:
+    container_name: retailpulse-cadvisor
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "127.0.0.1:${CADVISOR_HOST_PORT:-9190}:8080"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://127.0.0.1:8080/healthz",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  redis-exporter:
+    container_name: retailpulse-redis-exporter
+    image: oliver006/redis_exporter:v1.67.0
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    ports:
+      - "127.0.0.1:${REDIS_EXPORTER_HOST_PORT:-9121}:9121"
+    # Image has no wget — binary self-check; HTTP: curl http://127.0.0.1:9121/metrics
+    healthcheck:
+      test: ["CMD", "/redis_exporter", "--version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  mysqld-exporter:
+    container_name: retailpulse-mysqld-exporter
+    image: prom/mysqld-exporter:v0.16.0
+    command:
+      - --mysqld.address=mysql:3306
+      - --mysqld.username=root
+      - --collect.global_status
+      - --collect.global_variables
+      - --collect.info_schema.innodb_metrics
+    environment:
+      # Preferred auth for exporter ≥0.15 (DATA_SOURCE_NAME is brittle on some hosts)
+      MYSQLD_EXPORTER_PASSWORD: ${MYSQL_ROOT_PASSWORD:-secret}
+    ports:
+      - "127.0.0.1:${MYSQL_EXPORTER_HOST_PORT:-9104}:9104"
+    healthcheck:
+      test: ["CMD", "/bin/mysqld_exporter", "--version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+  blackbox-exporter:
+    container_name: retailpulse-blackbox-exporter
+    image: prom/blackbox-exporter:v0.25.0
+    volumes:
+      - ./docker/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    ports:
+      - "127.0.0.1:${BLACKBOX_HOST_PORT:-9115}:9115"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://127.0.0.1:9115/",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - retailpulse
+    restart: unless-stopped
+
+networks:
+  retailpulse:
+    external: true
+    name: retailpulse
+
+volumes:
+  retailpulse_prometheus:
+    name: retailpulse_prometheus
+  retailpulse_grafana:
+    name: retailpulse_grafana
+  retailpulse_loki:
+    name: retailpulse_loki

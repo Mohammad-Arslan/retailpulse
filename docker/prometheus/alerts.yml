@@ -1,0 +1,70 @@
+groups:
+  - name: retailpulse.availability
+    rules:
+      - alert: RetailPulseAppDown
+        expr: probe_success{job="blackbox-http",instance="http://app:8000/up"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "RetailPulse Octane /up probe failing"
+          description: "Blackbox cannot reach http://app:8000/up for 2 minutes."
+
+      - alert: RetailPulseReverbPortDown
+        expr: probe_success{job="blackbox-tcp",instance="app:8080"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Reverb TCP port unreachable"
+          description: "app:8080 (Reverb) failed TCP probe for 2 minutes."
+
+      - alert: MySQLDown
+        expr: probe_success{job="blackbox-tcp",instance="mysql:3306"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MySQL unreachable"
+
+      - alert: RedisDown
+        expr: probe_success{job="blackbox-tcp",instance="redis:6379"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis unreachable"
+
+      - alert: MinIODown
+        expr: probe_success{job="blackbox-http",instance="http://minio:9000/minio/health/live"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MinIO health endpoint failing"
+
+  - name: retailpulse.resources
+    rules:
+      - alert: HostDiskSpaceLow
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"}) < 0.15
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host filesystem below 15% free"
+
+      - alert: HostMemoryPressure
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) < 0.10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host available memory below 10%"
+
+      - alert: ContainerHighCpu
+        expr: rate(container_cpu_usage_seconds_total{name="retailpulse-app"}[5m]) > 1.5
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "retailpulse-app sustained high CPU"

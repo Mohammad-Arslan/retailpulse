@@ -1,0 +1,190 @@
+// =============================================================================
+// RetailPulse — sample Jenkins Declarative Pipeline
+//
+// Intended controller: retailpulse-jenkins (see docker-compose.ops.yml).
+// Agent: built-in (same image has Docker CLI, Composer, Node, npm, Git).
+//
+// Credentials (configure in Jenkins → Manage Jenkins → Credentials):
+//   retailpulse-git          — GitHub PAT (HTTPS) or SSH key for Mohammad-Arslan/retailpulse
+//   retailpulse-vps-ssh      — SSH private key for the Contabo VPS (optional deploy)
+//
+// Default repo: https://github.com/Mohammad-Arslan/retailpulse.git
+// =============================================================================
+
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        ansiColor('xterm')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        timeout(time: 90, unit: 'MINUTES')
+    }
+
+    parameters {
+        string(name: 'GIT_URL', defaultValue: 'https://github.com/Mohammad-Arslan/retailpulse.git', description: 'Repository URL')
+        string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Branch to build (push feature/ops-observability-stack before selecting it)')
+        booleanParam(name: 'RUN_PINT', defaultValue: true, description: 'Run Laravel Pint')
+        booleanParam(name: 'RUN_PHPUNIT', defaultValue: false, description: 'Run PHPUnit/Pest suite (often skipped until suite is green)')
+        booleanParam(name: 'BUILD_IMAGE', defaultValue: true, description: 'Build retailpulse-app:production')
+        booleanParam(name: 'DEPLOY_PRODUCTION', defaultValue: false, description: 'SSH to VPS and run setup.sh production --rebuild')
+        string(name: 'VPS_HOST', defaultValue: '169.58.58.151', description: 'VPS hostname/IP (required when DEPLOY_PRODUCTION)')
+        string(name: 'VPS_USER', defaultValue: 'ubuntu', description: 'SSH user on the VPS')
+        string(name: 'VPS_APP_DIR', defaultValue: '/var/www/retailpulse', description: 'App path on the VPS')
+    }
+
+    environment {
+        COMPOSER_ALLOW_SUPERUSER = '1'
+        PHP_VERSION_HINT = '8.3'
+        NODE_VERSION_HINT = '20'
+        APP_IMAGE = 'retailpulse-app:production'
+        // Match Dockerfile / CI: lock has a PHP 8.4.1 platform constraint on one
+        // transitive package while the project runs PHP 8.3 everywhere.
+        COMPOSER_FLAGS = '--no-interaction --prefer-dist --ignore-platform-reqs'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                cleanWs()
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "*/${params.GIT_BRANCH}"]],
+                    extensions: [[$class: 'CloneOption', depth: 1, shallow: true, noTags: true]],
+                    userRemoteConfigs: [[
+                        url: params.GIT_URL
+                    ]]
+                ])
+                sh 'git rev-parse --short HEAD > .git-commit'
+                script {
+                    env.GIT_COMMIT_SHORT = readFile('.git-commit').trim()
+                }
+            }
+        }
+
+        stage('Composer install') {
+            steps {
+                sh """
+                    set -euo pipefail
+                    composer install ${COMPOSER_FLAGS}
+                """
+            }
+        }
+
+        stage('npm install') {
+            steps {
+                sh '''
+                    set -euo pipefail
+                    npm ci
+                '''
+            }
+        }
+
+        stage('Pint') {
+            when {
+                expression { return params.RUN_PINT }
+            }
+            steps {
+                sh '''
+                    set -euo pipefail
+                    ./vendor/bin/pint --test
+                '''
+            }
+        }
+
+        stage('PHPUnit') {
+            when {
+                expression { return params.RUN_PHPUNIT }
+            }
+            steps {
+                sh '''
+                    set -euo pipefail
+                    cp -n .env.example .env || true
+                    php artisan key:generate --no-interaction || true
+                    npm run build
+                    composer test
+                '''
+            }
+        }
+
+        stage('Build Docker image') {
+            when {
+                expression { return params.BUILD_IMAGE }
+            }
+            steps {
+                sh """
+                    set -euo pipefail
+                    docker build \\
+                      --target production \\
+                      --build-arg BUILDKIT_INLINE_CACHE=1 \\
+                      -t ${APP_IMAGE} \\
+                      -t retailpulse-app:${env.GIT_COMMIT_SHORT} \\
+                      .
+                """
+            }
+        }
+
+        stage('Deploy (setup.sh production --rebuild)') {
+            when {
+                allOf {
+                    expression { return params.DEPLOY_PRODUCTION }
+                    expression { return params.VPS_HOST?.trim() }
+                }
+            }
+            steps {
+                sshagent(credentials: ['retailpulse-vps-ssh']) {
+                    sh """
+                        set -euo pipefail
+                        ssh -o StrictHostKeyChecking=accept-new \\
+                            ${params.VPS_USER}@${params.VPS_HOST} \\
+                            'set -euo pipefail
+                             cd ${params.VPS_APP_DIR}
+                             git fetch origin
+                             git checkout ${params.GIT_BRANCH}
+                             git pull --ff-only origin ${params.GIT_BRANCH}
+                             bash setup.sh production --rebuild'
+                    """
+                }
+            }
+        }
+
+        stage('Optimize & verify health') {
+            when {
+                expression { return params.DEPLOY_PRODUCTION && params.VPS_HOST?.trim() }
+            }
+            steps {
+                sshagent(credentials: ['retailpulse-vps-ssh']) {
+                    sh """
+                        set -euo pipefail
+                        ssh -o StrictHostKeyChecking=accept-new \\
+                            ${params.VPS_USER}@${params.VPS_HOST} \\
+                            'set -euo pipefail
+                             cd ${params.VPS_APP_DIR}
+                             # Entrypoint already caches on boot; re-warm after deploy settles.
+                             sleep 20
+                             docker compose exec -T app php artisan optimize || true
+                             docker compose exec -T app php artisan config:cache
+                             docker compose exec -T app php artisan route:cache
+                             docker compose exec -T app php artisan view:cache
+                             curl -fsS -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/up | grep -E "200|204"
+                             docker compose ps
+                             docker compose exec -T app php artisan horizon:status || true'
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "RetailPulse pipeline OK — commit ${env.GIT_COMMIT_SHORT}"
+        }
+        failure {
+            echo "RetailPulse pipeline FAILED — commit ${env.GIT_COMMIT_SHORT}"
+        }
+        always {
+            cleanWs(cleanWhenNotBuilt: false, deleteDirs: true, disableDeferredWipeout: true)
+        }
+    }
+}

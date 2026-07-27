@@ -32,6 +32,8 @@ If you're new to RetailPulse — human contributor or AI coding agent — read i
 | `user-manual-*.md` | How does an end user (not a developer) use a shipped feature? |
 | `generic-import-export.md` | How does the bulk import/export framework work, mechanically? |
 | [deployment-guidelines.md](./deployment-guidelines.md) | How do we deploy RetailPulse to a Contabo VPS with Docker? |
+| [ops-stack.md](./ops-stack.md) | How do we run Portainer, Jenkins, Uptime Kuma, and Prometheus/Grafana/Loki alongside the app? |
+| [docker-security-audit.md](./docker-security-audit.md) | What are the Docker/socket/secrets hardening findings and recommended mitigations? |
 
 ## What is authoritative
 
