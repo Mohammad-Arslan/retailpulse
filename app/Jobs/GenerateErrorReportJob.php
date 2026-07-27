@@ -74,13 +74,14 @@ final class GenerateErrorReportJob implements ShouldQueue
 
             $path = $this->storeErrorReport($content, $job->ulid);
 
-            $errorCount = (int) ImportRowError::query()->where('job_id', $job->id)->count();
-
+            // Counters are already correct by the time this job runs — ValidateImportJob
+            // and ProcessImportJob partition every row into exactly one of
+            // success/failed/skipped as it's decided. Only attach the report file here;
+            // do not touch the counters, or a row rejected at validation (already
+            // counted as skipped) gets double-counted into failed as well.
             $job->update([
                 'output_file_path' => $path,
                 'processed_rows' => $job->total_rows,
-                'failed_rows' => max($job->failed_rows, $errorCount),
-                'skipped_rows' => max($job->skipped_rows, $errorCount),
             ]);
 
             $job->markCompleted();

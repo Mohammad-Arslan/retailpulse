@@ -95,10 +95,17 @@ final class ValidateImportJob implements ShouldQueue
             $this->broadcastProgress($job, 'validated', $totalRows, $totalRows, $errorCount);
 
             if ($job->is_dry_run || ($hasErrors && $context->isStrictMode())) {
+                // Neither path reaches ProcessImportJob::processRow: a dry run never
+                // processes by design, and strict mode aborts the entire batch rather
+                // than importing the rows that did pass validation. Every row is
+                // therefore "skipped" (never processed) — "failed" is reserved for
+                // rows that reached processRow and errored there. This keeps
+                // success + failed + skipped == total for every completed import.
                 $job->update([
                     'processed_rows' => $totalRows,
-                    'failed_rows' => $errorCount,
-                    'skipped_rows' => $errorCount,
+                    'success_rows' => 0,
+                    'failed_rows' => 0,
+                    'skipped_rows' => $totalRows,
                 ]);
                 GenerateErrorReportJob::dispatch($job->id)->onQueue('imports-reports');
 

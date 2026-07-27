@@ -32,7 +32,7 @@ export default function ImportLogsDialog({
 
     const activeUlid = job?.ulid ?? preferredUlid ?? null;
 
-    const { progress, status } = useImportExportJob(activeUlid, {
+    const { progress, status, refresh: refreshProgress, realtimeUnavailable } = useImportExportJob(activeUlid, {
         onCompleted: (payload) => {
             setSummary(payload);
             setJob((current) =>
@@ -104,7 +104,13 @@ export default function ImportLogsDialog({
         }
 
         loadJob();
-    }, [open, preferredUlid, loadJob]);
+        // The progress hook's socket subscription persists in the background
+        // even while this dialog is closed (the component doesn't unmount),
+        // so reopening it can't rely solely on a reconnect to resync — force
+        // a fresh pull of the job's current progress/status every time the
+        // dialog becomes visible again.
+        refreshProgress();
+    }, [open, preferredUlid, loadJob, refreshProgress]);
 
     const isRunning = job && !TERMINAL_STATUSES.includes(status);
     const resultSummary =
@@ -171,7 +177,12 @@ export default function ImportLogsDialog({
                         </div>
 
                         {isRunning && (
-                            <ImportProgressPanel progress={progress} status={status} />
+                            <ImportProgressPanel
+                                progress={progress}
+                                status={status}
+                                realtimeUnavailable={realtimeUnavailable}
+                                onRefresh={refreshProgress}
+                            />
                         )}
 
                         {resultSummary && TERMINAL_STATUSES.includes(status) && (

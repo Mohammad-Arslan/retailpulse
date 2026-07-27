@@ -8,6 +8,7 @@ use App\Models\Department;
 use App\Services\Hr\DepartmentService;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\TenantImportScope;
 use Illuminate\Database\Eloquent\Builder;
 
 final class DepartmentExportHandler implements ExportHandler
@@ -19,7 +20,7 @@ final class DepartmentExportHandler implements ExportHandler
 
     public function query(ExportContext $context): Builder
     {
-        $query = Department::query()
+        $query = TenantImportScope::constrain(Department::query(), $context->tenantId)
             ->with(['legalEntity:id,legal_name', 'parent:id,code', 'costCentre:id,code'])
             ->orderBy('code');
 

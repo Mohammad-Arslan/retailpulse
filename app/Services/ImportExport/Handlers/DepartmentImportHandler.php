@@ -8,6 +8,7 @@ use App\Models\CostCentre;
 use App\Models\Department;
 use App\Models\OrganizationEntity;
 use App\Services\Hr\DepartmentService;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -15,9 +16,16 @@ use Illuminate\Support\Facades\DB;
 
 final class DepartmentImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
     public function __construct(
         private readonly DepartmentService $departments,
     ) {}
+
+    public function targetModels(): array
+    {
+        return [Department::class];
+    }
 
     public function columns(): array
     {

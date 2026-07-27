@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ImportExport\Handlers;
 
 use App\Models\Category;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -14,6 +15,24 @@ use Illuminate\Support\Facades\DB;
 
 final class CategoryImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
+    public function targetModels(): array
+    {
+        return [Category::class];
+    }
+
+    public function columnMap(): array
+    {
+        return [
+            'code' => 'slug',
+            'name' => 'name',
+            'description' => 'description',
+            'sort_order' => 'sort_order',
+            'is_active' => 'is_active',
+        ];
+    }
+
     public function columns(): array
     {
         return [

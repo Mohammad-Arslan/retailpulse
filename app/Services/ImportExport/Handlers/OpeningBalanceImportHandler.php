@@ -4,16 +4,34 @@ declare(strict_types=1);
 
 namespace App\Services\ImportExport\Handlers;
 
+use App\Models\OpeningBalanceImportLine;
 use App\Services\Accounting\OpeningBalanceImportService;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
 
 final class OpeningBalanceImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
     public function __construct(
         private readonly OpeningBalanceImportService $openingBalances,
     ) {}
+
+    public function targetModels(): array
+    {
+        return [OpeningBalanceImportLine::class];
+    }
+
+    public function columnMap(): array
+    {
+        return [
+            'debit' => 'debit',
+            'credit' => 'credit',
+            'party_type' => 'party_type',
+        ];
+    }
 
     public function columns(): array
     {
@@ -31,6 +49,19 @@ final class OpeningBalanceImportHandler implements ImportHandler
     public function validateRow(array $row, ImportContext $context): array
     {
         return [];
+    }
+
+    /**
+     * True in the sense that addLine() only ever appends staging rows — but unlike
+     * InventoryImportHandler, there is no "replace" mode here yet: re-importing the
+     * same file does not fail (no per-row uniqueness check), it silently appends
+     * duplicate staging lines that finalize() would post twice. That is a real,
+     * currently-unmitigated risk, tracked in docs/gaps/gaps.md rather than fixed
+     * here — correcting it needs ledger-reversal semantics, not a row-level replace.
+     */
+    public function isInsertOnly(): bool
+    {
+        return true;
     }
 
     public function processRow(array $row, ImportContext $context): ImportRowResult

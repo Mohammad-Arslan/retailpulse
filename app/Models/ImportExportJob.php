@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 #[Fillable([
     'tenant_id',
@@ -30,6 +31,7 @@ use Illuminate\Support\Facades\DB;
     'success_rows',
     'failed_rows',
     'skipped_rows',
+    'last_processed_row_index',
     'summary',
     'error_message',
     'options',
@@ -140,10 +142,21 @@ class ImportExportJob extends Model
     public function markProcessing(): void
     {
         $this->status = 'processing';
-        $this->processed_rows = 0;
-        $this->success_rows = 0;
-        $this->failed_rows = 0;
-        $this->skipped_rows = 0;
+        $this->completed_at = null;
+        $this->error_message = null;
+
+        // Preserve counters when resuming from a checkpoint (queue retry / re-dispatch).
+        if ($this->last_processed_row_index === null) {
+            $this->processed_rows = 0;
+            $this->success_rows = 0;
+            $this->failed_rows = 0;
+            $this->skipped_rows = 0;
+        }
+
+        if ($this->started_at === null) {
+            $this->started_at = now();
+        }
+
         $this->save();
     }
 
@@ -158,6 +171,32 @@ class ImportExportJob extends Model
         $this->status = 'completed';
         $this->completed_at = now();
         $this->save();
+
+        $this->assertRowCountersReconcile();
+    }
+
+    /**
+     * Every completed import must partition its rows into exactly one bucket:
+     * success + failed + skipped == total. A violation means a row was counted
+     * twice (or not at all) across the validation/processing phases — log it
+     * rather than silently shipping a summary that can't add up.
+     */
+    private function assertRowCountersReconcile(): void
+    {
+        $total = (int) $this->total_rows;
+        $accounted = (int) $this->success_rows + (int) $this->failed_rows + (int) $this->skipped_rows;
+
+        if ($accounted !== $total) {
+            Log::error('Import row counters do not reconcile with total_rows.', [
+                'job_id' => $this->id,
+                'ulid' => $this->ulid,
+                'total_rows' => $total,
+                'success_rows' => $this->success_rows,
+                'failed_rows' => $this->failed_rows,
+                'skipped_rows' => $this->skipped_rows,
+                'accounted' => $accounted,
+            ]);
+        }
     }
 
     public function markFailed(string $message): void

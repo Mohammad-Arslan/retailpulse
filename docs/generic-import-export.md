@@ -269,3 +269,27 @@ After implementing everything above, verify the following. The ImportExportServi
 ---
 
 Do not ask for clarification. Implement everything completely from top to bottom as described. Every method must have a real implementation. Every migration must be complete SQL. Every job must handle exceptions and call markFailed. Every controller must return proper HTTP status codes. Start with the migrations in order, then models, then contracts, then the service layer, then jobs, then events, then routes, then the service provider.
+
+---
+
+## Import Paths (Architecture Note)
+
+RetailPulse has two distinct import paths:
+
+### 1. Generic Import/Export Registry (this system)
+
+The standard path for all entity imports: Products, Brands, Categories, Units, Customers, Suppliers, Employees, Inventory (opening stock), Inventory Adjustments, Supplier Price Lists, Attendance, Departments, Designations, Grades, Employment Types, Reporting Hierarchy, Holiday Calendars, and COA/Opening Balances.
+
+Flow: Upload → Wizard (mapping + rules) → ValidateImportJob → ProcessImportJob → per-row handler → afterImport → GenerateErrorReportJob (if errors).
+
+All handlers register via `ImportExportRegistry::register()` in `ImportExportServiceProvider`.
+
+### 2. Historical Sales Import (X-04)
+
+A separate dedicated API endpoint (`POST /api/v1/sales/import-historical`) exists for bulk historical sales archive import. This bypasses the generic wizard because historical sales have unique requirements: they write finalized state without re-firing side effects (no stock deduction, no webhooks, no loyalty accrual), and they use the SaleImportService directly. This is not registered in the generic ImportExportRegistry.
+
+### 3. COA/Opening Balance Batch + Approval
+
+While COA and Opening Balance imports use the generic registry for file upload and row processing, the `OpeningBalanceImportHandler` stages lines via `OpeningBalanceImportService::addLine()` and then calls `finalize()` in `afterImport`. The finalize step creates a single batch journal entry (all debits/credits from the file) that may require approval before posting, depending on accounting workflow settings. This is a hybrid: generic upload mechanics + domain-specific batch/approval semantics.
+
+These paths are deliberate architectural decisions, not accidental drift. The generic registry handles the common case; specialized paths exist where domain constraints demand different lifecycle semantics.

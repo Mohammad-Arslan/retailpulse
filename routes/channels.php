@@ -11,7 +11,12 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('import-job.{ulid}', function (User $user, string $ulid): bool {
     $job = ImportExportJob::query()->byUlid($ulid)->first();
 
-    return $job !== null && (int) $user->tenant_id === (int) $job->tenant_id;
+    if ($job === null) {
+        return false;
+    }
+
+    return (int) $user->id === (int) $job->user_id
+        && (int) $user->tenant_id === (int) $job->tenant_id;
 });
 
 Broadcast::channel('user.{userId}.import-jobs', function (User $user, string $userId): bool {

@@ -61,7 +61,7 @@ final class ImportExportStorageManager
         return $this->adapter()->download($path);
     }
 
-    public function temporaryUrl(string $path, ?int $ttl = null): string
+    public function temporaryUrl(string $path, ?int $ttl = null, ?string $jobUlid = null): string
     {
         $path = trim($path);
 
@@ -76,10 +76,15 @@ final class ImportExportStorageManager
         $ttl ??= (int) SystemSetting::get(FileStorageDiskRegistrar::GROUP, 'signed_url_ttl', 30);
 
         if ($this->diskName === 'local') {
+            $params = ['path' => encrypt($path)];
+            if ($jobUlid !== null && $jobUlid !== '') {
+                $params['job'] = $jobUlid;
+            }
+
             return url()->temporarySignedRoute(
-                'admin.import-export.stream',
+                'admin.import-export.download-signed',
                 now()->addMinutes($ttl),
-                ['path' => encrypt($path)],
+                $params,
             );
         }
 

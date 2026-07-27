@@ -1,9 +1,9 @@
-import { cumulativeImportProgress } from '@/lib/importProgress';
+import { combinedProcessed, cumulativeImportProgress } from '@/lib/importProgress';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export default function ImportProgressPanel({ progress, status }) {
+export default function ImportProgressPanel({ progress, status, realtimeUnavailable, onRefresh }) {
     const { t } = useTranslation();
 
     const percent = useMemo(
@@ -13,7 +13,10 @@ export default function ImportProgressPanel({ progress, status }) {
 
     const phase = progress?.phase ?? status;
     const total = progress?.total ?? 0;
-    const processed = progress?.processed ?? 0;
+    // Validation and processing are one task — this is the blended count
+    // across both passes (see combinedProcessed), not either phase's own
+    // 0-total count, so it never appears to jump backwards at the handoff.
+    const processed = Math.min(total, Math.round(combinedProcessed(progress, status)));
     const success = progress?.success ?? 0;
     const failed = progress?.failed ?? progress?.errors ?? 0;
     const skipped = progress?.skipped ?? 0;
@@ -29,6 +32,20 @@ export default function ImportProgressPanel({ progress, status }) {
 
     return (
         <div className="space-y-5">
+            {realtimeUnavailable && (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+                    <span>{t('importExport.realtimeUnavailable')}</span>
+                    {onRefresh && (
+                        <button
+                            type="button"
+                            onClick={onRefresh}
+                            className="shrink-0 rounded-md border border-amber-500/40 px-2.5 py-1 text-xs font-medium hover:bg-amber-500/10"
+                        >
+                            {t('importExport.refreshNow')}
+                        </button>
+                    )}
+                </div>
+            )}
             <div className="rounded-lg border border-rp-border bg-rp-surface-subtle px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
                     <div>

@@ -65,14 +65,14 @@ trait HandlesImportExportStorage
         return $this->storageManager()->storeContent($content, $path);
     }
 
-    public function importFileTemporaryUrl(string $path): string
+    public function importFileTemporaryUrl(string $path, ?string $jobUlid = null): string
     {
-        return $this->storageManager()->temporaryUrl($path);
+        return $this->storageManager()->temporaryUrl($path, null, $jobUlid);
     }
 
-    public function exportFileTemporaryUrl(string $path): string
+    public function exportFileTemporaryUrl(string $path, ?string $jobUlid = null): string
     {
-        return $this->storageManager()->temporaryUrl($path);
+        return $this->storageManager()->temporaryUrl($path, null, $jobUlid);
     }
 
     public function deleteImportFile(string $path): bool

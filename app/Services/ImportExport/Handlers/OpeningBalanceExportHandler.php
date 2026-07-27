@@ -8,6 +8,7 @@ use App\Models\JournalTransaction;
 use App\Services\Accounting\OpeningBalanceImportService;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\TenantImportScope;
 use Illuminate\Database\Eloquent\Builder;
 
 final class OpeningBalanceExportHandler implements ExportHandler
@@ -20,7 +21,7 @@ final class OpeningBalanceExportHandler implements ExportHandler
     public function query(ExportContext $context): Builder
     {
         return JournalTransaction::query()
-            ->whereHas('journalEntry', fn (Builder $query) => $query
+            ->whereHas('journalEntry', fn (Builder $query) => TenantImportScope::constrain($query, $context->tenantId)
                 ->where('is_opening_balance', true)
                 ->where('status', 'posted'))
             ->with(['account:id,code', 'journalEntry:id,journal_number'])

@@ -161,12 +161,34 @@ final class ImportJobController extends Controller
         return response()->json(['job' => $job]);
     }
 
-    public function stream(Request $request): StreamedResponse
+    public function downloadSigned(Request $request): StreamedResponse
     {
         $path = trim(decrypt((string) $request->query('path')));
 
         if ($path === '' || ! $this->importFileExists($path)) {
             abort(404);
+        }
+
+        $jobUlid = (string) $request->query('job');
+        if ($jobUlid === '') {
+            abort(403, 'Job ownership is required for signed downloads.');
+        }
+
+        $job = ImportExportJob::query()->byUlid($jobUlid)->first();
+        if ($job === null) {
+            abort(403);
+        }
+
+        $this->assertJobOwnership($job, $request->user());
+
+        $allowedPaths = array_filter([
+            $job->input_file_path,
+            $job->output_file_path,
+            "errors/{$job->ulid}/error-report.xlsx",
+        ]);
+
+        if (! in_array($path, $allowedPaths, true)) {
+            abort(403);
         }
 
         return $this->storageManager()->download($path);

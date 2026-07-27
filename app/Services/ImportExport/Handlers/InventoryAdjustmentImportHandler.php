@@ -7,6 +7,8 @@ namespace App\Services\ImportExport\Handlers;
 use App\DTOs\Inventory\AdjustStockData;
 use App\Enums\StockMovementReason;
 use App\Exceptions\ImportExport\ImportRowException;
+use App\Models\Inventory;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -16,10 +18,17 @@ use Illuminate\Validation\ValidationException;
 
 final class InventoryAdjustmentImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
     public function __construct(
         private readonly InventoryService $inventory,
         private readonly InventoryImportSupport $support,
     ) {}
+
+    public function targetModels(): array
+    {
+        return [Inventory::class];
+    }
 
     public function columns(): array
     {

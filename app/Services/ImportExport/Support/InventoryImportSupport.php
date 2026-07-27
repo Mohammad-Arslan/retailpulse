@@ -87,6 +87,27 @@ final class InventoryImportSupport
         return $batch->id;
     }
 
+    /**
+     * Read-only counterpart to {@see resolveBatchId()} for validation-time checks —
+     * looks up an existing batch without creating one, so validation stays a
+     * read-only pass. A null return means no batch exists yet for this variant/batch
+     * number, which for a duplicate-opening-balance check simply means "not a
+     * duplicate" (nothing has ever been imported against it).
+     */
+    public function findExistingBatchId(ProductVariant $variant, array $row): ?int
+    {
+        $batchNo = trim((string) ($row['batch_no'] ?? ''));
+
+        if ($batchNo === '') {
+            return null;
+        }
+
+        return ProductBatch::query()
+            ->where('product_variant_id', $variant->id)
+            ->where('batch_no', $batchNo)
+            ->value('id');
+    }
+
     public function resolveBinId(int $warehouseId, array $row): ?int
     {
         $binCode = trim((string) ($row['bin_code'] ?? ''));

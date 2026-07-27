@@ -19,7 +19,9 @@ use Illuminate\Support\Facades\Route;
  */
 return function (string $namePrefix): void {
     Route::prefix('import-export')->name($namePrefix)->group(function () {
-        Route::post('imports/upload', [ImportWizardController::class, 'upload'])->name('imports.upload');
+        Route::post('imports/upload', [ImportWizardController::class, 'upload'])
+            ->middleware('throttle:import-upload')
+            ->name('imports.upload');
         Route::get('imports/{ulid}/headers', [ImportWizardController::class, 'headers'])->name('imports.headers');
         Route::post('imports/{ulid}/mapping', [ImportWizardController::class, 'saveMapping'])->name('imports.mapping');
         Route::get('imports/{ulid}/rules', [ImportWizardController::class, 'getRules'])->name('imports.rules');
@@ -37,7 +39,12 @@ return function (string $namePrefix): void {
         Route::post('exports', [ExportController::class, 'initiate'])->name('exports.initiate');
         Route::get('templates/{entity}', [TemplateController::class, 'download'])->name('templates.download');
 
-        Route::get('stream', [ImportJobController::class, 'stream'])
+        Route::get('download-signed', [ImportJobController::class, 'downloadSigned'])
+            ->middleware('signed')
+            ->name('download-signed');
+
+        // Legacy alias for backward compatibility
+        Route::get('stream', [ImportJobController::class, 'downloadSigned'])
             ->middleware('signed')
             ->name('stream');
     });

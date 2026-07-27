@@ -24,6 +24,17 @@ import { toast } from 'sonner';
 
 const TOTAL_STEPS = 6;
 
+// Entities whose handler only ever inserts new records — re-uploading the same
+// file in the default "create" mode fails every row that already exists rather
+// than silently overwriting it. "Update"/"Upsert" here means "replace the
+// existing balance" for these entities specifically, not a generic field patch.
+// 'opening-balances' (accounting GL opening balances) is also insert-only on the
+// backend (OpeningBalanceImportHandler::isInsertOnly()), but has no working
+// "replace" mode yet — surfacing this hint for it would point users at a mode
+// the handler doesn't actually implement. Only list entities with a real
+// replace path here.
+const INSERT_ONLY_ENTITY_TYPES = ['inventory'];
+
 function guessMapping(systemFields, headers) {
     const mapping = {};
 
@@ -77,12 +88,13 @@ export default function ImportWizardDialog({
 }) {
     const { t } = useTranslation();
     const { refreshJobs } = useImportJobsTray();
+    const isInsertOnlyEntity = INSERT_ONLY_ENTITY_TYPES.includes(entityType);
     const [step, setStep] = useState(1);
     const [uploading, setUploading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [file, setFile] = useState(null);
     const [filename, setFilename] = useState('');
-    const [mode, setMode] = useState('upsert');
+    const [mode, setMode] = useState(isInsertOnlyEntity ? 'create' : 'upsert');
     const [matchField, setMatchField] = useState('sku');
     const [isDryRun, setIsDryRun] = useState(false);
     const [ulid, setUlid] = useState(null);
@@ -91,6 +103,7 @@ export default function ImportWizardDialog({
     const [systemFields, setSystemFields] = useState([]);
     const [mapping, setMapping] = useState({});
     const [columnRules, setColumnRules] = useState([]);
+    const [lockedConstraints, setLockedConstraints] = useState({ fields: [] });
     const [availableRules, setAvailableRules] = useState([]);
     const [availableTransforms, setAvailableTransforms] = useState([]);
     const [importBehaviors, setImportBehaviors] = useState([]);
@@ -110,7 +123,7 @@ export default function ImportWizardDialog({
         [t],
     );
 
-    const { progress, status } = useImportExportJob(ulid, {
+    const { progress, status, refresh, realtimeUnavailable } = useImportExportJob(ulid, {
         onCompleted: (payload) => {
             setSummary(payload);
             setStep(6);
@@ -133,17 +146,18 @@ export default function ImportWizardDialog({
             setSystemFields([]);
             setMapping({});
             setColumnRules([]);
+            setLockedConstraints({ fields: [] });
             setAvailableRules([]);
             setAvailableTransforms([]);
             setImportBehaviors([]);
             setBehaviorOptions({});
             setSummary(null);
             setTotalRows(0);
-            setMode('upsert');
+            setMode(isInsertOnlyEntity ? 'create' : 'upsert');
             setMatchField('sku');
             setIsDryRun(false);
         }
-    }, [open]);
+    }, [open, isInsertOnlyEntity]);
 
     useEffect(() => {
         if (step === 5 && ['completed', 'failed', 'cancelled'].includes(status)) {
@@ -203,6 +217,7 @@ export default function ImportWizardDialog({
             await saveMapping(ulid, mapping);
             const rulesData = await fetchRules(ulid);
             setColumnRules(rulesData.column_rules ?? []);
+            setLockedConstraints(rulesData.locked_constraints ?? { fields: [] });
             setAvailableRules(rulesData.available_rules ?? []);
             setAvailableTransforms(rulesData.available_transforms ?? []);
             const behaviors = rulesData.import_behaviors ?? [];
@@ -334,6 +349,13 @@ export default function ImportWizardDialog({
                                 ]}
                             />
                             <p className="mt-1 text-xs text-rp-text-muted">{t('importExport.modeHint')}</p>
+                            {isInsertOnlyEntity && (
+                                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                                    {mode === 'create'
+                                        ? t('importExport.insertOnlyHint')
+                                        : t('importExport.insertOnlyReplaceHint')}
+                                </p>
+                            )}
                         </div>
                         {showMatchField && (
                             <div>
@@ -424,6 +446,7 @@ export default function ImportWizardDialog({
                     <div className="space-y-5">
                         <ImportValidationConfig
                             columnRules={columnRules}
+                            lockedConstraints={lockedConstraints}
                             availableRules={availableRules}
                             availableTransforms={availableTransforms}
                             importBehaviors={importBehaviors}
@@ -510,7 +533,12 @@ export default function ImportWizardDialog({
                 )}
 
                 {step === 5 && (
-                    <ImportProgressPanel progress={progress} status={status} />
+                    <ImportProgressPanel
+                        progress={progress}
+                        status={status}
+                        realtimeUnavailable={realtimeUnavailable}
+                        onRefresh={refresh}
+                    />
                 )}
 
                 {step === 6 && (

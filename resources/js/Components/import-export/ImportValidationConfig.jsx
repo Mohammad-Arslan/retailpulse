@@ -1,6 +1,6 @@
 import Select from '@/Components/ui/select';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
+import { ChevronDown, ChevronUp, Lock, ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -19,20 +19,160 @@ function ruleLabel(rule, availableRules) {
     return meta?.label ?? key;
 }
 
-function ColumnRuleEditor({ column, availableRules, availableTransforms, onChange }) {
+function lockedRuleLabel(rule, t) {
+    const type = rule?.type ?? '';
+
+    if (type === 'required') {
+        return t('importExport.lockedRuleTypes.required');
+    }
+
+    if (type === 'string') {
+        return t('importExport.lockedRuleTypes.string');
+    }
+
+    if (type === 'integer') {
+        return t('importExport.lockedRuleTypes.integer');
+    }
+
+    if (type === 'numeric') {
+        return t('importExport.lockedRuleTypes.numeric');
+    }
+
+    if (type === 'boolean') {
+        return t('importExport.lockedRuleTypes.boolean');
+    }
+
+    if (type === 'date') {
+        return t('importExport.lockedRuleTypes.date');
+    }
+
+    if (type === 'max') {
+        return t('importExport.lockedRuleTypes.max', { value: rule.value });
+    }
+
+    if (type === 'in') {
+        return t('importExport.lockedRuleTypes.in', {
+            values: Array.isArray(rule.value) ? rule.value.join(', ') : rule.value,
+        });
+    }
+
+    if (type === 'unique') {
+        return t('importExport.lockedRuleTypes.uniqueAdvisory');
+    }
+
+    return type;
+}
+
+function LockedRuleChips({ fieldConstraints, t }) {
+    if (!fieldConstraints?.rules?.length) {
+        return null;
+    }
+
+    return (
+        <div className="mb-3 rounded-md border border-rp-border bg-rp-surface-inset px-3 py-2.5">
+            <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-rp-text-muted">
+                <Lock className="h-3 w-3" aria-hidden />
+                {t('importExport.lockedRules')}
+            </p>
+            <p className="mb-2 text-xs text-rp-text-muted">{t('importExport.lockedRuleHint')}</p>
+            <div className="flex flex-wrap gap-2">
+                {fieldConstraints.rules.map((rule, index) => {
+                    const isUnique = rule.type === 'unique';
+
+                    return (
+                        <span
+                            key={`${rule.type}-${index}`}
+                            className={cn(
+                                'inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium',
+                                isUnique
+                                    ? 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200'
+                                    : 'border-rp-border bg-rp-surface-inset text-rp-text-secondary',
+                            )}
+                            title={
+                                isUnique
+                                    ? t('importExport.lockedUniqueHint')
+                                    : t('importExport.lockedRuleHint')
+                            }
+                        >
+                            <Lock className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+                            {lockedRuleLabel(rule, t)}
+                        </span>
+                    );
+                })}
+            </div>
+            {fieldConstraints.rules.some((rule) => rule.type === 'unique') ? (
+                <p className="mt-1.5 text-xs text-rp-text-muted">{t('importExport.lockedUniqueHint')}</p>
+            ) : null}
+        </div>
+    );
+}
+
+function CompositeAdvisories({ advisories, t }) {
+    if (!advisories?.length) {
+        return null;
+    }
+
+    return (
+        <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2.5">
+            <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200">
+                <Lock className="h-3 w-3" aria-hidden />
+                {t('importExport.compositeConstraints')}
+            </p>
+            <ul className="space-y-1 text-xs text-rp-text-secondary">
+                {advisories.map((advisory) => (
+                    <li key={advisory}>{advisory}</li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+function ColumnRuleEditor({
+    column,
+    availableRules,
+    availableTransforms,
+    lockedConstraints,
+    onChange,
+}) {
     const { t } = useTranslation();
     const [expanded, setExpanded] = useState(column.is_required ?? false);
 
+    const systemKey = column.system_key ?? column.mapped_to ?? column.column_key;
+    const fieldLocked = (lockedConstraints?.fields ?? []).find(
+        (entry) => entry.field === systemKey || entry.field === column.column_key,
+    );
+
     const enabledRules = column.rules ?? [];
+
+    // Required-ness is fully represented by the "Required Field" toggle above,
+    // and any schema/engine-locked rule already has its own explanation in the
+    // "Schema Rules (Locked)" chips — so neither belongs in the interactive
+    // custom-rules checklist below. This is what keeps that list unambiguous:
+    // everything shown there is something the user actually controls.
+    const isEngineLocked = (name) =>
+        name === 'unique_in_db' || Boolean(fieldLocked?.rules?.some((rule) => rule.type === name));
+    const isRequiredLocked = Boolean(fieldLocked?.rules?.some((rule) => rule.type === 'required'));
+    const customRules = enabledRules.filter((rule) => {
+        const name = ruleKey(rule);
+
+        return name !== 'required' && !isEngineLocked(name);
+    });
+
     const enabledTransforms = Array.isArray(column.transform)
         ? column.transform
         : column.transform
           ? [column.transform]
           : [];
 
+    // A rule type already locked for this field must never be offered here — adding
+    // it would enter enabledRules, then vanish from the customRules list above
+    // (filtered out by isEngineLocked), reading as "the rule I just added disappeared."
     const addableRules = availableRules.filter(
-        (meta) => !enabledRules.some((rule) => ruleKey(rule) === meta.rule),
+        (meta) => !enabledRules.some((rule) => ruleKey(rule) === meta.rule) && !isEngineLocked(meta.rule),
     );
+
+    const lockedRuleCount = fieldLocked?.rules?.length ?? 0;
+    const totalRuleCount = lockedRuleCount + customRules.length;
 
     const toggleRule = (ruleName, enabled, templateRule = null) => {
         if (enabled) {
@@ -73,11 +213,17 @@ function ColumnRuleEditor({ column, availableRules, availableTransforms, onChang
                     <p className="text-sm font-medium text-rp-text">
                         {column.display_label ?? column.column_key}
                         {column.is_required ? <span className="text-destructive"> *</span> : null}
+                        {fieldLocked ? (
+                            <Lock
+                                className="ml-1.5 inline h-3.5 w-3.5 text-rp-text-muted"
+                                aria-label={t('importExport.lockedRules')}
+                            />
+                        ) : null}
                     </p>
                     <p className="text-xs text-rp-text-muted">
                         {t('importExport.mappedTo', { column: column.mapped_to ?? column.column_key })}
                         {' · '}
-                        {t('importExport.rulesEnabled', { count: enabledRules.length })}
+                        {t('importExport.rulesEnabled', { count: totalRuleCount })}
                     </p>
                 </div>
                 {expanded ? (
@@ -89,25 +235,36 @@ function ColumnRuleEditor({ column, availableRules, availableTransforms, onChang
 
             {expanded && (
                 <div className="space-y-4 border-t border-rp-border px-4 py-4">
-                    <label className="flex items-center gap-2 text-sm text-rp-text">
-                        <input
-                            type="checkbox"
-                            className="rounded border-rp-border text-teal-500 focus:ring-teal-500/30"
-                            checked={Boolean(column.is_required)}
-                            onChange={(event) => setRequired(event.target.checked)}
-                        />
-                        {t('importExport.requiredField')}
-                    </label>
+                    <LockedRuleChips fieldConstraints={fieldLocked} t={t} />
+
+                    <div>
+                        <label className="flex items-center gap-2 text-sm text-rp-text">
+                            <input
+                                type="checkbox"
+                                className="rounded border-rp-border text-teal-500 focus:ring-teal-500/30"
+                                checked={Boolean(column.is_required)}
+                                onChange={(event) => setRequired(event.target.checked)}
+                                disabled={isRequiredLocked}
+                            />
+                            {t('importExport.requiredField')}
+                            {isRequiredLocked ? <Lock className="h-3 w-3 opacity-70" aria-hidden /> : null}
+                        </label>
+                        {isRequiredLocked && (
+                            <p className="mt-1 pl-6 text-xs text-rp-text-muted">
+                                {t('importExport.lockedRuleHint')}
+                            </p>
+                        )}
+                    </div>
 
                     <div>
                         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-rp-text-muted">
-                            {t('importExport.validationRules')}
+                            {t('importExport.customRules')}
                         </p>
-                        {enabledRules.length === 0 ? (
+                        {customRules.length === 0 ? (
                             <p className="text-xs text-rp-text-muted">{t('importExport.noRulesEnabled')}</p>
                         ) : (
                             <div className="space-y-2">
-                                {enabledRules.map((rule, index) => {
+                                {customRules.map((rule, index) => {
                                     const name = ruleKey(rule);
                                     const meta = availableRules.find((entry) => entry.rule === name);
 
@@ -211,6 +368,7 @@ function ColumnRuleEditor({ column, availableRules, availableTransforms, onChang
 
 export default function ImportValidationConfig({
     columnRules,
+    lockedConstraints,
     availableRules,
     availableTransforms,
     importBehaviors,
@@ -319,6 +477,7 @@ export default function ImportValidationConfig({
                         {t('importExport.columnValidationRulesHint')}
                     </p>
                 </div>
+                <CompositeAdvisories advisories={lockedConstraints?.advisories} t={t} />
                 <div className="space-y-3">
                     {columnRules.map((column, index) => (
                         <ColumnRuleEditor
@@ -326,6 +485,7 @@ export default function ImportValidationConfig({
                             column={column}
                             availableRules={availableRules}
                             availableTransforms={availableTransforms}
+                            lockedConstraints={lockedConstraints}
                             onChange={(next) => updateColumn(index, next)}
                         />
                     ))}

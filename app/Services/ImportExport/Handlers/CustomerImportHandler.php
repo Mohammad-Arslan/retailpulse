@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\ImportExport\Handlers;
 
+use App\Models\Customer;
 use App\Models\CustomerGroup;
 use App\Models\LoyaltyTier;
 use App\Services\Customer\CustomerService;
 use App\Services\Customer\WalletService;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -15,10 +17,28 @@ use Illuminate\Support\Facades\DB;
 
 final class CustomerImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
     public function __construct(
         private readonly CustomerService $customers,
         private readonly WalletService $wallet,
     ) {}
+
+    public function targetModels(): array
+    {
+        return [Customer::class];
+    }
+
+    public function columnMap(): array
+    {
+        return [
+            'name' => 'name',
+            'phone' => 'phone',
+            'email' => 'email',
+            'credit_limit' => 'credit_limit',
+            'is_active' => 'is_active',
+        ];
+    }
 
     public function columns(): array
     {

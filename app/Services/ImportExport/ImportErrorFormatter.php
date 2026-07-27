@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ImportExport;
 
 use App\Models\ImportExportJob;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
 
 final class ImportErrorFormatter
@@ -175,6 +176,145 @@ final class ImportErrorFormatter
         }
 
         return $formatted;
+    }
+
+    /**
+     * Map a database integrity/transient failure to per-field user messages.
+     * Never leaks table, index, or constraint names.
+     *
+     * @return array<string, list<string>>
+     */
+    public function fromQueryException(QueryException $e): array
+    {
+        $kind = ImportQueryExceptionClassifier::classify($e);
+        $field = $this->guessFieldFromQueryException($e);
+        $label = $this->fieldLabel($field);
+
+        $message = match ($kind) {
+            ImportQueryExceptionClassifier::KIND_INTEGRITY => $this->integrityMessage($e, $label),
+            ImportQueryExceptionClassifier::KIND_TRANSIENT => 'Could not save this row because the database was busy. Please retry the import.',
+            default => 'Could not save this row due to a database error.',
+        };
+
+        return [$field => [$message]];
+    }
+
+    private function integrityMessage(QueryException $e, string $label): string
+    {
+        $lower = mb_strtolower($e->getMessage());
+        $driverCode = isset($e->errorInfo[1]) && is_numeric($e->errorInfo[1])
+            ? (int) $e->errorInfo[1]
+            : null;
+
+        if (
+            str_contains($lower, 'unique')
+            || str_contains($lower, 'duplicate')
+            || $driverCode === 1062
+            || str_contains($lower, '23505')
+        ) {
+            return "{$label}: Duplicate value — must be unique";
+        }
+
+        if (
+            str_contains($lower, 'not null')
+            || str_contains($lower, 'cannot be null')
+            || $driverCode === 1048
+            || $driverCode === 1364
+            || str_contains($lower, '23502')
+        ) {
+            return "{$label}: Required value is missing";
+        }
+
+        if (
+            str_contains($lower, 'foreign key')
+            || $driverCode === 1451
+            || $driverCode === 1452
+            || str_contains($lower, '23503')
+        ) {
+            return "{$label}: Related record was not found or is not allowed";
+        }
+
+        return "{$label}: Value is not valid for this field";
+    }
+
+    private function guessFieldFromQueryException(QueryException $e): string
+    {
+        $message = $e->getMessage();
+
+        // SQLite: UNIQUE/NOT NULL constraint failed: table.column
+        if (preg_match('/constraint failed:\s*(?:["`]?\w+["`]?\.)?["`]?(\w+)["`]?/i', $message, $matches) === 1) {
+            return $this->logicalFieldForPhysicalColumn($matches[1]);
+        }
+
+        // PostgreSQL DETAIL: Key (column)=(value) already exists.
+        if (preg_match('/\bKey\s*\(([^)]+)\)/i', $message, $matches) === 1) {
+            $columns = array_map('trim', explode(',', $matches[1]));
+            $columns = array_values(array_filter(
+                $columns,
+                fn (string $col): bool => ! in_array(mb_strtolower($col), ['tenant_id', 'id'], true),
+            ));
+
+            if ($columns !== []) {
+                return $this->logicalFieldForPhysicalColumn($columns[0]);
+            }
+        }
+
+        // PostgreSQL / MySQL: null value in column "name" / Column 'name' cannot be null
+        if (preg_match('/column\s+[\'"`]?(\w+)[\'"`]?/i', $message, $matches) === 1) {
+            return $this->logicalFieldForPhysicalColumn($matches[1]);
+        }
+
+        // MySQL: Duplicate entry 'x' for key 'table_column_unique' — prefer mapped column keys only.
+        foreach ($this->knownColumnKeys() as $key) {
+            if (str_contains(mb_strtolower($message), mb_strtolower($key))) {
+                return $key;
+            }
+        }
+
+        return '_row';
+    }
+
+    private function logicalFieldForPhysicalColumn(string $physical): string
+    {
+        $physical = trim($physical, '`"');
+
+        foreach ($this->columnRules as $column) {
+            $columnKey = (string) ($column['column_key'] ?? '');
+            $mappedTo = (string) ($column['mapped_to'] ?? $columnKey);
+
+            if ($physical === $columnKey || $physical === $mappedTo) {
+                return $columnKey !== '' ? $columnKey : $physical;
+            }
+
+            // Common slug ↔ code mapping used by catalog handlers.
+            if ($physical === 'slug' && in_array($columnKey, ['code', 'slug'], true)) {
+                return $columnKey;
+            }
+        }
+
+        return $physical !== '' ? $physical : '_row';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function knownColumnKeys(): array
+    {
+        $keys = [];
+
+        foreach ($this->columnRules as $column) {
+            $key = (string) ($column['column_key'] ?? '');
+            if ($key !== '') {
+                $keys[] = $key;
+            }
+
+            $mapped = (string) ($column['mapped_to'] ?? '');
+            if ($mapped !== '' && $mapped !== $key) {
+                $keys[] = $mapped;
+            }
+        }
+
+        return $keys;
     }
 
     private function looksUserFriendly(string $message, string $field): bool

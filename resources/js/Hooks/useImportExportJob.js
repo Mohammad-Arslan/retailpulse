@@ -19,6 +19,7 @@ function progressFromJob(job) {
 export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
     const [progress, setProgress] = useState(null);
     const [status, setStatus] = useState('pending');
+    const [realtimeUnavailable, setRealtimeUnavailable] = useState(false);
     const handlersRef = useRef({ onCompleted, onFailed });
     const completedRef = useRef(false);
     const maxPercentRef = useRef(0);
@@ -81,21 +82,39 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
         maxPercentRef.current = 0;
     }, [ulid]);
 
+    // WebSocket channel subscription. Reverb is the single source of truth for
+    // progress — there is no polling fallback. If Echo isn't available, the UI
+    // must say so explicitly rather than sit on a silently frozen bar.
     useEffect(() => {
-        if (!ulid || typeof window.Echo === 'undefined') {
+        if (!ulid) {
             return undefined;
         }
 
+        if (typeof window.Echo === 'undefined') {
+            setRealtimeUnavailable(true);
+
+            return undefined;
+        }
+
+        setRealtimeUnavailable(false);
+
         const channel = window.Echo.private(`import-job.${ulid}`);
 
-        // Fires on initial subscribe and again on every reconnect, so this
-        // both seeds state on mount and resyncs anything missed while the
-        // socket was briefly disconnected — no polling loop needed.
+        // Fires on initial subscribe and again on every reconnect, so this both
+        // seeds state on mount and resyncs anything missed while the socket was
+        // briefly disconnected — no polling loop needed.
         channel.subscribed(() => {
             refresh();
         });
 
+        // Terminal status is sticky: a progress event delivered after
+        // completion (out of order, or from a stray reconnect resync) must
+        // never revert the job back to a running phase.
         channel.listen('.progress.updated', (payload) => {
+            if (completedRef.current) {
+                return;
+            }
+
             applyProgress(payload, payload.phase ?? 'processing');
             setStatus(payload.phase ?? 'processing');
         });
@@ -125,5 +144,5 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
         };
     }, [ulid, applyProgress, refresh]);
 
-    return { progress, status, refresh };
+    return { progress, status, refresh, realtimeUnavailable };
 }

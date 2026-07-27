@@ -401,6 +401,13 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(15)->by($userId !== null ? 'user:'.$userId : $request->ip());
         });
 
+        RateLimiter::for('import-upload', function (Request $request) {
+            $userId = $request->user()?->id;
+            $limit = (int) config('import-export.upload_rate_limit_per_minute', 10);
+
+            return Limit::perMinute($limit)->by($userId !== null ? 'import-upload:'.$userId : $request->ip());
+        });
+
         Event::listen(DropShipGrnConfirmed::class, LogDropShipGrnConfirmed::class);
         Event::listen(GoodsReceived::class, LogGoodsReceived::class);
         Event::listen(GoodsReceived::class, ProcessAccountingOnGoodsReceived::class);

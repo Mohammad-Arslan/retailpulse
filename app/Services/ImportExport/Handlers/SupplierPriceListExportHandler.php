@@ -7,6 +7,7 @@ namespace App\Services\ImportExport\Handlers;
 use App\Models\SupplierPriceListItem;
 use App\Services\ImportExport\Contracts\ExportHandler;
 use App\Services\ImportExport\ExportContext;
+use App\Support\TenantImportScope;
 use Illuminate\Database\Eloquent\Builder;
 
 final class SupplierPriceListExportHandler implements ExportHandler
@@ -24,7 +25,10 @@ final class SupplierPriceListExportHandler implements ExportHandler
     {
         $query = SupplierPriceListItem::query()
             ->with(['priceList.supplier', 'variant.product'])
-            ->whereHas('priceList')
+            ->whereHas('priceList', fn (Builder $q) => $q->whereHas(
+                'supplier',
+                fn (Builder $sq) => TenantImportScope::constrain($sq, $context->tenantId),
+            ))
             ->orderBy('price_list_id')
             ->orderBy('id');
 

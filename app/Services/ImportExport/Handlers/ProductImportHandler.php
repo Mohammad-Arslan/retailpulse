@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Supplier;
 use App\Models\Unit;
+use App\Services\ImportExport\Concerns\DeclaresImportSchema;
 use App\Services\ImportExport\Contracts\ImportHandler;
 use App\Services\ImportExport\ImportContext;
 use App\Services\ImportExport\ImportRowResult;
@@ -23,6 +24,27 @@ use Illuminate\Support\Str;
 
 final class ProductImportHandler implements ImportHandler
 {
+    use DeclaresImportSchema;
+
+    public function targetModels(): array
+    {
+        return [Product::class, ProductVariant::class];
+    }
+
+    public function columnMap(): array
+    {
+        return [
+            'name' => 'name',
+            'sku' => ProductVariant::class.'.sku',
+            'barcode' => ProductVariant::class.'.barcode',
+            'cost_price' => ProductVariant::class.'.cost_price',
+            'sell_price' => ProductVariant::class.'.sell_price',
+            'type' => 'type',
+            'variant_label' => ProductVariant::class.'.name',
+            'is_active' => 'is_active',
+        ];
+    }
+
     public function columns(): array
     {
         return [
