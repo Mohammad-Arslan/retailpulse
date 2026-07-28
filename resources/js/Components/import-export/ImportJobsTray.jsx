@@ -136,6 +136,11 @@ export function ImportJobsProvider({ children }) {
 
         channel.subscribed(() => refreshJobs());
 
+        // A genuine subscription failure (e.g. broadcasting auth rejected)
+        // would otherwise leave the tray showing stale progress forever with
+        // no live updates and nothing to trigger a resync.
+        channel.error(() => refreshJobs());
+
         // Only refresh on lifecycle transitions, not progress ticks. A
         // terminal job's status is sticky — a progress event delivered after
         // completion must never downgrade it back to a running phase.
