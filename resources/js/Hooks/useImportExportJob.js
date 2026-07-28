@@ -92,11 +92,22 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
 
         if (typeof window.Echo === 'undefined') {
             setRealtimeUnavailable(true);
+            refresh();
 
             return undefined;
         }
 
         setRealtimeUnavailable(false);
+
+        // Sync once immediately via REST, independent of the socket's timing.
+        // A small/fast job can validate, process, and broadcast its
+        // completion event before the private channel finishes subscribing —
+        // most likely on the very first import of a session, when the
+        // WebSocket connection itself is still being established — so
+        // relying solely on channel.subscribed()'s resync can leave the UI
+        // waiting forever on an event that already fired and will never be
+        // redelivered.
+        refresh();
 
         const channel = window.Echo.private(`import-job.${ulid}`);
 
@@ -104,6 +115,16 @@ export function useImportExportJob(ulid, { onCompleted, onFailed } = {}) {
         // seeds state on mount and resyncs anything missed while the socket was
         // briefly disconnected — no polling loop needed.
         channel.subscribed(() => {
+            refresh();
+        });
+
+        // A genuine subscription failure (e.g. broadcasting auth rejected)
+        // would otherwise leave the UI frozen forever with no live updates
+        // and no visible way to recover — surface it the same way as "Echo
+        // not loaded" so the manual refresh affordance appears, and try one
+        // more REST sync right away.
+        channel.error(() => {
+            setRealtimeUnavailable(true);
             refresh();
         });
 

@@ -18,7 +18,7 @@ import {
     uploadImport,
 } from '@/lib/importExportApi';
 import { FileSpreadsheet } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -135,28 +135,48 @@ export default function ImportWizardDialog({
         },
     });
 
+    // Read inside the close effect below without making it re-run on every
+    // step change — only the step at the moment the dialog actually closes
+    // matters, not later background transitions (e.g. the job finishing
+    // while the dialog stays closed) that happen to touch the same state.
+    const stepAtCloseRef = useRef(step);
+    stepAtCloseRef.current = step;
+
     useEffect(() => {
-        if (!open) {
-            setStep(1);
-            setFile(null);
-            setFilename('');
-            setUlid(null);
-            setHeaders([]);
-            setPreviewRows([]);
-            setSystemFields([]);
-            setMapping({});
-            setColumnRules([]);
-            setLockedConstraints({ fields: [] });
-            setAvailableRules([]);
-            setAvailableTransforms([]);
-            setImportBehaviors([]);
-            setBehaviorOptions({});
-            setSummary(null);
-            setTotalRows(0);
-            setMode(isInsertOnlyEntity ? 'create' : 'upsert');
-            setMatchField('sku');
-            setIsDryRun(false);
+        if (open) {
+            return;
         }
+
+        // A job still actively running (the progress step) keeps its state
+        // on close, so reopening the dialog resumes watching that same job
+        // instead of silently discarding it for a blank upload form — the
+        // hook's own immediate refresh + live subscription pick up wherever
+        // it actually is. Anything before that (still composing the import,
+        // so cancelJob already ran in handleClose) or after it (done) resets
+        // fully, so the next open starts a clean draft.
+        if (stepAtCloseRef.current === 5) {
+            return;
+        }
+
+        setStep(1);
+        setFile(null);
+        setFilename('');
+        setUlid(null);
+        setHeaders([]);
+        setPreviewRows([]);
+        setSystemFields([]);
+        setMapping({});
+        setColumnRules([]);
+        setLockedConstraints({ fields: [] });
+        setAvailableRules([]);
+        setAvailableTransforms([]);
+        setImportBehaviors([]);
+        setBehaviorOptions({});
+        setSummary(null);
+        setTotalRows(0);
+        setMode(isInsertOnlyEntity ? 'create' : 'upsert');
+        setMatchField('sku');
+        setIsDryRun(false);
     }, [open, isInsertOnlyEntity]);
 
     useEffect(() => {
