@@ -301,7 +301,9 @@
             "processed": "Processed",
             "successful": "Successful",
             "failed": "Failed",
-            "skipped": "Skipped"
+            "skipped": "Skipped",
+            "validated": "Validated",
+            "invalid": "Invalid"
         },
         "starting": "Starting…",
         "startImport": "Start import",

@@ -1,4 +1,4 @@
-import { combinedProcessed, cumulativeImportProgress } from '@/lib/importProgress';
+import { combinedProcessed, cumulativeImportProgress, trackOf } from '@/lib/importProgress';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,13 +13,24 @@ export default function ImportProgressPanel({ progress, status, realtimeUnavaila
 
     const phase = progress?.phase ?? status;
     const total = progress?.total ?? 0;
-    // Validation and processing are one task — this is the blended count
-    // across both passes (see combinedProcessed), not either phase's own
-    // 0-total count, so it never appears to jump backwards at the handoff.
-    const processed = Math.min(total, Math.round(combinedProcessed(progress, status)));
-    const success = progress?.success ?? 0;
-    const failed = progress?.failed ?? progress?.errors ?? 0;
-    const skipped = progress?.skipped ?? 0;
+    // Overall progress (the bar + the "X / total" line below) is blended
+    // across both validation and processing passes so it never appears to
+    // jump backwards at the handoff — see combinedProcessed. The stat cards
+    // further down deliberately do NOT use this blended number: they show
+    // the *current phase's* raw outcome counts (validated/invalid during
+    // validation, successful/failed/skipped during processing), which must
+    // stay mutually consistent with each other. Mixing the blended overall
+    // count into a "Processed" card next to raw per-phase outcome cards is
+    // exactly the bug this component used to have — successful reading
+    // larger than processed during validation, and far smaller than
+    // processed during processing — so there is no "Processed" stat card
+    // here at all, only the phase-appropriate outcome cards.
+    const overallProcessed = Math.min(total, Math.round(combinedProcessed(progress, status)));
+
+    const isValidationPhase = trackOf(phase) === 'validation';
+    const success = Number(progress?.success) || 0;
+    const failed = Number(progress?.failed ?? progress?.errors) || 0;
+    const skipped = Number(progress?.skipped) || 0;
 
     const phaseLabel = {
         validating: t('importExport.phases.validating'),
@@ -29,6 +40,17 @@ export default function ImportProgressPanel({ progress, status, realtimeUnavaila
         completed: t('importExport.phases.completed'),
         failed: t('importExport.phases.failed'),
     }[phase] ?? phase;
+
+    // During validation nothing has been imported yet — rows have only been
+    // checked, not written — so label the outcome cards Validated/Invalid
+    // rather than claiming a "Successful" import. Once processing starts,
+    // these are real imported-row outcomes.
+    const successLabel = isValidationPhase
+        ? t('importExport.stats.validated')
+        : t('importExport.stats.successful');
+    const failedLabel = isValidationPhase
+        ? t('importExport.stats.invalid')
+        : t('importExport.stats.failed');
 
     return (
         <div className="space-y-5">
@@ -51,7 +73,7 @@ export default function ImportProgressPanel({ progress, status, realtimeUnavaila
                     <div>
                         <p className="text-sm font-medium text-rp-text">{phaseLabel}</p>
                         <p className="mt-1 text-xs text-rp-text-muted">
-                            {t('importExport.progressRecords', { processed, total, percent })}
+                            {t('importExport.progressRecords', { processed: overallProcessed, total, percent })}
                         </p>
                     </div>
                     <span className="text-2xl font-semibold tabular-nums text-teal-600 dark:text-teal-400">
@@ -71,10 +93,9 @@ export default function ImportProgressPanel({ progress, status, realtimeUnavaila
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard label={t('importExport.stats.total')} value={total} />
-                <StatCard label={t('importExport.stats.processed')} value={processed} />
-                <StatCard label={t('importExport.stats.successful')} value={success} accent="success" />
+                <StatCard label={successLabel} value={success} accent="success" />
                 <StatCard
-                    label={t('importExport.stats.failed')}
+                    label={failedLabel}
                     value={failed}
                     accent={failed > 0 ? 'danger' : undefined}
                 />

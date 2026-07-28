@@ -1,7 +1,7 @@
 const VALIDATION_PHASES = ['validating', 'validated'];
 const PROCESSING_PHASES = ['processing', 'completing'];
 
-function trackOf(phase) {
+export function trackOf(phase) {
     if (VALIDATION_PHASES.includes(phase)) {
         return 'validation';
     }
