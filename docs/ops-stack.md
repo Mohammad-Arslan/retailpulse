@@ -228,7 +228,7 @@ Committed at [`jenkins/Jenkinsfile`](../jenkins/Jenkinsfile):
 6. PHPUnit (`composer test`) — optional via parameter
 7. `docker build --target production`
 8. SSH → `bash setup.sh production --rebuild` (on by default — see below)
-9. Optimize caches + `curl http://127.0.0.1:8000/up` health check, then record the deployed commit for the next run's release notes
+9. Poll `curl http://127.0.0.1:8000/up` (up to 30 attempts, 5s apart — the container's own boot sequence runs migrations, ~20 seeders, and a cache warm before it starts listening, which can legitimately take longer than a fixed delay), re-warm caches once healthy, then record the deployed commit for the next run's release notes. On timeout, the stage dumps `docker compose logs --tail=150 app` and `docker compose ps` before failing, so the actual boot state is visible in the Jenkins console instead of just "curl failed"
 
 **Auto-trigger:** the Jenkinsfile declares `triggers { pollSCM('H/2 * * * *') }` — Jenkins polls this job's configured SCM (`main`) every ~2 minutes and builds on new commits, with `DEPLOY_PRODUCTION` defaulting to `true`. No GitHub webhook is used: Jenkins stays `127.0.0.1`-only (per §1/§2.1) and only needs outbound internet, which it already has for `git`/`composer`/`npm`. This trades a small trigger latency for not exposing Jenkins to the internet on a box with no domain/TLS yet. Instant webhook triggering is possible later if a domain + TLS + a shared secret are set up, but it isn't done here — see [docker-security-audit.md](./docker-security-audit.md).
 

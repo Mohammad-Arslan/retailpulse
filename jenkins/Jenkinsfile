@@ -254,19 +254,41 @@ ${notes}
                             ${params.VPS_USER}@${params.VPS_HOST} \\
                             'set -euo pipefail
                              cd ${params.VPS_APP_DIR}
-                             # Entrypoint already caches on boot; re-warm after deploy settles.
-                             sleep 20
+                             # entrypoint.sh already caches config/routes/views at boot,
+                             # but that whole boot sequence (composer/npm freshness
+                             # checks, DB + Redis wait loops, migrate --force, roughly
+                             # 20 seeders, cache warm) can legitimately run well past a
+                             # fixed delay -- the app healthcheck itself allows up to a
+                             # 90s start_period for exactly this reason. A flat sleep
+                             # plus a single curl attempt is a race, not a check: poll
+                             # the health endpoint instead of guessing a fixed delay.
+                             echo "[deploy] waiting for app to report healthy..."
+                             READY=0
+                             for i in \$(seq 1 30); do
+                               CODE="\$(curl -fsS -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/up 2>/dev/null || true)"
+                               if [ "\$CODE" = "200" ] || [ "\$CODE" = "204" ]; then
+                                 READY=1
+                                 break
+                               fi
+                               sleep 5
+                             done
+                             if [ "\$READY" != "1" ]; then
+                               echo "[deploy] ERROR: app did not become healthy in time (last HTTP code: \$CODE)"
+                               docker compose logs --tail=150 app || true
+                               docker compose ps
+                               exit 1
+                             fi
+                             echo "[deploy] app is healthy"
                              docker compose exec -T app php artisan optimize || true
                              docker compose exec -T app php artisan config:cache
                              docker compose exec -T app php artisan route:cache
                              docker compose exec -T app php artisan view:cache
-                             curl -fsS -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/up | grep -E "200|204"
                              docker compose ps
                              docker compose exec -T app php artisan horizon:status || true'
                     """
                 }
-                // Health check above already failed the stage (non-2xx) before this
-                // point, so reaching here means the deploy is confirmed live.
+                // Health check above already failed the stage (non-2xx, or timed out)
+                // before this point, so reaching here means the deploy is confirmed live.
                 sh "echo ${env.GIT_COMMIT_SHORT} > ${env.LAST_DEPLOYED_SHA_FILE}"
             }
         }
