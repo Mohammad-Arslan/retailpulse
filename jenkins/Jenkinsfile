@@ -281,7 +281,13 @@ ${notes}
             echo "RetailPulse pipeline FAILED — commit ${env.GIT_COMMIT_SHORT}"
             sendBuildNotification('FAILURE')
         }
-        always {
+        // `cleanup` (not `always`) -- Jenkins runs post conditions in a fixed
+        // order regardless of declaration order in the Jenkinsfile: always,
+        // ..., failure, success, ..., cleanup last. `always` would (and did,
+        // in build #1) wipe the workspace -- including
+        // docker/jenkins/scripts/send-mail.py -- before the success/failure
+        // notification steps above got a chance to run it.
+        cleanup {
             cleanWs(cleanWhenNotBuilt: false, deleteDirs: true, disableDeferredWipeout: true)
         }
     }
